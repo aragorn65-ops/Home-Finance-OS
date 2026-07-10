@@ -1,0 +1,99 @@
+.hfos-button {
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:8px;
+
+    min-height:44px;
+
+    padding:12px 20px;
+
+    border:none;
+
+    border-radius:var(--radius-lg);
+
+    font-weight:600;
+
+    font-size:14px;
+
+    cursor:pointer;
+
+    transition:all .2s ease;
+
+    font-family:inherit;
+
+}
+
+/* ---------------- */
+
+.primary{
+
+    background:var(--accent);
+
+    color:white;
+
+}
+
+.primary:hover{
+
+    filter:brightness(.95);
+
+}
+
+/* ---------------- */
+
+.secondary{
+
+    background:var(--surface);
+
+    color:var(--text);
+
+    border:1px solid var(--border);
+
+}
+
+.secondary:hover{
+
+    background:#F1F5F9;
+
+}
+
+/* ---------------- */
+
+.danger{
+
+    background:var(--danger);
+
+    color:white;
+
+}
+
+/* ---------------- */
+
+.ghost{
+
+    background:transparent;
+
+    color:var(--accent);
+
+}
+
+/* ---------------- */
+
+.full-width{
+
+    width:100%;
+
+}
+
+.hfos-button:disabled{
+
+    opacity:.5;
+
+    cursor:not-allowed;
+
+}

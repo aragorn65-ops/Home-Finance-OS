@@ -1,0 +1,45 @@
+.hfos-page-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    gap:24px;
+
+    margin-bottom:32px;
+
+}
+
+.hfos-page-header h1{
+
+    margin:0;
+
+    color:var(--text);
+
+    font-size:32px;
+
+    font-weight:700;
+
+}
+
+.hfos-page-header p{
+
+    margin-top:8px;
+
+    color:var(--text-secondary);
+
+    font-size:16px;
+
+}
+
+.actions{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+}

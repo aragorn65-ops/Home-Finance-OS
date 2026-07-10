@@ -1,3 +1,4 @@
+import StatusBadge from "../../../shared/ui/StatusBadge";
 import type { GovernanceDocument } from "../types/document";
 
 type Props = {
@@ -24,7 +25,7 @@ export default function ApprovalCard({ document }: Props) {
         <strong>Status</strong>
       </p>
 
-      <p>🟢 {document.status}</p>
+      <StatusBadge status={document.status} />
 
       <p>
         <strong>Version</strong>

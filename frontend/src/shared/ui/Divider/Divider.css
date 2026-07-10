@@ -1,0 +1,9 @@
+.hfos-divider{
+
+    border:none;
+
+    border-top:1px solid var(--border);
+
+    margin:24px 0;
+
+}
