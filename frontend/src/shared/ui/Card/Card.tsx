@@ -1,10 +1,10 @@
-import { ReactNode } from "react";
 import "./Card.css";
+import type { ReactNode } from "react";
 
-type CardProps = {
+interface CardProps {
   children: ReactNode;
   className?: string;
-};
+}
 
 export default function Card({
   children,

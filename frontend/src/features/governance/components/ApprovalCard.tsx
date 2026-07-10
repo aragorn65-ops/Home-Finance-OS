@@ -1,60 +1,61 @@
+import Card from "../../../shared/ui/Card";
+import Divider from "../../../shared/ui/Divider";
 import StatusBadge from "../../../shared/ui/StatusBadge";
+
 import type { GovernanceDocument } from "../types/document";
 
 type Props = {
   document: GovernanceDocument;
 };
 
-export default function ApprovalCard({ document }: Props) {
+export default function ApprovalCard({
+  document,
+}: Props) {
   return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: 12,
-        padding: 24,
-        background: "white",
-      }}
-    >
+    <Card>
+
       <h2>{document.id}</h2>
 
       <h3>{document.title}</h3>
 
-      <hr />
+      <Divider />
 
-      <p>
-        <strong>Status</strong>
-      </p>
+      <strong>Status</strong>
 
-      <StatusBadge status={document.status} />
+      <br />
 
-      <p>
-        <strong>Version</strong>
-      </p>
+      <StatusBadge
+        status={document.status}
+      />
+
+      <Divider />
+
+      <strong>Version</strong>
 
       <p>{document.version}</p>
 
-      <p>
-        <strong>Approved By</strong>
-      </p>
+      <strong>Approved By</strong>
 
       <p>{document.approvedBy}</p>
 
-      <p>
-        <strong>Approval Date</strong>
-      </p>
+      <strong>Approval Date</strong>
 
       <p>{document.approvedDate}</p>
 
-      <blockquote>{document.motto}</blockquote>
+      <Divider />
 
-      <p
-        style={{
-          marginTop: 20,
-          color: "#6B7280",
-        }}
-      >
+      <blockquote>
+
+        {document.motto}
+
+      </blockquote>
+
+      <p>
+
         {document.description}
+
       </p>
-    </div>
+
+    </Card>
   );
 }

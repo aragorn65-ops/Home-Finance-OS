@@ -1,5 +1,9 @@
 import { useState } from "react";
 
+import PageHeader from "../../../shared/ui/PageHeader";
+import Section from "../../../shared/ui/Section";
+import Card from "../../../shared/ui/Card";
+
 import ApprovalCard from "../components/ApprovalCard";
 import DocumentRegistry from "../components/DocumentRegistry";
 import MarkdownViewer from "../components/MarkdownViewer";
@@ -17,26 +21,33 @@ export default function GovernancePage() {
     ) ?? governanceDocuments[0];
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "300px 1fr",
-        gap: "24px",
-      }}
-    >
-      <DocumentRegistry
-        documents={governanceDocuments}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
+    <>
+      <PageHeader
+        title="Knowledge Center"
+        subtitle="Financial Clarity Through Transparency"
       />
 
-      <div>
-        <ApprovalCard document={selectedDocument} />
-
-        <MarkdownViewer
-          content={selectedDocument.markdown}
+      <Section title="Governance Documents">
+        <DocumentRegistry
+          documents={governanceDocuments}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
         />
-      </div>
-    </div>
+      </Section>
+
+      <Section title="Document Information">
+        <ApprovalCard
+          document={selectedDocument}
+        />
+      </Section>
+
+      <Section title="Document Content">
+        <Card>
+          <MarkdownViewer
+            content={selectedDocument.markdown}
+          />
+        </Card>
+      </Section>
+    </>
   );
 }
