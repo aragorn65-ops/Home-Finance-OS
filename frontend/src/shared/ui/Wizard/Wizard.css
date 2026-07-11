@@ -1,0 +1,83 @@
+.wizard{
+
+    width:100%;
+
+    max-width:720px;
+
+    margin:0 auto;
+
+}
+
+.wizard-header{
+
+    margin-bottom:32px;
+
+}
+
+.wizard-header h1{
+
+    margin:0 0 12px;
+
+    font-size:36px;
+
+    font-weight:700;
+
+    color:var(--text-primary);
+
+}
+
+.wizard-header p{
+
+    margin:0;
+
+    max-width:560px;
+
+    color:var(--text-secondary)
+
+    line-height:1.7;
+
+}
+
+.wizard-content{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:24px;
+
+}
+
+.wizard-dots{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin-bottom:24px;
+
+}
+
+.dot{
+
+    width:10px;
+
+    height:10px;
+
+    border-radius:999px;
+
+    background:#CBD5E1;
+
+    transition:all .2s ease;
+
+}
+
+.dot.active{
+
+    width:28px;
+
+    background:var(--primary);
+
+}

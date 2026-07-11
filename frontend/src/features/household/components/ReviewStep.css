@@ -1,0 +1,37 @@
+.review-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.review-item{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:16px 0;
+
+    border-bottom:1px solid var(--border);
+
+}
+
+.review-item span{
+
+    color:#64748B;
+
+}
+
+.review-item strong{
+
+    color:var(--text-primary);
+
+    font-weight:600;
+
+}

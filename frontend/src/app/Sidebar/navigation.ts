@@ -16,17 +16,17 @@ export const navigation = [
       {
         label: "Dashboard",
         icon: LayoutDashboard,
-        path: "/",
+        path: "/app",
       },
       {
-        label: "Knowledge Center",
+        label: "Help Center",
         icon: BookOpen,
-        path: "/knowledge-center",
+        path: "/app/help-center",
       },
       {
         label: "Settings",
         icon: Settings,
-        path: "/settings",
+        path: "/app/settings",
       },
     ],
   },
@@ -36,22 +36,22 @@ export const navigation = [
       {
         label: "Expenses",
         icon: CreditCard,
-        path: "/expenses",
+        path: "/app/expenses",
       },
       {
         label: "Settlements",
         icon: HandCoins,
-        path: "/settlements",
+        path: "/app/settlements",
       },
       {
         label: "Savings",
         icon: PiggyBank,
-        path: "/savings",
+        path: "/app/savings",
       },
       {
         label: "Reports",
         icon: BarChart3,
-        path: "/reports",
+        path: "/app/reports",
       },
     ],
   },
@@ -61,7 +61,7 @@ export const navigation = [
       {
         label: "About",
         icon: Info,
-        path: "/about",
+        path: "/app/about",
       },
     ],
   },

@@ -1,20 +1,31 @@
+import { useNavigate } from "react-router-dom";
+
 import PageHeader from "../../../shared/ui/PageHeader";
 import Card from "../../../shared/ui/Card";
+import Button from "../../../shared/ui/Button";
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
+
   return (
     <>
       <PageHeader
         title="Dashboard"
-        subtitle="Welcome to HFOS"
+        subtitle="Your household financial workspace."
       />
 
       <Card>
-        <h2>Coming Soon</h2>
+        <h2>Welcome Home</h2>
 
         <p>
-          Your household dashboard will appear here.
+          Complete your household setup to unlock your financial dashboard.
         </p>
+
+        <Button
+          onClick={() => navigate("/household")}
+        >
+          Set Up Household →
+        </Button>
       </Card>
     </>
   );

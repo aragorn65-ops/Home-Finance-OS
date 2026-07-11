@@ -1,0 +1,1 @@
+export { default as HouseholdPage } from "./pages/HouseholdPage";

@@ -24,8 +24,20 @@
 
     flex:1;
 
+    padding:32px;
+
+    display:flex;
+
+    justify-content:center;
+
     overflow:auto;
 
-    padding:32px;
+}
+
+.page-container{
+
+    width:100%;
+
+    max-width:1200px;
 
 }

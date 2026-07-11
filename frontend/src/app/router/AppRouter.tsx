@@ -2,31 +2,52 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import AppShell from "../AppShell";
 
-import GovernancePage from "../../features/governance/pages/GovernancePage";
+import { StartupPage } from "../../features/startup";
+import { HouseholdPage } from "../../features/household";
+
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
+import GovernancePage from "../../features/governance/pages/GovernancePage";
 import SettingsPage from "../../features/settings/pages/SettingsPage";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <AppShell>
-        <Routes>
+      <Routes>
+
+        {/* Startup */}
+        <Route
+          path="/"
+          element={<StartupPage />}
+        />
+
+        {/* Household Setup */}
+        <Route
+          path="/household"
+          element={<HouseholdPage />}
+        />
+
+        {/* Main Application */}
+        <Route
+          path="/app"
+          element={<AppShell />}
+        >
           <Route
-            path="/"
+            index
             element={<DashboardPage />}
           />
 
           <Route
-            path="/knowledge-center"
+            path="help-center"
             element={<GovernancePage />}
           />
 
           <Route
-            path="/settings"
+            path="settings"
             element={<SettingsPage />}
           />
-        </Routes>
-      </AppShell>
+        </Route>
+
+      </Routes>
     </BrowserRouter>
   );
 }

@@ -23,9 +23,14 @@ export default function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`hfos-button ${variant} ${
-        fullWidth ? "full-width" : ""
-      } ${className}`}
+      className={[
+  "hfos-button",
+  variant,
+  fullWidth && "full-width",
+  className,
+]
+  .filter(Boolean)
+  .join(" ")}
       {...props}
     >
       {children}

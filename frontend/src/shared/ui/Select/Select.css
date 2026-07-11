@@ -1,0 +1,71 @@
+.hfos-select{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+    width:100%;
+
+}
+
+.hfos-select label{
+
+    font-size:14px;
+
+    font-weight:600;
+
+    color:#334155;
+
+}
+
+.hfos-select select{
+
+    width:100%;
+
+    padding:14px 16px;
+
+    border:1px solid var(--border);
+
+    border-radius:12px;
+
+    background:#FFFFFF;
+
+    color:#0F172A;
+
+    font-size:16px;
+
+    cursor:pointer;
+
+    transition:
+        border-color .18s ease,
+        box-shadow .18s ease;
+
+    box-sizing:border-box;
+
+}
+
+.hfos-select select:focus{
+
+    outline:none;
+
+    border-color:#2563EB;
+
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+
+}
+
+.hfos-select small{
+
+    color:#64748B;
+
+    font-size:13px;
+
+}
+
+.hfos-select .error{
+
+    color:#DC2626;
+
+}
