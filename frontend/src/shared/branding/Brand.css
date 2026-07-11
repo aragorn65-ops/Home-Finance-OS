@@ -1,0 +1,25 @@
+.brand-logo{
+
+    width:220px;
+
+    height:auto;
+
+    display:block;
+
+}
+
+.brand-logo.compact{
+
+    width:170px;
+
+}
+
+.brand-symbol{
+
+    width:42px;
+
+    height:42px;
+
+    display:block;
+
+}

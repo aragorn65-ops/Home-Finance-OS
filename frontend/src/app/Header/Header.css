@@ -1,0 +1,29 @@
+.app-header{
+
+    height:72px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 32px;
+
+    background:white;
+
+    border-bottom:1px solid var(--border);
+
+}
+
+.app-header h1{
+
+    margin:0;
+
+    font-size:26px;
+
+    font-weight:700;
+
+    color:#0F172A;
+
+}

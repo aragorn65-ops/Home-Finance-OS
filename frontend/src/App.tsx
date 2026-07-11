@@ -1,7 +1,5 @@
-import GovernancePage from "./features/governance/pages/GovernancePage";
+import AppRouter from "./app/router";
 
-function App() {
-  return <GovernancePage />;
+export default function App() {
+  return <AppRouter />;
 }
-
-export default App;
