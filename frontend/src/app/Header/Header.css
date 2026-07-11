@@ -1,6 +1,6 @@
 .app-header{
 
-    height:72px;
+    height:64px;
 
     display:flex;
 
@@ -8,22 +8,36 @@
 
     justify-content:space-between;
 
-    padding:0 32px;
+    padding:0 24px;
 
-    background:white;
+    background:#FFFFFF;
 
     border-bottom:1px solid var(--border);
 
 }
 
-.app-header h1{
+.header-actions{
 
-    margin:0;
+    display:flex;
 
-    font-size:26px;
+    align-items:center;
 
-    font-weight:700;
+    gap:18px;
 
-    color:#0F172A;
+    color:#64748B;
+
+}
+
+.header-actions svg{
+
+    cursor:pointer;
+
+    transition:color .18s ease;
+
+}
+
+.header-actions svg:hover{
+
+    color:#2563EB;
 
 }

@@ -1,18 +1,26 @@
 import "./Header.css";
 
-interface HeaderProps {
-  title?: string;
-}
+import TimeContext from "../../shared/ui/TimeContext";
 
-export default function Header({
-  title = "Knowledge Center",
-}: HeaderProps) {
+import {
+  Search,
+  Bell,
+  CircleUserRound,
+} from "lucide-react";
+
+export default function Header() {
   return (
     <header className="app-header">
 
-      <div>
+      <TimeContext />
 
-        <h1>{title}</h1>
+      <div className="header-actions">
+
+        <Search size={19} />
+
+        <Bell size={19} />
+
+        <CircleUserRound size={24} />
 
       </div>
 

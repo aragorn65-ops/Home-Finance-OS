@@ -20,9 +20,11 @@
 
 .sidebar-brand{
 
-    margin-bottom:32px;
+    margin-top:16px;
+   
+    margin-bottom:16px;
 
-    padding:12px 12px 32px;
+    padding:12px 12px 12px;
 
 }
 

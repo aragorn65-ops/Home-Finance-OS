@@ -1,0 +1,37 @@
+.time-context{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:10px 14px;
+
+    border:1px solid var(--border);
+
+    border-radius:12px;
+
+    background:#FFFFFF;
+
+    color:#0F172A;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:
+        border-color .18s ease,
+        background-color .18s ease;
+
+}
+
+.time-context:hover{
+
+    background:#F8FAFC;
+
+    border-color:#CBD5E1;
+
+}

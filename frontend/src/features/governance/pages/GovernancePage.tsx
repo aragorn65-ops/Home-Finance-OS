@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-import PageHeader from "../../../shared/ui/PageHeader";
 import Section from "../../../shared/ui/Section";
 import Card from "../../../shared/ui/Card";
 
@@ -22,10 +21,19 @@ export default function GovernancePage() {
 
   return (
     <>
-      <PageHeader
-        title="Knowledge Center"
-        subtitle="Financial Clarity Through Transparency"
-      />
+ <p
+  style={{
+    color: "#64748B",
+    fontSize: "16px",
+    marginBottom: "32px",
+    maxWidth: "720px",
+    lineHeight: 1.7,
+  }}
+>
+  Explore the governance documents that define the
+  principles, architecture, and standards of Home
+  Finance OS.
+</p>
 
       <Section title="Governance Documents">
         <DocumentRegistry
