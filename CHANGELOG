@@ -1,1 +1,56 @@
-#Change Log
+# Home Finance OS (HFOS)
+
+## Changelog
+
+All notable changes to Home Finance OS are documented in this file.
+
+This project follows a sprint-based development process.
+
+---
+
+# v0.2.0 — Application Shell Complete
+
+**Status**
+
+Development Milestone
+
+**Completed**
+
+- Application Shell
+- Sidebar Navigation
+- Context Header
+- TimeContext component
+- Shared Brand component
+- React Router foundation
+- Shared UI Components
+- Governance Module
+- Document Registry
+- Markdown Viewer
+- Approval Card
+- Status Badge
+
+**Architecture**
+
+- Feature-first architecture
+- Shared component library
+- Shared branding
+- Centralized routing
+- Reusable layouts
+
+**UX Improvements**
+
+- Sidebar provides navigation
+- Header provides context
+- Pages focus on user tasks
+- Duplicate page titles removed
+- Cleaner visual hierarchy
+
+---
+
+# v0.1.0 — Knowledge Center Foundation
+
+**Completed**
+
+- Governance Documents
+- Product Constitution
+- Initial UI Foundation
