@@ -18,7 +18,7 @@ export default function AppRouter() {
         <Route
           path="/"
           element={<StartupPage />}
-        />
+        /> 
 
         {/* Household Setup */}
         <Route

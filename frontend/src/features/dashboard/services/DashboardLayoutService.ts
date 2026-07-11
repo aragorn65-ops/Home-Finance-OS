@@ -1,0 +1,10 @@
+import { dashboardWidgets } from "../widgetRegistry";
+import type { DashboardWidget } from "../models/DashboardWidget";
+
+export default class DashboardLayoutService {
+  static getWidgets(): DashboardWidget[] {
+    return dashboardWidgets
+      .filter(widget => widget.enabled)
+      .sort((a, b) => a.order - b.order);
+  }
+}

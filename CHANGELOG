@@ -54,3 +54,29 @@ Development Milestone
 - Governance Documents
 - Product Constitution
 - Initial UI Foundation
+
+# Sprint 5
+
+## Added
+
+- Dashboard Widget Registry
+- Dashboard Layout Service
+- Account domain
+- Transaction domain
+- Repository Pattern
+- Account Summary
+- Account List
+- Cash Flow Widget
+- Accounts Page
+
+## Changed
+
+- Dashboard now renders from Widget Registry.
+- Services now consume repositories.
+- Cash Flow widget now consumes TransactionService.
+
+## Fixed
+
+- Dashboard Widget type conflict.
+- Repository import resolution.
+- Cash Flow widget integration.
