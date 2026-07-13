@@ -4,11 +4,13 @@ import AccountCard from "./AccountCard";
 interface AccountListProps {
   accounts: Account[];
   onEdit?: (account: Account) => void;
+  onDelete?: (account: Account) => void;
 }
 
 export default function AccountList({
   accounts,
   onEdit,
+  onDelete,
 }: AccountListProps) {
   if (accounts.length === 0) {
     return <p>No accounts found.</p>;
@@ -21,6 +23,7 @@ export default function AccountList({
           key={account.id}
           account={account}
           onEdit={onEdit}
+          onDelete={onDelete}
         />
       ))}
     </div>

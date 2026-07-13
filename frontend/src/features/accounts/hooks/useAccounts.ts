@@ -18,7 +18,36 @@ export default function useAccounts() {
     form: AccountForm,
     householdId: string
   ) => {
-    const result = AccountService.create(form, householdId);
+    const result = AccountService.create(
+      form,
+      householdId
+    );
+
+    if (result.success) {
+      refresh();
+    }
+
+    return result;
+  };
+
+  const update = (
+    id: string,
+    form: AccountForm
+  ) => {
+    const result = AccountService.update(
+      id,
+      form
+    );
+
+    if (result.success) {
+      refresh();
+    }
+
+    return result;
+  };
+
+  const remove = (id: string) => {
+    const result = AccountService.delete(id);
 
     if (result.success) {
       refresh();
@@ -29,7 +58,8 @@ export default function useAccounts() {
 
   const totalBalance = useMemo(() => {
     return accounts.reduce(
-      (total, account) => total + account.currentBalance,
+      (total, account) =>
+        total + account.currentBalance,
       0
     );
   }, [accounts]);
@@ -38,6 +68,8 @@ export default function useAccounts() {
     accounts,
     totalBalance,
     create,
+    update,
+    remove,
     refresh,
   };
 }
