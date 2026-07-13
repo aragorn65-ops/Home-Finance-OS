@@ -116,3 +116,57 @@ All notable changes to HFOS are documented here.
 - Filter
 - Sort
 - Dashboard integration
+
+# [v0.6.0-alpha] - 2026-07-13
+
+## Added
+
+### Governance
+- HFOS Product Constitution v1.0
+- Governance document registry
+- Approval cards
+- Document viewer
+
+### Shared UI
+- Dialog
+- ConfirmDialog
+- Shared UI standardization
+- Input and Select enhancements
+
+### Dashboard
+- DashboardService aggregation layer
+- Dashboard Summary widget
+- Live Net Worth
+- Live Household Summary
+- Cash Flow integration
+
+### Accounts
+- Full CRUD implementation
+- Account validation
+- Repository pattern
+- Service layer
+- Summary widget
+
+## Changed
+
+- Refactored Accounts into layered architecture.
+- Connected Dashboard widgets to live services.
+- Standardized shared UI components.
+
+## Fixed
+
+- TypeScript compilation errors.
+- Vite production build issues.
+- Household wizard typing.
+- Shared UI prop consistency.
+- Account service validation.
+- Dashboard integration issues.
+
+## Build
+
+- TypeScript: ✅ Passed
+- Production Build: ✅ Passed
+
+## Status
+
+**Alpha Release**
