@@ -1,96 +1,49 @@
-import type { Account } from "../models/Account";
-import type { AccountForm } from "../models/AccountForm";
+/**
+ * Updates an existing account.
+ */
+static update(
+  id: string,
+  form: AccountForm
+): OperationResult<Account> {
+  const existing = AccountRepository.findById(id);
 
-import AccountRepository from "../repositories/AccountRepository";
-import AccountValidator from "../validators/AccountValidator";
-
-import {
-  OperationResults,
-  type OperationResult,
-} from "@/shared/types";
-
-export default class AccountService {
-  /**
-   * Returns all accounts.
-   */
-  static getAccounts(): Account[] {
-    return AccountRepository.findAll();
-  }
-
-  /**
-   * Returns active accounts.
-   */
-  static getActiveAccounts(): Account[] {
-    return this.getAccounts().filter(
-      (account) => account.isActive
+  if (!existing) {
+    return OperationResults.failure<Account>(
+      ["Account not found."],
+      "Unable to update account."
     );
   }
 
-  /**
-   * Calculates the total balance of all active accounts.
-   */
-  static getTotalBalance(): number {
-    return this.getActiveAccounts().reduce(
-      (total, account) => total + account.currentBalance,
-      0
+  const validation = AccountValidator.validate(form);
+
+  if (!validation.isValid) {
+    return OperationResults.failure<Account>(
+      validation.errors,
+      "Please correct the validation errors."
     );
   }
 
-  /**
-   * Finds an account by ID.
-   */
-  static getAccountById(id: string): Account | undefined {
-    return this.getAccounts().find(
-      (account) => account.id === id
-    );
-  }
+  const updatedAccount: Account = {
+    ...existing,
 
-  /**
-   * Creates a new account.
-   */
-  static create(
-    form: AccountForm,
-    householdId: string
-  ): OperationResult<Account> {
-    const validation = AccountValidator.validate(form);
+    name: form.name.trim(),
+    institution: form.institution?.trim() || undefined,
 
-    if (!validation.isValid) {
-      return OperationResults.failure<Account>(
-        validation.errors,
-        "Please correct the validation errors."
-      );
-    }
+    type: form.type as Account["type"],
 
-    const now = new Date();
+    currency: form.currency,
 
-    const account: Account = {
-      id: crypto.randomUUID(),
-      householdId,
+    openingBalance: form.balance,
 
-      name: form.name.trim(),
-      institution: form.institution?.trim() || undefined,
+    isActive: form.isActive,
 
-      // AccountForm.type should match AccountType
-      type: form.type as Account["type"],
+    updatedAt: new Date(),
+  };
 
-      currency: form.currency,
+  AccountRepository.update(updatedAccount);
 
-      openingBalance: form.balance,
-      currentBalance: form.balance,
-
-      accountNumber: undefined,
-
-      isActive: form.isActive,
-
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    const createdAccount = AccountRepository.create(account);
-
-    return OperationResults.success(
-      createdAccount,
-      "Account created successfully."
-    );
-  }
+  return OperationResults.success(
+    updatedAccount,
+    "Account updated successfully."
+  );
 }

@@ -8,6 +8,8 @@ import AccountSummary from "../components/AccountSummary";
 
 import useAccounts from "../hooks/useAccounts";
 
+import type { Account } from "../models/Account";
+
 import {
   defaultAccountForm,
   type AccountForm as AccountFormModel,
@@ -18,32 +20,59 @@ export default function AccountsPage() {
     accounts,
     totalBalance,
     create,
+    update,
   } = useAccounts();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const [editingAccount, setEditingAccount] =
+    useState<Account | null>(null);
 
   const [form, setForm] =
     useState<AccountFormModel>(defaultAccountForm);
 
   const handleAddAccount = () => {
+    setEditingAccount(null);
     setForm(defaultAccountForm);
     setIsDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
+  const handleEditAccount = (account: Account) => {
+    setEditingAccount(account);
+
+    setForm({
+      name: account.name,
+      institution: account.institution ?? "",
+      type: account.type,
+      currency: account.currency,
+      balance: account.openingBalance,
+      isActive: account.isActive,
+    });
+
+    setIsDialogOpen(true);
+  };
+
+  const resetDialog = () => {
+    setEditingAccount(null);
+    setForm(defaultAccountForm);
     setIsDialogOpen(false);
   };
 
+  const handleCloseDialog = () => {
+    resetDialog();
+  };
+
   const handleSaveAccount = () => {
-    const result = create(form, "household-001");
+    const result = editingAccount
+      ? update(editingAccount.id, form)
+      : create(form, "household-001");
 
     if (!result.success) {
       console.error(result.errors);
       return;
     }
 
-    setIsDialogOpen(false);
-    setForm(defaultAccountForm);
+    resetDialog();
   };
 
   return (
@@ -56,15 +85,26 @@ export default function AccountsPage() {
           totalBalance={totalBalance}
         />
 
-        <AccountList accounts={accounts} />
+        <AccountList
+          accounts={accounts}
+          onEdit={handleEditAccount}
+        />
       </div>
 
       <AccountDialog
         open={isDialogOpen}
-        title="Add Account"
+        title={
+          editingAccount
+            ? "Edit Account"
+            : "Add Account"
+        }
         onClose={handleCloseDialog}
         onSave={handleSaveAccount}
-        saveLabel="Create Account"
+        saveLabel={
+          editingAccount
+            ? "Update Account"
+            : "Create Account"
+        }
       >
         <AccountForm
           value={form}
