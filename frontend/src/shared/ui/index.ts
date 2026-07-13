@@ -13,3 +13,4 @@ export type { SelectOption, SelectProps } from "./Select";
 export { default as PageHeader } from "./PageHeader";
 
 export * from "./Dialog";
+export * from "./ConfirmDialog";
