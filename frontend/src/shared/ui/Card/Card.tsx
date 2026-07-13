@@ -1,8 +1,7 @@
-import "./Card.css";
-import type { ReactNode } from "react";
+import React from "react";
 
-interface CardProps {
-  children: ReactNode;
+export interface CardProps {
+  children: React.ReactNode;
   className?: string;
 }
 
@@ -11,7 +10,17 @@ export default function Card({
   className = "",
 }: CardProps) {
   return (
-    <div className={`hfos-card ${className}`}>
+    <div
+      className={[
+        "rounded-xl",
+        "border",
+        "border-gray-200",
+        "bg-white",
+        "shadow-sm",
+        "p-6",
+        className,
+      ].join(" ")}
+    >
       {children}
     </div>
   );

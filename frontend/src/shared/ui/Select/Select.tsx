@@ -1,41 +1,53 @@
-import "./Select.css";
-
-import type {
-  SelectHTMLAttributes,
-} from "react";
+import React from "react";
 
 export interface SelectOption {
-  value: string;
   label: string;
+  value: string;
 }
 
-interface SelectProps
-  extends SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps
+  extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
-  helperText?: string;
   error?: string;
   options: SelectOption[];
 }
 
 export default function Select({
   label,
-  helperText,
   error,
-  id,
   options,
+  className = "",
+  id,
   ...props
 }: SelectProps) {
-  return (
-    <div className="hfos-select">
+  const selectId =
+    id ?? props.name ?? `select-${Math.random().toString(36).slice(2, 9)}`;
 
+  return (
+    <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={id}>
+        <label
+          htmlFor={selectId}
+          className="text-sm font-medium text-gray-700"
+        >
           {label}
         </label>
       )}
 
       <select
-        id={id}
+        id={selectId}
+        className={[
+          "w-full rounded-lg border border-gray-300",
+          "px-3 py-2",
+          "text-sm",
+          "outline-none",
+          "transition",
+          "focus:border-blue-500",
+          "focus:ring-2 focus:ring-blue-500/20",
+          "disabled:bg-gray-100",
+          error ? "border-red-500" : "",
+          className,
+        ].join(" ")}
         {...props}
       >
         {options.map((option) => (
@@ -48,16 +60,11 @@ export default function Select({
         ))}
       </select>
 
-      {helperText && !error && (
-        <small>{helperText}</small>
-      )}
-
       {error && (
-        <small className="error">
+        <p className="text-sm text-red-600">
           {error}
-        </small>
+        </p>
       )}
-
     </div>
   );
 }
