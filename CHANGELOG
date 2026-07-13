@@ -170,3 +170,70 @@ All notable changes to HFOS are documented here.
 ## Status
 
 **Alpha Release**
+
+## [0.7.0-alpha] - 2026-07-14
+
+### Added
+
+* Added the Transactions feature module with transaction domain models, repository, service layer, validation, hooks, components, and page routing.
+* Added support for income, expense, and account-transfer transactions.
+* Added transaction creation, editing, viewing, and deletion workflows.
+* Added monthly income, expense, and net cash-flow calculations.
+* Added account balance updates using debit and credit accounting operations.
+* Added liability-aware credit-card transaction handling.
+* Added credit-card purchases as expenses that increase liability balances.
+* Added credit-card payments as transfers that reduce both asset and liability balances without duplicating expenses.
+* Added transaction rollback protection for failed balance, persistence, and allocation operations.
+* Added household-member domain models, form contracts, validation, service operations, and management UI.
+* Added household-member creation, editing, activation, and deactivation.
+* Added household-member roles for owner, admin, and member.
+* Added household-member navigation and the `/app/household-members` route.
+* Added transaction payer tracking through `paidByMemberId`.
+* Added transaction visibility options for household, participants, and private records.
+* Added equal, exact, individual, and utility-precalculated expense split methods.
+* Added member-level expense allocations and member opt-out support.
+* Added cent-level equal-split rounding.
+* Added exact-allocation validation requiring allocations to match the total expense.
+* Added persistence of the original expense split method.
+* Added private account ownership and visibility fields.
+* Added service-layer validation preventing non-owners from using private accounts.
+* Added participant-only visibility defaults for shared expenses paid through private accounts.
+* Added member-scoped transaction query methods.
+* Added defensive transaction and allocation cloning in repositories.
+
+### Changed
+
+* Expanded the Account model to distinguish asset and liability accounts.
+* Expanded account types to support credit cards, loans, mortgages, lines of credit, and other liabilities.
+* Updated account forms and validation for liability balances, credit limits, statement balances, minimum payments, and due dates.
+* Updated account totals to calculate total assets, total liabilities, and net worth.
+* Updated household local storage to persist household members.
+* Updated transaction forms to select the payer, visibility, accounts, split method, and participants.
+* Updated transaction editing to restore the saved payer, visibility, split method, and allocations.
+* Updated the application sidebar with Accounts, Transactions, and Household Members navigation.
+* Updated the dashboard cash-flow calculations to use the Transactions service.
+
+### Fixed
+
+* Fixed missing Accounts routing and sidebar navigation.
+* Fixed transaction creation using a hardcoded household identifier.
+* Fixed account and transaction household mismatches.
+* Fixed credit-card purchase and bill-payment balance behavior.
+* Fixed transaction form type errors after introducing allocation fields.
+* Fixed equal expenses reopening as exact allocations.
+* Fixed orphaned expense allocations during transaction deletion.
+* Fixed account balances not being restored when transaction operations failed.
+* Fixed private accounts appearing for members who do not own them.
+* Fixed navigation export and section-property compatibility errors.
+
+### Verified
+
+* Verified income, expense, and transfer balance effects.
+* Verified credit-card expense and payment workflows.
+* Verified equal and exact member allocation workflows.
+* Verified incorrect exact-allocation totals are rejected.
+* Verified equal splits remain equal when reopened.
+* Verified private accounts can only be used by their owners.
+* Verified shared expenses paid from private accounts use participant-only visibility.
+* Verified transaction deletion restores balances and removes allocations.
+* Verified the production TypeScript and Vite build completes with zero errors.

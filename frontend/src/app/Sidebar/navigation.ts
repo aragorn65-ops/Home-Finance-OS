@@ -1,68 +1,111 @@
 import {
-  LayoutDashboard,
-  BookOpen,
-  Settings,
-  CreditCard,
-  HandCoins,
-  PiggyBank,
+  ArrowLeftRight,
   BarChart3,
-  Info,
+  CircleHelp,
+  LayoutDashboard,
+  PiggyBank,
+  Settings,
+  Users,
+  WalletCards,
 } from "lucide-react";
 
-export const navigation = [
+export interface NavigationItem {
+  label: string;
+  path: string;
+  icon: typeof LayoutDashboard;
+}
+
+export interface NavigationSection {
+  /**
+   * Used by the current SidebarNav component.
+   */
+  section: string;
+
+  /**
+   * Retained for compatibility with other components.
+   */
+  label: string;
+
+  items: NavigationItem[];
+}
+
+export const navigationSections: NavigationSection[] = [
   {
-    section: "MAIN",
+    section: "OVERVIEW",
+    label: "OVERVIEW",
+
     items: [
       {
         label: "Dashboard",
-        icon: LayoutDashboard,
         path: "/app",
+        icon: LayoutDashboard,
       },
+    ],
+  },
+  {
+    section: "HOUSEHOLD",
+    label: "HOUSEHOLD",
+
+    items: [
       {
-        label: "Help Center",
-        icon: BookOpen,
-        path: "/app/help-center",
-      },
-      {
-        label: "Settings",
-        icon: Settings,
-        path: "/app/settings",
+        label: "Household Members",
+        path: "/app/household-members",
+        icon: Users,
       },
     ],
   },
   {
     section: "FINANCES",
+    label: "FINANCES",
+
     items: [
       {
-        label: "Expenses",
-        icon: CreditCard,
-        path: "/app/expenses",
+        label: "Accounts",
+        path: "/app/accounts",
+        icon: WalletCards,
+      },
+      {
+        label: "Transactions",
+        path: "/app/transactions",
+        icon: ArrowLeftRight,
       },
       {
         label: "Settlements",
-        icon: HandCoins,
         path: "/app/settlements",
+        icon: ArrowLeftRight,
       },
       {
         label: "Savings",
-        icon: PiggyBank,
         path: "/app/savings",
+        icon: PiggyBank,
       },
       {
         label: "Reports",
-        icon: BarChart3,
         path: "/app/reports",
+        icon: BarChart3,
       },
     ],
   },
   {
     section: "SYSTEM",
+    label: "SYSTEM",
+
     items: [
       {
-        label: "About",
-        icon: Info,
-        path: "/app/about",
+        label: "Help Center",
+        path: "/app/help-center",
+        icon: CircleHelp,
+      },
+      {
+        label: "Settings",
+        path: "/app/settings",
+        icon: Settings,
       },
     ],
   },
 ];
+
+/**
+ * Export expected by SidebarNav.
+ */
+export const navigation = navigationSections;

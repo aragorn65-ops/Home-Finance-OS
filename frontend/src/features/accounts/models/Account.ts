@@ -1,81 +1,73 @@
-/**
- * Supported account types.
- */
+import type { HouseholdMember } from "../../household/models/HouseholdMember";
+
+export type AccountClass =
+  | "asset"
+  | "liability";
+
+export type AccountVisibility =
+  | "household"
+  | "private";
+
 export type AccountType =
   | "checking"
   | "savings"
   | "cash"
-  | "credit-card"
-  | "loan"
-  | "investment"
   | "e-wallet"
-  | "other";
+  | "investment"
+  | "credit-card"
+  | "line-of-credit"
+  | "loan"
+  | "mortgage"
+  | "other-asset"
+  | "other-liability";
 
-/**
- * Represents a financial account within a household.
- */
 export interface Account {
-  /**
-   * Unique identifier.
-   */
   id: string;
-
-  /**
-   * Household that owns this account.
-   */
   householdId: string;
 
   /**
-   * Display name.
-   * Example: "BDO Savings", "Cash Wallet"
+   * Household member who owns and controls the account.
    */
-  name: string;
+  ownerMemberId: HouseholdMember["id"];
 
   /**
-   * Financial institution.
-   * Optional because cash accounts may not have one.
+   * Household accounts are visible to authorized
+   * household members.
+   *
+   * Private accounts are visible only to their owner.
    */
+  visibility: AccountVisibility;
+
+  name: string;
   institution?: string;
 
-  /**
-   * Account classification.
-   */
+  accountClass: AccountClass;
   type: AccountType;
 
-  /**
-   * ISO 4217 Currency Code.
-   * Examples: USD, PHP, EUR
-   */
   currency: string;
 
   /**
-   * Balance when the account was first created.
+   * Asset account:
+   * Balance represents available funds.
+   *
+   * Liability account:
+   * Balance represents the outstanding amount owed.
    */
   openingBalance: number;
-
-  /**
-   * Current calculated balance.
-   */
   currentBalance: number;
 
-  /**
-   * Optional masked account number.
-   * Example: ****1234
-   */
   accountNumber?: string;
 
   /**
-   * Soft delete / active status.
+   * Liability-specific fields.
    */
+  creditLimit?: number;
+  statementBalance?: number;
+  minimumPayment?: number;
+  paymentDueDate?: Date;
+
   isActive: boolean;
 
-  /**
-   * Date created.
-   */
   createdAt: Date;
-
-  /**
-   * Date last modified.
-   */
   updatedAt: Date;
 }

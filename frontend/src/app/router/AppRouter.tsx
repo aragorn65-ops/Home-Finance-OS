@@ -1,24 +1,35 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+} from "react-router-dom";
 
 import AppShell from "../AppShell";
 
-import { StartupPage } from "../../features/startup";
-import { HouseholdPage } from "../../features/household";
+import {
+  StartupPage,
+} from "../../features/startup";
 
+import {
+  HouseholdPage,
+} from "../../features/household";
+
+import AccountsPage from "../../features/accounts/pages/AccountsPage";
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
 import GovernancePage from "../../features/governance/pages/GovernancePage";
+import HouseholdMembersPage from "../../features/household/pages/HouseholdMembersPage";
 import SettingsPage from "../../features/settings/pages/SettingsPage";
+import TransactionsPage from "../../features/transactions/pages/TransactionsPage";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Startup */}
         <Route
           path="/"
           element={<StartupPage />}
-        /> 
+        />
 
         {/* Household Setup */}
         <Route
@@ -37,6 +48,23 @@ export default function AppRouter() {
           />
 
           <Route
+            path="accounts"
+            element={<AccountsPage />}
+          />
+
+          <Route
+            path="transactions"
+            element={<TransactionsPage />}
+          />
+
+          <Route
+            path="household-members"
+            element={
+              <HouseholdMembersPage />
+            }
+          />
+
+          <Route
             path="help-center"
             element={<GovernancePage />}
           />
@@ -46,7 +74,6 @@ export default function AppRouter() {
             element={<SettingsPage />}
           />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
