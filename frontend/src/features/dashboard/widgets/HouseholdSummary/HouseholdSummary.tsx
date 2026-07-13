@@ -1,4 +1,5 @@
 import Widget from "../../../../shared/ui/Widget";
+import DashboardService from "../../services/DashboardService";
 
 import "./HouseholdSummary.css";
 
@@ -13,24 +14,24 @@ function SummaryItem({
 }: SummaryItemProps) {
   return (
     <div className="household-summary-item">
-      <span className="household-summary-label">{label}</span>
-      <strong className="household-summary-value">{value}</strong>
+      <span className="household-summary-label">
+        {label}
+      </span>
+
+      <strong className="household-summary-value">
+        {value}
+      </strong>
     </div>
   );
 }
 
 export default function HouseholdSummary() {
-  const household = {
-    householdName: "The Bunsoy Family",
-    country: "Philippines",
-    currency: "PHP",
-    timezone: "Asia/Manila",
-  };
+  const household =
+    DashboardService.getHouseholdSummary();
 
   return (
     <Widget title="Household Summary">
       <div className="household-summary">
-
         <SummaryItem
           label="Household"
           value={household.householdName}
@@ -50,7 +51,6 @@ export default function HouseholdSummary() {
           label="Time Zone"
           value={household.timezone}
         />
-
       </div>
     </Widget>
   );

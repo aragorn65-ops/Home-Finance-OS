@@ -1,4 +1,4 @@
-import { AccountForm } from "../models/AccountForm";
+import type { AccountForm } from "../models/AccountForm";
 
 export interface ValidationResult {
   isValid: boolean;

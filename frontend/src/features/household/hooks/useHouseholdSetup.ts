@@ -1,9 +1,5 @@
 import { useState } from "react";
 
-import {
-    loadHousehold,
-} from "../services/householdStorage";
-
 export interface HouseholdSetupState {
   householdName: string;
   country: string;

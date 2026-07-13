@@ -1,61 +1,47 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import type { Account } from "../models/Account";
-import type { AccountForm } from "../models/AccountForm";
+import { settlements as initialSettlements } from "../data/mockData";
 
-import AccountService from "../services/AccountService";
+import type { Settlement } from "../types/settlement";
 
-export default function useAccounts() {
-  const [accounts, setAccounts] = useState<Account[]>(
-    AccountService.getActiveAccounts()
-  );
+export function useSettlements() {
+  const [settlements, setSettlements] =
+    useState<Settlement[]>(initialSettlements);
 
-  const refresh = () => {
-    setAccounts(AccountService.getActiveAccounts());
-  };
+  function addSettlement(
+    settlement: Omit<Settlement, "id">
+  ) {
+    const newSettlement: Settlement = {
+      ...settlement,
+      id: crypto.randomUUID(),
+    };
 
-  const create = (
-    form: AccountForm,
-    householdId: string
-  ) => {
-    const result = AccountService.create(
-      form,
-      householdId
+    setSettlements((prev) => [
+      newSettlement,
+      ...prev,
+    ]);
+  }
+
+  function deleteSettlement(id: string) {
+    setSettlements((prev) =>
+      prev.filter((s) => s.id !== id)
     );
+  }
 
-    if (result.success) {
-      refresh();
-    }
-
-    return result;
-  };
-
-  const update = (
-    id: string,
-    form: AccountForm
-  ) => {
-    const result = AccountService.update(id, form);
-
-    if (result.success) {
-      refresh();
-    }
-
-    return result;
-  };
-
-  const totalBalance = useMemo(() => {
-    return accounts.reduce(
-      (total, account) =>
-        total + account.currentBalance,
-      0
+  function updateSettlement(
+    updated: Settlement
+  ) {
+    setSettlements((prev) =>
+      prev.map((s) =>
+        s.id === updated.id ? updated : s
+      )
     );
-  }, [accounts]);
+  }
 
   return {
-    accounts,
-    totalBalance,
-    create,
-    update,
-    refresh,
+    settlements,
+    addSettlement,
+    deleteSettlement,
+    updateSettlement,
   };
 }

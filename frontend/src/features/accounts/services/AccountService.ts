@@ -7,7 +7,7 @@ import AccountValidator from "../validators/AccountValidator";
 import {
   OperationResults,
   type OperationResult,
-} from "@/shared/types";
+} from "../../../shared/types";
 
 export default class AccountService {
   /**
@@ -27,23 +27,22 @@ export default class AccountService {
   }
 
   /**
-   * Calculates the total balance of all active accounts.
-   */
-  static getTotalBalance(): number {
-    return this.getActiveAccounts().reduce(
-      (total, account) => total + account.currentBalance,
-      0
-    );
-  }
-
-  /**
-   * Finds an account by ID.
+   * Returns an account by ID.
    */
   static getAccountById(
     id: string
   ): Account | undefined {
-    return this.getAccounts().find(
-      (account) => account.id === id
+    return AccountRepository.findById(id);
+  }
+
+  /**
+   * Calculates the total balance of active accounts.
+   */
+  static getTotalBalance(): number {
+    return this.getActiveAccounts().reduce(
+      (total, account) =>
+        total + account.currentBalance,
+      0
     );
   }
 
@@ -72,7 +71,7 @@ export default class AccountService {
 
       name: form.name.trim(),
       institution:
-        form.institution?.trim() || undefined,
+        form.institution.trim() || undefined,
 
       type: form.type as Account["type"],
 
@@ -89,11 +88,11 @@ export default class AccountService {
       updatedAt: now,
     };
 
-    const createdAccount =
+    const created =
       AccountRepository.create(account);
 
     return OperationResults.success(
-      createdAccount,
+      created,
       "Account created successfully."
     );
   }
@@ -110,7 +109,9 @@ export default class AccountService {
 
     if (!existing) {
       return OperationResults.failure<Account>(
-        ["Account not found."],
+        {
+          general: "Account not found.",
+        },
         "Unable to update account."
       );
     }
@@ -125,12 +126,12 @@ export default class AccountService {
       );
     }
 
-    const updatedAccount: Account = {
+    const updated: Account = {
       ...existing,
 
       name: form.name.trim(),
       institution:
-        form.institution?.trim() || undefined,
+        form.institution.trim() || undefined,
 
       type: form.type as Account["type"],
 
@@ -138,15 +139,22 @@ export default class AccountService {
 
       openingBalance: form.balance,
 
+      currentBalance:
+        existing.currentBalance,
+
+      accountNumber:
+        existing.accountNumber,
+
       isActive: form.isActive,
 
+      createdAt: existing.createdAt,
       updatedAt: new Date(),
     };
 
-    AccountRepository.update(updatedAccount);
+    AccountRepository.update(updated);
 
     return OperationResults.success(
-      updatedAccount,
+      updated,
       "Account updated successfully."
     );
   }
@@ -162,7 +170,9 @@ export default class AccountService {
 
     if (!account) {
       return OperationResults.failure<boolean>(
-        ["Account not found."],
+        {
+          general: "Account not found.",
+        },
         "Unable to delete account."
       );
     }
@@ -172,7 +182,10 @@ export default class AccountService {
 
     if (!deleted) {
       return OperationResults.failure<boolean>(
-        ["Unable to delete account."],
+        {
+          general:
+            "Unable to delete account.",
+        },
         "Delete failed."
       );
     }

@@ -1,8 +1,8 @@
-import { ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
+
 import { Input, Select } from "../../../shared/ui";
-import {
-  AccountForm as AccountFormModel,
-} from "../models/AccountForm";
+
+import type { AccountForm as AccountFormModel } from "../models/AccountForm";
 
 interface AccountFormProps {
   value: AccountFormModel;
