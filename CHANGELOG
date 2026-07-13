@@ -80,3 +80,39 @@ Development Milestone
 - Dashboard Widget type conflict.
 - Repository import resolution.
 - Cash Flow widget integration.
+
+# Changelog
+
+All notable changes to HFOS are documented here.
+
+---
+
+## [0.6.0-alpha]
+
+### Added
+
+- Accounts module
+- CRUD operations
+- Shared Dialog
+- Confirm Dialog
+- Repository Pattern
+- Service Layer
+- Validators
+- Shared UI library
+
+### Changed
+
+- Accounts architecture
+- Shared component exports
+
+### Fixed
+
+- Account update flow
+- Dialog reuse
+
+### Planned
+
+- Search
+- Filter
+- Sort
+- Dashboard integration
