@@ -66,7 +66,10 @@ export default class TransactionValidator {
         "Category is required.";
     }
 
-    if (!form.description.trim()) {
+    if (
+      form.type !== "expense" &&
+      !form.description.trim()
+    ) {
       errors.description =
         "Description is required.";
     }
@@ -140,11 +143,6 @@ export default class TransactionValidator {
     }
 
     if (form.type === "expense") {
-      if (!form.sourceAccountId.trim()) {
-        errors.sourceAccountId =
-          "Select the account used to pay the expense.";
-      }
-
       return;
     }
 

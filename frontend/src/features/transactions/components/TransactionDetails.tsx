@@ -1,98 +1,66 @@
 import type { Transaction } from "../models/Transaction";
 
+import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+
+import TransactionService from "../services/TransactionService";
+
 type TransactionDetailsProps = {
   transaction: Transaction;
   sourceAccountName?: string;
   destinationAccountName?: string;
   onClose?: () => void;
-  onEdit?: (transaction: Transaction) => void;
+  onEdit?: (
+    transaction: Transaction
+  ) => void;
 };
 
-const amountFormatter = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+const amountFormatter =
+  new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
-function getTransactionTypeLabel(
-  type: Transaction["type"]
+function formatAmount(
+  amount: number
 ): string {
-  switch (type) {
-    case "income":
-      return "Income";
-
-    case "expense":
-      return "Expense";
-
-    case "transfer":
-      return "Transfer";
-
-    default:
-      return "Transaction";
-  }
+  return amountFormatter.format(
+    amount
+  );
 }
 
 export default function TransactionDetails({
   transaction,
-  sourceAccountName,
-  destinationAccountName,
   onClose,
   onEdit,
 }: TransactionDetailsProps) {
-  const formattedAmount = amountFormatter.format(
-    transaction.amount
-  );
+  const allocations =
+    transaction.type === "expense"
+      ? TransactionService
+          .getExpenseAllocations(
+            transaction.id
+          )
+          .filter(
+            (allocation) =>
+              allocation.isIncluded
+          )
+      : [];
 
   const formattedTransactionDate =
-    transaction.transactionDate.toLocaleDateString();
-
-  const formattedCreatedAt =
-    transaction.createdAt.toLocaleString();
-
-  const formattedUpdatedAt =
-    transaction.updatedAt.toLocaleString();
+    transaction.transactionDate
+      .toLocaleDateString();
 
   return (
     <div className="space-y-6 rounded-lg border bg-white p-6">
-      <div className="flex flex-col gap-3 border-b pb-5 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              {getTransactionTypeLabel(
-                transaction.type
-              )}
-            </span>
+      <div className="border-b pb-5">
+        <p className="text-sm font-medium text-muted-foreground">
+          Total Grocery
+        </p>
 
-            <span
-              className={
-                transaction.isActive
-                  ? "rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
-                  : "rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
-              }
-            >
-              {transaction.isActive
-                ? "Active"
-                : "Inactive"}
-            </span>
-          </div>
-
-          <h2 className="text-xl font-semibold text-foreground">
-            {transaction.description}
-          </h2>
-
-          <p className="mt-1 text-sm text-muted-foreground">
-            {transaction.category}
-          </p>
-        </div>
-
-        <div className="text-left sm:text-right">
-          <p className="text-sm text-muted-foreground">
-            Amount
-          </p>
-
-          <p className="text-2xl font-semibold text-foreground">
-            {formattedAmount}
-          </p>
-        </div>
+        <p className="mt-1 text-3xl font-semibold text-foreground">
+          {formatAmount(
+            transaction.amount
+          )}
+        </p>
       </div>
 
       <dl className="grid gap-5 sm:grid-cols-2">
@@ -115,63 +83,171 @@ export default function TransactionDetails({
             {transaction.id}
           </dd>
         </div>
-
-        {transaction.sourceAccountId && (
-          <div>
-            <dt className="text-sm font-medium text-muted-foreground">
-              Source Account
-            </dt>
-
-            <dd className="mt-1 text-sm text-foreground">
-              {sourceAccountName ??
-                "Account unavailable"}
-            </dd>
-          </div>
-        )}
-
-        {transaction.destinationAccountId && (
-          <div>
-            <dt className="text-sm font-medium text-muted-foreground">
-              Destination Account
-            </dt>
-
-            <dd className="mt-1 text-sm text-foreground">
-              {destinationAccountName ??
-                "Account unavailable"}
-            </dd>
-          </div>
-        )}
-
-        <div>
-          <dt className="text-sm font-medium text-muted-foreground">
-            Created
-          </dt>
-
-          <dd className="mt-1 text-sm text-foreground">
-            {formattedCreatedAt}
-          </dd>
-        </div>
-
-        <div>
-          <dt className="text-sm font-medium text-muted-foreground">
-            Last Updated
-          </dt>
-
-          <dd className="mt-1 text-sm text-foreground">
-            {formattedUpdatedAt}
-          </dd>
-        </div>
       </dl>
 
-      <div>
-        <h3 className="text-sm font-medium text-muted-foreground">
-          Notes
-        </h3>
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">
+            Member Summary
+          </h3>
 
-        <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
-          {transaction.notes.trim() ||
-            "No notes provided."}
-        </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Shared amount and personal grocery items
+            assigned to each member.
+          </p>
+        </div>
+
+        {allocations.length === 0 ? (
+          <div className="rounded-md border border-dashed p-5 text-center">
+            <p className="text-sm text-muted-foreground">
+              No member allocations recorded.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {allocations.map(
+              (allocation) => {
+                const member =
+                  HouseholdMemberService
+                    .getMemberById(
+                      allocation.memberId
+                    );
+
+                const personalItems =
+                  allocation.personalItems ??
+                  [];
+
+                const personalSubtotal =
+                  allocation.personalAmount ??
+                  personalItems.reduce(
+                    (
+                      total,
+                      item
+                    ) =>
+                      total +
+                      item.amount,
+                    0
+                  );
+
+                const sharedAmount =
+                  Math.max(
+                    0,
+                    Math.round(
+                      (
+                        allocation
+                          .allocatedAmount -
+                        personalSubtotal
+                      ) * 100
+                    ) / 100
+                  );
+
+                return (
+                  <div
+                    key={allocation.id}
+                    className="rounded-lg border p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <h4 className="font-semibold text-foreground">
+                          {member?.displayName ??
+                            "Unknown Member"}
+                        </h4>
+
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Member grocery allocation
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Total Share
+                        </p>
+
+                        <p className="font-semibold text-foreground">
+                          {formatAmount(
+                            allocation
+                              .allocatedAmount
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-md bg-muted/30 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm text-muted-foreground">
+                          Shared Amount
+                        </span>
+
+                        <span className="text-sm font-semibold text-foreground">
+                          {formatAmount(
+                            sharedAmount
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <h5 className="text-sm font-medium text-foreground">
+                          Personal Items
+                        </h5>
+
+                        <span className="text-sm font-semibold text-foreground">
+                          {formatAmount(
+                            personalSubtotal
+                          )}
+                        </span>
+                      </div>
+
+                      {personalItems.length ===
+                      0 ? (
+                        <p className="mt-3 text-sm text-muted-foreground">
+                          No personal items recorded.
+                        </p>
+                      ) : (
+                        <div className="mt-3 divide-y rounded-md border">
+                          {personalItems.map(
+                            (item) => (
+                              <div
+                                key={
+                                  item.id
+                                }
+                                className="flex items-center justify-between gap-4 px-3 py-2"
+                              >
+                                <span className="text-sm text-foreground">
+                                  {item.description ||
+                                    "Personal item"}
+                                </span>
+
+                                <span className="text-sm font-medium text-foreground">
+                                  {formatAmount(
+                                    item.amount
+                                  )}
+                                </span>
+                              </div>
+                            )
+                          )}
+
+                          <div className="flex items-center justify-between gap-4 bg-muted/20 px-3 py-2">
+                            <span className="text-sm font-medium text-foreground">
+                              Personal Items Subtotal
+                            </span>
+
+                            <span className="text-sm font-semibold text-foreground">
+                              {formatAmount(
+                                personalSubtotal
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+            )}
+          </div>
+        )}
       </div>
 
       {(onClose || onEdit) && (
@@ -189,7 +265,9 @@ export default function TransactionDetails({
           {onEdit && (
             <button
               type="button"
-              onClick={() => onEdit(transaction)}
+              onClick={() =>
+                onEdit(transaction)
+              }
               className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
             >
               Edit Transaction

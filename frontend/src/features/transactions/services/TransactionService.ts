@@ -944,7 +944,10 @@ export default class TransactionService {
       }
     }
 
-    if (form.type === "expense") {
+    if (
+      form.type === "expense" &&
+      form.sourceAccountId.trim()
+    ) {
       validateAccount(
         form.sourceAccountId,
         "sourceAccountId",
@@ -1237,14 +1240,8 @@ export default class TransactionService {
 
     if (transaction.type === "expense") {
       if (!transaction.sourceAccountId) {
-        return OperationResults.failure<
-          AccountOperation[]
-        >(
-          {
-            sourceAccountId:
-              "Payment account is required.",
-          },
-          "Unable to process expense."
+        return OperationResults.success(
+          []
         );
       }
 

@@ -237,3 +237,60 @@ All notable changes to HFOS are documented here.
 * Verified shared expenses paid from private accounts use participant-only visibility.
 * Verified transaction deletion restores balances and removes allocations.
 * Verified the production TypeScript and Vite build completes with zero errors.
+
+## [0.8.0-alpha] - 2026-07-14
+
+### Added
+
+* Added the Settlements feature module with domain models, repositories, services, validation, hooks, components, and page routing.
+* Added household settlement creation, editing, viewing, and deletion workflows.
+* Added member obligation calculations derived from active expense allocations.
+* Added member balance summaries showing amounts payable, receivable, and net position.
+* Added a Who Owes Whom summary for outstanding household reimbursements.
+* Added settlement applications linking payments to specific expense allocations.
+* Added oldest-first settlement application based on transaction date and allocation order.
+* Added manual settlement application with exact applied-amount validation.
+* Added partial settlement support.
+* Added derived unpaid, partially paid, and paid allocation statuses.
+* Added settlement history and itemized application details.
+* Added optional source and destination account linking for settlements.
+* Added settlement account balance effects and rollback protection.
+* Added edit-mode restoration of existing settlement applications.
+* Added grocery transaction summaries showing total grocery amount, member shared amounts, personal-item lists, and personal-item subtotals.
+* Added ESLint flat configuration compatible with ESLint 10.
+
+### Changed
+
+* Updated settlement member selectors so paying and receiving members can be selected independently.
+* Updated expense validation so payment accounts are optional.
+* Updated expense validation so descriptions and notes may remain blank.
+* Updated transaction account processing so accountless expenses create no account balance operation.
+* Updated transaction details to focus on transaction date, transaction ID, grocery total, and member allocation summaries.
+* Separated Toast context, provider, and consumer hook into dedicated modules.
+* Updated shared Dialog body and footer prop declarations for TypeScript and ESLint compatibility.
+* Updated startup navigation effect dependencies.
+
+### Fixed
+
+* Fixed paying members being unavailable until the receiving member was changed.
+* Fixed accountless expenses being rejected as having an invalid or missing payment account.
+* Fixed blank expense descriptions preventing transaction creation.
+* Fixed settlement edits potentially counting the current settlement against its own outstanding allocations.
+* Fixed Toast Fast Refresh warnings caused by exporting a provider and hook from the same component module.
+* Fixed empty-interface ESLint errors in shared Dialog components.
+* Fixed the missing Toast context module after the Toast refactor.
+
+### Verified
+
+* Verified settlement page routing and runtime rendering.
+* Verified oldest-first settlement creation.
+* Verified manual settlement creation and exact application totals.
+* Verified settlement editing without duplicate applications or balance effects.
+* Verified settlement deletion restores allocation outstanding balances.
+* Verified accountless settlements do not modify account balances.
+* Verified linked-account settlements update payer and receiver balances.
+* Verified deleting linked-account settlements restores both account balances.
+* Verified expenses can be created without an account, description, or notes.
+* Verified grocery transaction summaries and personal-item subtotals.
+* Verified ESLint completes with zero errors and zero warnings.
+* Verified the production TypeScript and Vite build completes with zero errors.

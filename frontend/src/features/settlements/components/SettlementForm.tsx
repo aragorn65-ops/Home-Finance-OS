@@ -584,11 +584,7 @@ export default function SettlementForm({
       expenseAllocationId,
       {
         isSelected,
-
-        appliedAmount:
-          isSelected
-            ? 0
-            : 0,
+        appliedAmount: 0,
       }
     );
   };
@@ -729,10 +725,6 @@ export default function SettlementForm({
                 <option
                   key={member.id}
                   value={member.id}
-                  disabled={
-                    member.id ===
-                    form.toMemberId
-                  }
                 >
                   {member.displayName}
                 </option>
@@ -772,10 +764,6 @@ export default function SettlementForm({
                 <option
                   key={member.id}
                   value={member.id}
-                  disabled={
-                    member.id ===
-                    form.fromMemberId
-                  }
                 >
                   {member.displayName}
                 </option>
