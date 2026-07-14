@@ -1,4 +1,7 @@
 import type { ExpenseAllocationForm } from "../models/ExpenseAllocationForm";
+import type {
+  ExpenseSplitMethod,
+} from "../models/ExpenseAllocation";
 import type { TransactionForm } from "../models/TransactionForm";
 import type { TransactionVisibility } from "../models/Transaction";
 
@@ -14,12 +17,14 @@ const transactionVisibilities:
     "private",
   ];
 
-const allowedSplitMethods = [
-  "none",
-  "equal",
-  "exact",
-  "submeter",
-] as const;
+const allowedSplitMethods:
+  ExpenseSplitMethod[] = [
+    "none",
+    "equal",
+    "exact",
+    "shared-personal",
+    "submeter",
+  ];
 
 export default class TransactionValidator {
   /**
@@ -235,6 +240,8 @@ export default class TransactionValidator {
     ) {
       errors.allocations =
         "At least one member must participate in the expense.";
+
+      return;
     }
 
     this.validateOptedOutAllocations(
@@ -242,12 +249,29 @@ export default class TransactionValidator {
       errors
     );
 
+    if (errors.allocations) {
+      return;
+    }
+
     if (form.splitMethod === "equal") {
       return;
     }
 
     if (form.splitMethod === "exact") {
       this.validateExactAllocations(
+        includedAllocations,
+        form.amount,
+        errors
+      );
+
+      return;
+    }
+
+    if (
+      form.splitMethod ===
+      "shared-personal"
+    ) {
+      this.validateSharedPersonalAllocations(
         includedAllocations,
         form.amount,
         errors
@@ -295,7 +319,8 @@ export default class TransactionValidator {
   }
 
   /**
-   * Ensures opted-out members receive a zero allocation.
+   * Ensures opted-out members receive no common
+   * or personal allocation.
    */
   private static validateOptedOutAllocations(
     allocations: ExpenseAllocationForm[],
@@ -305,12 +330,18 @@ export default class TransactionValidator {
       allocations.some(
         (allocation) =>
           !allocation.isIncluded &&
-          allocation.allocatedAmount !== 0
+          (
+            allocation.allocatedAmount !== 0 ||
+            (
+              allocation.personalAmount ??
+              0
+            ) !== 0
+          )
       );
 
     if (invalidOptOut) {
       errors.allocations =
-        "Members who opt out must have a zero allocation.";
+        "Members who opt out must have zero allocated and personal amounts.";
     }
   }
 
@@ -354,6 +385,52 @@ export default class TransactionValidator {
     ) {
       errors.allocations =
         "Exact member allocations must equal the total expense amount.";
+    }
+  }
+
+  /**
+   * Validates personal-item amounts before the common
+   * amount is divided between participating members.
+   */
+  private static validateSharedPersonalAllocations(
+    allocations: ExpenseAllocationForm[],
+    transactionAmount: number,
+    errors: Record<string, string>
+  ): void {
+    const hasInvalidPersonalAmount =
+      allocations.some(
+        (allocation) =>
+          !Number.isFinite(
+            allocation.personalAmount
+          ) ||
+          allocation.personalAmount < 0
+      );
+
+    if (hasInvalidPersonalAmount) {
+      errors.allocations =
+        "Every included member must have a valid non-negative personal amount.";
+
+      return;
+    }
+
+    const personalTotal =
+      allocations.reduce(
+        (total, allocation) =>
+          total +
+          allocation.personalAmount,
+        0
+      );
+
+    if (
+      Math.round(
+        personalTotal * 100
+      ) >
+      Math.round(
+        transactionAmount * 100
+      )
+    ) {
+      errors.allocations =
+        "The total personal amount cannot exceed the total expense amount.";
     }
   }
 

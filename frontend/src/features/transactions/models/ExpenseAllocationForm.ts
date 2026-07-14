@@ -1,30 +1,40 @@
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
+import type {
+  PersonalExpenseItem,
+} from "./PersonalExpenseItem";
+
 export interface ExpenseAllocationForm {
-  /**
-   * Member receiving this share of the expense.
-   */
   memberId: HouseholdMember["id"];
 
   /**
-   * False means the member opted out.
-   *
-   * Opted-out members must receive a zero allocation.
+   * Controls whether the member participates
+   * in the shared portion of the expense.
    */
   isIncluded: boolean;
 
   /**
-   * Calculated or manually entered share.
+   * Final amount assigned to the member.
    *
-   * Equal splits calculate this automatically.
-   * Exact splits accept manual values.
+   * For shared-personal splits:
+   * common share + personal amount.
    */
   allocatedAmount: number;
 
   /**
-   * Optional explanation for an opt-out,
-   * adjustment, or exact allocation.
+   * Total value of all personal items assigned
+   * exclusively to this member.
+   *
+   * This is calculated from personalItems.
    */
+  personalAmount: number;
+
+  /**
+   * Individual personal items assigned
+   * exclusively to this member.
+   */
+  personalItems: PersonalExpenseItem[];
+
   notes: string;
 }
 
@@ -36,6 +46,8 @@ export function createExpenseAllocationForm(
     memberId,
     isIncluded,
     allocatedAmount: 0,
+    personalAmount: 0,
+    personalItems: [],
     notes: "",
   };
 }

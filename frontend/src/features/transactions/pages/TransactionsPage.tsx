@@ -44,7 +44,8 @@ type TransactionDialogMode =
 function formatDateInput(
   date: Date
 ): string {
-  const year = date.getFullYear();
+  const year =
+    date.getFullYear();
 
   const month = String(
     date.getMonth() + 1
@@ -68,8 +69,11 @@ function mapTransactionToForm(
       : [];
 
   return {
-    type: transaction.type,
-    amount: transaction.amount,
+    type:
+      transaction.type,
+
+    amount:
+      transaction.amount,
 
     paidByMemberId:
       transaction.paidByMemberId ??
@@ -105,9 +109,11 @@ function mapTransactionToForm(
     splitMethod:
       transaction.type === "expense"
         ? transaction.expenseSplitMethod ??
-          (storedAllocations.length > 0
-            ? "exact"
-            : "none")
+          (
+            storedAllocations.length > 0
+              ? "exact"
+              : "none"
+          )
         : "none",
 
     allocations:
@@ -122,8 +128,20 @@ function mapTransactionToForm(
           allocatedAmount:
             allocation.allocatedAmount,
 
+          personalAmount:
+            allocation.personalAmount ??
+            0,
+
+          personalItems:
+            allocation.personalItems?.map(
+              (item) => ({
+                ...item,
+              })
+            ) ?? [],
+
           notes:
-            allocation.notes ?? "",
+            allocation.notes ??
+            "",
         })
       ),
 
@@ -144,11 +162,13 @@ export default function TransactionsPage() {
     loadHousehold();
 
   const accounts =
-    AccountService.getActiveAccounts().filter(
-      (account) =>
-        account.householdId ===
-        household?.id
-    );
+    AccountService
+      .getActiveAccounts()
+      .filter(
+        (account) =>
+          account.householdId ===
+          household?.id
+      );
 
   const members =
     household
@@ -291,7 +311,8 @@ export default function TransactionsPage() {
 
     return accounts.find(
       (account) =>
-        account.id === accountId
+        account.id ===
+        accountId
     )?.name;
   };
 
@@ -364,7 +385,9 @@ export default function TransactionsPage() {
             onSubmit={
               handleSubmitTransaction
             }
-            onCancel={closeDialog}
+            onCancel={
+              closeDialog
+            }
           />
         </DialogBody>
       </Dialog>
@@ -398,7 +421,9 @@ export default function TransactionsPage() {
                     .destinationAccountId
                 )
               }
-              onClose={closeDialog}
+              onClose={
+                closeDialog
+              }
               onEdit={
                 handleEditTransaction
               }
@@ -426,7 +451,9 @@ export default function TransactionsPage() {
               onConfirm={
                 handleDeleteConfirm
               }
-              onCancel={closeDialog}
+              onCancel={
+                closeDialog
+              }
             />
           )}
         </DialogBody>

@@ -19,6 +19,12 @@ import {
 } from "../models/ExpenseAllocationForm";
 
 import {
+  calculatePersonalItemsTotal,
+  createPersonalExpenseItem,
+  type PersonalExpenseItem,
+} from "../models/PersonalExpenseItem";
+
+import {
   defaultTransactionForm,
   type TransactionForm as TransactionFormData,
 } from "../models/TransactionForm";
@@ -35,6 +41,16 @@ type TransactionFormProps = {
 
   onCancel?: () => void;
 };
+
+interface SharedPersonalPreview {
+  includedCount: number;
+  personalTotal: number;
+  commonAmount: number;
+  excessAmount: number;
+  isOverAmount: boolean;
+  commonShareAmounts: number[];
+  finalAmounts: number[];
+}
 
 function getDefaultFormValues(
   defaultMemberId: string
@@ -54,22 +70,75 @@ function getDefaultFormValues(
   };
 }
 
+function toCents(
+  amount: number
+): number {
+  if (!Number.isFinite(amount)) {
+    return 0;
+  }
+
+  return Math.round(
+    amount * 100
+  );
+}
+
+function normalizePersonalItems(
+  allocation: ExpenseAllocationForm
+): PersonalExpenseItem[] {
+  const storedItems =
+    allocation.personalItems?.map(
+      (item) => ({
+        ...item,
+      })
+    ) ?? [];
+
+  if (storedItems.length > 0) {
+    return storedItems;
+  }
+
+  if (
+    allocation.personalAmount > 0
+  ) {
+    return [
+      {
+        id: crypto.randomUUID(),
+        description:
+          "Personal items",
+        amount:
+          allocation.personalAmount,
+      },
+    ];
+  }
+
+  return [];
+}
+
 function calculateEqualPreview(
   amount: number,
   allocations: ExpenseAllocationForm[]
 ): number[] {
-  const includedIndexes = allocations
-    .map((allocation, index) => ({
-      allocation,
-      index,
-    }))
-    .filter(
-      ({ allocation }) =>
-        allocation.isIncluded
-    )
-    .map(({ index }) => index);
+  const includedIndexes =
+    allocations
+      .map(
+        (
+          allocation,
+          index
+        ) => ({
+          allocation,
+          index,
+        })
+      )
+      .filter(
+        ({ allocation }) =>
+          allocation.isIncluded
+      )
+      .map(
+        ({ index }) =>
+          index
+      );
 
-  const result = allocations.map(() => 0);
+  const result =
+    allocations.map(() => 0);
 
   if (
     includedIndexes.length === 0 ||
@@ -80,7 +149,7 @@ function calculateEqualPreview(
   }
 
   const totalCents =
-    Math.round(amount * 100);
+    toCents(amount);
 
   const baseShareCents =
     Math.floor(
@@ -94,7 +163,10 @@ function calculateEqualPreview(
       includedIndexes.length;
 
   includedIndexes.forEach(
-    (allocationIndex, includedIndex) => {
+    (
+      allocationIndex,
+      includedIndex
+    ) => {
       const isLast =
         includedIndex ===
         includedIndexes.length - 1;
@@ -102,14 +174,185 @@ function calculateEqualPreview(
       result[allocationIndex] =
         (
           baseShareCents +
-          (isLast
-            ? remainderCents
-            : 0)
+          (
+            isLast
+              ? remainderCents
+              : 0
+          )
         ) / 100;
     }
   );
 
   return result;
+}
+
+function calculateSharedPersonalPreview(
+  amount: number,
+  allocations: ExpenseAllocationForm[]
+): SharedPersonalPreview {
+  const includedIndexes =
+    allocations
+      .map(
+        (
+          allocation,
+          index
+        ) => ({
+          allocation,
+          index,
+        })
+      )
+      .filter(
+        ({ allocation }) =>
+          allocation.isIncluded
+      )
+      .map(
+        ({ index }) =>
+          index
+      );
+
+  const commonShareAmounts =
+    allocations.map(() => 0);
+
+  const finalAmounts =
+    allocations.map(() => 0);
+
+  const totalCents =
+    Math.max(
+      0,
+      toCents(amount)
+    );
+
+  const personalAmountCents =
+    allocations.map(
+      (allocation) => {
+        if (!allocation.isIncluded) {
+          return 0;
+        }
+
+        return Math.max(
+          0,
+          toCents(
+            allocation.personalAmount
+          )
+        );
+      }
+    );
+
+  const personalTotalCents =
+    personalAmountCents.reduce(
+      (
+        total,
+        personalAmount
+      ) =>
+        total +
+        personalAmount,
+      0
+    );
+
+  const rawCommonAmountCents =
+    totalCents -
+    personalTotalCents;
+
+  const isOverAmount =
+    rawCommonAmountCents < 0;
+
+  const commonAmountCents =
+    Math.max(
+      0,
+      rawCommonAmountCents
+    );
+
+  const excessAmountCents =
+    Math.max(
+      0,
+      personalTotalCents -
+        totalCents
+    );
+
+  if (
+    includedIndexes.length > 0 &&
+    !isOverAmount
+  ) {
+    const baseCommonShareCents =
+      Math.floor(
+        commonAmountCents /
+          includedIndexes.length
+      );
+
+    const remainderCents =
+      commonAmountCents -
+      baseCommonShareCents *
+        includedIndexes.length;
+
+    includedIndexes.forEach(
+      (
+        allocationIndex,
+        includedIndex
+      ) => {
+        const isLastIncluded =
+          includedIndex ===
+          includedIndexes.length - 1;
+
+        const commonShareCents =
+          baseCommonShareCents +
+          (
+            isLastIncluded
+              ? remainderCents
+              : 0
+          );
+
+        commonShareAmounts[
+          allocationIndex
+        ] =
+          commonShareCents / 100;
+      }
+    );
+  }
+
+  allocations.forEach(
+    (
+      allocation,
+      index
+    ) => {
+      if (!allocation.isIncluded) {
+        finalAmounts[index] = 0;
+
+        return;
+      }
+
+      finalAmounts[index] =
+        (
+          personalAmountCents[
+            index
+          ] +
+          toCents(
+            commonShareAmounts[
+              index
+            ]
+          )
+        ) / 100;
+    }
+  );
+
+  return {
+    includedCount:
+      includedIndexes.length,
+
+    personalTotal:
+      personalTotalCents / 100,
+
+    commonAmount:
+      commonAmountCents / 100,
+
+    excessAmount:
+      excessAmountCents / 100,
+
+    isOverAmount,
+
+    commonShareAmounts,
+
+    finalAmounts,
+  };
 }
 
 function formatAmount(
@@ -134,7 +377,8 @@ export default function TransactionForm({
 }: TransactionFormProps) {
   const activeMembers =
     members.filter(
-      (member) => member.isActive
+      (member) =>
+        member.isActive
     );
 
   const defaultMemberId =
@@ -170,6 +414,27 @@ export default function TransactionForm({
               initialValues
                 .paidByMemberId ||
               defaultMemberId,
+
+            allocations:
+              initialValues.allocations.map(
+                (allocation) => {
+                  const personalItems =
+                    normalizePersonalItems(
+                      allocation
+                    );
+
+                  return {
+                    ...allocation,
+
+                    personalItems,
+
+                    personalAmount:
+                      calculatePersonalItemsTotal(
+                        personalItems
+                      ),
+                  };
+                }
+              ),
           }
         : getDefaultFormValues(
             defaultMemberId
@@ -222,17 +487,50 @@ export default function TransactionForm({
       ]
     );
 
+  const sharedPersonalPreview =
+    useMemo(
+      () =>
+        calculateSharedPersonalPreview(
+          form.amount,
+          form.allocations
+        ),
+      [
+        form.amount,
+        form.allocations,
+      ]
+    );
+
   const enteredAllocationTotal =
     useMemo(() => {
       return form.allocations.reduce(
-        (total, allocation) =>
+        (
+          total,
+          allocation
+        ) =>
           total +
-          (allocation.isIncluded
-            ? allocation.allocatedAmount
-            : 0),
+          (
+            allocation.isIncluded
+              ? allocation
+                  .allocatedAmount
+              : 0
+          ),
         0
       );
     }, [form.allocations]);
+
+  const sharedPersonalFinalTotal =
+    useMemo(() => {
+      return sharedPersonalPreview
+        .finalAmounts
+        .reduce(
+          (
+            total,
+            amount
+          ) =>
+            total + amount,
+          0
+        );
+    }, [sharedPersonalPreview]);
 
   const updateField = <
     Field extends keyof TransactionFormData,
@@ -280,7 +578,6 @@ export default function TransactionForm({
     setMessage("");
   };
 
- 
   const handleMemberChange = (
     event: ChangeEvent<HTMLSelectElement>
   ) => {
@@ -422,12 +719,39 @@ export default function TransactionForm({
                       member.id
                   );
 
-                return (
+                const allocation =
                   existing ??
                   createExpenseAllocationForm(
                     member.id
-                  )
-                );
+                  );
+
+                const personalItems =
+                  splitMethod ===
+                  "shared-personal"
+                    ? normalizePersonalItems(
+                        allocation
+                      )
+                    : [];
+
+                return {
+                  ...allocation,
+
+                  allocatedAmount:
+                    splitMethod ===
+                      "exact" ||
+                    splitMethod ===
+                      "submeter"
+                      ? allocation
+                          .allocatedAmount
+                      : 0,
+
+                  personalItems,
+
+                  personalAmount:
+                    calculatePersonalItemsTotal(
+                      personalItems
+                    ),
+                };
               }
             ),
     }));
@@ -469,6 +793,49 @@ export default function TransactionForm({
     clearAllocationError();
   };
 
+  const updatePersonalItems = (
+    memberId: string,
+    updater: (
+      items: PersonalExpenseItem[]
+    ) => PersonalExpenseItem[]
+  ) => {
+    setForm((current) => ({
+      ...current,
+
+      allocations:
+        current.allocations.map(
+          (allocation) => {
+            if (
+              allocation.memberId !==
+              memberId
+            ) {
+              return allocation;
+            }
+
+            const nextItems =
+              updater(
+                allocation.personalItems ??
+                  []
+              );
+
+            return {
+              ...allocation,
+
+              personalItems:
+                nextItems,
+
+              personalAmount:
+                calculatePersonalItemsTotal(
+                  nextItems
+                ),
+            };
+          }
+        ),
+    }));
+
+    clearAllocationError();
+  };
+
   const handleIncludedChange = (
     memberId: string,
     isIncluded: boolean
@@ -478,10 +845,11 @@ export default function TransactionForm({
       {
         isIncluded,
 
-        allocatedAmount:
-          isIncluded
-            ? 0
-            : 0,
+        allocatedAmount: 0,
+
+        personalAmount: 0,
+
+        personalItems: [],
       }
     );
   };
@@ -504,12 +872,79 @@ export default function TransactionForm({
     );
   };
 
+  const handleAddPersonalItem = (
+    memberId: string
+  ) => {
+    updatePersonalItems(
+      memberId,
+      (items) => [
+        ...items,
+        createPersonalExpenseItem(),
+      ]
+    );
+  };
+
+  const handlePersonalItemChange = (
+    memberId: string,
+    itemId: string,
+    changes: Partial<PersonalExpenseItem>
+  ) => {
+    updatePersonalItems(
+      memberId,
+      (items) =>
+        items.map(
+          (item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  ...changes,
+                }
+              : item
+        )
+    );
+  };
+
+  const handlePersonalItemAmountChange = (
+    memberId: string,
+    itemId: string,
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    const rawValue =
+      event.target.value;
+
+    handlePersonalItemChange(
+      memberId,
+      itemId,
+      {
+        amount:
+          rawValue === ""
+            ? 0
+            : Number(rawValue),
+      }
+    );
+  };
+
+  const handleRemovePersonalItem = (
+    memberId: string,
+    itemId: string
+  ) => {
+    updatePersonalItems(
+      memberId,
+      (items) =>
+        items.filter(
+          (item) =>
+            item.id !== itemId
+        )
+    );
+  };
+
   const handleSubmit = (
     event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
-    let submissionForm = form;
+    let submissionForm =
+      form;
 
     if (
       form.type === "expense" &&
@@ -520,13 +955,86 @@ export default function TransactionForm({
 
         allocations:
           form.allocations.map(
-            (allocation, index) => ({
+            (
+              allocation,
+              index
+            ) => ({
               ...allocation,
 
               allocatedAmount:
                 allocation.isIncluded
                   ? equalPreview[index] ??
                     0
+                  : 0,
+
+              personalAmount: 0,
+
+              personalItems: [],
+            })
+          ),
+      };
+    }
+
+    if (
+      form.type === "expense" &&
+      form.splitMethod ===
+        "shared-personal"
+    ) {
+      const allocationsWithTotals =
+        form.allocations.map(
+          (allocation) => {
+            if (!allocation.isIncluded) {
+              return {
+                ...allocation,
+
+                allocatedAmount: 0,
+
+                personalAmount: 0,
+
+                personalItems: [],
+              };
+            }
+
+            const personalItems =
+              allocation.personalItems ??
+              [];
+
+            return {
+              ...allocation,
+
+              personalItems,
+
+              personalAmount:
+                calculatePersonalItemsTotal(
+                  personalItems
+                ),
+            };
+          }
+        );
+
+      const submissionPreview =
+        calculateSharedPersonalPreview(
+          form.amount,
+          allocationsWithTotals
+        );
+
+      submissionForm = {
+        ...form,
+
+        allocations:
+          allocationsWithTotals.map(
+            (
+              allocation,
+              index
+            ) => ({
+              ...allocation,
+
+              allocatedAmount:
+                allocation.isIncluded
+                  ? submissionPreview
+                      .finalAmounts[
+                        index
+                      ] ?? 0
                   : 0,
             })
           ),
@@ -558,6 +1066,10 @@ export default function TransactionForm({
   const showAllocationAmountInputs =
     form.splitMethod === "exact" ||
     form.splitMethod === "submeter";
+
+  const showPersonalItemInputs =
+    form.splitMethod ===
+    "shared-personal";
 
   const normalizedCategory =
     form.category
@@ -805,7 +1317,9 @@ export default function TransactionForm({
 
           <select
             id="destination-account"
-            value={form.destinationAccountId}
+            value={
+              form.destinationAccountId
+            }
             onChange={(event) =>
               updateField(
                 "destinationAccountId",
@@ -919,8 +1433,8 @@ export default function TransactionForm({
             </h3>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Choose who shares this expense. Members may
-              opt out or receive an exact amount.
+              Choose which members participate and how
+              the expense should be divided.
             </p>
           </div>
 
@@ -946,6 +1460,10 @@ export default function TransactionForm({
 
               <option value="equal">
                 Divide Equally
+              </option>
+
+              <option value="shared-personal">
+                Shared + Personal Items
               </option>
 
               <option value="exact">
@@ -988,7 +1506,7 @@ export default function TransactionForm({
                       }
                       className="rounded-md border p-4"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="font-medium text-foreground">
                             {member?.displayName ??
@@ -1007,6 +1525,38 @@ export default function TransactionForm({
                                 )}
                               </p>
                             )}
+
+                          {form.splitMethod ===
+                            "shared-personal" &&
+                            allocation.isIncluded && (
+                              <div className="mt-1 space-y-1 text-sm">
+                                <p className="text-muted-foreground">
+                                  Common share:{" "}
+                                  {formatAmount(
+                                    sharedPersonalPreview
+                                      .commonShareAmounts[
+                                        index
+                                      ] ?? 0
+                                  )}
+                                </p>
+
+                                <p className="font-medium text-foreground">
+                                  Final share:{" "}
+                                  {formatAmount(
+                                    sharedPersonalPreview
+                                      .finalAmounts[
+                                        index
+                                      ] ?? 0
+                                  )}
+                                </p>
+                              </div>
+                            )}
+
+                          {!allocation.isIncluded && (
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Opted out — allocation is 0.00
+                            </p>
+                          )}
                         </div>
 
                         <label className="flex items-center gap-2">
@@ -1032,6 +1582,149 @@ export default function TransactionForm({
                           </span>
                         </label>
                       </div>
+
+                      {showPersonalItemInputs &&
+                        allocation.isIncluded && (
+                          <div className="mt-4 space-y-3 rounded-md bg-muted/30 p-3">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">
+                                  Personal Items
+                                </p>
+
+                                <p className="text-xs text-muted-foreground">
+                                  Add items used only by this member.
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleAddPersonalItem(
+                                    allocation.memberId
+                                  )
+                                }
+                                className="rounded-md border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
+                              >
+                                Add Personal Item
+                              </button>
+                            </div>
+
+                            {allocation.personalItems
+                              .length === 0 && (
+                              <p className="rounded-md border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
+                                No personal items added.
+                              </p>
+                            )}
+
+                            {allocation.personalItems.map(
+                              (
+                                item,
+                                itemIndex
+                              ) => (
+                                <div
+                                  key={
+                                    item.id
+                                  }
+                                  className="grid gap-3 rounded-md border bg-background p-3 md:grid-cols-[minmax(0,1fr)_10rem_auto]"
+                                >
+                                  <div className="space-y-2">
+                                    <label
+                                      htmlFor={`personal-item-description-${item.id}`}
+                                      className="text-xs font-medium text-foreground"
+                                    >
+                                      Item{" "}
+                                      {itemIndex +
+                                        1}
+                                    </label>
+
+                                    <input
+                                      id={`personal-item-description-${item.id}`}
+                                      type="text"
+                                      value={
+                                        item.description
+                                      }
+                                      onChange={(
+                                        event
+                                      ) =>
+                                        handlePersonalItemChange(
+                                          allocation.memberId,
+                                          item.id,
+                                          {
+                                            description:
+                                              event
+                                                .target
+                                                .value,
+                                          }
+                                        )
+                                      }
+                                      placeholder="Example: Shampoo"
+                                      className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <label
+                                      htmlFor={`personal-item-amount-${item.id}`}
+                                      className="text-xs font-medium text-foreground"
+                                    >
+                                      Amount
+                                    </label>
+
+                                    <input
+                                      id={`personal-item-amount-${item.id}`}
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={
+                                        item.amount ||
+                                        ""
+                                      }
+                                      onChange={(
+                                        event
+                                      ) =>
+                                        handlePersonalItemAmountChange(
+                                          allocation.memberId,
+                                          item.id,
+                                          event
+                                        )
+                                      }
+                                      placeholder="0.00"
+                                      className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+                                    />
+                                  </div>
+
+                                  <div className="flex items-end">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleRemovePersonalItem(
+                                          allocation.memberId,
+                                          item.id
+                                        )
+                                      }
+                                      className="w-full rounded-md border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 md:w-auto"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </div>
+                              )
+                            )}
+
+                            <div className="flex items-center justify-between border-t pt-3 text-sm">
+                              <span className="text-muted-foreground">
+                                Personal Subtotal
+                              </span>
+
+                              <span className="font-semibold text-foreground">
+                                {formatAmount(
+                                  allocation.personalAmount
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        )}
 
                       {showAllocationAmountInputs &&
                         allocation.isIncluded && (
@@ -1102,6 +1795,91 @@ export default function TransactionForm({
                     </div>
                   );
                 }
+              )}
+
+              {form.splitMethod ===
+                "shared-personal" && (
+                <div className="space-y-3 rounded-md bg-muted/40 px-4 py-4 text-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">
+                      Total Expense
+                    </span>
+
+                    <span className="font-medium text-foreground">
+                      {formatAmount(
+                        form.amount
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">
+                      Personal Items Total
+                    </span>
+
+                    <span className="font-medium text-foreground">
+                      {formatAmount(
+                        sharedPersonalPreview
+                          .personalTotal
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">
+                      Common Items Amount
+                    </span>
+
+                    <span className="font-medium text-foreground">
+                      {formatAmount(
+                        sharedPersonalPreview
+                          .commonAmount
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">
+                      Participating Members
+                    </span>
+
+                    <span className="font-medium text-foreground">
+                      {
+                        sharedPersonalPreview
+                          .includedCount
+                      }
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 border-t pt-3">
+                    <span className="font-medium text-foreground">
+                      Final Allocation Total
+                    </span>
+
+                    <span className="font-semibold text-foreground">
+                      {formatAmount(
+                        sharedPersonalFinalTotal
+                      )}{" "}
+                      /{" "}
+                      {formatAmount(
+                        form.amount
+                      )}
+                    </span>
+                  </div>
+
+                  {sharedPersonalPreview
+                    .isOverAmount && (
+                    <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive">
+                      Personal items exceed the total
+                      expense by{" "}
+                      {formatAmount(
+                        sharedPersonalPreview
+                          .excessAmount
+                      )}
+                      .
+                    </p>
+                  )}
+                </div>
               )}
 
               {showAllocationAmountInputs && (

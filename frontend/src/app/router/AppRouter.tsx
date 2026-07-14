@@ -19,6 +19,7 @@ import DashboardPage from "../../features/dashboard/pages/DashboardPage";
 import GovernancePage from "../../features/governance/pages/GovernancePage";
 import HouseholdMembersPage from "../../features/household/pages/HouseholdMembersPage";
 import SettingsPage from "../../features/settings/pages/SettingsPage";
+import SettlementsPage from "../../features/settlements/pages/SettlementsPage";
 import TransactionsPage from "../../features/transactions/pages/TransactionsPage";
 
 export default function AppRouter() {
@@ -55,6 +56,11 @@ export default function AppRouter() {
           <Route
             path="transactions"
             element={<TransactionsPage />}
+          />
+
+          <Route
+            path="settlements"
+            element={<SettlementsPage />}
           />
 
           <Route

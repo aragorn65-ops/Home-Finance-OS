@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 
-export interface DialogFooterProps
-  extends HTMLAttributes<HTMLDivElement> {}
+export type DialogFooterProps =
+  HTMLAttributes<HTMLDivElement>;
 
 export default function DialogFooter({
   children,

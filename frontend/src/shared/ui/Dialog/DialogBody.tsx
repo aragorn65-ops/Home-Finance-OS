@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 
-export interface DialogBodyProps
-  extends HTMLAttributes<HTMLDivElement> {}
+export type DialogBodyProps =
+  HTMLAttributes<HTMLDivElement>;
 
 export default function DialogBody({
   children,

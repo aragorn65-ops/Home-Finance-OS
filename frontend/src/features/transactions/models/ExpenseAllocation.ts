@@ -1,10 +1,16 @@
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
+
 import type { Transaction } from "./Transaction";
+
+import type {
+  PersonalExpenseItem,
+} from "./PersonalExpenseItem";
 
 export type ExpenseSplitMethod =
   | "none"
   | "equal"
   | "exact"
+  | "shared-personal"
   | "submeter";
 
 export type AllocationPaymentStatus =
@@ -40,13 +46,31 @@ export interface ExpenseAllocation {
   /**
    * Final amount assigned to this member.
    *
+   * For shared-personal expenses:
+   * common share + personal amount.
+   *
    * For opted-out members, this must be zero.
    */
   allocatedAmount: number;
 
   /**
-   * Optional explanation for exclusions or
-   * manual allocation adjustments.
+   * Total amount of items assigned exclusively
+   * to this member.
+   */
+  personalAmount?: number;
+
+  /**
+   * Individual personal items assigned
+   * exclusively to this member.
+   *
+   * Optional to remain compatible with
+   * older saved allocations.
+   */
+  personalItems?: PersonalExpenseItem[];
+
+  /**
+   * Optional explanation for exclusions,
+   * personal items, or manual adjustments.
    */
   notes?: string;
 

@@ -9,6 +9,8 @@ import ExpenseAllocationRepository from "../repositories/ExpenseAllocationReposi
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
+import SharedPersonalAllocationService from "./SharedPersonalAllocationService";
+
 import {
   OperationResults,
   type OperationResult,
@@ -55,14 +57,15 @@ export default class ExpenseAllocationService {
     transactionAmount: number,
     forms: ExpenseAllocationForm[]
   ): OperationResult<ExpenseAllocation[]> {
-    const buildResult = this.buildAllocations(
-      transactionId,
-      householdId,
-      paidByMemberId,
-      splitMethod,
-      transactionAmount,
-      forms
-    );
+    const buildResult =
+      this.buildAllocations(
+        transactionId,
+        householdId,
+        paidByMemberId,
+        splitMethod,
+        transactionAmount,
+        forms
+      );
 
     if (!buildResult.success) {
       return OperationResults.failure<
@@ -74,7 +77,8 @@ export default class ExpenseAllocationService {
       );
     }
 
-    const allocations = buildResult.data ?? [];
+    const allocations =
+      buildResult.data ?? [];
 
     if (allocations.length === 0) {
       return OperationResults.success(
@@ -105,14 +109,15 @@ export default class ExpenseAllocationService {
     transactionAmount: number,
     forms: ExpenseAllocationForm[]
   ): OperationResult<ExpenseAllocation[]> {
-    const buildResult = this.buildAllocations(
-      transactionId,
-      householdId,
-      paidByMemberId,
-      splitMethod,
-      transactionAmount,
-      forms
-    );
+    const buildResult =
+      this.buildAllocations(
+        transactionId,
+        householdId,
+        paidByMemberId,
+        splitMethod,
+        transactionAmount,
+        forms
+      );
 
     if (!buildResult.success) {
       return OperationResults.failure<
@@ -124,7 +129,8 @@ export default class ExpenseAllocationService {
       );
     }
 
-    const allocations = buildResult.data ?? [];
+    const allocations =
+      buildResult.data ?? [];
 
     const savedAllocations =
       ExpenseAllocationRepository.replaceByTransactionId(
@@ -201,7 +207,9 @@ export default class ExpenseAllocationService {
     }
 
     if (
-      !Number.isFinite(transactionAmount) ||
+      !Number.isFinite(
+        transactionAmount
+      ) ||
       transactionAmount <= 0
     ) {
       return OperationResults.failure<
@@ -228,7 +236,9 @@ export default class ExpenseAllocationService {
         );
       }
 
-      return OperationResults.success([]);
+      return OperationResults.success(
+        []
+      );
     }
 
     const memberValidation =
@@ -248,9 +258,11 @@ export default class ExpenseAllocationService {
       );
     }
 
-    const includedForms = forms.filter(
-      (form) => form.isIncluded
-    );
+    const includedForms =
+      forms.filter(
+        (form) =>
+          form.isIncluded
+      );
 
     if (includedForms.length === 0) {
       return OperationResults.failure<
@@ -264,16 +276,46 @@ export default class ExpenseAllocationService {
       );
     }
 
-    const calculatedAmounts =
-      splitMethod === "equal"
-        ? this.calculateEqualAmounts(
-            transactionAmount,
-            forms
-          )
-        : this.calculateEnteredAmounts(
+    let calculatedAmounts:
+      OperationResult<number[]>;
+
+    switch (splitMethod) {
+      case "equal":
+        calculatedAmounts =
+          this.calculateEqualAmounts(
             transactionAmount,
             forms
           );
+        break;
+
+      case "shared-personal":
+        calculatedAmounts =
+          this.calculateSharedPersonalAmounts(
+            transactionAmount,
+            forms
+          );
+        break;
+
+      case "exact":
+      case "submeter":
+        calculatedAmounts =
+          this.calculateEnteredAmounts(
+            transactionAmount,
+            forms
+          );
+        break;
+
+      default:
+        return OperationResults.failure<
+          ExpenseAllocation[]
+        >(
+          {
+            splitMethod:
+              "Unsupported expense split method.",
+          },
+          "Unable to calculate expense allocations."
+        );
+    }
 
     if (!calculatedAmounts.success) {
       return OperationResults.failure<
@@ -288,31 +330,62 @@ export default class ExpenseAllocationService {
     const amounts =
       calculatedAmounts.data ?? [];
 
-    const now = new Date();
+    const now =
+      new Date();
 
-    const allocations = forms.map(
-      (form, index): ExpenseAllocation => ({
-        id: crypto.randomUUID(),
+    const allocations =
+      forms.map(
+        (
+          form,
+          index
+        ): ExpenseAllocation => ({
+          id:
+            crypto.randomUUID(),
 
-        transactionId,
-        paidByMemberId,
+          transactionId,
 
-        memberId: form.memberId.trim(),
+          paidByMemberId,
 
-        isIncluded: form.isIncluded,
+          memberId:
+            form.memberId.trim(),
 
-        allocatedAmount:
-          form.isIncluded
-            ? amounts[index] ?? 0
-            : 0,
+          isIncluded:
+            form.isIncluded,
 
-        notes:
-          form.notes.trim() || undefined,
+          allocatedAmount:
+            form.isIncluded
+              ? amounts[index] ?? 0
+              : 0,
 
-        createdAt: now,
-        updatedAt: now,
-      })
-    );
+          personalAmount:
+            splitMethod ===
+              "shared-personal" &&
+            form.isIncluded
+              ? form.personalAmount
+              : undefined,
+
+          personalItems:
+            splitMethod ===
+              "shared-personal" &&
+            form.isIncluded
+              ? form.personalItems.map(
+                  (item) => ({
+                    ...item,
+                  })
+                )
+              : undefined,
+
+          notes:
+            form.notes.trim() ||
+            undefined,
+
+          createdAt:
+            now,
+
+          updatedAt:
+            now,
+        })
+      );
 
     return OperationResults.success(
       allocations
@@ -343,7 +416,8 @@ export default class ExpenseAllocationService {
     }
 
     if (
-      payer.householdId !== householdId ||
+      payer.householdId !==
+        householdId ||
       !payer.isActive
     ) {
       return OperationResults.failure<boolean>(
@@ -365,10 +439,12 @@ export default class ExpenseAllocationService {
       );
     }
 
-    const memberIds = new Set<string>();
+    const memberIds =
+      new Set<string>();
 
     for (const form of forms) {
-      const memberId = form.memberId.trim();
+      const memberId =
+        form.memberId.trim();
 
       if (!memberId) {
         return OperationResults.failure<boolean>(
@@ -380,7 +456,9 @@ export default class ExpenseAllocationService {
         );
       }
 
-      if (memberIds.has(memberId)) {
+      if (
+        memberIds.has(memberId)
+      ) {
         return OperationResults.failure<boolean>(
           {
             allocations:
@@ -390,7 +468,9 @@ export default class ExpenseAllocationService {
         );
       }
 
-      memberIds.add(memberId);
+      memberIds.add(
+        memberId
+      );
 
       const member =
         HouseholdMemberService.getMemberById(
@@ -399,7 +479,8 @@ export default class ExpenseAllocationService {
 
       if (
         !member ||
-        member.householdId !== householdId ||
+        member.householdId !==
+          householdId ||
         !member.isActive
       ) {
         return OperationResults.failure<boolean>(
@@ -413,19 +494,25 @@ export default class ExpenseAllocationService {
 
       if (
         !form.isIncluded &&
-        form.allocatedAmount !== 0
+        (
+          form.allocatedAmount !== 0 ||
+          form.personalAmount !== 0 ||
+          form.personalItems.length > 0
+        )
       ) {
         return OperationResults.failure<boolean>(
           {
             allocations:
-              "Opted-out members must have a zero allocation.",
+              "Opted-out members must have zero allocations and no personal items.",
           },
           "Unable to validate expense allocations."
         );
       }
     }
 
-    return OperationResults.success(true);
+    return OperationResults.success(
+      true
+    );
   }
 
   /**
@@ -438,16 +525,32 @@ export default class ExpenseAllocationService {
     transactionAmount: number,
     forms: ExpenseAllocationForm[]
   ): OperationResult<number[]> {
-    const includedIndexes = forms
-      .map((form, index) => ({
-        form,
-        index,
-      }))
-      .filter(({ form }) => form.isIncluded)
-      .map(({ index }) => index);
+    const includedIndexes =
+      forms
+        .map(
+          (
+            form,
+            index
+          ) => ({
+            form,
+            index,
+          })
+        )
+        .filter(
+          ({ form }) =>
+            form.isIncluded
+        )
+        .map(
+          ({ index }) =>
+            index
+        );
 
-    if (includedIndexes.length === 0) {
-      return OperationResults.failure<number[]>(
+    if (
+      includedIndexes.length === 0
+    ) {
+      return OperationResults.failure<
+        number[]
+      >(
         {
           allocations:
             "At least one member must participate in the expense.",
@@ -456,65 +559,149 @@ export default class ExpenseAllocationService {
       );
     }
 
-    const totalCents = Math.round(
-      transactionAmount * 100
-    );
+    const totalCents =
+      Math.round(
+        transactionAmount * 100
+      );
 
-    const baseShareCents = Math.floor(
-      totalCents / includedIndexes.length
-    );
+    const baseShareCents =
+      Math.floor(
+        totalCents /
+          includedIndexes.length
+      );
 
     const remainderCents =
       totalCents -
       baseShareCents *
         includedIndexes.length;
 
-    const amounts = forms.map(() => 0);
+    const amounts =
+      forms.map(
+        () => 0
+      );
 
     includedIndexes.forEach(
-      (formIndex, includedIndex) => {
+      (
+        formIndex,
+        includedIndex
+      ) => {
         const isLastIncluded =
           includedIndex ===
           includedIndexes.length - 1;
 
         const shareCents =
           baseShareCents +
-          (isLastIncluded
-            ? remainderCents
-            : 0);
+          (
+            isLastIncluded
+              ? remainderCents
+              : 0
+          );
 
         amounts[formIndex] =
           shareCents / 100;
       }
     );
 
-    return OperationResults.success(amounts);
+    return OperationResults.success(
+      amounts
+    );
   }
 
   /**
-   * Uses entered amounts for exact and utility-precalculated
-   * allocations.
+   * Calculates the common amount after subtracting
+   * personal items and divides it equally among
+   * participating members.
+   */
+  private static calculateSharedPersonalAmounts(
+    transactionAmount: number,
+    forms: ExpenseAllocationForm[]
+  ): OperationResult<number[]> {
+    const calculationResult =
+      SharedPersonalAllocationService.calculate(
+        transactionAmount,
+        forms.map(
+          (form) => ({
+            memberId:
+              form.memberId,
+
+            isIncluded:
+              form.isIncluded,
+
+            personalAmount:
+              form.personalAmount,
+          })
+        )
+      );
+
+    if (
+      !calculationResult.success
+    ) {
+      return OperationResults.failure<
+        number[]
+      >(
+        calculationResult.errors,
+        calculationResult.message ??
+          "Unable to calculate shared and personal allocations."
+      );
+    }
+
+    const calculation =
+      calculationResult.data;
+
+    if (!calculation) {
+      return OperationResults.failure<
+        number[]
+      >(
+        {
+          allocations:
+            "The shared and personal allocation calculation returned no result.",
+        },
+        "Unable to calculate shared and personal allocations."
+      );
+    }
+
+    return OperationResults.success(
+      calculation.allocations.map(
+        (allocation) =>
+          allocation.allocatedAmount
+      )
+    );
+  }
+
+  /**
+   * Uses entered amounts for exact and
+   * utility-precalculated allocations.
    */
   private static calculateEnteredAmounts(
     transactionAmount: number,
     forms: ExpenseAllocationForm[]
   ): OperationResult<number[]> {
-    const amounts = forms.map((form) => {
-      if (!form.isIncluded) {
-        return 0;
-      }
+    const amounts =
+      forms.map(
+        (form) => {
+          if (
+            !form.isIncluded
+          ) {
+            return 0;
+          }
 
-      return form.allocatedAmount;
-    });
+          return form.allocatedAmount;
+        }
+      );
 
-    const hasInvalidAmount = amounts.some(
-      (amount) =>
-        !Number.isFinite(amount) ||
-        amount < 0
-    );
+    const hasInvalidAmount =
+      amounts.some(
+        (amount) =>
+          !Number.isFinite(
+            amount
+          ) ||
+          amount < 0
+      );
 
     if (hasInvalidAmount) {
-      return OperationResults.failure<number[]>(
+      return OperationResults.failure<
+        number[]
+      >(
         {
           allocations:
             "Every included member must have a valid non-negative allocation.",
@@ -523,18 +710,31 @@ export default class ExpenseAllocationService {
       );
     }
 
-    const totalCents = amounts.reduce(
-      (total, amount) =>
-        total + Math.round(amount * 100),
-      0
-    );
+    const totalCents =
+      amounts.reduce(
+        (
+          total,
+          amount
+        ) =>
+          total +
+          Math.round(
+            amount * 100
+          ),
+        0
+      );
 
-    const transactionCents = Math.round(
-      transactionAmount * 100
-    );
+    const transactionCents =
+      Math.round(
+        transactionAmount * 100
+      );
 
-    if (totalCents !== transactionCents) {
-      return OperationResults.failure<number[]>(
+    if (
+      totalCents !==
+      transactionCents
+    ) {
+      return OperationResults.failure<
+        number[]
+      >(
         {
           allocations:
             "Member allocations must equal the total expense amount.",
@@ -543,6 +743,8 @@ export default class ExpenseAllocationService {
       );
     }
 
-    return OperationResults.success(amounts);
+    return OperationResults.success(
+      amounts
+    );
   }
 }

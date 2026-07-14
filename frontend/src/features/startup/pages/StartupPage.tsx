@@ -1,57 +1,52 @@
-import Brand from "../../../shared/branding";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { hasHousehold } from "../services/startup";
 import {
   DEV_MODE,
   DEV_SKIP_STARTUP,
 } from "../../../config/development";
 
+import Brand from "../../../shared/branding";
+
+import { hasHousehold } from "../services/startup";
+
 export default function StartupPage() {
   const navigate = useNavigate();
 
- useEffect(() => {
+  useEffect(() => {
+    if (
+      DEV_MODE &&
+      DEV_SKIP_STARTUP
+    ) {
+      navigate("/app", {
+        replace: true,
+      });
 
-  if (DEV_MODE && DEV_SKIP_STARTUP) {
+      return;
+    }
 
-    navigate("/app", {
-      replace: true,
-    });
+    if (hasHousehold()) {
+      navigate("/app", {
+        replace: true,
+      });
 
-    return;
-
-  }
-
-  if (hasHousehold()) {
-
-    navigate("/app", {
-      replace: true,
-    });
-
-  } else {
+      return;
+    }
 
     navigate("/household", {
       replace: true,
     });
-
-  }
-
-}, [
-  navigate,
-  DEV_MODE,
-  DEV_SKIP_STARTUP,
-]);
+  }, [navigate]);
 
   return (
-  <div className="startup-page">
-    <div className="startup-content">
-      <Brand />
+    <div className="startup-page">
+      <div className="startup-content">
+        <Brand />
 
-      <p className="startup-message">
-        Preparing your workspace...
-      </p>
+        <p className="startup-message">
+          Preparing your workspace...
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
 }
