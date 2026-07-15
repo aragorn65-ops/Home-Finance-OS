@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   BarChart3,
   CircleHelp,
+  Gauge,
   LayoutDashboard,
   PiggyBank,
   Settings,
@@ -68,6 +69,11 @@ export const navigationSections: NavigationSection[] = [
         label: "Transactions",
         path: "/app/transactions",
         icon: ArrowLeftRight,
+      },
+      {
+        label: "Utilities",
+        path: "/app/utilities",
+        icon: Gauge,
       },
       {
         label: "Settlements",

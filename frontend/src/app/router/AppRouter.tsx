@@ -21,6 +21,7 @@ import HouseholdMembersPage from "../../features/household/pages/HouseholdMember
 import SettingsPage from "../../features/settings/pages/SettingsPage";
 import SettlementsPage from "../../features/settlements/pages/SettlementsPage";
 import TransactionsPage from "../../features/transactions/pages/TransactionsPage";
+import UtilitiesPage from "../../features/utilities/pages/UtilitiesPage";
 
 export default function AppRouter() {
   return (
@@ -56,6 +57,11 @@ export default function AppRouter() {
           <Route
             path="transactions"
             element={<TransactionsPage />}
+          />
+
+          <Route
+            path="utilities"
+            element={<UtilitiesPage />}
           />
 
           <Route

@@ -1,96 +1,32 @@
 import type { Account } from "../models/Account";
 
+import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+
+import {
+  loadHousehold,
+} from "../../household/services/householdStorage";
+
 export default class AccountRepository {
   /**
-   * Demo data source.
+   * Demo in-memory data source.
    *
-   * Replace with database or API persistence
-   * in a future sprint.
+   * Demo accounts are initialized only after the single
+   * active household has been created.
    */
-  private static accounts: Account[] = [
-    {
-      id: "acc-001",
-      householdId: "household-001",
+  private static accounts: Account[] = [];
 
-      ownerMemberId: "member-001",
-      visibility: "household",
-
-      name: "BPI Savings",
-      institution: "Bank of the Philippine Islands",
-
-      accountClass: "asset",
-      type: "savings",
-
-      currency: "PHP",
-
-      openingBalance: 50000,
-      currentBalance: 125000,
-
-      accountNumber: "****1234",
-
-      isActive: true,
-
-      createdAt: new Date("2026-07-01T08:00:00"),
-      updatedAt: new Date("2026-07-01T08:00:00"),
-    },
-    {
-      id: "acc-002",
-      householdId: "household-001",
-
-      ownerMemberId: "member-001",
-      visibility: "household",
-
-      name: "GCash",
-      institution: "GCash",
-
-      accountClass: "asset",
-      type: "e-wallet",
-
-      currency: "PHP",
-
-      openingBalance: 5000,
-      currentBalance: 12750,
-
-      accountNumber: undefined,
-
-      isActive: true,
-
-      createdAt: new Date("2026-07-01T08:00:00"),
-      updatedAt: new Date("2026-07-01T08:00:00"),
-    },
-    {
-      id: "acc-003",
-      householdId: "household-001",
-
-      ownerMemberId: "member-001",
-      visibility: "private",
-
-      name: "Personal Cash",
-      institution: undefined,
-
-      accountClass: "asset",
-      type: "cash",
-
-      currency: "PHP",
-
-      openingBalance: 3000,
-      currentBalance: 3000,
-
-      accountNumber: undefined,
-
-      isActive: true,
-
-      createdAt: new Date("2026-07-01T08:00:00"),
-      updatedAt: new Date("2026-07-01T08:00:00"),
-    },
-  ];
+  private static initializedHouseholdId:
+    string | null = null;
 
   /**
    * Returns all accounts.
    */
   static findAll(): Account[] {
-    return this.accounts.map((account) =>
-      this.clone(account)
+    this.ensureInitialized();
+
+    return this.accounts.map(
+      (account) =>
+        this.clone(account)
     );
   }
 
@@ -100,9 +36,13 @@ export default class AccountRepository {
   static findById(
     id: string
   ): Account | undefined {
-    const account = this.accounts.find(
-      (item) => item.id === id
-    );
+    this.ensureInitialized();
+
+    const account =
+      this.accounts.find(
+        (item) =>
+          item.id === id
+      );
 
     return account
       ? this.clone(account)
@@ -112,12 +52,21 @@ export default class AccountRepository {
   /**
    * Creates a new account.
    */
-  static create(account: Account): Account {
-    const storedAccount = this.clone(account);
+  static create(
+    account: Account
+  ): Account {
+    this.ensureInitialized();
 
-    this.accounts.push(storedAccount);
+    const storedAccount =
+      this.clone(account);
 
-    return this.clone(storedAccount);
+    this.accounts.push(
+      storedAccount
+    );
+
+    return this.clone(
+      storedAccount
+    );
   }
 
   /**
@@ -126,36 +75,204 @@ export default class AccountRepository {
   static update(
     account: Account
   ): Account | undefined {
-    const accountIndex = this.accounts.findIndex(
-      (item) => item.id === account.id
-    );
+    this.ensureInitialized();
 
-    if (accountIndex === -1) {
+    const accountIndex =
+      this.accounts.findIndex(
+        (item) =>
+          item.id === account.id
+      );
+
+    if (
+      accountIndex === -1
+    ) {
       return undefined;
     }
 
-    const updatedAccount = this.clone(account);
+    const updatedAccount =
+      this.clone(account);
 
-    this.accounts[accountIndex] = updatedAccount;
+    this.accounts[
+      accountIndex
+    ] = updatedAccount;
 
-    return this.clone(updatedAccount);
+    return this.clone(
+      updatedAccount
+    );
   }
 
   /**
    * Removes an account from the demo repository.
    */
-  static delete(id: string): boolean {
-    const accountIndex = this.accounts.findIndex(
-      (item) => item.id === id
-    );
+  static delete(
+    id: string
+  ): boolean {
+    this.ensureInitialized();
 
-    if (accountIndex === -1) {
+    const accountIndex =
+      this.accounts.findIndex(
+        (item) =>
+          item.id === id
+      );
+
+    if (
+      accountIndex === -1
+    ) {
       return false;
     }
 
-    this.accounts.splice(accountIndex, 1);
+    this.accounts.splice(
+      accountIndex,
+      1
+    );
 
     return true;
+  }
+
+  /**
+   * Initializes demo accounts for the single active
+   * household.
+   */
+  private static ensureInitialized(): void {
+    const household =
+      loadHousehold();
+
+    if (!household) {
+      this.accounts = [];
+
+      this.initializedHouseholdId =
+        null;
+
+      return;
+    }
+
+    if (
+      this.initializedHouseholdId ===
+      household.id
+    ) {
+      return;
+    }
+
+    const owner =
+      HouseholdMemberService
+        .getOwnerMember();
+
+    const ownerMemberId =
+      owner?.id ??
+      "member-001";
+
+    this.accounts =
+      this.createDemoAccounts(
+        household.id,
+        ownerMemberId
+      );
+
+    this.initializedHouseholdId =
+      household.id;
+  }
+
+  /**
+   * Creates the default account collection for the
+   * active household.
+   */
+  private static createDemoAccounts(
+    householdId: string,
+    ownerMemberId: string
+  ): Account[] {
+    const createdAt =
+      new Date(
+        "2026-07-01T08:00:00"
+      );
+
+    return [
+      {
+        id: "acc-001",
+        householdId,
+
+        ownerMemberId,
+        visibility: "household",
+
+        name: "BPI Savings",
+        institution:
+          "Bank of the Philippine Islands",
+
+        accountClass: "asset",
+        type: "savings",
+
+        currency: "PHP",
+
+        openingBalance: 50000,
+        currentBalance: 125000,
+
+        accountNumber:
+          "****1234",
+
+        isActive: true,
+
+        createdAt,
+        updatedAt:
+          new Date(createdAt),
+      },
+      {
+        id: "acc-002",
+        householdId,
+
+        ownerMemberId,
+        visibility: "household",
+
+        name: "GCash",
+        institution: "GCash",
+
+        accountClass: "asset",
+        type: "e-wallet",
+
+        currency: "PHP",
+
+        openingBalance: 5000,
+        currentBalance: 12750,
+
+        accountNumber:
+          undefined,
+
+        isActive: true,
+
+        createdAt:
+          new Date(createdAt),
+
+        updatedAt:
+          new Date(createdAt),
+      },
+      {
+        id: "acc-003",
+        householdId,
+
+        ownerMemberId,
+        visibility: "private",
+
+        name: "Personal Cash",
+        institution:
+          undefined,
+
+        accountClass: "asset",
+        type: "cash",
+
+        currency: "PHP",
+
+        openingBalance: 3000,
+        currentBalance: 3000,
+
+        accountNumber:
+          undefined,
+
+        isActive: true,
+
+        createdAt:
+          new Date(createdAt),
+
+        updatedAt:
+          new Date(createdAt),
+      },
+    ];
   }
 
   /**
@@ -167,12 +284,22 @@ export default class AccountRepository {
     return {
       ...account,
 
-      paymentDueDate: account.paymentDueDate
-        ? new Date(account.paymentDueDate)
-        : undefined,
+      paymentDueDate:
+        account.paymentDueDate
+          ? new Date(
+              account.paymentDueDate
+            )
+          : undefined,
 
-      createdAt: new Date(account.createdAt),
-      updatedAt: new Date(account.updatedAt),
+      createdAt:
+        new Date(
+          account.createdAt
+        ),
+
+      updatedAt:
+        new Date(
+          account.updatedAt
+        ),
     };
   }
 }

@@ -1,11 +1,29 @@
 import "./AppShell.css";
 
-import { Outlet } from "react-router-dom";
+import {
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 
 import Sidebar from "../Sidebar/Sidebar";
 import Header from "../Header/Header";
 
+import {
+  loadHousehold,
+} from "../../features/household/services/householdStorage";
+
 export default function AppShell() {
+  const household = loadHousehold();
+
+  if (!household) {
+    return (
+      <Navigate
+        to="/household"
+        replace
+      />
+    );
+  }
+
   return (
     <div className="app-shell">
       <Sidebar />
