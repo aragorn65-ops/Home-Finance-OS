@@ -294,3 +294,51 @@ All notable changes to HFOS are documented here.
 * Verified grocery transaction summaries and personal-item subtotals.
 * Verified ESLint completes with zero errors and zero warnings.
 * Verified the production TypeScript and Vite build completes with zero errors.
+
+## [0.9.0-alpha] - 2026-07-15
+
+### Added
+
+* Added the Utilities feature module with domain models, validation, calculation services, components, persistence, and page routing.
+* Added electricity and water utility bill workflows.
+* Added provider bill amount and per-unit rate inputs.
+* Added member submeter tracking using previous and current readings.
+* Added meter reset and replacement handling with manually entered billing-period usage.
+* Added personal appliance usage calculations using appliance power rating and usage hours.
+* Added fixed compensation amounts for direct member charges not captured by meters or appliance records.
+* Added equal distribution of the remaining utility bill among participating household members.
+* Added exact cent-level allocation to ensure member shares equal the provider bill.
+* Added utility bill calculation previews with direct usage, shared remainder, and final member shares.
+* Added optional payment-account selection for utility expenses.
+* Added utility bill persistence as exact-split expense transactions.
+* Added automatic settlement obligations from persisted utility allocations.
+* Added a household setup guard for authenticated application routes.
+* Added Utilities navigation and application routing.
+
+### Changed
+
+* Updated demo account initialization so accounts belong to the single active household and its owner.
+* Simplified appliance usage input to require only power rating in kilowatts and total usage hours.
+* Removed the user-facing appliance usage-factor field and its related validation and calculations.
+* Updated utility calculations so the shared remainder equals the provider bill minus all direct usage and fixed compensation.
+* Updated utility transaction notes to preserve submeter, appliance, compensation, and shared-allocation details.
+
+### Fixed
+
+* Fixed utility payments being rejected because demo accounts used a hardcoded household identifier.
+* Fixed direct appliance charges requiring users to estimate an unfamiliar usage factor.
+* Fixed utility allocation rounding so the final member-share total always matches the provider bill.
+* Fixed utility expenses not flowing into Transactions and Settlements.
+
+### Verified
+
+* Verified electricity bill calculations using appliance usage, submeter usage, and fixed compensation.
+* Verified appliance consumption is calculated as power rating multiplied by usage hours.
+* Verified submeter consumption is calculated as current reading minus previous reading.
+* Verified the remaining bill is divided equally among participating members.
+* Verified final member shares equal the total provider bill with a difference of zero.
+* Verified utility expenses are created in Transactions using exact member allocations.
+* Verified utility obligations appear correctly in Settlements.
+* Verified utility payments can use accounts belonging to the active household.
+* Verified the production TypeScript and Vite build completes with zero errors.
+* Verified ESLint completes with zero errors.
