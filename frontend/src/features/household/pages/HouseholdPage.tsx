@@ -23,9 +23,10 @@ export default function HouseholdPage() {
 
   const { state, update } = useHouseholdSetup();
 
-  const [currentStep, setCurrentStep] = useState(
-    HOUSEHOLD_SETUP_STEPS.HOUSEHOLD_NAME
-  );
+  const [currentStep, setCurrentStep] =
+    useState<number>(
+      HOUSEHOLD_SETUP_STEPS.HOUSEHOLD_NAME
+    );
 
   function nextStep() {
     setCurrentStep((step) =>
@@ -54,7 +55,8 @@ export default function HouseholdPage() {
       currentStep={currentStep + 1}
       totalSteps={TOTAL_STEPS}
     >
-      {currentStep === HOUSEHOLD_SETUP_STEPS.HOUSEHOLD_NAME && (
+      {currentStep ===
+        HOUSEHOLD_SETUP_STEPS.HOUSEHOLD_NAME && (
         <HouseholdNameStep
           value={state.householdName}
           onChange={(value) =>
@@ -64,7 +66,8 @@ export default function HouseholdPage() {
         />
       )}
 
-      {currentStep === HOUSEHOLD_SETUP_STEPS.COUNTRY && (
+      {currentStep ===
+        HOUSEHOLD_SETUP_STEPS.COUNTRY && (
         <CountryStep
           value={state.country}
           onChange={(value) =>
@@ -75,7 +78,8 @@ export default function HouseholdPage() {
         />
       )}
 
-      {currentStep === HOUSEHOLD_SETUP_STEPS.CURRENCY && (
+      {currentStep ===
+        HOUSEHOLD_SETUP_STEPS.CURRENCY && (
         <CurrencyStep
           value={state.currency}
           onChange={(value) =>
@@ -86,7 +90,8 @@ export default function HouseholdPage() {
         />
       )}
 
-      {currentStep === HOUSEHOLD_SETUP_STEPS.TIMEZONE && (
+      {currentStep ===
+        HOUSEHOLD_SETUP_STEPS.TIMEZONE && (
         <TimezoneStep
           value={state.timezone}
           onChange={(value) =>
@@ -97,7 +102,8 @@ export default function HouseholdPage() {
         />
       )}
 
-      {currentStep === HOUSEHOLD_SETUP_STEPS.REVIEW && (
+      {currentStep ===
+        HOUSEHOLD_SETUP_STEPS.REVIEW && (
         <ReviewStep
           householdName={state.householdName}
           country={state.country}

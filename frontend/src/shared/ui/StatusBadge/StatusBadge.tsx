@@ -2,6 +2,7 @@ import Badge from "../Badge";
 
 export type Status =
   | "Approved"
+  | "Archived"
   | "Draft"
   | "Pending"
   | "Rejected"
@@ -22,21 +23,42 @@ export default function StatusBadge({
     case "Approved":
     case "Paid":
     case "Active":
-      return <Badge variant="success">{status}</Badge>;
+      return (
+        <Badge variant="success">
+          {status}
+        </Badge>
+      );
 
     case "Pending":
     case "Draft":
-      return <Badge variant="warning">{status}</Badge>;
+      return (
+        <Badge variant="warning">
+          {status}
+        </Badge>
+      );
 
     case "Rejected":
     case "Overdue":
     case "Unpaid":
-      return <Badge variant="danger">{status}</Badge>;
+      return (
+        <Badge variant="danger">
+          {status}
+        </Badge>
+      );
 
     case "Inactive":
-      return <Badge variant="neutral">{status}</Badge>;
+    case "Archived":
+      return (
+        <Badge variant="neutral">
+          {status}
+        </Badge>
+      );
 
     default:
-      return <Badge variant="info">{status}</Badge>;
+      return (
+        <Badge variant="info">
+          {status}
+        </Badge>
+      );
   }
 }

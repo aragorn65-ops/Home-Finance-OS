@@ -1,0 +1,63 @@
+import {
+  Button,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
+} from "..";
+
+export interface ConfirmDialogProps {
+  open: boolean;
+  title: string;
+  message: string;
+
+  confirmLabel?: string;
+  cancelLabel?: string;
+
+  variant?: "primary" | "danger";
+
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export default function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  variant = "primary",
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
+  return (
+    <Dialog
+      open={open}
+      onClose={onCancel}
+    >
+      <DialogHeader title={title} />
+
+      <DialogBody>
+        <p className="text-sm leading-6 text-gray-600">
+          {message}
+        </p>
+      </DialogBody>
+
+      <DialogFooter>
+        <Button
+          variant="secondary"
+          onClick={onCancel}
+        >
+          {cancelLabel}
+        </Button>
+
+        <Button
+          variant={variant}
+          onClick={onConfirm}
+        >
+          {confirmLabel}
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  );
+}

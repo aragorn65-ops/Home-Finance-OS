@@ -1,0 +1,28 @@
+.cashflow-trend {
+  margin-top: 24px;
+}
+
+.cashflow-trend h4 {
+  margin-bottom: 16px;
+}
+
+.trend-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 70px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.trend-bar-container {
+  height: 10px;
+  background: #ececec;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.trend-bar {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 999px;
+}

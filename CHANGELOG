@@ -54,3 +54,409 @@ Development Milestone
 - Governance Documents
 - Product Constitution
 - Initial UI Foundation
+
+# Sprint 5
+
+## Added
+
+- Dashboard Widget Registry
+- Dashboard Layout Service
+- Account domain
+- Transaction domain
+- Repository Pattern
+- Account Summary
+- Account List
+- Cash Flow Widget
+- Accounts Page
+
+## Changed
+
+- Dashboard now renders from Widget Registry.
+- Services now consume repositories.
+- Cash Flow widget now consumes TransactionService.
+
+## Fixed
+
+- Dashboard Widget type conflict.
+- Repository import resolution.
+- Cash Flow widget integration.
+
+# Changelog
+
+All notable changes to HFOS are documented here.
+
+---
+
+## [0.6.0-alpha]
+
+### Added
+
+- Accounts module
+- CRUD operations
+- Shared Dialog
+- Confirm Dialog
+- Repository Pattern
+- Service Layer
+- Validators
+- Shared UI library
+
+### Changed
+
+- Accounts architecture
+- Shared component exports
+
+### Fixed
+
+- Account update flow
+- Dialog reuse
+
+### Planned
+
+- Search
+- Filter
+- Sort
+- Dashboard integration
+
+# [v0.6.0-alpha] - 2026-07-13
+
+## Added
+
+### Governance
+- HFOS Product Constitution v1.0
+- Governance document registry
+- Approval cards
+- Document viewer
+
+### Shared UI
+- Dialog
+- ConfirmDialog
+- Shared UI standardization
+- Input and Select enhancements
+
+### Dashboard
+- DashboardService aggregation layer
+- Dashboard Summary widget
+- Live Net Worth
+- Live Household Summary
+- Cash Flow integration
+
+### Accounts
+- Full CRUD implementation
+- Account validation
+- Repository pattern
+- Service layer
+- Summary widget
+
+## Changed
+
+- Refactored Accounts into layered architecture.
+- Connected Dashboard widgets to live services.
+- Standardized shared UI components.
+
+## Fixed
+
+- TypeScript compilation errors.
+- Vite production build issues.
+- Household wizard typing.
+- Shared UI prop consistency.
+- Account service validation.
+- Dashboard integration issues.
+
+## Build
+
+- TypeScript: ✅ Passed
+- Production Build: ✅ Passed
+
+## Status
+
+**Alpha Release**
+
+## [0.7.0-alpha] - 2026-07-14
+
+### Added
+
+* Added the Transactions feature module with transaction domain models, repository, service layer, validation, hooks, components, and page routing.
+* Added support for income, expense, and account-transfer transactions.
+* Added transaction creation, editing, viewing, and deletion workflows.
+* Added monthly income, expense, and net cash-flow calculations.
+* Added account balance updates using debit and credit accounting operations.
+* Added liability-aware credit-card transaction handling.
+* Added credit-card purchases as expenses that increase liability balances.
+* Added credit-card payments as transfers that reduce both asset and liability balances without duplicating expenses.
+* Added transaction rollback protection for failed balance, persistence, and allocation operations.
+* Added household-member domain models, form contracts, validation, service operations, and management UI.
+* Added household-member creation, editing, activation, and deactivation.
+* Added household-member roles for owner, admin, and member.
+* Added household-member navigation and the `/app/household-members` route.
+* Added transaction payer tracking through `paidByMemberId`.
+* Added transaction visibility options for household, participants, and private records.
+* Added equal, exact, individual, and utility-precalculated expense split methods.
+* Added member-level expense allocations and member opt-out support.
+* Added cent-level equal-split rounding.
+* Added exact-allocation validation requiring allocations to match the total expense.
+* Added persistence of the original expense split method.
+* Added private account ownership and visibility fields.
+* Added service-layer validation preventing non-owners from using private accounts.
+* Added participant-only visibility defaults for shared expenses paid through private accounts.
+* Added member-scoped transaction query methods.
+* Added defensive transaction and allocation cloning in repositories.
+
+### Changed
+
+* Expanded the Account model to distinguish asset and liability accounts.
+* Expanded account types to support credit cards, loans, mortgages, lines of credit, and other liabilities.
+* Updated account forms and validation for liability balances, credit limits, statement balances, minimum payments, and due dates.
+* Updated account totals to calculate total assets, total liabilities, and net worth.
+* Updated household local storage to persist household members.
+* Updated transaction forms to select the payer, visibility, accounts, split method, and participants.
+* Updated transaction editing to restore the saved payer, visibility, split method, and allocations.
+* Updated the application sidebar with Accounts, Transactions, and Household Members navigation.
+* Updated the dashboard cash-flow calculations to use the Transactions service.
+
+### Fixed
+
+* Fixed missing Accounts routing and sidebar navigation.
+* Fixed transaction creation using a hardcoded household identifier.
+* Fixed account and transaction household mismatches.
+* Fixed credit-card purchase and bill-payment balance behavior.
+* Fixed transaction form type errors after introducing allocation fields.
+* Fixed equal expenses reopening as exact allocations.
+* Fixed orphaned expense allocations during transaction deletion.
+* Fixed account balances not being restored when transaction operations failed.
+* Fixed private accounts appearing for members who do not own them.
+* Fixed navigation export and section-property compatibility errors.
+
+### Verified
+
+* Verified income, expense, and transfer balance effects.
+* Verified credit-card expense and payment workflows.
+* Verified equal and exact member allocation workflows.
+* Verified incorrect exact-allocation totals are rejected.
+* Verified equal splits remain equal when reopened.
+* Verified private accounts can only be used by their owners.
+* Verified shared expenses paid from private accounts use participant-only visibility.
+* Verified transaction deletion restores balances and removes allocations.
+* Verified the production TypeScript and Vite build completes with zero errors.
+
+## [0.8.0-alpha] - 2026-07-14
+
+### Added
+
+* Added the Settlements feature module with domain models, repositories, services, validation, hooks, components, and page routing.
+* Added household settlement creation, editing, viewing, and deletion workflows.
+* Added member obligation calculations derived from active expense allocations.
+* Added member balance summaries showing amounts payable, receivable, and net position.
+* Added a Who Owes Whom summary for outstanding household reimbursements.
+* Added settlement applications linking payments to specific expense allocations.
+* Added oldest-first settlement application based on transaction date and allocation order.
+* Added manual settlement application with exact applied-amount validation.
+* Added partial settlement support.
+* Added derived unpaid, partially paid, and paid allocation statuses.
+* Added settlement history and itemized application details.
+* Added optional source and destination account linking for settlements.
+* Added settlement account balance effects and rollback protection.
+* Added edit-mode restoration of existing settlement applications.
+* Added grocery transaction summaries showing total grocery amount, member shared amounts, personal-item lists, and personal-item subtotals.
+* Added ESLint flat configuration compatible with ESLint 10.
+
+### Changed
+
+* Updated settlement member selectors so paying and receiving members can be selected independently.
+* Updated expense validation so payment accounts are optional.
+* Updated expense validation so descriptions and notes may remain blank.
+* Updated transaction account processing so accountless expenses create no account balance operation.
+* Updated transaction details to focus on transaction date, transaction ID, grocery total, and member allocation summaries.
+* Separated Toast context, provider, and consumer hook into dedicated modules.
+* Updated shared Dialog body and footer prop declarations for TypeScript and ESLint compatibility.
+* Updated startup navigation effect dependencies.
+
+### Fixed
+
+* Fixed paying members being unavailable until the receiving member was changed.
+* Fixed accountless expenses being rejected as having an invalid or missing payment account.
+* Fixed blank expense descriptions preventing transaction creation.
+* Fixed settlement edits potentially counting the current settlement against its own outstanding allocations.
+* Fixed Toast Fast Refresh warnings caused by exporting a provider and hook from the same component module.
+* Fixed empty-interface ESLint errors in shared Dialog components.
+* Fixed the missing Toast context module after the Toast refactor.
+
+### Verified
+
+* Verified settlement page routing and runtime rendering.
+* Verified oldest-first settlement creation.
+* Verified manual settlement creation and exact application totals.
+* Verified settlement editing without duplicate applications or balance effects.
+* Verified settlement deletion restores allocation outstanding balances.
+* Verified accountless settlements do not modify account balances.
+* Verified linked-account settlements update payer and receiver balances.
+* Verified deleting linked-account settlements restores both account balances.
+* Verified expenses can be created without an account, description, or notes.
+* Verified grocery transaction summaries and personal-item subtotals.
+* Verified ESLint completes with zero errors and zero warnings.
+* Verified the production TypeScript and Vite build completes with zero errors.
+
+## [0.9.0-alpha] - 2026-07-15
+
+### Added
+
+* Added the Utilities feature module with domain models, validation, calculation services, components, persistence, and page routing.
+* Added electricity and water utility bill workflows.
+* Added provider bill amount and per-unit rate inputs.
+* Added member submeter tracking using previous and current readings.
+* Added meter reset and replacement handling with manually entered billing-period usage.
+* Added personal appliance usage calculations using appliance power rating and usage hours.
+* Added fixed compensation amounts for direct member charges not captured by meters or appliance records.
+* Added equal distribution of the remaining utility bill among participating household members.
+* Added exact cent-level allocation to ensure member shares equal the provider bill.
+* Added utility bill calculation previews with direct usage, shared remainder, and final member shares.
+* Added optional payment-account selection for utility expenses.
+* Added utility bill persistence as exact-split expense transactions.
+* Added automatic settlement obligations from persisted utility allocations.
+* Added a household setup guard for authenticated application routes.
+* Added Utilities navigation and application routing.
+
+### Changed
+
+* Updated demo account initialization so accounts belong to the single active household and its owner.
+* Simplified appliance usage input to require only power rating in kilowatts and total usage hours.
+* Removed the user-facing appliance usage-factor field and its related validation and calculations.
+* Updated utility calculations so the shared remainder equals the provider bill minus all direct usage and fixed compensation.
+* Updated utility transaction notes to preserve submeter, appliance, compensation, and shared-allocation details.
+
+### Fixed
+
+* Fixed utility payments being rejected because demo accounts used a hardcoded household identifier.
+* Fixed direct appliance charges requiring users to estimate an unfamiliar usage factor.
+* Fixed utility allocation rounding so the final member-share total always matches the provider bill.
+* Fixed utility expenses not flowing into Transactions and Settlements.
+
+### Verified
+
+* Verified electricity bill calculations using appliance usage, submeter usage, and fixed compensation.
+* Verified appliance consumption is calculated as power rating multiplied by usage hours.
+* Verified submeter consumption is calculated as current reading minus previous reading.
+* Verified the remaining bill is divided equally among participating members.
+* Verified final member shares equal the total provider bill with a difference of zero.
+* Verified utility expenses are created in Transactions using exact member allocations.
+* Verified utility obligations appear correctly in Settlements.
+* Verified utility payments can use accounts belonging to the active household.
+* Verified the production TypeScript and Vite build completes with zero errors.
+* Verified ESLint completes with zero errors.
+
+## [0.10.0-alpha] - 2026-07-16
+
+### Added
+
+* Added versioned localStorage persistence for household data, accounts, transactions, expense allocations, settlements, and settlement applications.
+* Added schema-aware storage envelopes and validation for persisted application data.
+* Added date serialization and hydration for persisted domain models.
+* Added defensive deep cloning for expense allocation personal items and transaction attachments.
+* Added application-wide data reset support with an explicit two-step confirmation workflow.
+* Added receipt and bill attachments for transactions.
+* Added image upload, PDF upload, and clipboard image-paste support.
+* Added attachment categories for receipts, bills, and other supporting documents.
+* Added attachment previews, open actions, removal, validation, and edit-mode restoration.
+* Added utility bill attachment support with persistence through generated expense transactions.
+* Added itemized member settlement balances showing descriptions, dates, original amounts, paid amounts, remaining amounts, and payment status.
+* Added derived Unpaid, Partially Paid, and Paid tags to shared expense transactions.
+* Added Savings and Reports placeholder pages and application routes.
+
+### Changed
+
+* Updated repositories to seed demo data only when their versioned storage key is missing.
+* Updated repositories so intentionally stored empty arrays remain empty after refresh.
+* Updated persistence handling so malformed or unsupported stored data is not silently replaced.
+* Updated account management to display inactive accounts while excluding them from active balance totals.
+* Updated transaction account effects to support historical corrections involving inactive accounts.
+* Updated transaction and utility payment-account selectors to show only active accounts owned by the selected payer.
+* Updated settlement source-account selection to use only accounts owned by the paying member.
+* Updated settlement destination-account selection to use only accounts owned by the receiving member.
+* Updated private-account enforcement so other household members and administrators cannot view or use another member's private accounts.
+* Updated utility allocation rules so fixed compensation and equal participation in the remaining bill are mutually exclusive.
+* Updated transaction details with generic transaction wording, category, description, and supporting-document display.
+* Updated member balance cards with expandable Items to Pay and Items to Receive sections.
+* Updated transaction payment status to be derived from settlement applications rather than stored separately.
+
+### Fixed
+
+* Fixed persisted dates reopening as strings instead of Date instances.
+* Fixed stored empty collections being replaced by demo seed records.
+* Fixed account balance restoration failures when historical transactions referenced inactive accounts.
+* Fixed private accounts appearing in transaction, utility, and settlement account selectors for non-owners.
+* Fixed utility payers retaining an invalid payment account after changing the selected member.
+* Fixed settlement source and destination accounts remaining selected after changing payer or receiver.
+* Fixed utility members receiving both fixed compensation and a share of the remaining common bill.
+* Fixed transaction attachments being omitted from utility-generated expense transactions.
+* Fixed settlement balance summaries hiding the individual expenses contributing to an outstanding balance.
+* Fixed transaction rows lacking reimbursement payment-status visibility.
+* Fixed transaction payment-status derivation attempting to read a nonexistent stored allocation status property.
+
+### Verified
+
+* Verified accounts, transactions, allocations, settlements, settlement applications, household members, and utility-generated records persist after refresh.
+* Verified stored empty arrays remain empty and do not reseed automatically.
+* Verified transaction and utility attachments persist after saving and reopening.
+* Verified receipt and bill images can be uploaded or pasted from the clipboard.
+* Verified invalid attachment types, oversized files, and attachment-count limits are rejected.
+* Verified private accounts are available only to their owners.
+* Verified utility fixed compensation and equal remainder sharing cannot be applied to the same member.
+* Verified settlement balances display itemized unpaid and partially paid obligations.
+* Verified partial settlements update paid and remaining amounts correctly.
+* Verified transaction payment tags recalculate after settlement creation, editing, or deletion.
+* Verified Reset All Data removes persisted records and deleted data does not return after refresh.
+* Verified Savings and Reports routes render successfully.
+* Verified the production TypeScript and Vite build completes with zero errors.
+* Verified ESLint completes with zero errors.
+
+## [0.11.0-alpha] - 2026-07-16
+
+### Added
+
+* Added the complete Savings feature module with domain models, form models, repositories, services, validators, hooks, components, and page integration.
+* Added savings goals for emergency funds, vacations, annual insurance, home repairs, tuition, vehicle maintenance, appliance replacement, general savings, and custom purposes.
+* Added target amounts, optional target dates, priority levels, statuses, descriptions, and optional linked household asset accounts.
+* Added contribution, withdrawal, and signed adjustment activities.
+* Added derived saved amounts based on active savings activities rather than duplicated stored balances.
+* Added goal progress calculations showing saved amount, remaining amount, percentage complete, overfunding, overdue state, days remaining, and required monthly contribution.
+* Added active, completed, and archived savings-goal sections.
+* Added savings goal details with itemized activity history.
+* Added create, edit, archive, and delete workflows for savings goals.
+* Added create, edit, and delete workflows for savings activities.
+* Added optional account balance effects for savings contributions, withdrawals, and adjustments.
+* Added account-effect reversal and rollback protection when savings activities are edited or deleted.
+* Added savings-goal and savings-activity persistence through versioned localStorage repositories.
+* Added a household Savings summary showing total saved, combined targets, remaining amount, overall progress, active goals, and completed goals.
+* Added a Savings Goals widget to the main Dashboard.
+
+### Changed
+
+* Replaced the Sprint 10 Savings placeholder with the functional Savings page.
+* Updated Reset All Data to remove savings activities and savings goals.
+* Updated the shared storage key registry with versioned savings-goal and savings-activity keys.
+* Updated the Dashboard widget registry to include household savings progress.
+* Restricted goal-level linked accounts to active household asset accounts.
+* Restricted activity account selection to household accounts and private accounts owned by the selected member.
+* Updated completed goals so they remain visible and may still record withdrawals or adjustments.
+* Updated archived goals so their progress and activity history remain available for review while further changes are blocked.
+
+### Fixed
+
+* Prevented withdrawals and negative adjustments from reducing a savings goal below zero.
+* Prevented contributions and positive adjustments from exceeding the available balance of a selected asset account.
+* Prevented members from using another member's private account for savings activity.
+* Prevented savings goals with activity history from being deleted instead of archived.
+* Prevented savings activity edits from duplicating account balance effects.
+* Prevented savings activity deletion from leaving its linked account balance effect applied.
+* Prevented failed savings operations from leaving partially applied account or repository changes.
+* Prevented invalid or unsupported persisted savings records from being silently replaced.
+
+### Verified
+
+* Verified the Savings page and all Savings UI components compile successfully.
+* Verified savings repositories use versioned localStorage keys.
+* Verified Reset All Data includes savings goals and savings activities.
+* Verified the Dashboard Savings widget compiles and registers successfully.
+* Verified the production TypeScript and Vite build completes with zero errors.
+* Verified ESLint completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+* Confirmed the Vite bundle-size message remains a non-blocking optimization warning.

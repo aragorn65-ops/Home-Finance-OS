@@ -1,19 +1,34 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+} from "react-router-dom";
 
 import AppShell from "../AppShell";
 
-import { StartupPage } from "../../features/startup";
-import { HouseholdPage } from "../../features/household";
+import {
+  StartupPage,
+} from "../../features/startup";
 
+import {
+  HouseholdPage,
+} from "../../features/household";
+
+import AccountsPage from "../../features/accounts/pages/AccountsPage";
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
 import GovernancePage from "../../features/governance/pages/GovernancePage";
+import HouseholdMembersPage from "../../features/household/pages/HouseholdMembersPage";
+import ReportsPage from "../../features/reports/pages/ReportsPage";
+import SavingsPage from "../../features/savings/pages/SavingsPage";
 import SettingsPage from "../../features/settings/pages/SettingsPage";
+import SettlementsPage from "../../features/settlements/pages/SettlementsPage";
+import TransactionsPage from "../../features/transactions/pages/TransactionsPage";
+import UtilitiesPage from "../../features/utilities/pages/UtilitiesPage";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Startup */}
         <Route
           path="/"
@@ -37,6 +52,43 @@ export default function AppRouter() {
           />
 
           <Route
+            path="accounts"
+            element={<AccountsPage />}
+          />
+
+          <Route
+            path="transactions"
+            element={<TransactionsPage />}
+          />
+
+          <Route
+            path="utilities"
+            element={<UtilitiesPage />}
+          />
+
+          <Route
+            path="settlements"
+            element={<SettlementsPage />}
+          />
+
+          <Route
+            path="savings"
+            element={<SavingsPage />}
+          />
+
+          <Route
+            path="reports"
+            element={<ReportsPage />}
+          />
+
+          <Route
+            path="household-members"
+            element={
+              <HouseholdMembersPage />
+            }
+          />
+
+          <Route
             path="help-center"
             element={<GovernancePage />}
           />
@@ -46,7 +98,6 @@ export default function AppRouter() {
             element={<SettingsPage />}
           />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
