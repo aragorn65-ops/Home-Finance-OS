@@ -1,81 +1,53 @@
 .hfos-badge {
-
-    display:inline-flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    padding:6px 12px;
-
-    border-radius:999px;
-
-    font-size:12px;
-
-    font-weight:600;
-
-    line-height:1;
-
-    border:1px solid transparent;
-
+  display: inline-flex;
+  min-height: 1.625rem;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
 }
 
-/* Success */
+/* ---------- Success ---------- */
 
-.success{
-
-    background:#DCFCE7;
-
-    color:#166534;
-
-    border-color:#BBF7D0;
-
+.hfos-badge--success {
+  background: var(--color-success-background);
+  border-color: var(--color-success-border);
+  color: var(--color-success-text);
 }
 
-/* Warning */
+/* ---------- Warning ---------- */
 
-.warning{
-
-    background:#FEF3C7;
-
-    color:#92400E;
-
-    border-color:#FDE68A;
-
+.hfos-badge--warning {
+  background: var(--color-warning-background);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning-text);
 }
 
-/* Danger */
+/* ---------- Danger ---------- */
 
-.danger{
-
-    background:#FEE2E2;
-
-    color:#991B1B;
-
-    border-color:#FECACA;
-
+.hfos-badge--danger {
+  background: var(--color-danger-background);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger-text);
 }
 
-/* Info */
+/* ---------- Information ---------- */
 
-.info{
-
-    background:#DBEAFE;
-
-    color:#1D4ED8;
-
-    border-color:#BFDBFE;
-
+.hfos-badge--info {
+  background: var(--color-info-background);
+  border-color: var(--color-info-border);
+  color: var(--color-info-text);
 }
 
-/* Neutral */
+/* ---------- Neutral ---------- */
 
-.neutral{
-
-    background:#F3F4F6;
-
-    color:#374151;
-
-    border-color:#E5E7EB;
-
+.hfos-badge--neutral {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border-subtle);
+  color: var(--color-text);
 }

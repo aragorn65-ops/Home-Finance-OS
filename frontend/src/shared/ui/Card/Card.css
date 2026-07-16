@@ -1,13 +1,17 @@
-.hfos-card{
+.hfos-card {
+  width: 100%;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-none);
+  color: var(--color-text);
+}
 
-    background:var(--surface);
+.hfos-card--compact {
+  padding: var(--space-4);
+}
 
-    border:1px solid var(--border);
-
-    border-radius:var(--radius-lg);
-
-    padding:24px;
-
-    box-shadow:var(--shadow-card);
-
+.hfos-card--unpad {
+  padding: 0;
 }

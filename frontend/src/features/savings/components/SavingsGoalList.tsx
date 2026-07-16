@@ -1,3 +1,5 @@
+import "./SavingsGoalList.css";
+
 import type {
   SavingsGoal,
 } from "../models/SavingsGoal";
@@ -57,12 +59,12 @@ export default function SavingsGoalList({
 }: SavingsGoalListProps) {
   if (goals.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed bg-white p-8 text-center">
-        <h3 className="font-semibold text-foreground">
+      <div className="hfos-savings-goal-list__empty">
+        <h3 className="hfos-savings-goal-list__empty-title">
           {emptyTitle}
         </h3>
 
-        <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
+        <p className="hfos-savings-goal-list__empty-message">
           {emptyMessage}
         </p>
       </div>
@@ -70,7 +72,7 @@ export default function SavingsGoalList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="hfos-savings-goal-list">
       {goals.map((goal) => {
         const progress =
           progressByGoalId[

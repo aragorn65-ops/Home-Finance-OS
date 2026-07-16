@@ -13,20 +13,24 @@ export default function PageHeader({
   actions,
 }: PageHeaderProps) {
   return (
-    <div className="hfos-page-header">
-      <div>
-        <h1>{title}</h1>
+    <header className="hfos-page-header">
+      <div className="hfos-page-header__content">
+        <h1 className="hfos-page-header__title">
+          {title}
+        </h1>
 
         {subtitle && (
-          <p>{subtitle}</p>
+          <p className="hfos-page-header__subtitle">
+            {subtitle}
+          </p>
         )}
       </div>
 
       {actions && (
-        <div className="actions">
+        <div className="hfos-page-header__actions">
           {actions}
         </div>
       )}
-    </div>
+    </header>
   );
 }

@@ -38,7 +38,16 @@ export default function ConfirmDialog({
       <DialogHeader title={title} />
 
       <DialogBody>
-        <p className="text-sm leading-6 text-gray-600">
+        <p
+          style={{
+            color:
+              "var(--color-text-muted)",
+            fontSize:
+              "var(--font-size-sm)",
+            lineHeight:
+              "var(--line-height-relaxed)",
+          }}
+        >
           {message}
         </p>
       </DialogBody>

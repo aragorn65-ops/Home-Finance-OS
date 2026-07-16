@@ -1,28 +1,47 @@
-import Widget from "../../../../shared/ui/Widget";
+import "./DashboardSummary.css";
+
 import StatCard from "../../../../shared/ui/StatCard";
+import Widget from "../../../../shared/ui/Widget";
+import formatCurrency from "../../../../shared/utils/formatCurrency";
 
 import DashboardService from "../../services/DashboardService";
 
 export default function DashboardSummary() {
-  const summary = DashboardService.getSummary();
+  const summary =
+    DashboardService.getSummary();
+
+  const household =
+    DashboardService.getHouseholdSummary();
 
   return (
     <Widget title="Dashboard Summary">
-      <div className="space-y-4">
-        <StatCard
-          label="Accounts"
-          value={summary.totalAccounts.toString()}
-        />
+      <div className="hfos-dashboard-summary">
+        <div className="hfos-dashboard-summary__metric">
+          <StatCard
+            label="Accounts"
+            value={summary.totalAccounts.toString()}
+          />
+        </div>
 
-        <StatCard
-          label="Total Balance"
-          value={`₱${summary.totalAccountBalance.toLocaleString()}`}
-        />
+        <div className="hfos-dashboard-summary__metric">
+          <StatCard
+            label="Total Balance"
+            value={formatCurrency(
+              summary.totalAccountBalance,
+              household.currency
+            )}
+          />
+        </div>
 
-        <StatCard
-          label="Net Worth"
-          value={`₱${summary.netWorth.toLocaleString()}`}
-        />
+        <div className="hfos-dashboard-summary__metric">
+          <StatCard
+            label="Net Worth"
+            value={formatCurrency(
+              summary.netWorth,
+              household.currency
+            )}
+          />
+        </div>
       </div>
     </Widget>
   );

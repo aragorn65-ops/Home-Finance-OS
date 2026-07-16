@@ -1,6 +1,10 @@
+import "./SavingsGoalCard.css";
+
 import {
   Button,
 } from "../../../shared/ui";
+
+import formatCurrency from "../../../shared/utils/formatCurrency";
 
 import type {
   SavingsGoal,
@@ -36,21 +40,6 @@ interface SavingsGoalCardProps {
   ) => void;
 }
 
-function formatCurrency(
-  amount: number,
-  currency: string
-): string {
-  return new Intl.NumberFormat(
-    undefined,
-    {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }
-  ).format(amount);
-}
-
 function formatDate(
   date?: Date
 ): string {
@@ -68,10 +57,10 @@ function formatDate(
   ).format(date);
 }
 
-function formatGoalType(
-  goalType: SavingsGoal["goalType"]
+function formatLabel(
+  value: string
 ): string {
-  return goalType
+  return value
     .split("-")
     .map(
       (word) =>
@@ -79,28 +68,6 @@ function formatGoalType(
         word.slice(1)
     )
     .join(" ");
-}
-
-function formatStatus(
-  status: SavingsGoal["status"]
-): string {
-  return status
-    .split("-")
-    .map(
-      (word) =>
-        word.charAt(0).toUpperCase() +
-        word.slice(1)
-    )
-    .join(" ");
-}
-
-function formatPriority(
-  priority: SavingsGoal["priority"]
-): string {
-  return (
-    priority.charAt(0).toUpperCase() +
-    priority.slice(1)
-  );
 }
 
 function getTimelineLabel(
@@ -158,59 +125,69 @@ export default function SavingsGoalCard({
       100
     );
 
+  const progressLabel =
+    new Intl.NumberFormat(
+      undefined,
+      {
+        maximumFractionDigits: 2,
+      }
+    ).format(
+      progress.progressPercentage
+    );
+
   const mayRecordActivity =
     goal.isActive &&
     goal.status !==
       "archived";
 
   return (
-    <article className="rounded-lg border bg-white p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-semibold text-foreground">
+    <article className="hfos-savings-goal-card">
+      <div className="hfos-savings-goal-card__header">
+        <div className="hfos-savings-goal-card__content">
+          <div className="hfos-savings-goal-card__title-row">
+            <h3 className="hfos-savings-goal-card__title">
               {goal.name}
             </h3>
 
-            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              {formatGoalType(
+            <span className="hfos-savings-goal-card__badge hfos-savings-goal-card__badge--neutral">
+              {formatLabel(
                 goal.goalType
               )}
             </span>
 
-            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-              {formatPriority(
+            <span className="hfos-savings-goal-card__badge hfos-savings-goal-card__badge--info">
+              {formatLabel(
                 goal.priority
               )}
             </span>
 
-            <span className="rounded-full border px-2.5 py-1 text-xs font-medium text-foreground">
-              {formatStatus(
+            <span className="hfos-savings-goal-card__badge hfos-savings-goal-card__badge--neutral">
+              {formatLabel(
                 goal.status
               )}
             </span>
 
             {progress.isOverfunded && (
-              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
+              <span className="hfos-savings-goal-card__badge hfos-savings-goal-card__badge--success">
                 Overfunded
               </span>
             )}
 
             {progress.isOverdue && (
-              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">
+              <span className="hfos-savings-goal-card__badge hfos-savings-goal-card__badge--warning">
                 Overdue
               </span>
             )}
           </div>
 
           {goal.description && (
-            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            <p className="hfos-savings-goal-card__description">
               {goal.description}
             </p>
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="hfos-savings-goal-card__actions">
           <Button
             variant="secondary"
             onClick={() =>
@@ -271,13 +248,13 @@ export default function SavingsGoalCard({
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="hfos-savings-goal-card__metrics">
+        <div className="hfos-savings-goal-card__metric">
+          <p className="hfos-savings-goal-card__metric-label">
             Saved
           </p>
 
-          <p className="mt-1 text-lg font-semibold text-foreground">
+          <p className="hfos-savings-goal-card__metric-value">
             {formatCurrency(
               progress.savedAmount,
               currency
@@ -285,12 +262,12 @@ export default function SavingsGoalCard({
           </p>
         </div>
 
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="hfos-savings-goal-card__metric">
+          <p className="hfos-savings-goal-card__metric-label">
             Target
           </p>
 
-          <p className="mt-1 text-lg font-semibold text-foreground">
+          <p className="hfos-savings-goal-card__metric-value">
             {formatCurrency(
               progress.targetAmount,
               currency
@@ -298,12 +275,12 @@ export default function SavingsGoalCard({
           </p>
         </div>
 
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="hfos-savings-goal-card__metric">
+          <p className="hfos-savings-goal-card__metric-label">
             Remaining
           </p>
 
-          <p className="mt-1 text-lg font-semibold text-foreground">
+          <p className="hfos-savings-goal-card__metric-value">
             {formatCurrency(
               progress.remainingAmount,
               currency
@@ -311,28 +288,28 @@ export default function SavingsGoalCard({
           </p>
         </div>
 
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="hfos-savings-goal-card__metric">
+          <p className="hfos-savings-goal-card__metric-label">
             Progress
           </p>
 
-          <p className="mt-1 text-lg font-semibold text-foreground">
-            {new Intl.NumberFormat(
-              undefined,
-              {
-                maximumFractionDigits: 2,
-              }
-            ).format(
-              progress.progressPercentage
-            )}
-            %
+          <p className="hfos-savings-goal-card__metric-value">
+            {progressLabel}%
           </p>
         </div>
       </div>
 
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-muted">
+      <div
+        className="hfos-savings-goal-card__progress-track"
+        role="progressbar"
+        aria-label={`Progress for ${goal.name}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progressBarWidth}
+        aria-valuetext={`${progressLabel}%`}
+      >
         <div
-          className="h-full rounded-full bg-primary transition-[width]"
+          className="hfos-savings-goal-card__progress-bar"
           style={{
             width:
               `${progressBarWidth}%`,
@@ -340,34 +317,37 @@ export default function SavingsGoalCard({
         />
       </div>
 
-      <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
-        <div>
-          <span className="text-muted-foreground">
+      <div className="hfos-savings-goal-card__details">
+        <div className="hfos-savings-goal-card__detail">
+          <span>
             Target date:
           </span>{" "}
-          <span className="font-medium text-foreground">
+
+          <span className="hfos-savings-goal-card__detail-value">
             {formatDate(
               progress.targetDate
             )}
           </span>
         </div>
 
-        <div>
-          <span className="text-muted-foreground">
+        <div className="hfos-savings-goal-card__detail">
+          <span>
             Timeline:
           </span>{" "}
-          <span className="font-medium text-foreground">
+
+          <span className="hfos-savings-goal-card__detail-value">
             {getTimelineLabel(
               progress
             )}
           </span>
         </div>
 
-        <div>
-          <span className="text-muted-foreground">
+        <div className="hfos-savings-goal-card__detail">
+          <span>
             Monthly needed:
           </span>{" "}
-          <span className="font-medium text-foreground">
+
+          <span className="hfos-savings-goal-card__detail-value">
             {progress
               .requiredMonthlyContribution !==
             undefined
@@ -380,11 +360,12 @@ export default function SavingsGoalCard({
           </span>
         </div>
 
-        <div>
-          <span className="text-muted-foreground">
+        <div className="hfos-savings-goal-card__detail">
+          <span>
             Last updated:
           </span>{" "}
-          <span className="font-medium text-foreground">
+
+          <span className="hfos-savings-goal-card__detail-value">
             {formatDate(
               goal.updatedAt
             )}

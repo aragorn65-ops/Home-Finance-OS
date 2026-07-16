@@ -1,26 +1,14 @@
-import Widget from "../../../../shared/ui/Widget";
+import "./SavingsWidget.css";
+
 import StatCard from "../../../../shared/ui/StatCard";
+import Widget from "../../../../shared/ui/Widget";
+import formatCurrency from "../../../../shared/utils/formatCurrency";
 
 import {
   loadHousehold,
 } from "../../../household/services/householdStorage";
 
 import useSavings from "../../../savings/hooks/useSavings";
-
-function formatCurrency(
-  amount: number,
-  currency: string
-): string {
-  return new Intl.NumberFormat(
-    undefined,
-    {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }
-  ).format(amount);
-}
 
 export default function SavingsWidget() {
   const household =
@@ -37,16 +25,25 @@ export default function SavingsWidget() {
   const progressBarWidth =
     Math.min(
       Math.max(
-        summary
-          .overallProgressPercentage,
+        summary.overallProgressPercentage,
         0
       ),
       100
     );
 
+  const progressLabel =
+    new Intl.NumberFormat(
+      undefined,
+      {
+        maximumFractionDigits: 2,
+      }
+    ).format(
+      summary.overallProgressPercentage
+    );
+
   return (
     <Widget title="Savings Goals">
-      <div className="space-y-4">
+      <div className="hfos-savings-widget">
         <StatCard
           label="Total Saved"
           value={formatCurrency(
@@ -60,13 +57,13 @@ export default function SavingsWidget() {
           }`}
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border bg-white p-4">
-            <p className="text-sm text-muted-foreground">
+        <div className="hfos-savings-widget__metrics">
+          <div className="hfos-savings-widget__metric">
+            <p className="hfos-savings-widget__metric-label">
               Combined Target
             </p>
 
-            <p className="mt-1 text-lg font-semibold text-foreground">
+            <p className="hfos-savings-widget__metric-value">
               {formatCurrency(
                 summary.totalTarget,
                 currency
@@ -74,12 +71,12 @@ export default function SavingsWidget() {
             </p>
           </div>
 
-          <div className="rounded-lg border bg-white p-4">
-            <p className="text-sm text-muted-foreground">
+          <div className="hfos-savings-widget__metric">
+            <p className="hfos-savings-widget__metric-label">
               Remaining
             </p>
 
-            <p className="mt-1 text-lg font-semibold text-foreground">
+            <p className="hfos-savings-widget__metric-value">
               {formatCurrency(
                 summary.remainingAmount,
                 currency
@@ -88,29 +85,27 @@ export default function SavingsWidget() {
           </div>
         </div>
 
-        <div>
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">
+        <div className="hfos-savings-widget__progress">
+          <div className="hfos-savings-widget__progress-header">
+            <span>
               Overall Progress
             </span>
 
-            <strong className="text-foreground">
-              {new Intl.NumberFormat(
-                undefined,
-                {
-                  maximumFractionDigits: 2,
-                }
-              ).format(
-                summary
-                  .overallProgressPercentage
-              )}
-              %
+            <strong className="hfos-savings-widget__progress-value">
+              {progressLabel}%
             </strong>
           </div>
 
-          <div className="mt-2 h-3 overflow-hidden rounded-full bg-muted">
+          <div
+            className="hfos-savings-widget__progress-track"
+            role="progressbar"
+            aria-label="Overall savings progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressBarWidth}
+          >
             <div
-              className="h-full rounded-full bg-primary transition-[width]"
+              className="hfos-savings-widget__progress-bar"
               style={{
                 width:
                   `${progressBarWidth}%`,
@@ -119,12 +114,12 @@ export default function SavingsWidget() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t pt-4 text-sm">
-          <span className="text-muted-foreground">
+        <div className="hfos-savings-widget__footer">
+          <span>
             Completed Goals
           </span>
 
-          <strong className="text-foreground">
+          <strong className="hfos-savings-widget__footer-value">
             {summary.completedGoalCount}
           </strong>
         </div>

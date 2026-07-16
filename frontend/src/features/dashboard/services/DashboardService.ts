@@ -1,5 +1,9 @@
 import AccountService from "../../accounts/services/AccountService";
 
+import {
+  loadHousehold,
+} from "../../household/services/householdStorage";
+
 export interface HouseholdSummary {
   householdName: string;
   country: string;
@@ -13,19 +17,45 @@ export interface DashboardSummary {
   netWorth: number;
 }
 
+const EMPTY_HOUSEHOLD_SUMMARY:
+  HouseholdSummary = {
+    householdName:
+      "Household not configured",
+    country:
+      "Not configured",
+    currency:
+      "PHP",
+    timezone:
+      "Not configured",
+  };
+
 export default class DashboardService {
   /**
-   * Returns household information.
-   *
-   * TODO:
-   * Replace with HouseholdService in a future sprint.
+   * Returns information for the single active household.
    */
-  static getHouseholdSummary(): HouseholdSummary {
+  static getHouseholdSummary():
+    HouseholdSummary {
+    const household =
+      loadHousehold();
+
+    if (!household) {
+      return {
+        ...EMPTY_HOUSEHOLD_SUMMARY,
+      };
+    }
+
     return {
-      householdName: "The Bunsoy Family",
-      country: "Philippines",
-      currency: "PHP",
-      timezone: "Asia/Manila",
+      householdName:
+        household.householdName,
+
+      country:
+        household.country,
+
+      currency:
+        household.currency,
+
+      timezone:
+        household.timezone,
     };
   }
 
@@ -33,14 +63,17 @@ export default class DashboardService {
    * Returns the number of active accounts.
    */
   static getTotalAccounts(): number {
-    return AccountService.getActiveAccounts().length;
+    return AccountService
+      .getActiveAccounts()
+      .length;
   }
 
   /**
    * Returns the total balance of active accounts.
    */
   static getTotalAccountBalance(): number {
-    return AccountService.getTotalBalance();
+    return AccountService
+      .getTotalBalance();
   }
 
   /**
@@ -56,7 +89,8 @@ export default class DashboardService {
    * - Liabilities
    */
   static getNetWorth(): number {
-    return this.getTotalAccountBalance();
+    return this
+      .getTotalAccountBalance();
   }
 
   /**
@@ -64,10 +98,14 @@ export default class DashboardService {
    */
   static getSummary(): DashboardSummary {
     return {
-      totalAccounts: this.getTotalAccounts(),
+      totalAccounts:
+        this.getTotalAccounts(),
+
       totalAccountBalance:
         this.getTotalAccountBalance(),
-      netWorth: this.getNetWorth(),
+
+      netWorth:
+        this.getNetWorth(),
     };
   }
 }

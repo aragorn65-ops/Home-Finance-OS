@@ -211,3 +211,63 @@ Avoid technical terminology whenever possible.
 # Product Promise
 
 Follow Your Money.
+
+cd D:\HFOS\Home-Finance-OS
+
+@'
+# HFOS UI Guidelines
+
+Version: 1.1
+
+---
+
+# Product Promise
+
+Follow Your Money.
+
+---
+
+# Design Philosophy
+
+HFOS should feel calm, trustworthy, and approachable.
+
+The interface should reduce financial stress rather than add to it.
+
+Every screen should help household members understand what happened, what needs attention, and what they can do next.
+
+---
+
+# Core Principles
+
+1. Simplicity over complexity.
+
+2. White space is functional.
+
+3. Navigation should be obvious.
+
+4. Every page should have one clear primary action.
+
+5. Consistency builds trust.
+
+6. Build for everyday households.
+
+7. Financial information should be readable without requiring technical knowledge.
+
+8. Responsive behavior is part of the design, not a later enhancement.
+
+9. Accessibility is required for shared UI components.
+
+10. Private financial information must never be revealed through presentation shortcuts.
+
+---
+
+# Styling Boundary
+
+HFOS uses a controlled hybrid styling system.
+
+## Semantic CSS Tokens
+
+Semantic design tokens are defined in:
+
+```text
+frontend/src/styles/theme.css

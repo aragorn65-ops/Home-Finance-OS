@@ -11,12 +11,14 @@ export default function Widget({
   children,
 }: WidgetProps) {
   return (
-    <section className="widget">
-      <header className="widget-header">
-        <h2>{title}</h2>
+    <section className="hfos-widget">
+      <header className="hfos-widget__header">
+        <h2 className="hfos-widget__title">
+          {title}
+        </h2>
       </header>
 
-      <div className="widget-body">
+      <div className="hfos-widget__body">
         {children}
       </div>
     </section>

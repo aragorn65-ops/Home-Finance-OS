@@ -1,43 +1,92 @@
-.app-header{
-
-    height:64px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:space-between;
-
-    padding:0 24px;
-
-    background:#FFFFFF;
-
-    border-bottom:1px solid var(--border);
-
+.app-header {
+  position: relative;
+  z-index: var(--z-header);
+  display: flex;
+  min-height: var(--layout-header-height);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
-.header-actions{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:18px;
-
-    color:#64748B;
-
+.app-header__leading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.header-actions svg{
-
-    cursor:pointer;
-
-    transition:color .18s ease;
-
+.app-header__menu-button {
+  display: none;
+  width: var(--control-height-md);
+  height: var(--control-height-md);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--color-text-muted);
+  transition:
+    background-color var(--duration-normal) var(--ease-standard),
+    color var(--duration-normal) var(--ease-standard);
 }
 
-.header-actions svg:hover{
+.app-header__menu-button:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-strong);
+}
 
-    color:#2563EB;
+.app-header__menu-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 
+.app-header__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.app-header__action-button {
+  display: inline-flex;
+  width: var(--control-height-md);
+  height: var(--control-height-md);
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: inherit;
+  transition:
+    background-color var(--duration-normal) var(--ease-standard),
+    color var(--duration-normal) var(--ease-standard);
+}
+
+.app-header__action-button:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-brand-700);
+}
+
+.app-header__action-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 64rem) {
+  .app-header__menu-button {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 48rem) {
+  .app-header {
+    padding: 0 var(--layout-page-padding-mobile);
+  }
+
+  .app-header__actions {
+    gap: var(--space-1);
+  }
 }

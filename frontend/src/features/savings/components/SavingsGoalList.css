@@ -1,0 +1,38 @@
+.hfos-savings-goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.hfos-savings-goal-list__empty {
+  padding: var(--space-8);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+
+.hfos-savings-goal-list__empty-title {
+  color: var(--color-text-strong);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.hfos-savings-goal-list__empty-message {
+  max-width: var(--layout-reading-max-width);
+  margin: var(--space-2) auto 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+@media (max-width: 48rem) {
+  .hfos-savings-goal-list {
+    gap: var(--space-3);
+  }
+
+  .hfos-savings-goal-list__empty {
+    padding: var(--space-6) var(--space-4);
+  }
+}

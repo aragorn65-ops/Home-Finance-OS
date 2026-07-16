@@ -1,25 +1,27 @@
-import React from "react";
+import "./Card.css";
+import type { HTMLAttributes, ReactNode } from "react";
 
-export interface CardProps {
-  children: React.ReactNode;
-  className?: string;
+export interface CardProps
+  extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
 }
 
 export default function Card({
   children,
   className = "",
+  ...props
 }: CardProps) {
+  const classes = [
+    "hfos-card",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div
-      className={[
-        "rounded-xl",
-        "border",
-        "border-gray-200",
-        "bg-white",
-        "shadow-sm",
-        "p-6",
-        className,
-      ].join(" ")}
+      className={classes}
+      {...props}
     >
       {children}
     </div>
