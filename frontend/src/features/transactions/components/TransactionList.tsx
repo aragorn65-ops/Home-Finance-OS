@@ -1,4 +1,6 @@
 import type { Account } from "../../accounts/models/Account";
+
+import type { AllocationPaymentStatus } from "../models/ExpenseAllocation";
 import type { Transaction } from "../models/Transaction";
 
 import TransactionListItem from "./TransactionListItem";
@@ -6,6 +8,10 @@ import TransactionListItem from "./TransactionListItem";
 type TransactionListProps = {
   transactions: Transaction[];
   accounts: Account[];
+  paymentStatusByTransactionId: Record<
+    string,
+    AllocationPaymentStatus | undefined
+  >;
   onView?: (transaction: Transaction) => void;
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (transaction: Transaction) => void;
@@ -14,6 +20,7 @@ type TransactionListProps = {
 export default function TransactionList({
   transactions,
   accounts,
+  paymentStatusByTransactionId,
   onView,
   onEdit,
   onDelete,
@@ -51,6 +58,11 @@ export default function TransactionList({
         <TransactionListItem
           key={transaction.id}
           transaction={transaction}
+          paymentStatus={
+            paymentStatusByTransactionId[
+              transaction.id
+            ]
+          }
           sourceAccountName={getAccountName(
             transaction.sourceAccountId
           )}

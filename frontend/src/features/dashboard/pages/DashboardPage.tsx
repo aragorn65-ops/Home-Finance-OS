@@ -1,9 +1,11 @@
 import PageHeader from "../../../shared/ui/PageHeader";
 
 import DashboardGrid from "../components/DashboardGrid";
-import { dashboardWidgets } from "../widgetRegistry";
+import DashboardLayoutService from "../services/DashboardLayoutService";
 
 export default function DashboardPage() {
+  const widgets = DashboardLayoutService.getWidgets();
+
   return (
     <>
       <PageHeader
@@ -12,9 +14,9 @@ export default function DashboardPage() {
       />
 
       <DashboardGrid>
-        {dashboardWidgets.map(({ id, component: Component }) => (
+        {widgets.map(({ id, component: Component }) => (
           <Component key={id} />
-       ))}
+        ))}
       </DashboardGrid>
     </>
   );

@@ -173,7 +173,8 @@ export default class UtilityBillValidator {
     const hasSharedMember =
       form.memberShares.some(
         (memberShare) =>
-          memberShare.sharesRemainder
+          memberShare.sharesRemainder &&
+          memberShare.fixedCompensationAmount === 0
       );
 
     if (!hasSharedMember) {
@@ -288,6 +289,13 @@ export default class UtilityBillValidator {
       "boolean"
     ) {
       return "Every member must specify whether they share the remaining bill.";
+    }
+
+    if (
+      memberShare.fixedCompensationAmount > 0 &&
+      memberShare.sharesRemainder
+    ) {
+      return "A member may receive fixed compensation or share the remaining bill, but not both.";
     }
 
     return undefined;

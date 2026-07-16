@@ -328,6 +328,14 @@ export default function SettlementsPage() {
     )?.name;
   };
 
+  const outstandingAllocations =
+    household
+      ? SettlementAllocationService
+          .getOutstandingAllocations(
+            household.id
+          )
+      : [];
+
   const formAllocationOptions =
     household
       ? dialogMode === "edit" &&
@@ -337,10 +345,7 @@ export default function SettlementsPage() {
               household.id,
               selectedSettlement.id
             )
-        : SettlementAllocationService
-            .getOutstandingAllocations(
-              household.id
-            )
+        : outstandingAllocations
       : [];
 
   const selectedApplicationDetails =
@@ -392,6 +397,9 @@ export default function SettlementsPage() {
             memberBalances
           }
           members={members}
+          allocations={
+            outstandingAllocations
+          }
         />
 
         <WhoOwesWhomSummary

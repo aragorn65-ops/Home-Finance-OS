@@ -53,7 +53,7 @@ export default function TransactionDetails({
     <div className="space-y-6 rounded-lg border bg-white p-6">
       <div className="border-b pb-5">
         <p className="text-sm font-medium text-muted-foreground">
-          Total Grocery
+          Total Transaction
         </p>
 
         <p className="mt-1 text-3xl font-semibold text-foreground">
@@ -83,6 +83,28 @@ export default function TransactionDetails({
             {transaction.id}
           </dd>
         </div>
+
+        <div>
+          <dt className="text-sm font-medium text-muted-foreground">
+            Category
+          </dt>
+
+          <dd className="mt-1 text-sm text-foreground">
+            {transaction.category ||
+              "Uncategorized"}
+          </dd>
+        </div>
+
+        <div>
+          <dt className="text-sm font-medium text-muted-foreground">
+            Description
+          </dt>
+
+          <dd className="mt-1 text-sm text-foreground">
+            {transaction.description ||
+              "No description"}
+          </dd>
+        </div>
       </dl>
 
       <div className="space-y-4">
@@ -92,8 +114,8 @@ export default function TransactionDetails({
           </h3>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Shared amount and personal grocery items
-            assigned to each member.
+            Shared amount and personal items assigned to
+            each participating member.
           </p>
         </div>
 
@@ -154,7 +176,7 @@ export default function TransactionDetails({
                         </h4>
 
                         <p className="mt-1 text-sm text-muted-foreground">
-                          Member grocery allocation
+                          Member expense allocation
                         </p>
                       </div>
 
@@ -249,6 +271,90 @@ export default function TransactionDetails({
           </div>
         )}
       </div>
+
+      <section className="space-y-4 border-t pt-5">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">
+            Receipts and Bills
+          </h3>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Supporting documents saved with this
+            transaction.
+          </p>
+        </div>
+
+        {(transaction.attachments?.length ??
+          0) === 0 ? (
+          <div className="rounded-md border border-dashed p-5 text-center">
+            <p className="text-sm text-muted-foreground">
+              No receipt or bill attached.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {transaction.attachments?.map(
+              (attachment) => (
+                <article
+                  key={attachment.id}
+                  className="overflow-hidden rounded-lg border"
+                >
+                  <div className="flex h-44 items-center justify-center bg-muted/30">
+                    {attachment.mimeType.startsWith(
+                      "image/"
+                    ) ? (
+                      <img
+                        src={
+                          attachment.dataUrl
+                        }
+                        alt={
+                          attachment.fileName
+                        }
+                        className="h-full w-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-lg font-semibold text-muted-foreground">
+                        PDF
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-3 p-4">
+                    <div>
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {
+                          attachment.fileName
+                        }
+                      </p>
+
+                      <p className="mt-1 text-xs capitalize text-muted-foreground">
+                        {attachment.category}
+                        {" · "}
+                        {(
+                          attachment.sizeBytes /
+                          1024
+                        ).toFixed(1)}
+                        {" KB"}
+                      </p>
+                    </div>
+
+                    <a
+                      href={
+                        attachment.dataUrl
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                    >
+                      Open Attachment
+                    </a>
+                  </div>
+                </article>
+              )
+            )}
+          </div>
+        )}
+      </section>
 
       {(onClose || onEdit) && (
         <div className="flex flex-wrap justify-end gap-3 border-t pt-5">

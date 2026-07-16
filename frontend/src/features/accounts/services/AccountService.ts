@@ -178,6 +178,16 @@ export default class AccountService {
     const createdAccount =
       AccountRepository.create(account);
 
+    if (!createdAccount) {
+      return OperationResults.failure<Account>(
+        {
+          general:
+            "Account could not be saved.",
+        },
+        "Unable to create account."
+      );
+    }
+
     return OperationResults.success(
       createdAccount,
       "Account created successfully."
@@ -288,6 +298,8 @@ export default class AccountService {
    *
    * Liability:
    * Debit decreases the outstanding amount owed.
+   *
+   * Normal operations require an active account.
    */
   static debitAccount(
     id: string,
@@ -327,6 +339,8 @@ export default class AccountService {
    *
    * Liability:
    * Credit increases the outstanding amount owed.
+   *
+   * Normal operations require an active account.
    */
   static creditAccount(
     id: string,
@@ -355,6 +369,86 @@ export default class AccountService {
       account,
       balanceChange,
       "Account credited successfully."
+    );
+  }
+
+  /**
+   * Applies a historical accounting debit.
+   *
+   * This method is reserved for reversing or correcting
+   * an already-recorded transaction or settlement.
+   *
+   * It may update an inactive account, but it does not
+   * reactivate that account.
+   */
+  static debitAccountForHistoricalAdjustment(
+    id: string,
+    amount: number
+  ): OperationResult<Account> {
+    const account =
+      AccountRepository.findById(id);
+
+    if (!account) {
+      return this.accountNotFoundResult();
+    }
+
+    const amountError =
+      this.validateOperationAmount(amount);
+
+    if (amountError) {
+      return amountError;
+    }
+
+    const balanceChange =
+      account.accountClass === "asset"
+        ? amount
+        : -amount;
+
+    return this.applyBalanceChange(
+      account,
+      balanceChange,
+      "Historical account debit applied successfully.",
+      true
+    );
+  }
+
+  /**
+   * Applies a historical accounting credit.
+   *
+   * This method is reserved for reversing or correcting
+   * an already-recorded transaction or settlement.
+   *
+   * It may update an inactive account, but it does not
+   * reactivate that account.
+   */
+  static creditAccountForHistoricalAdjustment(
+    id: string,
+    amount: number
+  ): OperationResult<Account> {
+    const account =
+      AccountRepository.findById(id);
+
+    if (!account) {
+      return this.accountNotFoundResult();
+    }
+
+    const amountError =
+      this.validateOperationAmount(amount);
+
+    if (amountError) {
+      return amountError;
+    }
+
+    const balanceChange =
+      account.accountClass === "asset"
+        ? -amount
+        : amount;
+
+    return this.applyBalanceChange(
+      account,
+      balanceChange,
+      "Historical account credit applied successfully.",
+      true
     );
   }
 
@@ -434,13 +528,20 @@ export default class AccountService {
 
   /**
    * Applies a raw stored-balance change.
+   *
+   * Inactive accounts remain protected unless an explicit
+   * historical adjustment requests otherwise.
    */
   private static applyBalanceChange(
     account: Account,
     balanceChange: number,
-    successMessage: string
+    successMessage: string,
+    allowInactive = false
   ): OperationResult<Account> {
-    if (!account.isActive) {
+    if (
+      !account.isActive &&
+      !allowInactive
+    ) {
       return OperationResults.failure<Account>(
         {
           accountId: "Account is inactive.",

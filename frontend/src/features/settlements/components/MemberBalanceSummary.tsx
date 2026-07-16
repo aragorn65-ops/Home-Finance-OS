@@ -5,9 +5,12 @@ import type {
   MemberSettlementPosition,
 } from "../models/MemberSettlementBalance";
 
+import type { SettlementAllocationOption } from "../models/SettlementAllocationOption";
+
 type MemberBalanceSummaryProps = {
   balances: MemberSettlementBalance[];
   members: HouseholdMember[];
+  allocations: SettlementAllocationOption[];
 };
 
 const amountFormatter =
@@ -15,6 +18,14 @@ const amountFormatter =
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+function formatAmount(
+  amount: number
+): string {
+  return amountFormatter.format(
+    amount
+  );
+}
 
 function getPositionLabel(
   position: MemberSettlementPosition
@@ -52,9 +63,44 @@ function getPositionClasses(
   }
 }
 
+function getPaymentStatusLabel(
+  status:
+    SettlementAllocationOption["paymentStatus"]
+): string {
+  switch (status) {
+    case "partially-paid":
+      return "Partially Paid";
+
+    case "paid":
+      return "Paid";
+
+    case "unpaid":
+    default:
+      return "Unpaid";
+  }
+}
+
+function getPaymentStatusClasses(
+  status:
+    SettlementAllocationOption["paymentStatus"]
+): string {
+  switch (status) {
+    case "paid":
+      return "bg-green-50 text-green-700";
+
+    case "partially-paid":
+      return "bg-amber-50 text-amber-700";
+
+    case "unpaid":
+    default:
+      return "bg-red-50 text-red-700";
+  }
+}
+
 export default function MemberBalanceSummary({
   balances,
   members,
+  allocations,
 }: MemberBalanceSummaryProps) {
   const getMemberName = (
     memberId: string
@@ -76,8 +122,8 @@ export default function MemberBalanceSummary({
         </h2>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          Net reimbursement position for each household
-          member.
+          Net reimbursement position and itemized
+          outstanding expenses for each household member.
         </p>
       </div>
 
@@ -93,7 +139,7 @@ export default function MemberBalanceSummary({
           </p>
         </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-2">
           {balances.map((balance) => {
             const positionLabel =
               getPositionLabel(
@@ -105,22 +151,27 @@ export default function MemberBalanceSummary({
                 balance.position
               );
 
-            const formattedReceive =
-              amountFormatter.format(
-                balance.amountToReceive
+            const memberPayables =
+              allocations.filter(
+                (allocation) =>
+                  allocation.fromMemberId ===
+                    balance.memberId &&
+                  allocation.outstandingAmount >
+                    0
               );
 
-            const formattedPay =
-              amountFormatter.format(
-                balance.amountToPay
+            const memberReceivables =
+              allocations.filter(
+                (allocation) =>
+                  allocation.toMemberId ===
+                    balance.memberId &&
+                  allocation.outstandingAmount >
+                    0
               );
 
-            const formattedNet =
-              amountFormatter.format(
-                Math.abs(
-                  balance.netPosition
-                )
-              );
+            const itemCount =
+              memberPayables.length +
+              memberReceivables.length;
 
             return (
               <article
@@ -148,7 +199,9 @@ export default function MemberBalanceSummary({
                     </dt>
 
                     <dd className="font-medium text-foreground">
-                      {formattedReceive}
+                      {formatAmount(
+                        balance.amountToReceive
+                      )}
                     </dd>
                   </div>
 
@@ -158,7 +211,9 @@ export default function MemberBalanceSummary({
                     </dt>
 
                     <dd className="font-medium text-foreground">
-                      {formattedPay}
+                      {formatAmount(
+                        balance.amountToPay
+                      )}
                     </dd>
                   </div>
 
@@ -173,10 +228,213 @@ export default function MemberBalanceSummary({
                         : balance.netPosition > 0
                           ? "+"
                           : ""}
-                      {formattedNet}
+                      {formatAmount(
+                        Math.abs(
+                          balance.netPosition
+                        )
+                      )}
                     </dd>
                   </div>
                 </dl>
+
+                <details className="mt-4 border-t pt-4">
+                  <summary className="cursor-pointer text-sm font-medium text-foreground">
+                    View itemized balances
+                    {itemCount > 0
+                      ? ` (${itemCount})`
+                      : ""}
+                  </summary>
+
+                  {itemCount === 0 ? (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      No unpaid or partially paid items.
+                    </p>
+                  ) : (
+                    <div className="mt-4 space-y-5">
+                      {memberPayables.length >
+                        0 && (
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="text-sm font-semibold text-foreground">
+                              Items to Pay
+                            </h4>
+
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              These expenses may be paid
+                              fully or partially when
+                              recording a settlement.
+                            </p>
+                          </div>
+
+                          {memberPayables.map(
+                            (allocation) => (
+                              <div
+                                key={
+                                  allocation.expenseAllocationId
+                                }
+                                className="rounded-md border p-3"
+                              >
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-medium text-foreground">
+                                      {allocation.description ||
+                                        allocation.category ||
+                                        "Shared expense"}
+                                    </p>
+
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                      {allocation.transactionDate.toLocaleDateString()}
+                                      {" · "}
+                                      Owed to{" "}
+                                      {getMemberName(
+                                        allocation.toMemberId
+                                      )}
+                                    </p>
+                                  </div>
+
+                                  <span
+                                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${getPaymentStatusClasses(
+                                      allocation.paymentStatus
+                                    )}`}
+                                  >
+                                    {getPaymentStatusLabel(
+                                      allocation.paymentStatus
+                                    )}
+                                  </span>
+                                </div>
+
+                                <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+                                  <div>
+                                    <dt className="text-muted-foreground">
+                                      Original
+                                    </dt>
+
+                                    <dd className="mt-1 font-medium text-foreground">
+                                      {formatAmount(
+                                        allocation.allocatedAmount
+                                      )}
+                                    </dd>
+                                  </div>
+
+                                  <div>
+                                    <dt className="text-muted-foreground">
+                                      Paid
+                                    </dt>
+
+                                    <dd className="mt-1 font-medium text-foreground">
+                                      {formatAmount(
+                                        allocation.paidAmount
+                                      )}
+                                    </dd>
+                                  </div>
+
+                                  <div>
+                                    <dt className="text-muted-foreground">
+                                      Remaining
+                                    </dt>
+
+                                    <dd className="mt-1 font-semibold text-foreground">
+                                      {formatAmount(
+                                        allocation.outstandingAmount
+                                      )}
+                                    </dd>
+                                  </div>
+                                </dl>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {memberReceivables.length >
+                        0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-semibold text-foreground">
+                            Items to Receive
+                          </h4>
+
+                          {memberReceivables.map(
+                            (allocation) => (
+                              <div
+                                key={
+                                  allocation.expenseAllocationId
+                                }
+                                className="rounded-md border p-3"
+                              >
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-medium text-foreground">
+                                      {allocation.description ||
+                                        allocation.category ||
+                                        "Shared expense"}
+                                    </p>
+
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                      {allocation.transactionDate.toLocaleDateString()}
+                                      {" · "}
+                                      Owed by{" "}
+                                      {getMemberName(
+                                        allocation.fromMemberId
+                                      )}
+                                    </p>
+                                  </div>
+
+                                  <span
+                                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${getPaymentStatusClasses(
+                                      allocation.paymentStatus
+                                    )}`}
+                                  >
+                                    {getPaymentStatusLabel(
+                                      allocation.paymentStatus
+                                    )}
+                                  </span>
+                                </div>
+
+                                <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+                                  <div>
+                                    <dt className="text-muted-foreground">
+                                      Original
+                                    </dt>
+
+                                    <dd className="mt-1 font-medium text-foreground">
+                                      {formatAmount(
+                                        allocation.allocatedAmount
+                                      )}
+                                    </dd>
+                                  </div>
+
+                                  <div>
+                                    <dt className="text-muted-foreground">
+                                      Received
+                                    </dt>
+
+                                    <dd className="mt-1 font-medium text-foreground">
+                                      {formatAmount(
+                                        allocation.paidAmount
+                                      )}
+                                    </dd>
+                                  </div>
+
+                                  <div>
+                                    <dt className="text-muted-foreground">
+                                      Remaining
+                                    </dt>
+
+                                    <dd className="mt-1 font-semibold text-foreground">
+                                      {formatAmount(
+                                        allocation.outstandingAmount
+                                      )}
+                                    </dd>
+                                  </div>
+                                </dl>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </details>
               </article>
             );
           })}

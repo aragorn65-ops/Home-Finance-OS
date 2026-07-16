@@ -28,6 +28,7 @@ import useTransactions from "../hooks/useTransactions";
 
 import TransactionService from "../services/TransactionService";
 
+import type { AllocationPaymentStatus } from "../models/ExpenseAllocation";
 import type { Transaction } from "../models/Transaction";
 
 import type {
@@ -144,6 +145,18 @@ function mapTransactionToForm(
             "",
         })
       ),
+
+    attachments:
+      transaction.attachments?.map(
+        (attachment) => ({
+          ...attachment,
+
+          createdAt:
+            new Date(
+              attachment.createdAt
+            ),
+        })
+      ) ?? [],
 
     isActive:
       transaction.isActive,
@@ -323,6 +336,28 @@ export default function TransactionsPage() {
         household?.id
     );
 
+  const paymentStatusByTransactionId =
+    householdTransactions.reduce<
+      Record<
+        string,
+        AllocationPaymentStatus | undefined
+      >
+    >(
+      (
+        statuses,
+        transaction
+      ) => {
+        statuses[transaction.id] =
+          TransactionService
+            .getExpensePaymentStatus(
+              transaction.id
+            );
+
+        return statuses;
+      },
+      {}
+    );
+
   const isFormDialogOpen =
     dialogMode === "create" ||
     dialogMode === "edit";
@@ -341,6 +376,9 @@ export default function TransactionsPage() {
             householdTransactions
           }
           accounts={accounts}
+          paymentStatusByTransactionId={
+            paymentStatusByTransactionId
+          }
           onView={
             handleViewTransaction
           }

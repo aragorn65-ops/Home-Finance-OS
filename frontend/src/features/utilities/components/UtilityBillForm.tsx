@@ -1,8 +1,15 @@
 import {
   useMemo,
   useState,
+  type ChangeEvent,
+  type ClipboardEvent,
   type ReactNode,
 } from "react";
+
+import type {
+  StoredAttachment,
+  StoredAttachmentCategory,
+} from "../../../shared/models/StoredAttachment";
 
 import type {
   UtilityApplianceUsageForm,
@@ -30,6 +37,7 @@ export interface UtilityMemberOption {
 export interface UtilityAccountOption {
   id: string;
   name: string;
+  ownerMemberId: string;
 }
 
 interface UtilityBillFormProps {
@@ -47,6 +55,103 @@ interface UtilityBillFormProps {
   ) => void;
 
   onCancel?: () => void;
+}
+
+const acceptedAttachmentMimeTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+] as const;
+
+const maximumAttachmentCount = 3;
+
+const maximumAttachmentSizeBytes =
+  750 * 1024;
+
+function isAcceptedAttachmentMimeType(
+  mimeType: string
+): boolean {
+  return acceptedAttachmentMimeTypes.includes(
+    mimeType as
+      typeof acceptedAttachmentMimeTypes[number]
+  );
+}
+
+function getDefaultAttachmentCategory(
+  fileName: string
+): StoredAttachmentCategory {
+  const normalizedName =
+    fileName.toLowerCase();
+
+  if (
+    normalizedName.includes(
+      "receipt"
+    )
+  ) {
+    return "receipt";
+  }
+
+  return "bill";
+}
+
+function formatFileSize(
+  sizeBytes: number
+): string {
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`;
+  }
+
+  return `${(
+    sizeBytes /
+    1024
+  ).toFixed(1)} KB`;
+}
+
+function readFileAsDataUrl(
+  file: File
+): Promise<string> {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+      const reader =
+        new FileReader();
+
+      reader.onload = () => {
+        if (
+          typeof reader.result ===
+          "string"
+        ) {
+          resolve(
+            reader.result
+          );
+
+          return;
+        }
+
+        reject(
+          new Error(
+            "The selected attachment could not be read."
+          )
+        );
+      };
+
+      reader.onerror = () => {
+        reject(
+          reader.error ??
+            new Error(
+              "The selected attachment could not be read."
+            )
+        );
+      };
+
+      reader.readAsDataURL(
+        file
+      );
+    }
+  );
 }
 
 export default function UtilityBillForm({
@@ -92,6 +197,22 @@ export default function UtilityBillForm({
         ),
       [members]
     );
+
+  const availableAccounts =
+    useMemo(() => {
+      if (!form.paidByMemberId) {
+        return [];
+      }
+
+      return accounts.filter(
+        (account) =>
+          account.ownerMemberId ===
+          form.paidByMemberId
+      );
+    }, [
+      accounts,
+      form.paidByMemberId,
+    ]);
 
   const updateField = <
     Key extends keyof UtilityBillFormData,
@@ -185,6 +306,258 @@ export default function UtilityBillForm({
           index !== applianceIndex
       )
     );
+  };
+
+  const setAttachmentError = (
+    attachmentError: string
+  ): void => {
+    setErrors((current) => ({
+      ...current,
+
+      attachments:
+        attachmentError,
+    }));
+
+    setMessage(
+      "Unable to add attachment."
+    );
+
+    setPreviewResult(
+      undefined
+    );
+  };
+
+  const clearAttachmentError =
+    (): void => {
+      setErrors((current) => {
+        if (!current.attachments) {
+          return current;
+        }
+
+        const nextErrors = {
+          ...current,
+        };
+
+        delete nextErrors.attachments;
+
+        return nextErrors;
+      });
+
+      setMessage("");
+  };
+
+  const addAttachmentFiles =
+    async (
+      files: File[]
+    ): Promise<void> => {
+      if (files.length === 0) {
+        return;
+      }
+
+      if (
+        form.attachments.length +
+          files.length >
+        maximumAttachmentCount
+      ) {
+        setAttachmentError(
+          `Add no more than ${maximumAttachmentCount} attachments.`
+        );
+
+        return;
+      }
+
+      for (
+        const file of files
+      ) {
+        if (
+          !isAcceptedAttachmentMimeType(
+            file.type
+          )
+        ) {
+          setAttachmentError(
+            "Attachments must be JPEG, PNG, WebP, or PDF files."
+          );
+
+          return;
+        }
+
+        if (
+          file.size >
+          maximumAttachmentSizeBytes
+        ) {
+          setAttachmentError(
+            `${file.name} exceeds the 750 KB attachment limit.`
+          );
+
+          return;
+        }
+      }
+
+      try {
+        const attachments:
+          StoredAttachment[] =
+          [];
+
+        for (
+          const file of files
+        ) {
+          const dataUrl =
+            await readFileAsDataUrl(
+              file
+            );
+
+          attachments.push({
+            id:
+              crypto.randomUUID(),
+
+            category:
+              getDefaultAttachmentCategory(
+                file.name
+              ),
+
+            fileName:
+              file.name,
+
+            mimeType:
+              file.type,
+
+            sizeBytes:
+              file.size,
+
+            dataUrl,
+
+            createdAt:
+              new Date(),
+          });
+        }
+
+        setForm((current) => ({
+          ...current,
+
+          attachments: [
+            ...current.attachments,
+            ...attachments,
+          ],
+        }));
+
+        clearAttachmentError();
+        setPreviewResult(
+          undefined
+        );
+      } catch (
+        error
+      ) {
+        setAttachmentError(
+          error instanceof Error
+            ? error.message
+            : "The selected attachment could not be read."
+        );
+      }
+    };
+
+  const handleAttachmentInputChange =
+    async (
+      event:
+        ChangeEvent<HTMLInputElement>
+    ): Promise<void> => {
+      const files =
+        Array.from(
+          event.target.files ??
+            []
+        );
+
+      await addAttachmentFiles(
+        files
+      );
+
+      event.target.value =
+        "";
+    };
+
+  const handleAttachmentPaste =
+    async (
+      event:
+        ClipboardEvent<HTMLDivElement>
+    ): Promise<void> => {
+      const imageFiles =
+        Array.from(
+          event.clipboardData.items
+        )
+          .filter(
+            (item) =>
+              item.kind ===
+                "file" &&
+              item.type.startsWith(
+                "image/"
+              )
+          )
+          .map(
+            (item) =>
+              item.getAsFile()
+          )
+          .filter(
+            (
+              file
+            ): file is File =>
+              Boolean(file)
+          );
+
+      if (
+        imageFiles.length === 0
+      ) {
+        setAttachmentError(
+          "Clipboard does not contain a supported image."
+        );
+
+        return;
+      }
+
+      event.preventDefault();
+
+      await addAttachmentFiles(
+        imageFiles
+      );
+    };
+
+  const updateAttachmentCategory = (
+    attachmentId: string,
+    category:
+      StoredAttachmentCategory
+  ): void => {
+    setForm((current) => ({
+      ...current,
+
+      attachments:
+        current.attachments.map(
+          (attachment) =>
+            attachment.id ===
+            attachmentId
+              ? {
+                  ...attachment,
+                  category,
+                }
+              : attachment
+        ),
+    }));
+
+    clearAttachmentError();
+  };
+
+  const removeAttachment = (
+    attachmentId: string
+  ): void => {
+    setForm((current) => ({
+      ...current,
+
+      attachments:
+        current.attachments.filter(
+          (attachment) =>
+            attachment.id !==
+            attachmentId
+        ),
+    }));
+
+    clearAttachmentError();
   };
 
   const calculatePreview =
@@ -426,6 +799,10 @@ export default function UtilityBillForm({
                     sharesRemainder={
                       memberShare.sharesRemainder
                     }
+                    hasFixedCompensation={
+                      memberShare.fixedCompensationAmount >
+                      0
+                    }
                   />
                 </div>
 
@@ -502,7 +879,7 @@ export default function UtilityBillForm({
 
                   <Field
                     label="Fixed Compensation"
-                    helper="Additional direct amount for usage not covered by the submeter."
+                    helper="A member with fixed compensation is excluded from the equal share of the remaining bill."
                   >
                     <input
                       className={inputClassName}
@@ -513,17 +890,24 @@ export default function UtilityBillForm({
                         memberShare.fixedCompensationAmount ||
                         ""
                       }
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        const fixedCompensationAmount =
+                          parseNumber(
+                            event.target.value
+                          );
+
                         updateMemberShare(
                           memberIndex,
                           {
-                            fixedCompensationAmount:
-                              parseNumber(
-                                event.target.value
-                              ),
+                            fixedCompensationAmount,
+
+                            sharesRemainder:
+                              fixedCompensationAmount > 0
+                                ? false
+                                : memberShare.sharesRemainder,
                           }
-                        )
-                      }
+                        );
+                      }}
                       placeholder="0.00"
                     />
                   </Field>
@@ -535,16 +919,22 @@ export default function UtilityBillForm({
                         checked={
                           memberShare.sharesRemainder
                         }
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const sharesRemainder =
+                            event.target.checked;
+
                           updateMemberShare(
                             memberIndex,
                             {
-                              sharesRemainder:
-                                event.target
-                                  .checked,
+                              sharesRemainder,
+
+                              fixedCompensationAmount:
+                                sharesRemainder
+                                  ? 0
+                                  : memberShare.fixedCompensationAmount,
                             }
-                          )
-                        }
+                          );
+                        }}
                       />
 
                       Share remaining bill equally
@@ -842,6 +1232,173 @@ export default function UtilityBillForm({
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
+            Provider Bill or Receipt
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Upload the provider bill, payment receipt, or
+            paste a receipt image from the clipboard.
+          </p>
+        </header>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center transition hover:bg-slate-100">
+            <span className="text-sm font-semibold text-slate-800">
+              Upload bill or receipt
+            </span>
+
+            <span className="mt-1 text-xs text-slate-500">
+              JPEG, PNG, WebP, or PDF — up to 750 KB
+            </span>
+
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              multiple
+              className="sr-only"
+              onChange={
+                handleAttachmentInputChange
+              }
+            />
+          </label>
+
+          <div
+            tabIndex={0}
+            role="button"
+            onPaste={
+              handleAttachmentPaste
+            }
+            className="flex min-h-28 cursor-text flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center outline-none transition hover:bg-slate-100 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          >
+            <span className="text-sm font-semibold text-slate-800">
+              Paste receipt image
+            </span>
+
+            <span className="mt-1 text-xs text-slate-500">
+              Click here, then press Ctrl + V
+            </span>
+          </div>
+        </div>
+
+        {form.attachments.length ===
+        0 ? (
+          <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm text-slate-500">
+            No provider bill or receipt attached.
+          </div>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {form.attachments.map(
+              (attachment) => (
+                <article
+                  key={
+                    attachment.id
+                  }
+                  className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 md:grid-cols-[6rem_minmax(0,1fr)_auto]"
+                >
+                  <div className="flex h-24 items-center justify-center overflow-hidden rounded-lg bg-white">
+                    {attachment.mimeType.startsWith(
+                      "image/"
+                    ) ? (
+                      <img
+                        src={
+                          attachment.dataUrl
+                        }
+                        alt={
+                          attachment.fileName
+                        }
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-semibold text-slate-500">
+                        PDF
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 space-y-3">
+                    <div>
+                      <p className="truncate text-sm font-semibold text-slate-900">
+                        {
+                          attachment.fileName
+                        }
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {formatFileSize(
+                          attachment.sizeBytes
+                        )}
+                      </p>
+                    </div>
+
+                    <Field label="Document Type">
+                      <select
+                        className={inputClassName}
+                        value={
+                          attachment.category
+                        }
+                        onChange={(event) =>
+                          updateAttachmentCategory(
+                            attachment.id,
+                            event.target
+                              .value as StoredAttachmentCategory
+                          )
+                        }
+                      >
+                        <option value="bill">
+                          Bill
+                        </option>
+
+                        <option value="receipt">
+                          Receipt
+                        </option>
+
+                        <option value="other">
+                          Other
+                        </option>
+                      </select>
+                    </Field>
+                  </div>
+
+                  <div className="flex gap-2 md:flex-col">
+                    <a
+                      href={
+                        attachment.dataUrl
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className={secondaryButtonClassName}
+                    >
+                      Open
+                    </a>
+
+                    <button
+                      className={dangerButtonClassName}
+                      type="button"
+                      onClick={() =>
+                        removeAttachment(
+                          attachment.id
+                        )
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </article>
+              )
+            )}
+          </div>
+        )}
+
+        {errors.attachments && (
+          <p className="mt-3 text-sm text-red-700">
+            {errors.attachments}
+          </p>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <header className="mb-6">
+          <h2 className="text-xl font-semibold text-slate-900">
             Payment and Transaction Details
           </h2>
 
@@ -858,12 +1415,21 @@ export default function UtilityBillForm({
               value={
                 form.paidByMemberId
               }
-              onChange={(event) =>
-                updateField(
-                  "paidByMemberId",
-                  event.target.value
-                )
-              }
+              onChange={(event) => {
+                const paidByMemberId =
+                  event.target.value;
+
+                setForm(
+                  (current) => ({
+                    ...current,
+
+                    paidByMemberId,
+                    sourceAccountId: "",
+                  })
+                );
+
+                clearPreview();
+              }}
             >
               <option value="">
                 Select payer
@@ -887,9 +1453,12 @@ export default function UtilityBillForm({
             helper="Optional."
           >
             <select
-              className={inputClassName}
+              className={`${inputClassName} disabled:cursor-not-allowed disabled:opacity-60`}
               value={
                 form.sourceAccountId
+              }
+              disabled={
+                !form.paidByMemberId
               }
               onChange={(event) =>
                 updateField(
@@ -899,10 +1468,12 @@ export default function UtilityBillForm({
               }
             >
               <option value="">
-                No account
+                {form.paidByMemberId
+                  ? "No account"
+                  : "Select payer first"}
               </option>
 
-              {accounts.map(
+              {availableAccounts.map(
                 (account) => (
                   <option
                     key={account.id}
@@ -1174,16 +1745,27 @@ function EmptyState({
 
 interface ParticipationBadgeProps {
   sharesRemainder: boolean;
+  hasFixedCompensation: boolean;
 }
 
 function ParticipationBadge({
   sharesRemainder,
+  hasFixedCompensation,
 }: ParticipationBadgeProps) {
+  let label =
+    "Direct Usage Only";
+
+  if (hasFixedCompensation) {
+    label =
+      "Fixed Compensation";
+  } else if (sharesRemainder) {
+    label =
+      "Shares Remaining Bill";
+  }
+
   return (
     <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
-      {sharesRemainder
-        ? "Shares Remaining Bill"
-        : "Direct Usage Only"}
+      {label}
     </span>
   );
 }
@@ -1251,6 +1833,18 @@ function cloneForm(
           ...usage,
         })
       ),
+
+    attachments:
+      form.attachments?.map(
+        (attachment) => ({
+          ...attachment,
+
+          createdAt:
+            new Date(
+              attachment.createdAt
+            ),
+        })
+      ) ?? [],
   };
 }
 

@@ -30,9 +30,10 @@ export default class ExpenseAllocationService {
   static getByTransactionId(
     transactionId: string
   ): ExpenseAllocation[] {
-    return ExpenseAllocationRepository.findByTransactionId(
-      transactionId
-    );
+    return ExpenseAllocationRepository
+      .findByTransactionId(
+        transactionId
+      );
   }
 
   /**
@@ -41,9 +42,10 @@ export default class ExpenseAllocationService {
   static getByMemberId(
     memberId: string
   ): ExpenseAllocation[] {
-    return ExpenseAllocationRepository.findByMemberId(
-      memberId
-    );
+    return ExpenseAllocationRepository
+      .findByMemberId(
+        memberId
+      );
   }
 
   /**
@@ -80,7 +82,9 @@ export default class ExpenseAllocationService {
     const allocations =
       buildResult.data ?? [];
 
-    if (allocations.length === 0) {
+    if (
+      allocations.length === 0
+    ) {
       return OperationResults.success(
         [],
         "No expense allocations were required."
@@ -88,9 +92,22 @@ export default class ExpenseAllocationService {
     }
 
     const createdAllocations =
-      ExpenseAllocationRepository.createMany(
-        allocations
+      ExpenseAllocationRepository
+        .createMany(
+          allocations
+        );
+
+    if (!createdAllocations) {
+      return OperationResults.failure<
+        ExpenseAllocation[]
+      >(
+        {
+          allocations:
+            "Expense allocations could not be saved.",
+        },
+        "Unable to create expense allocations."
       );
+    }
 
     return OperationResults.success(
       createdAllocations,
@@ -133,10 +150,23 @@ export default class ExpenseAllocationService {
       buildResult.data ?? [];
 
     const savedAllocations =
-      ExpenseAllocationRepository.replaceByTransactionId(
-        transactionId,
-        allocations
+      ExpenseAllocationRepository
+        .replaceByTransactionId(
+          transactionId,
+          allocations
+        );
+
+    if (!savedAllocations) {
+      return OperationResults.failure<
+        ExpenseAllocation[]
+      >(
+        {
+          allocations:
+            "Expense allocations could not be saved.",
+        },
+        "Unable to update expense allocations."
       );
+    }
 
     return OperationResults.success(
       savedAllocations,
@@ -151,11 +181,14 @@ export default class ExpenseAllocationService {
     transactionId: string
   ): OperationResult<boolean> {
     const existing =
-      ExpenseAllocationRepository.findByTransactionId(
-        transactionId
-      );
+      ExpenseAllocationRepository
+        .findByTransactionId(
+          transactionId
+        );
 
-    if (existing.length === 0) {
+    if (
+      existing.length === 0
+    ) {
       return OperationResults.success(
         true,
         "No expense allocations required deletion."
@@ -163,12 +196,15 @@ export default class ExpenseAllocationService {
     }
 
     const deleted =
-      ExpenseAllocationRepository.deleteByTransactionId(
-        transactionId
-      );
+      ExpenseAllocationRepository
+        .deleteByTransactionId(
+          transactionId
+        );
 
     if (!deleted) {
-      return OperationResults.failure<boolean>(
+      return OperationResults.failure<
+        boolean
+      >(
         {
           allocations:
             "Expense allocations could not be deleted.",
@@ -194,7 +230,9 @@ export default class ExpenseAllocationService {
     transactionAmount: number,
     forms: ExpenseAllocationForm[]
   ): OperationResult<ExpenseAllocation[]> {
-    if (!transactionId.trim()) {
+    if (
+      !transactionId.trim()
+    ) {
       return OperationResults.failure<
         ExpenseAllocation[]
       >(
@@ -223,8 +261,13 @@ export default class ExpenseAllocationService {
       );
     }
 
-    if (splitMethod === "none") {
-      if (forms.length > 0) {
+    if (
+      splitMethod ===
+      "none"
+    ) {
+      if (
+        forms.length > 0
+      ) {
         return OperationResults.failure<
           ExpenseAllocation[]
         >(
@@ -248,7 +291,9 @@ export default class ExpenseAllocationService {
         forms
       );
 
-    if (!memberValidation.success) {
+    if (
+      !memberValidation.success
+    ) {
       return OperationResults.failure<
         ExpenseAllocation[]
       >(
@@ -264,7 +309,9 @@ export default class ExpenseAllocationService {
           form.isIncluded
       );
 
-    if (includedForms.length === 0) {
+    if (
+      includedForms.length === 0
+    ) {
       return OperationResults.failure<
         ExpenseAllocation[]
       >(
@@ -317,7 +364,9 @@ export default class ExpenseAllocationService {
         );
     }
 
-    if (!calculatedAmounts.success) {
+    if (
+      !calculatedAmounts.success
+    ) {
       return OperationResults.failure<
         ExpenseAllocation[]
       >(
@@ -401,12 +450,15 @@ export default class ExpenseAllocationService {
     forms: ExpenseAllocationForm[]
   ): OperationResult<boolean> {
     const payer =
-      HouseholdMemberService.getMemberById(
-        paidByMemberId.trim()
-      );
+      HouseholdMemberService
+        .getMemberById(
+          paidByMemberId.trim()
+        );
 
     if (!payer) {
-      return OperationResults.failure<boolean>(
+      return OperationResults.failure<
+        boolean
+      >(
         {
           paidByMemberId:
             "The member who paid the expense was not found.",
@@ -420,7 +472,9 @@ export default class ExpenseAllocationService {
         householdId ||
       !payer.isActive
     ) {
-      return OperationResults.failure<boolean>(
+      return OperationResults.failure<
+        boolean
+      >(
         {
           paidByMemberId:
             "The expense payer is not an active member of this household.",
@@ -429,8 +483,12 @@ export default class ExpenseAllocationService {
       );
     }
 
-    if (forms.length === 0) {
-      return OperationResults.failure<boolean>(
+    if (
+      forms.length === 0
+    ) {
+      return OperationResults.failure<
+        boolean
+      >(
         {
           allocations:
             "Add at least one member to the expense split.",
@@ -442,12 +500,16 @@ export default class ExpenseAllocationService {
     const memberIds =
       new Set<string>();
 
-    for (const form of forms) {
+    for (
+      const form of forms
+    ) {
       const memberId =
         form.memberId.trim();
 
       if (!memberId) {
-        return OperationResults.failure<boolean>(
+        return OperationResults.failure<
+          boolean
+        >(
           {
             allocations:
               "Every allocation must reference a household member.",
@@ -457,9 +519,13 @@ export default class ExpenseAllocationService {
       }
 
       if (
-        memberIds.has(memberId)
+        memberIds.has(
+          memberId
+        )
       ) {
-        return OperationResults.failure<boolean>(
+        return OperationResults.failure<
+          boolean
+        >(
           {
             allocations:
               "A member cannot appear more than once in an expense split.",
@@ -473,9 +539,10 @@ export default class ExpenseAllocationService {
       );
 
       const member =
-        HouseholdMemberService.getMemberById(
-          memberId
-        );
+        HouseholdMemberService
+          .getMemberById(
+            memberId
+          );
 
       if (
         !member ||
@@ -483,7 +550,9 @@ export default class ExpenseAllocationService {
           householdId ||
         !member.isActive
       ) {
-        return OperationResults.failure<boolean>(
+        return OperationResults.failure<
+          boolean
+        >(
           {
             allocations:
               "Every allocation member must be active and belong to the household.",
@@ -495,12 +564,17 @@ export default class ExpenseAllocationService {
       if (
         !form.isIncluded &&
         (
-          form.allocatedAmount !== 0 ||
-          form.personalAmount !== 0 ||
-          form.personalItems.length > 0
+          form.allocatedAmount !==
+            0 ||
+          form.personalAmount !==
+            0 ||
+          form.personalItems.length >
+            0
         )
       ) {
-        return OperationResults.failure<boolean>(
+        return OperationResults.failure<
+          boolean
+        >(
           {
             allocations:
               "Opted-out members must have zero allocations and no personal items.",
@@ -546,7 +620,8 @@ export default class ExpenseAllocationService {
         );
 
     if (
-      includedIndexes.length === 0
+      includedIndexes.length ===
+      0
     ) {
       return OperationResults.failure<
         number[]
@@ -561,7 +636,8 @@ export default class ExpenseAllocationService {
 
     const totalCents =
       Math.round(
-        transactionAmount * 100
+        transactionAmount *
+          100
       );
 
     const baseShareCents =
@@ -587,7 +663,8 @@ export default class ExpenseAllocationService {
       ) => {
         const isLastIncluded =
           includedIndex ===
-          includedIndexes.length - 1;
+          includedIndexes.length -
+            1;
 
         const shareCents =
           baseShareCents +
@@ -598,7 +675,8 @@ export default class ExpenseAllocationService {
           );
 
         amounts[formIndex] =
-          shareCents / 100;
+          shareCents /
+          100;
       }
     );
 
@@ -617,21 +695,23 @@ export default class ExpenseAllocationService {
     forms: ExpenseAllocationForm[]
   ): OperationResult<number[]> {
     const calculationResult =
-      SharedPersonalAllocationService.calculate(
-        transactionAmount,
-        forms.map(
-          (form) => ({
-            memberId:
-              form.memberId,
+      SharedPersonalAllocationService
+        .calculate(
+          transactionAmount,
 
-            isIncluded:
-              form.isIncluded,
+          forms.map(
+            (form) => ({
+              memberId:
+                form.memberId,
 
-            personalAmount:
-              form.personalAmount,
-          })
-        )
-      );
+              isIncluded:
+                form.isIncluded,
+
+              personalAmount:
+                form.personalAmount,
+            })
+          )
+        );
 
     if (
       !calculationResult.success
@@ -718,14 +798,16 @@ export default class ExpenseAllocationService {
         ) =>
           total +
           Math.round(
-            amount * 100
+            amount *
+              100
           ),
         0
       );
 
     const transactionCents =
       Math.round(
-        transactionAmount * 100
+        transactionAmount *
+          100
       );
 
     if (

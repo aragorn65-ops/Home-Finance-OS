@@ -1,4 +1,8 @@
 import type {
+  StoredAttachment,
+} from "../../../shared/models/StoredAttachment";
+
+import type {
   TransactionVisibility,
 } from "../../transactions/models/Transaction";
 
@@ -46,8 +50,8 @@ export interface UtilityMemberShareForm {
    * Determines whether this member participates in the
    * equal division of the remaining utility bill.
    *
-   * Direct usage and fixed compensation may still apply
-   * when this value is false.
+   * Fixed compensation and equal sharing are mutually
+   * exclusive.
    */
   sharesRemainder: boolean;
 }
@@ -118,6 +122,12 @@ export interface UtilityBillForm {
   description: string;
   notes: string;
 
+  /**
+   * Locally stored provider bills, receipts, or supporting
+   * documents attached to the generated transaction.
+   */
+  attachments: StoredAttachment[];
+
   transactionDate: string;
   isActive: boolean;
 }
@@ -143,6 +153,8 @@ export const defaultUtilityBillForm:
 
     description: "",
     notes: "",
+
+    attachments: [],
 
     transactionDate: "",
     isActive: true,

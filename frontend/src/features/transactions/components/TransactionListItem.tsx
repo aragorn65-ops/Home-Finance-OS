@@ -1,7 +1,10 @@
 import type { Transaction } from "../models/Transaction";
 
+import type { AllocationPaymentStatus } from "../models/ExpenseAllocation";
+
 type TransactionListItemProps = {
   transaction: Transaction;
+  paymentStatus?: AllocationPaymentStatus;
   sourceAccountName?: string;
   destinationAccountName?: string;
   onView?: (transaction: Transaction) => void;
@@ -32,6 +35,38 @@ function getTypeLabel(
   }
 }
 
+function getPaymentStatusLabel(
+  status: AllocationPaymentStatus
+): string {
+  switch (status) {
+    case "partially-paid":
+      return "Partially Paid";
+
+    case "paid":
+      return "Paid";
+
+    case "unpaid":
+    default:
+      return "Unpaid";
+  }
+}
+
+function getPaymentStatusClasses(
+  status: AllocationPaymentStatus
+): string {
+  switch (status) {
+    case "paid":
+      return "bg-green-50 text-green-700";
+
+    case "partially-paid":
+      return "bg-amber-50 text-amber-700";
+
+    case "unpaid":
+    default:
+      return "bg-red-50 text-red-700";
+  }
+}
+
 function getAccountSummary(
   transaction: Transaction,
   sourceAccountName?: string,
@@ -58,6 +93,7 @@ function getAccountSummary(
 
 export default function TransactionListItem({
   transaction,
+  paymentStatus,
   sourceAccountName,
   destinationAccountName,
   onView,
@@ -84,6 +120,18 @@ export default function TransactionListItem({
           <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize text-muted-foreground">
             {getTypeLabel(transaction.type)}
           </span>
+
+          {paymentStatus && (
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${getPaymentStatusClasses(
+                paymentStatus
+              )}`}
+            >
+              {getPaymentStatusLabel(
+                paymentStatus
+              )}
+            </span>
+          )}
 
           <span className="text-sm text-muted-foreground">
             {formattedDate}

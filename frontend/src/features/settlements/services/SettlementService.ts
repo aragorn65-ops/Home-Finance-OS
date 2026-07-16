@@ -32,21 +32,26 @@ export default class SettlementService {
    * newest first.
    */
   static getSettlements(): Settlement[] {
-    return SettlementRepository.findAll().sort(
-      (first, second) =>
-        second.settlementDate.getTime() -
-        first.settlementDate.getTime()
-    );
+    return SettlementRepository
+      .findAll()
+      .sort(
+        (first, second) =>
+          second.settlementDate.getTime() -
+          first.settlementDate.getTime()
+      );
   }
 
   /**
    * Returns active settlements.
    */
-  static getActiveSettlements(): Settlement[] {
-    return this.getSettlements().filter(
-      (settlement) =>
-        settlement.isActive
-    );
+  static getActiveSettlements():
+    Settlement[] {
+    return this
+      .getSettlements()
+      .filter(
+        (settlement) =>
+          settlement.isActive
+      );
   }
 
   /**
@@ -90,9 +95,10 @@ export default class SettlementService {
   static getSettlementById(
     id: string
   ): Settlement | undefined {
-    return SettlementRepository.findById(
-      id
-    );
+    return SettlementRepository
+      .findById(
+        id
+      );
   }
 
   /**
@@ -135,7 +141,9 @@ export default class SettlementService {
       );
 
     if (
-      Object.keys(accountErrors).length >
+      Object.keys(
+        accountErrors
+      ).length >
       0
     ) {
       return OperationResults.failure<
@@ -146,10 +154,12 @@ export default class SettlementService {
       );
     }
 
-    const now = new Date();
+    const now =
+      new Date();
 
     const settlement: Settlement = {
-      id: crypto.randomUUID(),
+      id:
+        crypto.randomUUID(),
 
       householdId:
         form.householdId.trim(),
@@ -171,18 +181,21 @@ export default class SettlementService {
         ),
 
       sourceAccountId:
-        form.sourceAccountId.trim() ||
+        form.sourceAccountId
+          .trim() ||
         undefined,
 
       destinationAccountId:
-        form.destinationAccountId.trim() ||
+        form.destinationAccountId
+          .trim() ||
         undefined,
 
       applicationMethod:
         form.applicationMethod,
 
       referenceNumber:
-        form.referenceNumber.trim() ||
+        form.referenceNumber
+          .trim() ||
         undefined,
 
       notes:
@@ -202,7 +215,9 @@ export default class SettlementService {
         form
       );
 
-    if (!applicationResult.success) {
+    if (
+      !applicationResult.success
+    ) {
       return OperationResults.failure<
         Settlement
       >(
@@ -232,13 +247,89 @@ export default class SettlementService {
         settlement
       );
 
+    if (!createdSettlement) {
+      const balanceRollback =
+        this.reverseBalanceEffects(
+          settlement
+        );
+
+      if (!balanceRollback.success) {
+        return OperationResults.failure<
+          Settlement
+        >(
+          {
+            general:
+              "The settlement could not be saved and its account effects could not be reversed.",
+          },
+          "Critical settlement persistence rollback failure."
+        );
+      }
+
+      return OperationResults.failure<
+        Settlement
+      >(
+        {
+          general:
+            "Settlement could not be saved.",
+        },
+        "Unable to create settlement."
+      );
+    }
+
     const applications =
       applicationResult.data ?? [];
 
-    SettlementApplicationRepository
-      .createMany(
-        applications
+    const createdApplications =
+      SettlementApplicationRepository
+        .createMany(
+          applications
+        );
+
+    if (!createdApplications) {
+      const settlementDeleted =
+        SettlementRepository.delete(
+          createdSettlement.id
+        );
+
+      if (!settlementDeleted) {
+        return OperationResults.failure<
+          Settlement
+        >(
+          {
+            general:
+              "Settlement applications could not be saved and the persisted settlement could not be removed.",
+          },
+          "Critical settlement persistence rollback failure."
+        );
+      }
+
+      const balanceRollback =
+        this.reverseBalanceEffects(
+          createdSettlement
+        );
+
+      if (!balanceRollback.success) {
+        return OperationResults.failure<
+          Settlement
+        >(
+          {
+            general:
+              "Settlement applications could not be saved and the settlement account effects could not be reversed.",
+          },
+          "Critical settlement account rollback failure."
+        );
+      }
+
+      return OperationResults.failure<
+        Settlement
+      >(
+        {
+          applications:
+            "Settlement applications could not be saved.",
+        },
+        "Unable to create settlement."
       );
+    }
 
     return OperationResults.success(
       createdSettlement,
@@ -310,7 +401,9 @@ export default class SettlementService {
       );
 
     if (
-      Object.keys(accountErrors).length >
+      Object.keys(
+        accountErrors
+      ).length >
       0
     ) {
       return OperationResults.failure<
@@ -345,18 +438,21 @@ export default class SettlementService {
           ),
 
         sourceAccountId:
-          form.sourceAccountId.trim() ||
+          form.sourceAccountId
+            .trim() ||
           undefined,
 
         destinationAccountId:
-          form.destinationAccountId.trim() ||
+          form.destinationAccountId
+            .trim() ||
           undefined,
 
         applicationMethod:
           form.applicationMethod,
 
         referenceNumber:
-          form.referenceNumber.trim() ||
+          form.referenceNumber
+            .trim() ||
           undefined,
 
         notes:
@@ -382,7 +478,9 @@ export default class SettlementService {
         existingApplications
       );
 
-    if (!applicationRemoval.success) {
+    if (
+      !applicationRemoval.success
+    ) {
       return OperationResults.failure<
         Settlement
       >(
@@ -398,11 +496,28 @@ export default class SettlementService {
         form
       );
 
-    if (!applicationResult.success) {
-      this.restoreApplications(
-        existing.id,
-        existingApplications
-      );
+    if (
+      !applicationResult.success
+    ) {
+      const applicationRestoration =
+        this.restoreApplications(
+          existing.id,
+          existingApplications
+        );
+
+      if (
+        !applicationRestoration.success
+      ) {
+        return OperationResults.failure<
+          Settlement
+        >(
+          {
+            general:
+              "The updated settlement applications were invalid and the original applications could not be restored.",
+          },
+          "Critical settlement application restoration failure."
+        );
+      }
 
       return OperationResults.failure<
         Settlement
@@ -419,10 +534,25 @@ export default class SettlementService {
       );
 
     if (!reversalResult.success) {
-      this.restoreApplications(
-        existing.id,
-        existingApplications
-      );
+      const applicationRestoration =
+        this.restoreApplications(
+          existing.id,
+          existingApplications
+        );
+
+      if (
+        !applicationRestoration.success
+      ) {
+        return OperationResults.failure<
+          Settlement
+        >(
+          {
+            general:
+              "The existing settlement could not be reversed and its applications could not be restored.",
+          },
+          "Critical settlement application restoration failure."
+        );
+      }
 
       return OperationResults.failure<
         Settlement
@@ -439,25 +569,29 @@ export default class SettlementService {
       );
 
     if (!applyResult.success) {
-      const restorationResult =
+      const balanceRestoration =
         this.applyBalanceEffects(
           existing
         );
 
-      this.restoreApplications(
-        existing.id,
-        existingApplications
-      );
+      const applicationRestoration =
+        this.restoreApplications(
+          existing.id,
+          existingApplications
+        );
 
-      if (!restorationResult.success) {
+      if (
+        !balanceRestoration.success ||
+        !applicationRestoration.success
+      ) {
         return OperationResults.failure<
           Settlement
         >(
           {
             general:
-              "The settlement update failed and the previous account balances could not be restored.",
+              "The settlement update failed and the original settlement state could not be fully restored.",
           },
-          "Critical settlement balance restoration failure."
+          "Critical settlement restoration failure."
         );
       }
 
@@ -476,24 +610,30 @@ export default class SettlementService {
       );
 
     if (!savedSettlement) {
-      const rollbackResult =
+      const balanceRollback =
         this.rollbackUpdatedBalanceEffects(
           existing,
           updatedSettlement
         );
 
-      this.restoreApplications(
-        existing.id,
-        existingApplications
-      );
+      const applicationRestoration =
+        this.restoreApplications(
+          existing.id,
+          existingApplications
+        );
 
-      if (!rollbackResult.success) {
+      if (
+        !balanceRollback.success ||
+        !applicationRestoration.success
+      ) {
         return OperationResults.failure<
           Settlement
         >(
-          rollbackResult.errors,
-          rollbackResult.message ??
-            "Unable to restore the original settlement account effects."
+          {
+            general:
+              "The updated settlement could not be saved and the original state could not be fully restored.",
+          },
+          "Critical settlement persistence rollback failure."
         );
       }
 
@@ -511,11 +651,57 @@ export default class SettlementService {
     const updatedApplications =
       applicationResult.data ?? [];
 
-    SettlementApplicationRepository
-      .replaceBySettlementId(
-        savedSettlement.id,
-        updatedApplications
+    const savedApplications =
+      SettlementApplicationRepository
+        .replaceBySettlementId(
+          savedSettlement.id,
+          updatedApplications
+        );
+
+    if (!savedApplications) {
+      const settlementRestoration =
+        SettlementRepository.update(
+          existing
+        );
+
+      const balanceRollback =
+        this.rollbackUpdatedBalanceEffects(
+          existing,
+          updatedSettlement
+        );
+
+      const applicationRestoration =
+        this.restoreApplications(
+          existing.id,
+          existingApplications
+        );
+
+      if (
+        !settlementRestoration ||
+        !balanceRollback.success ||
+        !applicationRestoration.success
+      ) {
+        return OperationResults.failure<
+          Settlement
+        >(
+          {
+            general:
+              "The updated applications could not be saved and the original settlement state could not be fully restored.",
+          },
+          "Critical settlement persistence restoration failure."
+        );
+      }
+
+      return OperationResults.failure<
+        Settlement
+      >(
+        {
+          applications:
+            "Settlement applications could not be saved.",
+        },
+        "Unable to update settlement."
       );
+    }
 
     return OperationResults.success(
       savedSettlement,
@@ -574,7 +760,9 @@ export default class SettlementService {
         existingApplications
       );
 
-    if (!applicationRemoval.success) {
+    if (
+      !applicationRemoval.success
+    ) {
       const balanceRestoration =
         this.applyBalanceEffects(
           existing
@@ -607,25 +795,29 @@ export default class SettlementService {
       );
 
     if (!deleted) {
-      this.restoreApplications(
-        id,
-        existingApplications
-      );
+      const applicationRestoration =
+        this.restoreApplications(
+          id,
+          existingApplications
+        );
 
       const balanceRestoration =
         this.applyBalanceEffects(
           existing
         );
 
-      if (!balanceRestoration.success) {
+      if (
+        !applicationRestoration.success ||
+        !balanceRestoration.success
+      ) {
         return OperationResults.failure<
           boolean
         >(
           {
             general:
-              "The settlement could not be deleted and its previous account balances could not be restored.",
+              "The settlement could not be deleted and its original state could not be fully restored.",
           },
-          "Critical settlement balance restoration failure."
+          "Critical settlement persistence restoration failure."
         );
       }
 
@@ -737,7 +929,7 @@ export default class SettlementService {
 
       if (
         account.visibility ===
-        "private" &&
+          "private" &&
         (
           !account.ownerMemberId ||
           account.ownerMemberId !==
@@ -775,7 +967,9 @@ export default class SettlementService {
     applications:
       SettlementApplication[]
   ): OperationResult<boolean> {
-    if (applications.length === 0) {
+    if (
+      applications.length === 0
+    ) {
       return OperationResults.success(
         true
       );
@@ -811,12 +1005,29 @@ export default class SettlementService {
     settlementId: string,
     applications:
       SettlementApplication[]
-  ): void {
-    SettlementApplicationRepository
-      .replaceBySettlementId(
-        settlementId,
-        applications
+  ): OperationResult<boolean> {
+    const restored =
+      SettlementApplicationRepository
+        .replaceBySettlementId(
+          settlementId,
+          applications
+        );
+
+    if (!restored) {
+      return OperationResults.failure<
+        boolean
+      >(
+        {
+          applications:
+            "The original settlement applications could not be restored.",
+        },
+        "Unable to restore settlement applications."
       );
+    }
+
+    return OperationResults.success(
+      true
+    );
   }
 
   /**
@@ -1003,7 +1214,10 @@ export default class SettlementService {
     const completedOperations:
       AccountOperation[] = [];
 
-    for (const operation of operations) {
+    for (
+      const operation of
+      operations
+    ) {
       const result =
         this.executeAccountOperation(
           operation
@@ -1053,18 +1267,21 @@ export default class SettlementService {
     operation: AccountOperation
   ) {
     if (
-      operation.type === "debit"
+      operation.type ===
+      "debit"
     ) {
-      return AccountService.debitAccount(
+      return AccountService
+        .debitAccount(
+          operation.accountId,
+          operation.amount
+        );
+    }
+
+    return AccountService
+      .creditAccount(
         operation.accountId,
         operation.amount
       );
-    }
-
-    return AccountService.creditAccount(
-      operation.accountId,
-      operation.amount
-    );
   }
 
   /**
@@ -1079,14 +1296,16 @@ export default class SettlementService {
     ].reverse();
 
     for (
-      const operation of reversedOperations
+      const operation of
+      reversedOperations
     ) {
       const inverseOperation:
         AccountOperation = {
           ...operation,
 
           type:
-            operation.type === "debit"
+            operation.type ===
+            "debit"
               ? "credit"
               : "debit",
         };
@@ -1119,7 +1338,9 @@ export default class SettlementService {
     amount: number
   ): number {
     return (
-      Math.round(amount * 100) /
+      Math.round(
+        amount * 100
+      ) /
       100
     );
   }

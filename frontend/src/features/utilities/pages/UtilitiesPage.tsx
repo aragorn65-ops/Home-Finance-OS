@@ -1,4 +1,5 @@
 import {
+  useRef,
   useState,
 } from "react";
 
@@ -31,6 +32,20 @@ export default function UtilitiesPage() {
     setSaveError,
   ] = useState("");
 
+  /**
+   * Changing this key recreates the utility form after
+   * a successful save.
+   */
+  const [
+    formKey,
+    setFormKey,
+  ] = useState(0);
+
+  const notificationRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
   const activeMembers =
     HouseholdMemberService.getActiveMembers();
 
@@ -54,8 +69,23 @@ export default function UtilitiesPage() {
           account.institution
             ? `${account.name} — ${account.institution}`
             : account.name,
+
+        ownerMemberId:
+          account.ownerMemberId,
       })
     );
+
+  const showNotification = (): void => {
+    window.requestAnimationFrame(
+      () => {
+        notificationRef.current
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+      }
+    );
+  };
 
   const handleSave = (
     form: UtilityBillFormData,
@@ -83,6 +113,8 @@ export default function UtilitiesPage() {
           "Unable to save the utility bill."
       );
 
+      showNotification();
+
       return;
     }
 
@@ -90,6 +122,17 @@ export default function UtilitiesPage() {
       result.message ??
         "Utility bill saved successfully."
     );
+
+    /**
+     * Clear the completed form only after persistence
+     * succeeds.
+     */
+    setFormKey(
+      (current) =>
+        current + 1
+    );
+
+    showNotification();
   };
 
   return (
@@ -113,35 +156,40 @@ export default function UtilitiesPage() {
           </p>
         </section>
 
-        {saveError && (
-          <section className="rounded-xl border border-red-200 bg-red-50 p-5">
-            <h2 className="font-semibold text-red-900">
-              Utility bill was not saved
-            </h2>
+        <div
+          ref={notificationRef}
+          aria-live="polite"
+        >
+          {saveError && (
+            <section className="rounded-xl border border-red-200 bg-red-50 p-5">
+              <h2 className="font-semibold text-red-900">
+                Utility bill was not saved
+              </h2>
 
-            <p className="mt-1 text-sm text-red-800">
-              {saveError}
-            </p>
-          </section>
-        )}
+              <p className="mt-1 text-sm text-red-800">
+                {saveError}
+              </p>
+            </section>
+          )}
 
-        {saveMessage && (
-          <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
-            <h2 className="font-semibold text-emerald-900">
-              Utility bill saved
-            </h2>
+          {saveMessage && (
+            <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+              <h2 className="font-semibold text-emerald-900">
+                Utility bill saved
+              </h2>
 
-            <p className="mt-1 text-sm text-emerald-800">
-              {saveMessage}
-            </p>
+              <p className="mt-1 text-sm text-emerald-800">
+                {saveMessage}
+              </p>
 
-            <p className="mt-2 text-sm text-emerald-700">
-              The expense is now available in Transactions,
-              and its member allocations are available to
-              Settlements.
-            </p>
-          </section>
-        )}
+              <p className="mt-2 text-sm text-emerald-700">
+                The expense is now available in Transactions,
+                and its member allocations are available to
+                Settlements.
+              </p>
+            </section>
+          )}
+        </div>
 
         {memberOptions.length === 0 ? (
           <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
@@ -156,6 +204,7 @@ export default function UtilitiesPage() {
           </section>
         ) : (
           <UtilityBillForm
+            key={formKey}
             members={memberOptions}
             accounts={accountOptions}
             submitLabel="Save Utility Bill"

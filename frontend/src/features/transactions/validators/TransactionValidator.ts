@@ -26,6 +26,27 @@ const allowedSplitMethods:
     "submeter",
   ];
 
+const allowedAttachmentMimeTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+] as const;
+
+const allowedAttachmentCategories = [
+  "receipt",
+  "bill",
+  "other",
+] as const;
+
+const maximumAttachmentCount = 3;
+
+const maximumAttachmentSizeBytes =
+  750 * 1024;
+
+const maximumTotalAttachmentSizeBytes =
+  1536 * 1024;
+
 export default class TransactionValidator {
   /**
    * Validates transaction form data before persistence.
@@ -79,6 +100,11 @@ export default class TransactionValidator {
       errors
     );
 
+    this.validateAttachments(
+      form,
+      errors
+    );
+
     this.validateAccounts(
       form,
       errors
@@ -121,6 +147,149 @@ export default class TransactionValidator {
     ) {
       errors.transactionDate =
         "Enter a valid transaction date.";
+    }
+  }
+
+  /**
+   * Validates locally stored receipt and bill attachments.
+   */
+  private static validateAttachments(
+    form: TransactionForm,
+    errors: Record<string, string>
+  ): void {
+    if (
+      form.attachments.length >
+      maximumAttachmentCount
+    ) {
+      errors.attachments =
+        `Add no more than ${maximumAttachmentCount} attachments.`;
+
+      return;
+    }
+
+    const attachmentIds =
+      new Set<string>();
+
+    let totalSizeBytes = 0;
+
+    for (
+      const attachment of
+      form.attachments
+    ) {
+      if (!attachment.id.trim()) {
+        errors.attachments =
+          "Every attachment must include an ID.";
+
+        return;
+      }
+
+      if (
+        attachmentIds.has(
+          attachment.id
+        )
+      ) {
+        errors.attachments =
+          "The same attachment cannot be added more than once.";
+
+        return;
+      }
+
+      attachmentIds.add(
+        attachment.id
+      );
+
+      if (
+        !allowedAttachmentCategories.includes(
+          attachment.category
+        )
+      ) {
+        errors.attachments =
+          "Select a valid attachment category.";
+
+        return;
+      }
+
+      if (!attachment.fileName.trim()) {
+        errors.attachments =
+          "Every attachment must include a filename.";
+
+        return;
+      }
+
+      if (
+        !allowedAttachmentMimeTypes.includes(
+          attachment.mimeType as
+            typeof allowedAttachmentMimeTypes[number]
+        )
+      ) {
+        errors.attachments =
+          "Attachments must be JPEG, PNG, WebP, or PDF files.";
+
+        return;
+      }
+
+      if (
+        !Number.isFinite(
+          attachment.sizeBytes
+        ) ||
+        attachment.sizeBytes <= 0
+      ) {
+        errors.attachments =
+          "Every attachment must have a valid file size.";
+
+        return;
+      }
+
+      if (
+        attachment.sizeBytes >
+        maximumAttachmentSizeBytes
+      ) {
+        errors.attachments =
+          "Each attachment must be 750 KB or smaller.";
+
+        return;
+      }
+
+      totalSizeBytes +=
+        attachment.sizeBytes;
+
+      const expectedPrefix =
+        `data:${attachment.mimeType};base64,`;
+
+      if (
+        !attachment.dataUrl.startsWith(
+          expectedPrefix
+        )
+      ) {
+        errors.attachments =
+          "An attachment contains invalid file data.";
+
+        return;
+      }
+
+      const createdAt =
+        new Date(
+          attachment.createdAt
+        );
+
+      if (
+        Number.isNaN(
+          createdAt.getTime()
+        )
+      ) {
+        errors.attachments =
+          "An attachment contains an invalid creation date.";
+
+        return;
+      }
+    }
+
+    if (
+      totalSizeBytes >
+      maximumTotalAttachmentSizeBytes
+    ) {
+      errors.attachments =
+        "Combined attachment size must be 1.5 MB or smaller.";
     }
   }
 

@@ -342,3 +342,68 @@ All notable changes to HFOS are documented here.
 * Verified utility payments can use accounts belonging to the active household.
 * Verified the production TypeScript and Vite build completes with zero errors.
 * Verified ESLint completes with zero errors.
+
+## [0.10.0-alpha] - 2026-07-16
+
+### Added
+
+* Added versioned localStorage persistence for household data, accounts, transactions, expense allocations, settlements, and settlement applications.
+* Added schema-aware storage envelopes and validation for persisted application data.
+* Added date serialization and hydration for persisted domain models.
+* Added defensive deep cloning for expense allocation personal items and transaction attachments.
+* Added application-wide data reset support with an explicit two-step confirmation workflow.
+* Added receipt and bill attachments for transactions.
+* Added image upload, PDF upload, and clipboard image-paste support.
+* Added attachment categories for receipts, bills, and other supporting documents.
+* Added attachment previews, open actions, removal, validation, and edit-mode restoration.
+* Added utility bill attachment support with persistence through generated expense transactions.
+* Added itemized member settlement balances showing descriptions, dates, original amounts, paid amounts, remaining amounts, and payment status.
+* Added derived Unpaid, Partially Paid, and Paid tags to shared expense transactions.
+* Added Savings and Reports placeholder pages and application routes.
+
+### Changed
+
+* Updated repositories to seed demo data only when their versioned storage key is missing.
+* Updated repositories so intentionally stored empty arrays remain empty after refresh.
+* Updated persistence handling so malformed or unsupported stored data is not silently replaced.
+* Updated account management to display inactive accounts while excluding them from active balance totals.
+* Updated transaction account effects to support historical corrections involving inactive accounts.
+* Updated transaction and utility payment-account selectors to show only active accounts owned by the selected payer.
+* Updated settlement source-account selection to use only accounts owned by the paying member.
+* Updated settlement destination-account selection to use only accounts owned by the receiving member.
+* Updated private-account enforcement so other household members and administrators cannot view or use another member's private accounts.
+* Updated utility allocation rules so fixed compensation and equal participation in the remaining bill are mutually exclusive.
+* Updated transaction details with generic transaction wording, category, description, and supporting-document display.
+* Updated member balance cards with expandable Items to Pay and Items to Receive sections.
+* Updated transaction payment status to be derived from settlement applications rather than stored separately.
+
+### Fixed
+
+* Fixed persisted dates reopening as strings instead of Date instances.
+* Fixed stored empty collections being replaced by demo seed records.
+* Fixed account balance restoration failures when historical transactions referenced inactive accounts.
+* Fixed private accounts appearing in transaction, utility, and settlement account selectors for non-owners.
+* Fixed utility payers retaining an invalid payment account after changing the selected member.
+* Fixed settlement source and destination accounts remaining selected after changing payer or receiver.
+* Fixed utility members receiving both fixed compensation and a share of the remaining common bill.
+* Fixed transaction attachments being omitted from utility-generated expense transactions.
+* Fixed settlement balance summaries hiding the individual expenses contributing to an outstanding balance.
+* Fixed transaction rows lacking reimbursement payment-status visibility.
+* Fixed transaction payment-status derivation attempting to read a nonexistent stored allocation status property.
+
+### Verified
+
+* Verified accounts, transactions, allocations, settlements, settlement applications, household members, and utility-generated records persist after refresh.
+* Verified stored empty arrays remain empty and do not reseed automatically.
+* Verified transaction and utility attachments persist after saving and reopening.
+* Verified receipt and bill images can be uploaded or pasted from the clipboard.
+* Verified invalid attachment types, oversized files, and attachment-count limits are rejected.
+* Verified private accounts are available only to their owners.
+* Verified utility fixed compensation and equal remainder sharing cannot be applied to the same member.
+* Verified settlement balances display itemized unpaid and partially paid obligations.
+* Verified partial settlements update paid and remaining amounts correctly.
+* Verified transaction payment tags recalculate after settlement creation, editing, or deletion.
+* Verified Reset All Data removes persisted records and deleted data does not return after refresh.
+* Verified Savings and Reports routes render successfully.
+* Verified the production TypeScript and Vite build completes with zero errors.
+* Verified ESLint completes with zero errors.

@@ -1,7 +1,15 @@
 import type { HouseholdMember } from "../models/HouseholdMember";
 import type { HouseholdSetupState } from "../hooks/useHouseholdSetup";
 
-const STORAGE_KEY = "hfos.household";
+import {
+  HFOS_LEGACY_STORAGE_KEYS,
+  HFOS_STORAGE_KEYS,
+  loadLegacyStoredData,
+  loadStoredData,
+  removeLegacyStoredData,
+  removeStoredData,
+  saveStoredData,
+} from "../../../shared/storage/localStorageStore";
 
 export interface StoredHousehold {
   id: string;
@@ -44,8 +52,12 @@ interface LegacyStoredHousehold {
   timezone: string;
 }
 
+type LegacyHouseholdPayload =
+  | SerializedStoredHousehold
+  | LegacyStoredHousehold;
+
 /**
- * Creates or updates the stored household.
+ * Creates or updates the single stored household.
  *
  * Existing members and the original creation date are
  * preserved when household setup details are updated.
@@ -54,39 +66,54 @@ export function saveHousehold(
   household: HouseholdSetupState,
   members?: HouseholdMember[]
 ): StoredHousehold {
-  const existing = loadHousehold();
-  const now = new Date();
+  const existing =
+    loadHousehold();
 
-  const storedHousehold: StoredHousehold = {
-    id:
-      existing?.id ??
-      crypto.randomUUID(),
+  const now =
+    new Date();
 
-    householdName:
-      household.householdName.trim(),
+  const storedHousehold:
+    StoredHousehold = {
+      id:
+        existing?.id ??
+        crypto.randomUUID(),
 
-    country:
-      household.country.trim(),
+      householdName:
+        household.householdName.trim(),
 
-    currency:
-      household.currency.trim(),
+      country:
+        household.country.trim(),
 
-    timezone:
-      household.timezone.trim(),
+      currency:
+        household.currency.trim(),
 
-    members:
-      members ??
-      existing?.members ??
-      [],
+      timezone:
+        household.timezone.trim(),
 
-    createdAt:
-      existing?.createdAt ??
-      now,
+      members:
+        members?.map(
+          (member) =>
+            cloneMember(member)
+        ) ??
+        existing?.members.map(
+          (member) =>
+            cloneMember(member)
+        ) ??
+        [],
 
-    updatedAt: now,
-  };
+      createdAt:
+        existing?.createdAt
+          ? new Date(
+              existing.createdAt
+            )
+          : now,
 
-  persistHousehold(storedHousehold);
+      updatedAt: now,
+    };
+
+  persistHousehold(
+    storedHousehold
+  );
 
   return cloneHousehold(
     storedHousehold
@@ -94,53 +121,49 @@ export function saveHousehold(
 }
 
 /**
- * Loads the household record.
+ * Loads the single active household.
  *
- * Legacy setup-only records are automatically upgraded
- * to the current storage contract.
+ * The current versioned record is preferred.
+ *
+ * When no versioned record exists, the previous
+ * unversioned household record is migrated without
+ * replacing its household ID or member IDs.
  */
 export function loadHousehold():
   StoredHousehold | null {
-  const json =
-    localStorage.getItem(STORAGE_KEY);
+  const loadResult =
+    loadStoredData<
+      SerializedStoredHousehold
+    >(
+      HFOS_STORAGE_KEYS.household,
+      isSerializedStoredHousehold
+    );
 
-  if (!json) {
+  if (
+    loadResult.status ===
+    "loaded"
+  ) {
+    return deserializeHousehold(
+      loadResult.data as
+        SerializedStoredHousehold
+    );
+  }
+
+  /**
+   * Do not fall back to legacy data when a versioned
+   * record exists but is malformed or unsupported.
+   *
+   * This prevents stale legacy data from silently
+   * replacing a newer household record.
+   */
+  if (
+    loadResult.status !==
+    "missing"
+  ) {
     return null;
   }
 
-  try {
-    const parsed: unknown =
-      JSON.parse(json);
-
-    if (
-      isSerializedStoredHousehold(
-        parsed
-      )
-    ) {
-      return deserializeHousehold(
-        parsed
-      );
-    }
-
-    if (
-      isLegacyStoredHousehold(parsed)
-    ) {
-      const migratedHousehold =
-        migrateLegacyHousehold(parsed);
-
-      persistHousehold(
-        migratedHousehold
-      );
-
-      return cloneHousehold(
-        migratedHousehold
-      );
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
+  return migrateLegacyStorage();
 }
 
 /**
@@ -161,17 +184,24 @@ export function saveHouseholdMembers(
     StoredHousehold = {
       ...household,
 
-      members: members.map(
-        (member) =>
-          cloneMember(member)
-      ),
+      members:
+        members.map(
+          (member) =>
+            cloneMember(member)
+        ),
 
-      updatedAt: new Date(),
+      updatedAt:
+        new Date(),
     };
 
-  persistHousehold(
-    updatedHousehold
-  );
+  const saved =
+    persistHousehold(
+      updatedHousehold
+    );
+
+  if (!saved) {
+    return null;
+  }
 
   return cloneHousehold(
     updatedHousehold
@@ -179,26 +209,89 @@ export function saveHouseholdMembers(
 }
 
 /**
- * Removes the stored household and all locally persisted
- * household members.
+ * Removes the current and legacy household records.
+ *
+ * Related financial storage is removed separately by
+ * the explicit application-data reset workflow.
  */
 export function clearHousehold(): void {
-  localStorage.removeItem(
-    STORAGE_KEY
+  removeStoredData(
+    HFOS_STORAGE_KEYS.household
+  );
+
+  removeLegacyStoredData(
+    HFOS_LEGACY_STORAGE_KEYS.household
   );
 }
 
 /**
- * Migrates the original household setup payload to the
- * current household storage contract.
+ * Loads and migrates the previous unversioned household
+ * storage record.
  */
-function migrateLegacyHousehold(
+function migrateLegacyStorage():
+  StoredHousehold | null {
+  const legacyResult =
+    loadLegacyStoredData<
+      LegacyHouseholdPayload
+    >(
+      HFOS_LEGACY_STORAGE_KEYS
+        .household,
+
+      isLegacyHouseholdPayload
+    );
+
+  if (
+    legacyResult.status !==
+      "loaded" ||
+    !legacyResult.data
+  ) {
+    return null;
+  }
+
+  const legacyPayload =
+    legacyResult.data;
+
+  const household =
+    isSerializedStoredHousehold(
+      legacyPayload
+    )
+      ? deserializeHousehold(
+          legacyPayload
+        )
+      : migrateSetupOnlyHousehold(
+          legacyPayload
+        );
+
+  const saved =
+    persistHousehold(
+      household
+    );
+
+  if (saved) {
+    removeLegacyStoredData(
+      HFOS_LEGACY_STORAGE_KEYS
+        .household
+    );
+  }
+
+  return cloneHousehold(
+    household
+  );
+}
+
+/**
+ * Migrates the original setup-only household payload
+ * into the complete household storage contract.
+ */
+function migrateSetupOnlyHousehold(
   legacy: LegacyStoredHousehold
 ): StoredHousehold {
-  const now = new Date();
+  const now =
+    new Date();
 
   return {
-    id: crypto.randomUUID(),
+    id:
+      crypto.randomUUID(),
 
     householdName:
       legacy.householdName.trim(),
@@ -220,18 +313,24 @@ function migrateLegacyHousehold(
 }
 
 /**
- * Writes a household record to local storage.
+ * Writes the complete household record using the shared
+ * versioned HFOS storage envelope.
  */
 function persistHousehold(
   household: StoredHousehold
-): void {
+): boolean {
   const serialized =
-    serializeHousehold(household);
+    serializeHousehold(
+      household
+    );
 
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(serialized)
-  );
+  const result =
+    saveStoredData(
+      HFOS_STORAGE_KEYS.household,
+      serialized
+    );
+
+  return result.success;
 }
 
 /**
@@ -241,7 +340,8 @@ function serializeHousehold(
   household: StoredHousehold
 ): SerializedStoredHousehold {
   return {
-    id: household.id,
+    id:
+      household.id,
 
     householdName:
       household.householdName,
@@ -261,18 +361,22 @@ function serializeHousehold(
           ...member,
 
           createdAt:
-            member.createdAt.toISOString(),
+            member.createdAt
+              .toISOString(),
 
           updatedAt:
-            member.updatedAt.toISOString(),
+            member.updatedAt
+              .toISOString(),
         })
       ),
 
     createdAt:
-      household.createdAt.toISOString(),
+      household.createdAt
+        .toISOString(),
 
     updatedAt:
-      household.updatedAt.toISOString(),
+      household.updatedAt
+        .toISOString(),
   };
 }
 
@@ -280,10 +384,12 @@ function serializeHousehold(
  * Restores Date values from persisted strings.
  */
 function deserializeHousehold(
-  household: SerializedStoredHousehold
+  household:
+    SerializedStoredHousehold
 ): StoredHousehold {
   return {
-    id: household.id,
+    id:
+      household.id,
 
     householdName:
       household.householdName,
@@ -374,18 +480,25 @@ function cloneMember(
   };
 }
 
-function isRecord(
+/**
+ * Validates either supported legacy household payload.
+ */
+function isLegacyHouseholdPayload(
   value: unknown
-): value is Record<
-  string,
-  unknown
-> {
+): value is LegacyHouseholdPayload {
   return (
-    typeof value === "object" &&
-    value !== null
+    isSerializedStoredHousehold(
+      value
+    ) ||
+    isLegacyStoredHousehold(
+      value
+    )
   );
 }
 
+/**
+ * Validates the setup-only legacy household payload.
+ */
 function isLegacyStoredHousehold(
   value: unknown
 ): value is LegacyStoredHousehold {
@@ -407,6 +520,9 @@ function isLegacyStoredHousehold(
   );
 }
 
+/**
+ * Validates the complete serialized household payload.
+ */
 function isSerializedStoredHousehold(
   value: unknown
 ): value is SerializedStoredHousehold {
@@ -425,10 +541,102 @@ function isSerializedStoredHousehold(
       "string" &&
     typeof value.timezone ===
       "string" &&
-    Array.isArray(value.members) &&
-    typeof value.createdAt ===
+    Array.isArray(
+      value.members
+    ) &&
+    value.members.every(
+      (member) =>
+        isSerializedHouseholdMember(
+          member
+        )
+    ) &&
+    isDateString(
+      value.createdAt
+    ) &&
+    isDateString(
+      value.updatedAt
+    )
+  );
+}
+
+/**
+ * Validates one serialized household member.
+ */
+function isSerializedHouseholdMember(
+  value: unknown
+): value is SerializedHouseholdMember {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id ===
       "string" &&
-    typeof value.updatedAt ===
+    typeof value.householdId ===
+      "string" &&
+    isOptionalString(
+      value.userId
+    ) &&
+    typeof value.displayName ===
+      "string" &&
+    isHouseholdMemberRole(
+      value.role
+    ) &&
+    isOptionalString(
+      value.color
+    ) &&
+    typeof value.isActive ===
+      "boolean" &&
+    isDateString(
+      value.createdAt
+    ) &&
+    isDateString(
+      value.updatedAt
+    )
+  );
+}
+
+function isHouseholdMemberRole(
+  value: unknown
+): value is HouseholdMember["role"] {
+  return (
+    value === "owner" ||
+    value === "admin" ||
+    value === "member"
+  );
+}
+
+function isOptionalString(
+  value: unknown
+): value is string | undefined {
+  return (
+    value === undefined ||
+    typeof value ===
       "string"
+  );
+}
+
+function isDateString(
+  value: unknown
+): value is string {
+  return (
+    typeof value ===
+      "string" &&
+    !Number.isNaN(
+      new Date(value).getTime()
+    )
+  );
+}
+
+function isRecord(
+  value: unknown
+): value is Record<
+  string,
+  unknown
+> {
+  return (
+    typeof value ===
+      "object" &&
+    value !== null
   );
 }

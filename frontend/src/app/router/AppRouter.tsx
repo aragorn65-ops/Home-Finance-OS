@@ -18,6 +18,8 @@ import AccountsPage from "../../features/accounts/pages/AccountsPage";
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
 import GovernancePage from "../../features/governance/pages/GovernancePage";
 import HouseholdMembersPage from "../../features/household/pages/HouseholdMembersPage";
+import ReportsPage from "../../features/reports/pages/ReportsPage";
+import SavingsPage from "../../features/savings/pages/SavingsPage";
 import SettingsPage from "../../features/settings/pages/SettingsPage";
 import SettlementsPage from "../../features/settlements/pages/SettlementsPage";
 import TransactionsPage from "../../features/transactions/pages/TransactionsPage";
@@ -67,6 +69,16 @@ export default function AppRouter() {
           <Route
             path="settlements"
             element={<SettlementsPage />}
+          />
+
+          <Route
+            path="savings"
+            element={<SavingsPage />}
+          />
+
+          <Route
+            path="reports"
+            element={<ReportsPage />}
           />
 
           <Route

@@ -1,3 +1,7 @@
+import type {
+  StoredAttachment,
+} from "../../../shared/models/StoredAttachment";
+
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
 import type {
@@ -51,6 +55,14 @@ export interface Transaction {
   category: string;
   description: string;
   notes: string;
+
+  /**
+   * Locally stored receipts, bills, or supporting files.
+   *
+   * Optional for compatibility with transactions saved
+   * before attachment support was introduced.
+   */
+  attachments?: StoredAttachment[];
 
   transactionDate: Date;
 

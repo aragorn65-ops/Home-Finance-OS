@@ -1,4 +1,8 @@
 import type {
+  StoredAttachment,
+} from "../../../shared/models/StoredAttachment";
+
+import type {
   TransactionType,
   TransactionVisibility,
 } from "./Transaction";
@@ -55,6 +59,11 @@ export interface TransactionForm {
    */
   allocations: ExpenseAllocationForm[];
 
+  /**
+   * Locally stored receipts, bills, or supporting files.
+   */
+  attachments: StoredAttachment[];
+
   isActive: boolean;
 }
 
@@ -76,6 +85,8 @@ export const defaultTransactionForm: TransactionForm = {
 
   splitMethod: "none",
   allocations: [],
+
+  attachments: [],
 
   isActive: true,
 };

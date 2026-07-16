@@ -177,6 +177,18 @@ export default class UtilityBillPersistenceService {
             )
         ),
 
+      attachments:
+        form.attachments.map(
+          (attachment) => ({
+            ...attachment,
+
+            createdAt:
+              new Date(
+                attachment.createdAt
+              ),
+          })
+        ),
+
       isActive:
         form.isActive,
     };

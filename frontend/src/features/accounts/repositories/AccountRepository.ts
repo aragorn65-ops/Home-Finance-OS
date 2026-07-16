@@ -1,4 +1,9 @@
-import type { Account } from "../models/Account";
+import type {
+  Account,
+  AccountClass,
+  AccountType,
+  AccountVisibility,
+} from "../models/Account";
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
@@ -6,15 +11,64 @@ import {
   loadHousehold,
 } from "../../household/services/householdStorage";
 
+import {
+  HFOS_STORAGE_KEYS,
+  loadStoredData,
+  saveStoredData,
+} from "../../../shared/storage/localStorageStore";
+
+interface SerializedAccount
+  extends Omit<
+    Account,
+    | "paymentDueDate"
+    | "createdAt"
+    | "updatedAt"
+  > {
+  paymentDueDate?: string;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+const accountClasses:
+  AccountClass[] = [
+    "asset",
+    "liability",
+  ];
+
+const accountVisibilities:
+  AccountVisibility[] = [
+    "household",
+    "private",
+  ];
+
+const accountTypes:
+  AccountType[] = [
+    "checking",
+    "savings",
+    "cash",
+    "e-wallet",
+    "investment",
+    "credit-card",
+    "line-of-credit",
+    "loan",
+    "mortgage",
+    "other-asset",
+    "other-liability",
+  ];
+
 export default class AccountRepository {
   /**
-   * Demo in-memory data source.
-   *
-   * Demo accounts are initialized only after the single
-   * active household has been created.
+   * Hydrated account collection for the single
+   * active household.
    */
-  private static accounts: Account[] = [];
+  private static accounts:
+    Account[] = [];
 
+  /**
+   * Household whose account collection has already
+   * been hydrated during the current application runtime.
+   */
   private static initializedHouseholdId:
     string | null = null;
 
@@ -50,19 +104,46 @@ export default class AccountRepository {
   }
 
   /**
-   * Creates a new account.
+   * Creates and persists a new account.
+   *
+   * Undefined is returned when the account does not
+   * belong to the active household or storage fails.
    */
   static create(
     account: Account
-  ): Account {
+  ): Account | undefined {
     this.ensureInitialized();
+
+    if (
+      !this.initializedHouseholdId ||
+      account.householdId !==
+        this.initializedHouseholdId
+    ) {
+      return undefined;
+    }
 
     const storedAccount =
       this.clone(account);
 
-    this.accounts.push(
-      storedAccount
-    );
+    const nextAccounts = [
+      ...this.accounts.map(
+        (item) =>
+          this.clone(item)
+      ),
+
+      storedAccount,
+    ];
+
+    if (
+      !this.persistAccounts(
+        nextAccounts
+      )
+    ) {
+      return undefined;
+    }
+
+    this.accounts =
+      nextAccounts;
 
     return this.clone(
       storedAccount
@@ -70,12 +151,20 @@ export default class AccountRepository {
   }
 
   /**
-   * Updates an existing account.
+   * Updates and persists an existing account.
    */
   static update(
     account: Account
   ): Account | undefined {
     this.ensureInitialized();
+
+    if (
+      !this.initializedHouseholdId ||
+      account.householdId !==
+        this.initializedHouseholdId
+    ) {
+      return undefined;
+    }
 
     const accountIndex =
       this.accounts.findIndex(
@@ -92,9 +181,26 @@ export default class AccountRepository {
     const updatedAccount =
       this.clone(account);
 
-    this.accounts[
+    const nextAccounts =
+      this.accounts.map(
+        (item) =>
+          this.clone(item)
+      );
+
+    nextAccounts[
       accountIndex
     ] = updatedAccount;
+
+    if (
+      !this.persistAccounts(
+        nextAccounts
+      )
+    ) {
+      return undefined;
+    }
+
+    this.accounts =
+      nextAccounts;
 
     return this.clone(
       updatedAccount
@@ -102,7 +208,7 @@ export default class AccountRepository {
   }
 
   /**
-   * Removes an account from the demo repository.
+   * Deletes and persists an account.
    */
   static delete(
     id: string
@@ -121,17 +227,40 @@ export default class AccountRepository {
       return false;
     }
 
-    this.accounts.splice(
-      accountIndex,
-      1
-    );
+    const nextAccounts =
+      this.accounts
+        .filter(
+          (item) =>
+            item.id !== id
+        )
+        .map(
+          (item) =>
+            this.clone(item)
+        );
+
+    if (
+      !this.persistAccounts(
+        nextAccounts
+      )
+    ) {
+      return false;
+    }
+
+    this.accounts =
+      nextAccounts;
 
     return true;
   }
 
   /**
-   * Initializes demo accounts for the single active
-   * household.
+   * Hydrates accounts for the single active household.
+   *
+   * Demo accounts are created only when no account
+   * storage record exists.
+   *
+   * Stored empty arrays remain empty and are not seeded.
+   * Invalid or unsupported stored records are left
+   * untouched and are not replaced with demo data.
    */
   private static ensureInitialized(): void {
     const household =
@@ -153,22 +282,110 @@ export default class AccountRepository {
       return;
     }
 
-    const owner =
-      HouseholdMemberService
-        .getOwnerMember();
+    const loadResult =
+      loadStoredData<
+        SerializedAccount[]
+      >(
+        HFOS_STORAGE_KEYS.accounts,
 
-    const ownerMemberId =
-      owner?.id ??
-      "member-001";
-
-    this.accounts =
-      this.createDemoAccounts(
-        household.id,
-        ownerMemberId
+        (
+          value
+        ): value is SerializedAccount[] =>
+          this.isSerializedAccountArray(
+            value
+          )
       );
+
+    if (
+      loadResult.status ===
+      "loaded"
+    ) {
+      const hydratedAccounts =
+        (
+          loadResult.data ?? []
+        ).map(
+          (account) =>
+            this.deserializeAccount(
+              account
+            )
+        );
+
+      const belongsToActiveHousehold =
+        hydratedAccounts.every(
+          (account) =>
+            account.householdId ===
+            household.id
+        );
+
+      this.accounts =
+        belongsToActiveHousehold
+          ? hydratedAccounts
+          : [];
+
+      this.initializedHouseholdId =
+        household.id;
+
+      return;
+    }
+
+    if (
+      loadResult.status ===
+      "missing"
+    ) {
+      const owner =
+        HouseholdMemberService
+          .getOwnerMember();
+
+      const ownerMemberId =
+        owner?.id ??
+        "member-001";
+
+      const demoAccounts =
+        this.createDemoAccounts(
+          household.id,
+          ownerMemberId
+        );
+
+      this.accounts =
+        demoAccounts;
+
+      this.initializedHouseholdId =
+        household.id;
+
+      this.persistAccounts(
+        demoAccounts
+      );
+
+      return;
+    }
+
+    this.accounts = [];
 
     this.initializedHouseholdId =
       household.id;
+  }
+
+  /**
+   * Persists the complete account collection.
+   */
+  private static persistAccounts(
+    accounts: Account[]
+  ): boolean {
+    const serializedAccounts =
+      accounts.map(
+        (account) =>
+          this.serializeAccount(
+            account
+          )
+      );
+
+    const result =
+      saveStoredData(
+        HFOS_STORAGE_KEYS.accounts,
+        serializedAccounts
+      );
+
+    return result.success;
   }
 
   /**
@@ -193,6 +410,7 @@ export default class AccountRepository {
         visibility: "household",
 
         name: "BPI Savings",
+
         institution:
           "Bank of the Philippine Islands",
 
@@ -209,7 +427,9 @@ export default class AccountRepository {
 
         isActive: true,
 
-        createdAt,
+        createdAt:
+          new Date(createdAt),
+
         updatedAt:
           new Date(createdAt),
       },
@@ -250,6 +470,7 @@ export default class AccountRepository {
         visibility: "private",
 
         name: "Personal Cash",
+
         institution:
           undefined,
 
@@ -273,6 +494,56 @@ export default class AccountRepository {
           new Date(createdAt),
       },
     ];
+  }
+
+  /**
+   * Converts an account into its JSON-safe form.
+   */
+  private static serializeAccount(
+    account: Account
+  ): SerializedAccount {
+    return {
+      ...account,
+
+      paymentDueDate:
+        account.paymentDueDate
+          ? account.paymentDueDate.toISOString()
+          : undefined,
+
+      createdAt:
+        account.createdAt.toISOString(),
+
+      updatedAt:
+        account.updatedAt.toISOString(),
+    };
+  }
+
+  /**
+   * Restores account Date properties.
+   */
+  private static deserializeAccount(
+    account: SerializedAccount
+  ): Account {
+    return {
+      ...account,
+
+      paymentDueDate:
+        account.paymentDueDate
+          ? new Date(
+              account.paymentDueDate
+            )
+          : undefined,
+
+      createdAt:
+        new Date(
+          account.createdAt
+        ),
+
+      updatedAt:
+        new Date(
+          account.updatedAt
+        ),
+    };
   }
 
   /**
@@ -301,5 +572,187 @@ export default class AccountRepository {
           account.updatedAt
         ),
     };
+  }
+
+  /**
+   * Validates the serialized account collection before
+   * any records are hydrated.
+   */
+  private static isSerializedAccountArray(
+    value: unknown
+  ): value is SerializedAccount[] {
+    return (
+      Array.isArray(value) &&
+      value.every(
+        (account) =>
+          this.isSerializedAccount(
+            account
+          )
+      )
+    );
+  }
+
+  /**
+   * Validates one serialized account.
+   */
+  private static isSerializedAccount(
+    value: unknown
+  ): value is SerializedAccount {
+    if (!this.isRecord(value)) {
+      return false;
+    }
+
+    return (
+      typeof value.id ===
+        "string" &&
+      typeof value.householdId ===
+        "string" &&
+      typeof value.ownerMemberId ===
+        "string" &&
+      this.isAccountVisibility(
+        value.visibility
+      ) &&
+      typeof value.name ===
+        "string" &&
+      this.isOptionalString(
+        value.institution
+      ) &&
+      this.isAccountClass(
+        value.accountClass
+      ) &&
+      this.isAccountType(
+        value.type
+      ) &&
+      typeof value.currency ===
+        "string" &&
+      this.isFiniteNumber(
+        value.openingBalance
+      ) &&
+      this.isFiniteNumber(
+        value.currentBalance
+      ) &&
+      this.isOptionalString(
+        value.accountNumber
+      ) &&
+      this.isOptionalFiniteNumber(
+        value.creditLimit
+      ) &&
+      this.isOptionalFiniteNumber(
+        value.statementBalance
+      ) &&
+      this.isOptionalFiniteNumber(
+        value.minimumPayment
+      ) &&
+      this.isOptionalDateString(
+        value.paymentDueDate
+      ) &&
+      typeof value.isActive ===
+        "boolean" &&
+      this.isDateString(
+        value.createdAt
+      ) &&
+      this.isDateString(
+        value.updatedAt
+      )
+    );
+  }
+
+  private static isAccountClass(
+    value: unknown
+  ): value is AccountClass {
+    return (
+      typeof value ===
+        "string" &&
+      accountClasses.includes(
+        value as AccountClass
+      )
+    );
+  }
+
+  private static isAccountVisibility(
+    value: unknown
+  ): value is AccountVisibility {
+    return (
+      typeof value ===
+        "string" &&
+      accountVisibilities.includes(
+        value as AccountVisibility
+      )
+    );
+  }
+
+  private static isAccountType(
+    value: unknown
+  ): value is AccountType {
+    return (
+      typeof value ===
+        "string" &&
+      accountTypes.includes(
+        value as AccountType
+      )
+    );
+  }
+
+  private static isOptionalString(
+    value: unknown
+  ): value is string | undefined {
+    return (
+      value === undefined ||
+      typeof value ===
+        "string"
+    );
+  }
+
+  private static isFiniteNumber(
+    value: unknown
+  ): value is number {
+    return (
+      typeof value ===
+        "number" &&
+      Number.isFinite(value)
+    );
+  }
+
+  private static isOptionalFiniteNumber(
+    value: unknown
+  ): value is number | undefined {
+    return (
+      value === undefined ||
+      this.isFiniteNumber(value)
+    );
+  }
+
+  private static isDateString(
+    value: unknown
+  ): value is string {
+    return (
+      typeof value ===
+        "string" &&
+      !Number.isNaN(
+        new Date(value).getTime()
+      )
+    );
+  }
+
+  private static isOptionalDateString(
+    value: unknown
+  ): value is string | undefined {
+    return (
+      value === undefined ||
+      this.isDateString(value)
+    );
+  }
+
+  private static isRecord(
+    value: unknown
+  ): value is Record<
+    string,
+    unknown
+  > {
+    return (
+      typeof value ===
+        "object" &&
+      value !== null
+    );
   }
 }

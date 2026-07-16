@@ -3,6 +3,7 @@ import {
   useMemo,
   useState,
   type ChangeEvent,
+  type ClipboardEvent,
   type FormEvent,
 } from "react";
 
@@ -10,6 +11,11 @@ import type { Account } from "../../accounts/models/Account";
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
 import type { OperationResult } from "../../../shared/types";
+
+import type {
+  StoredAttachment,
+  StoredAttachmentCategory,
+} from "../../../shared/models/StoredAttachment";
 
 import type { Transaction } from "../models/Transaction";
 
@@ -52,9 +58,115 @@ interface SharedPersonalPreview {
   finalAmounts: number[];
 }
 
-function getDefaultFormValues(
-  defaultMemberId: string
-): TransactionFormData {
+const acceptedAttachmentMimeTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+] as const;
+
+const maximumAttachmentCount = 3;
+
+const maximumAttachmentSizeBytes =
+  750 * 1024;
+
+function isAcceptedAttachmentMimeType(
+  mimeType: string
+): boolean {
+  return acceptedAttachmentMimeTypes.includes(
+    mimeType as
+      typeof acceptedAttachmentMimeTypes[number]
+  );
+}
+
+function getDefaultAttachmentCategory(
+  fileName: string
+): StoredAttachmentCategory {
+  const normalizedName =
+    fileName.toLowerCase();
+
+  if (
+    normalizedName.includes(
+      "bill"
+    ) ||
+    normalizedName.includes(
+      "invoice"
+    )
+  ) {
+    return "bill";
+  }
+
+  if (
+    normalizedName.includes(
+      "receipt"
+    )
+  ) {
+    return "receipt";
+  }
+
+  return "other";
+}
+
+function formatFileSize(
+  sizeBytes: number
+): string {
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`;
+  }
+
+  return `${(
+    sizeBytes /
+    1024
+  ).toFixed(1)} KB`;
+}
+
+function readFileAsDataUrl(
+  file: File
+): Promise<string> {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+      const reader =
+        new FileReader();
+
+      reader.onload = () => {
+        if (
+          typeof reader.result ===
+          "string"
+        ) {
+          resolve(
+            reader.result
+          );
+
+          return;
+        }
+
+        reject(
+          new Error(
+            "The selected attachment could not be read."
+          )
+        );
+      };
+
+      reader.onerror = () => {
+        reject(
+          reader.error ??
+            new Error(
+              "The selected attachment could not be read."
+            )
+        );
+      };
+
+      reader.readAsDataURL(
+        file
+      );
+    }
+  );
+}
+
+function getDefaultFormValues(): TransactionFormData {
   const today = new Date()
     .toISOString()
     .slice(0, 10);
@@ -62,8 +174,7 @@ function getDefaultFormValues(
   return {
     ...defaultTransactionForm,
 
-    paidByMemberId:
-      defaultMemberId,
+    paidByMemberId: "",
 
     transactionDate:
       today,
@@ -381,20 +492,10 @@ export default function TransactionForm({
         member.isActive
     );
 
-  const defaultMemberId =
-    activeMembers.find(
-      (member) =>
-        member.role === "owner"
-    )?.id ??
-    activeMembers[0]?.id ??
-    "";
-
   const [form, setForm] =
     useState<TransactionFormData>(
       initialValues ??
-        getDefaultFormValues(
-          defaultMemberId
-        )
+        getDefaultFormValues()
     );
 
   const [errors, setErrors] = useState<
@@ -409,11 +510,6 @@ export default function TransactionForm({
       initialValues
         ? {
             ...initialValues,
-
-            paidByMemberId:
-              initialValues
-                .paidByMemberId ||
-              defaultMemberId,
 
             allocations:
               initialValues.allocations.map(
@@ -435,39 +531,37 @@ export default function TransactionForm({
                   };
                 }
               ),
+
+            attachments:
+              initialValues.attachments?.map(
+                (attachment) => ({
+                  ...attachment,
+
+                  createdAt:
+                    new Date(
+                      attachment.createdAt
+                    ),
+                })
+              ) ?? [],
           }
-        : getDefaultFormValues(
-            defaultMemberId
-          );
+        : getDefaultFormValues();
 
     setForm(nextForm);
     setErrors({});
     setMessage("");
-  }, [
-    initialValues,
-    defaultMemberId,
-  ]);
+  }, [initialValues]);
 
   const availableAccounts =
     useMemo(() => {
+      if (!form.paidByMemberId) {
+        return [];
+      }
+
       return accounts.filter(
-        (account) => {
-          if (!account.isActive) {
-            return false;
-          }
-
-          if (
-            account.visibility ===
-            "household"
-          ) {
-            return true;
-          }
-
-          return (
-            account.ownerMemberId ===
+        (account) =>
+          account.isActive &&
+          account.ownerMemberId ===
             form.paidByMemberId
-          );
-        }
       );
     }, [
       accounts,
@@ -584,50 +678,15 @@ export default function TransactionForm({
     const memberId =
       event.target.value;
 
-    setForm((current) => {
-      const sourceAccount =
-        accounts.find(
-          (account) =>
-            account.id ===
-            current.sourceAccountId
-        );
+    setForm((current) => ({
+      ...current,
 
-      const destinationAccount =
-        accounts.find(
-          (account) =>
-            account.id ===
-            current.destinationAccountId
-        );
+      paidByMemberId:
+        memberId,
 
-      const shouldClearSource =
-        sourceAccount?.visibility ===
-          "private" &&
-        sourceAccount.ownerMemberId !==
-          memberId;
-
-      const shouldClearDestination =
-        destinationAccount?.visibility ===
-          "private" &&
-        destinationAccount.ownerMemberId !==
-          memberId;
-
-      return {
-        ...current,
-
-        paidByMemberId:
-          memberId,
-
-        sourceAccountId:
-          shouldClearSource
-            ? ""
-            : current.sourceAccountId,
-
-        destinationAccountId:
-          shouldClearDestination
-            ? ""
-            : current.destinationAccountId,
-      };
-    });
+      sourceAccountId: "",
+      destinationAccountId: "",
+    }));
 
     setErrors((current) => {
       const nextErrors = {
@@ -936,6 +995,251 @@ export default function TransactionForm({
             item.id !== itemId
         )
     );
+  };
+
+  const clearAttachmentError =
+    () => {
+      setErrors((current) => {
+        if (!current.attachments) {
+          return current;
+        }
+
+        const nextErrors = {
+          ...current,
+        };
+
+        delete nextErrors.attachments;
+
+        return nextErrors;
+      });
+
+      setMessage("");
+    };
+
+  const setAttachmentError = (
+    attachmentError: string
+  ) => {
+    setErrors((current) => ({
+      ...current,
+
+      attachments:
+        attachmentError,
+    }));
+
+    setMessage(
+      "Unable to add attachment."
+    );
+  };
+
+  const addAttachmentFiles =
+    async (
+      files: File[]
+    ): Promise<void> => {
+      if (files.length === 0) {
+        return;
+      }
+
+      if (
+        form.attachments.length +
+          files.length >
+        maximumAttachmentCount
+      ) {
+        setAttachmentError(
+          `Add no more than ${maximumAttachmentCount} attachments.`
+        );
+
+        return;
+      }
+
+      for (
+        const file of files
+      ) {
+        if (
+          !isAcceptedAttachmentMimeType(
+            file.type
+          )
+        ) {
+          setAttachmentError(
+            "Attachments must be JPEG, PNG, WebP, or PDF files."
+          );
+
+          return;
+        }
+
+        if (
+          file.size >
+          maximumAttachmentSizeBytes
+        ) {
+          setAttachmentError(
+            `${file.name} exceeds the 750 KB attachment limit.`
+          );
+
+          return;
+        }
+      }
+
+      try {
+        const attachments:
+          StoredAttachment[] =
+          [];
+
+        for (
+          const file of files
+        ) {
+          const dataUrl =
+            await readFileAsDataUrl(
+              file
+            );
+
+          attachments.push({
+            id:
+              crypto.randomUUID(),
+
+            category:
+              getDefaultAttachmentCategory(
+                file.name
+              ),
+
+            fileName:
+              file.name,
+
+            mimeType:
+              file.type,
+
+            sizeBytes:
+              file.size,
+
+            dataUrl,
+
+            createdAt:
+              new Date(),
+          });
+        }
+
+        setForm((current) => ({
+          ...current,
+
+          attachments: [
+            ...current.attachments,
+            ...attachments,
+          ],
+        }));
+
+        clearAttachmentError();
+      } catch (
+        error
+      ) {
+        setAttachmentError(
+          error instanceof Error
+            ? error.message
+            : "The selected attachment could not be read."
+        );
+      }
+    };
+
+  const handleAttachmentInputChange =
+    async (
+      event:
+        ChangeEvent<HTMLInputElement>
+    ) => {
+      const files =
+        Array.from(
+          event.target.files ??
+            []
+        );
+
+      await addAttachmentFiles(
+        files
+      );
+
+      event.target.value =
+        "";
+    };
+
+  const handleAttachmentPaste =
+    async (
+      event:
+        ClipboardEvent<HTMLDivElement>
+    ) => {
+      const imageFiles =
+        Array.from(
+          event.clipboardData.items
+        )
+          .filter(
+            (item) =>
+              item.kind ===
+                "file" &&
+              item.type.startsWith(
+                "image/"
+              )
+          )
+          .map(
+            (item) =>
+              item.getAsFile()
+          )
+          .filter(
+            (
+              file
+            ): file is File =>
+              Boolean(file)
+          );
+
+      if (
+        imageFiles.length === 0
+      ) {
+        setAttachmentError(
+          "Clipboard does not contain a supported image."
+        );
+
+        return;
+      }
+
+      event.preventDefault();
+
+      await addAttachmentFiles(
+        imageFiles
+      );
+    };
+
+  const updateAttachmentCategory = (
+    attachmentId: string,
+    category:
+      StoredAttachmentCategory
+  ) => {
+    setForm((current) => ({
+      ...current,
+
+      attachments:
+        current.attachments.map(
+          (attachment) =>
+            attachment.id ===
+            attachmentId
+              ? {
+                  ...attachment,
+                  category,
+                }
+              : attachment
+        ),
+    }));
+
+    clearAttachmentError();
+  };
+
+  const removeAttachment = (
+    attachmentId: string
+  ) => {
+    setForm((current) => ({
+      ...current,
+
+      attachments:
+        current.attachments.filter(
+          (attachment) =>
+            attachment.id !==
+            attachmentId
+        ),
+    }));
+
+    clearAttachmentError();
   };
 
   const handleSubmit = (
@@ -1271,10 +1575,15 @@ export default function TransactionForm({
                 event.target.value
               )
             }
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+            disabled={
+              !form.paidByMemberId
+            }
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="">
-              Select account
+              {form.paidByMemberId
+                ? "Select account"
+                : "Select member first"}
             </option>
 
             {availableAccounts.map(
@@ -1326,10 +1635,15 @@ export default function TransactionForm({
                 event.target.value
               )
             }
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+            disabled={
+              !form.paidByMemberId
+            }
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="">
-              Select destination account
+              {form.paidByMemberId
+                ? "Select destination account"
+                : "Select member first"}
             </option>
 
             {availableAccounts.map(
@@ -1961,6 +2275,182 @@ export default function TransactionForm({
           className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm text-foreground"
         />
       </div>
+
+      <section className="space-y-4 rounded-lg border p-4">
+        <div>
+          <h3 className="font-medium text-foreground">
+            Receipts and Bills
+          </h3>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Upload JPEG, PNG, WebP, or PDF files, or paste
+            an image from the clipboard. Maximum 3 files,
+            750 KB each.
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 px-4 py-5 text-center hover:bg-muted/40">
+            <span className="text-sm font-medium text-foreground">
+              Upload receipt or bill
+            </span>
+
+            <span className="mt-1 text-xs text-muted-foreground">
+              Choose images or PDF files
+            </span>
+
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              multiple
+              className="sr-only"
+              onChange={
+                handleAttachmentInputChange
+              }
+            />
+          </label>
+
+          <div
+            tabIndex={0}
+            role="button"
+            onPaste={
+              handleAttachmentPaste
+            }
+            className="flex min-h-24 cursor-text flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 px-4 py-5 text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            <span className="text-sm font-medium text-foreground">
+              Paste receipt image
+            </span>
+
+            <span className="mt-1 text-xs text-muted-foreground">
+              Click here, then press Ctrl + V
+            </span>
+          </div>
+        </div>
+
+        {form.attachments.length ===
+        0 ? (
+          <p className="rounded-md border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
+            No receipt or bill attached.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {form.attachments.map(
+              (attachment) => (
+                <article
+                  key={
+                    attachment.id
+                  }
+                  className="grid gap-4 rounded-md border p-3 md:grid-cols-[6rem_minmax(0,1fr)_auto]"
+                >
+                  <div className="flex h-24 items-center justify-center overflow-hidden rounded-md bg-muted">
+                    {attachment.mimeType.startsWith(
+                      "image/"
+                    ) ? (
+                      <img
+                        src={
+                          attachment.dataUrl
+                        }
+                        alt={
+                          attachment.fileName
+                        }
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        PDF
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 space-y-3">
+                    <div>
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {
+                          attachment.fileName
+                        }
+                      </p>
+
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatFileSize(
+                          attachment.sizeBytes
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label
+                        htmlFor={`attachment-category-${attachment.id}`}
+                        className="text-xs font-medium text-foreground"
+                      >
+                        Document Type
+                      </label>
+
+                      <select
+                        id={`attachment-category-${attachment.id}`}
+                        value={
+                          attachment.category
+                        }
+                        onChange={(event) =>
+                          updateAttachmentCategory(
+                            attachment.id,
+                            event.target
+                              .value as StoredAttachmentCategory
+                          )
+                        }
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+                      >
+                        <option value="receipt">
+                          Receipt
+                        </option>
+
+                        <option value="bill">
+                          Bill
+                        </option>
+
+                        <option value="other">
+                          Other
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 md:flex-col">
+                    <a
+                      href={
+                        attachment.dataUrl
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-md border px-3 py-2 text-center text-sm font-medium text-foreground hover:bg-muted"
+                    >
+                      Open
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removeAttachment(
+                          attachment.id
+                        )
+                      }
+                      className="rounded-md border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </article>
+              )
+            )}
+          </div>
+        )}
+
+        {errors.attachments && (
+          <p className="text-sm text-destructive">
+            {errors.attachments}
+          </p>
+        )}
+      </section>
 
       <label className="flex items-center gap-3">
         <input

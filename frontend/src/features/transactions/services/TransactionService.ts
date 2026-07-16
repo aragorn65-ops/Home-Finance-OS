@@ -4,13 +4,19 @@ import type {
 } from "../models/Transaction";
 
 import type { TransactionForm } from "../models/TransactionForm";
-import type { ExpenseAllocation } from "../models/ExpenseAllocation";
+
+import type {
+  AllocationPaymentStatus,
+  ExpenseAllocation,
+} from "../models/ExpenseAllocation";
 
 import TransactionRepository from "../repositories/TransactionRepository";
 import TransactionValidator from "../validators/TransactionValidator";
 
 import AccountService from "../../accounts/services/AccountService";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+
+import AllocationPaymentService from "../../settlements/services/AllocationPaymentService";
 
 import ExpenseAllocationService from "./ExpenseAllocationService";
 
@@ -65,7 +71,8 @@ export default class TransactionService {
    */
   static getActiveTransactions(): Transaction[] {
     return this.getTransactions().filter(
-      (transaction) => transaction.isActive
+      (transaction) =>
+        transaction.isActive
     );
   }
 
@@ -78,7 +85,8 @@ export default class TransactionService {
     return this.getTransactionsForMember(
       memberId
     ).filter(
-      (transaction) => transaction.isActive
+      (transaction) =>
+        transaction.isActive
     );
   }
 
@@ -88,7 +96,9 @@ export default class TransactionService {
   static getTransactionById(
     id: string
   ): Transaction | undefined {
-    return TransactionRepository.findById(id);
+    return TransactionRepository.findById(
+      id
+    );
   }
 
   /**
@@ -99,7 +109,9 @@ export default class TransactionService {
     memberId: string
   ): Transaction | undefined {
     const transaction =
-      TransactionRepository.findById(id);
+      TransactionRepository.findById(
+        id
+      );
 
     if (
       !transaction ||
@@ -132,7 +144,10 @@ export default class TransactionService {
       transaction.visibility ??
       "household";
 
-    if (visibility === "household") {
+    if (
+      visibility ===
+      "household"
+    ) {
       return true;
     }
 
@@ -145,14 +160,18 @@ export default class TransactionService {
       return true;
     }
 
-    if (visibility === "private") {
+    if (
+      visibility ===
+      "private"
+    ) {
       return false;
     }
 
     const allocations =
-      ExpenseAllocationService.getByTransactionId(
-        transaction.id
-      );
+      ExpenseAllocationService
+        .getByTransactionId(
+          transaction.id
+        );
 
     return allocations.some(
       (allocation) =>
@@ -168,9 +187,86 @@ export default class TransactionService {
   static getExpenseAllocations(
     transactionId: string
   ): ExpenseAllocation[] {
-    return ExpenseAllocationService.getByTransactionId(
-      transactionId
-    );
+    return ExpenseAllocationService
+      .getByTransactionId(
+        transactionId
+      );
+  }
+
+  /**
+   * Derives the reimbursement payment status for an
+   * expense transaction.
+   *
+   * Returns undefined when the transaction is not an
+   * expense or has no payable member allocations.
+   */
+  static getExpensePaymentStatus(
+    transactionId: string
+  ): AllocationPaymentStatus | undefined {
+    const transaction =
+      TransactionRepository.findById(
+        transactionId.trim()
+      );
+
+    if (
+      !transaction ||
+      transaction.type !==
+        "expense"
+    ) {
+      return undefined;
+    }
+
+    const payableAllocations =
+      ExpenseAllocationService
+        .getByTransactionId(
+          transaction.id
+        )
+        .filter(
+          (allocation) =>
+            allocation.isIncluded &&
+            allocation.allocatedAmount >
+              0 &&
+            allocation.memberId !==
+              allocation.paidByMemberId
+        );
+
+    if (
+      payableAllocations.length ===
+      0
+    ) {
+      return undefined;
+    }
+
+    const paymentStatuses =
+      payableAllocations.map(
+        (allocation) =>
+          AllocationPaymentService
+            .getPaymentStatus(
+              allocation
+            )
+      );
+
+    if (
+      paymentStatuses.every(
+        (status) =>
+          status ===
+          "paid"
+      )
+    ) {
+      return "paid";
+    }
+
+    if (
+      paymentStatuses.every(
+        (status) =>
+          status ===
+          "unpaid"
+      )
+    ) {
+      return "unpaid";
+    }
+
+    return "partially-paid";
   }
 
   /**
@@ -186,10 +282,11 @@ export default class TransactionService {
       return [];
     }
 
-    return this.getActiveTransactions().slice(
-      0,
-      limit
-    );
+    return this.getActiveTransactions()
+      .slice(
+        0,
+        limit
+      );
   }
 
   /**
@@ -206,9 +303,14 @@ export default class TransactionService {
       return [];
     }
 
-    return this.getActiveTransactionsForMember(
-      memberId
-    ).slice(0, limit);
+    return this
+      .getActiveTransactionsForMember(
+        memberId
+      )
+      .slice(
+        0,
+        limit
+      );
   }
 
   /**
@@ -224,13 +326,17 @@ export default class TransactionService {
     const month =
       referenceDate.getMonth();
 
-    return this.getActiveTransactions().filter(
-      (transaction) =>
-        transaction.transactionDate.getFullYear() ===
-          year &&
-        transaction.transactionDate.getMonth() ===
-          month
-    );
+    return this
+      .getActiveTransactions()
+      .filter(
+        (transaction) =>
+          transaction.transactionDate
+            .getFullYear() ===
+            year &&
+          transaction.transactionDate
+            .getMonth() ===
+            month
+      );
   }
 
   /**
@@ -239,16 +345,19 @@ export default class TransactionService {
   static getTotalIncome(
     referenceDate: Date = new Date()
   ): number {
-    return this.getTransactionsForMonth(
-      referenceDate
-    )
+    return this
+      .getTransactionsForMonth(
+        referenceDate
+      )
       .filter(
         (transaction) =>
-          transaction.type === "income"
+          transaction.type ===
+          "income"
       )
       .reduce(
         (total, transaction) =>
-          total + transaction.amount,
+          total +
+          transaction.amount,
         0
       );
   }
@@ -259,16 +368,19 @@ export default class TransactionService {
   static getTotalExpenses(
     referenceDate: Date = new Date()
   ): number {
-    return this.getTransactionsForMonth(
-      referenceDate
-    )
+    return this
+      .getTransactionsForMonth(
+        referenceDate
+      )
       .filter(
         (transaction) =>
-          transaction.type === "expense"
+          transaction.type ===
+          "expense"
       )
       .reduce(
         (total, transaction) =>
-          total + transaction.amount,
+          total +
+          transaction.amount,
         0
       );
   }
@@ -283,8 +395,12 @@ export default class TransactionService {
     referenceDate: Date = new Date()
   ): number {
     return (
-      this.getTotalIncome(referenceDate) -
-      this.getTotalExpenses(referenceDate)
+      this.getTotalIncome(
+        referenceDate
+      ) -
+      this.getTotalExpenses(
+        referenceDate
+      )
     );
   }
 
@@ -297,10 +413,14 @@ export default class TransactionService {
     householdId: string
   ): OperationResult<Transaction> {
     const validation =
-      TransactionValidator.validate(form);
+      TransactionValidator.validate(
+        form
+      );
 
     if (!validation.isValid) {
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         validation.errors,
         "Please correct the validation errors."
       );
@@ -313,10 +433,14 @@ export default class TransactionService {
       );
 
     if (
-      Object.keys(memberErrors).length >
+      Object.keys(
+        memberErrors
+      ).length >
       0
     ) {
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         memberErrors,
         "Please correct the household member errors."
       );
@@ -329,87 +453,111 @@ export default class TransactionService {
       );
 
     if (
-      Object.keys(accountErrors).length >
+      Object.keys(
+        accountErrors
+      ).length >
       0
     ) {
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         accountErrors,
         "Please correct the account errors."
       );
     }
 
-    const now = new Date();
+    const now =
+      new Date();
 
     const recordedByMemberId =
-      form.paidByMemberId.trim() ||
+      form.paidByMemberId
+        .trim() ||
       undefined;
 
-    const transaction: Transaction = {
-      id: crypto.randomUUID(),
-      householdId,
+    const transaction:
+      Transaction = {
+        id:
+          crypto.randomUUID(),
 
-      createdByMemberId:
-        recordedByMemberId,
+        householdId,
 
-      paidByMemberId:
-        form.type === "expense"
-          ? recordedByMemberId
-          : undefined,
+        createdByMemberId:
+          recordedByMemberId,
 
-      expenseSplitMethod:
-        form.type === "expense"
-          ? form.splitMethod
-          : undefined,
+        paidByMemberId:
+          form.type ===
+          "expense"
+            ? recordedByMemberId
+            : undefined,
 
-      visibility:
-        this.resolveTransactionVisibility(
-          form
-        ),
+        expenseSplitMethod:
+          form.type ===
+          "expense"
+            ? form.splitMethod
+            : undefined,
 
-      type:
-        form.type,
+        visibility:
+          this.resolveTransactionVisibility(
+            form
+          ),
 
-      amount:
-        form.amount,
+        type:
+          form.type,
 
-      sourceAccountId:
-        form.type === "income"
-          ? null
-          : form.sourceAccountId.trim(),
+        amount:
+          form.amount,
 
-      destinationAccountId:
-        form.type === "expense"
-          ? null
-          : form.destinationAccountId.trim(),
+        sourceAccountId:
+          form.type ===
+          "income"
+            ? null
+            : form.sourceAccountId
+                .trim(),
 
-      category:
-        form.category.trim(),
+        destinationAccountId:
+          form.type ===
+          "expense"
+            ? null
+            : form.destinationAccountId
+                .trim(),
 
-      description:
-        form.description.trim(),
+        category:
+          form.category.trim(),
 
-      notes:
-        form.notes.trim(),
+        description:
+          form.description.trim(),
 
-      transactionDate:
-        new Date(
-          `${form.transactionDate}T00:00:00`
-        ),
+        notes:
+          form.notes.trim(),
 
-      isActive:
-        form.isActive,
+        attachments:
+          this.cloneAttachments(
+            form.attachments
+          ),
 
-      createdAt: now,
-      updatedAt: now,
-    };
+        transactionDate:
+          new Date(
+            `${form.transactionDate}T00:00:00`
+          ),
+
+        isActive:
+          form.isActive,
+
+        createdAt: now,
+        updatedAt: now,
+      };
 
     const balanceResult =
       this.applyBalanceEffects(
         transaction
       );
 
-    if (!balanceResult.success) {
-      return OperationResults.failure<Transaction>(
+    if (
+      !balanceResult.success
+    ) {
+      return OperationResults.failure<
+        Transaction
+      >(
         balanceResult.errors,
         balanceResult.message ??
           "Unable to update account balances."
@@ -421,24 +569,74 @@ export default class TransactionService {
         transaction
       );
 
+    if (!createdTransaction) {
+      const balanceRollback =
+        this.reverseBalanceEffects(
+          transaction
+        );
+
+      if (
+        !balanceRollback.success
+      ) {
+        return OperationResults.failure<
+          Transaction
+        >(
+          {
+            general:
+              "The transaction could not be saved and its account balance effects could not be reversed.",
+          },
+          "Critical transaction persistence rollback failure."
+        );
+      }
+
+      return OperationResults.failure<
+        Transaction
+      >(
+        {
+          general:
+            "Transaction could not be saved.",
+        },
+        "Unable to create transaction."
+      );
+    }
+
     const allocationResult =
       this.createExpenseAllocations(
         createdTransaction,
         form
       );
 
-    if (!allocationResult.success) {
-      TransactionRepository.delete(
-        createdTransaction.id
-      );
+    if (
+      !allocationResult.success
+    ) {
+      const transactionDeleted =
+        TransactionRepository.delete(
+          createdTransaction.id
+        );
+
+      if (!transactionDeleted) {
+        return OperationResults.failure<
+          Transaction
+        >(
+          {
+            general:
+              "Expense allocations could not be created and the persisted transaction could not be removed.",
+          },
+          "Critical transaction persistence rollback failure."
+        );
+      }
 
       const balanceRollback =
         this.reverseBalanceEffects(
           createdTransaction
         );
 
-      if (!balanceRollback.success) {
-        return OperationResults.failure<Transaction>(
+      if (
+        !balanceRollback.success
+      ) {
+        return OperationResults.failure<
+          Transaction
+        >(
           {
             general:
               "The transaction allocation failed and account balances could not be restored.",
@@ -447,7 +645,9 @@ export default class TransactionService {
         );
       }
 
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         allocationResult.errors,
         allocationResult.message ??
           "Unable to create expense allocations."
@@ -469,10 +669,14 @@ export default class TransactionService {
     form: TransactionForm
   ): OperationResult<Transaction> {
     const existing =
-      TransactionRepository.findById(id);
+      TransactionRepository.findById(
+        id
+      );
 
     if (!existing) {
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         {
           general:
             "Transaction not found.",
@@ -482,10 +686,14 @@ export default class TransactionService {
     }
 
     const validation =
-      TransactionValidator.validate(form);
+      TransactionValidator.validate(
+        form
+      );
 
     if (!validation.isValid) {
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         validation.errors,
         "Please correct the validation errors."
       );
@@ -498,10 +706,14 @@ export default class TransactionService {
       );
 
     if (
-      Object.keys(memberErrors).length >
+      Object.keys(
+        memberErrors
+      ).length >
       0
     ) {
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         memberErrors,
         "Please correct the household member errors."
       );
@@ -514,85 +726,106 @@ export default class TransactionService {
       );
 
     if (
-      Object.keys(accountErrors).length >
+      Object.keys(
+        accountErrors
+      ).length >
       0
     ) {
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         accountErrors,
         "Please correct the account errors."
       );
     }
 
     const selectedMemberId =
-      form.paidByMemberId.trim() ||
+      form.paidByMemberId
+        .trim() ||
       undefined;
 
-    const updatedTransaction: Transaction = {
-      ...existing,
+    const updatedTransaction:
+      Transaction = {
+        ...existing,
 
-      createdByMemberId:
-        existing.createdByMemberId ??
-        selectedMemberId,
+        createdByMemberId:
+          existing.createdByMemberId ??
+          selectedMemberId,
 
-      paidByMemberId:
-        form.type === "expense"
-          ? selectedMemberId
-          : undefined,
+        paidByMemberId:
+          form.type ===
+          "expense"
+            ? selectedMemberId
+            : undefined,
 
-      expenseSplitMethod:
-        form.type === "expense"
-          ? form.splitMethod
-          : undefined,
+        expenseSplitMethod:
+          form.type ===
+          "expense"
+            ? form.splitMethod
+            : undefined,
 
-      visibility:
-        this.resolveTransactionVisibility(
-          form
-        ),
+        visibility:
+          this.resolveTransactionVisibility(
+            form
+          ),
 
-      type:
-        form.type,
+        type:
+          form.type,
 
-      amount:
-        form.amount,
+        amount:
+          form.amount,
 
-      sourceAccountId:
-        form.type === "income"
-          ? null
-          : form.sourceAccountId.trim(),
+        sourceAccountId:
+          form.type ===
+          "income"
+            ? null
+            : form.sourceAccountId
+                .trim(),
 
-      destinationAccountId:
-        form.type === "expense"
-          ? null
-          : form.destinationAccountId.trim(),
+        destinationAccountId:
+          form.type ===
+          "expense"
+            ? null
+            : form.destinationAccountId
+                .trim(),
 
-      category:
-        form.category.trim(),
+        category:
+          form.category.trim(),
 
-      description:
-        form.description.trim(),
+        description:
+          form.description.trim(),
 
-      notes:
-        form.notes.trim(),
+        notes:
+          form.notes.trim(),
 
-      transactionDate:
-        new Date(
-          `${form.transactionDate}T00:00:00`
-        ),
+        attachments:
+          this.cloneAttachments(
+            form.attachments
+          ),
 
-      isActive:
-        form.isActive,
+        transactionDate:
+          new Date(
+            `${form.transactionDate}T00:00:00`
+          ),
 
-      updatedAt:
-        new Date(),
-    };
+        isActive:
+          form.isActive,
+
+        updatedAt:
+          new Date(),
+      };
 
     const reversalResult =
       this.reverseBalanceEffects(
         existing
       );
 
-    if (!reversalResult.success) {
-      return OperationResults.failure<Transaction>(
+    if (
+      !reversalResult.success
+    ) {
+      return OperationResults.failure<
+        Transaction
+      >(
         reversalResult.errors,
         reversalResult.message ??
           "Unable to reverse the existing transaction."
@@ -604,14 +837,21 @@ export default class TransactionService {
         updatedTransaction
       );
 
-    if (!applyResult.success) {
+    if (
+      !applyResult.success
+    ) {
       const restorationResult =
         this.applyBalanceEffects(
-          existing
+          existing,
+          true
         );
 
-      if (!restorationResult.success) {
-        return OperationResults.failure<Transaction>(
+      if (
+        !restorationResult.success
+      ) {
+        return OperationResults.failure<
+          Transaction
+        >(
           {
             general:
               "The update failed and the previous account balances could not be restored.",
@@ -620,7 +860,9 @@ export default class TransactionService {
         );
       }
 
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         applyResult.errors,
         applyResult.message ??
           "Unable to apply the updated transaction."
@@ -640,14 +882,21 @@ export default class TransactionService {
           updatedTransaction
         );
 
-      if (!rollbackResult.success) {
-        return OperationResults.failure<Transaction>(
+      if (
+        !rollbackResult.success
+      ) {
+        return OperationResults.failure<
+          Transaction
+        >(
           rollbackResult.errors,
-          rollbackResult.message
+          rollbackResult.message ??
+            "Unable to restore the original transaction balances."
         );
       }
 
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         {
           general:
             "Transaction could not be saved.",
@@ -662,11 +911,26 @@ export default class TransactionService {
         form
       );
 
-    if (!allocationResult.success) {
-      TransactionRepository.update(
-        existing.id,
-        existing
-      );
+    if (
+      !allocationResult.success
+    ) {
+      const restoredTransaction =
+        TransactionRepository.update(
+          existing.id,
+          existing
+        );
+
+      if (!restoredTransaction) {
+        return OperationResults.failure<
+          Transaction
+        >(
+          {
+            general:
+              "Expense allocations could not be updated and the original transaction could not be restored.",
+          },
+          "Critical transaction persistence rollback failure."
+        );
+      }
 
       const rollbackResult =
         this.rollbackUpdatedBalanceEffects(
@@ -674,8 +938,12 @@ export default class TransactionService {
           updatedTransaction
         );
 
-      if (!rollbackResult.success) {
-        return OperationResults.failure<Transaction>(
+      if (
+        !rollbackResult.success
+      ) {
+        return OperationResults.failure<
+          Transaction
+        >(
           {
             general:
               "The allocation update failed and previous account balances could not be restored.",
@@ -684,7 +952,9 @@ export default class TransactionService {
         );
       }
 
-      return OperationResults.failure<Transaction>(
+      return OperationResults.failure<
+        Transaction
+      >(
         allocationResult.errors,
         allocationResult.message ??
           "Unable to update expense allocations."
@@ -705,10 +975,14 @@ export default class TransactionService {
     id: string
   ): OperationResult<boolean> {
     const existing =
-      TransactionRepository.findById(id);
+      TransactionRepository.findById(
+        id
+      );
 
     if (!existing) {
-      return OperationResults.failure<boolean>(
+      return OperationResults.failure<
+        boolean
+      >(
         {
           general:
             "Transaction not found.",
@@ -722,8 +996,12 @@ export default class TransactionService {
         existing
       );
 
-    if (!reversalResult.success) {
-      return OperationResults.failure<boolean>(
+    if (
+      !reversalResult.success
+    ) {
+      return OperationResults.failure<
+        boolean
+      >(
         reversalResult.errors,
         reversalResult.message ??
           "Unable to reverse the transaction."
@@ -731,16 +1009,23 @@ export default class TransactionService {
     }
 
     const deleted =
-      TransactionRepository.delete(id);
+      TransactionRepository.delete(
+        id
+      );
 
     if (!deleted) {
       const restorationResult =
         this.applyBalanceEffects(
-          existing
+          existing,
+          true
         );
 
-      if (!restorationResult.success) {
-        return OperationResults.failure<boolean>(
+      if (
+        !restorationResult.success
+      ) {
+        return OperationResults.failure<
+          boolean
+        >(
           {
             general:
               "The transaction could not be deleted and its account balances could not be restored.",
@@ -749,7 +1034,9 @@ export default class TransactionService {
         );
       }
 
-      return OperationResults.failure<boolean>(
+      return OperationResults.failure<
+        boolean
+      >(
         {
           general:
             "Transaction could not be deleted.",
@@ -760,20 +1047,42 @@ export default class TransactionService {
 
     const allocationDeleteResult =
       ExpenseAllocationService
-        .deleteForTransaction(id);
+        .deleteForTransaction(
+          id
+        );
 
-    if (!allocationDeleteResult.success) {
-      TransactionRepository.create(
-        existing
-      );
-
-      const balanceRestoration =
-        this.applyBalanceEffects(
+    if (
+      !allocationDeleteResult.success
+    ) {
+      const restoredTransaction =
+        TransactionRepository.create(
           existing
         );
 
-      if (!balanceRestoration.success) {
-        return OperationResults.failure<boolean>(
+      if (!restoredTransaction) {
+        return OperationResults.failure<
+          boolean
+        >(
+          {
+            general:
+              "Expense allocations could not be deleted and the original transaction could not be restored.",
+          },
+          "Critical transaction persistence restoration failure."
+        );
+      }
+
+      const balanceRestoration =
+        this.applyBalanceEffects(
+          existing,
+          true
+        );
+
+      if (
+        !balanceRestoration.success
+      ) {
+        return OperationResults.failure<
+          boolean
+        >(
           {
             general:
               "Expense allocations could not be deleted and the transaction balance effects could not be restored.",
@@ -782,7 +1091,9 @@ export default class TransactionService {
         );
       }
 
-      return OperationResults.failure<boolean>(
+      return OperationResults.failure<
+        boolean
+      >(
         allocationDeleteResult.errors,
         allocationDeleteResult.message ??
           "Unable to delete expense allocations."
@@ -801,8 +1112,13 @@ export default class TransactionService {
   private static createExpenseAllocations(
     transaction: Transaction,
     form: TransactionForm
-  ): OperationResult<ExpenseAllocation[]> {
-    if (transaction.type !== "expense") {
+  ): OperationResult<
+    ExpenseAllocation[]
+  > {
+    if (
+      transaction.type !==
+      "expense"
+    ) {
       return OperationResults.success(
         []
       );
@@ -825,8 +1141,13 @@ export default class TransactionService {
   private static replaceExpenseAllocations(
     transaction: Transaction,
     form: TransactionForm
-  ): OperationResult<ExpenseAllocation[]> {
-    if (transaction.type !== "expense") {
+  ): OperationResult<
+    ExpenseAllocation[]
+  > {
+    if (
+      transaction.type !==
+      "expense"
+    ) {
       return ExpenseAllocationService
         .replaceForTransaction(
           transaction.id,
@@ -850,16 +1171,37 @@ export default class TransactionService {
   }
 
   /**
+   * Returns defensive copies of transaction attachments.
+   */
+  private static cloneAttachments(
+    attachments:
+      TransactionForm["attachments"]
+  ): TransactionForm["attachments"] {
+    return attachments.map(
+      (attachment) => ({
+        ...attachment,
+
+        createdAt:
+          new Date(
+            attachment.createdAt
+          ),
+      })
+    );
+  }
+
+  /**
    * Validates referenced accounts and private ownership.
    */
   private static validateAccountReferences(
     form: TransactionForm,
     householdId: string
   ): Record<string, string> {
-    const errors: Record<string, string> = {};
+    const errors:
+      Record<string, string> = {};
 
     const selectedMemberId =
-      form.paidByMemberId.trim();
+      form.paidByMemberId
+        .trim();
 
     const validateAccount = (
       accountId: string,
@@ -926,7 +1268,10 @@ export default class TransactionService {
       return account;
     };
 
-    if (form.type === "income") {
+    if (
+      form.type ===
+      "income"
+    ) {
       const destinationAccount =
         validateAccount(
           form.destinationAccountId,
@@ -936,7 +1281,8 @@ export default class TransactionService {
 
       if (
         destinationAccount &&
-        destinationAccount.accountClass !==
+        destinationAccount
+          .accountClass !==
           "asset"
       ) {
         errors.destinationAccountId =
@@ -945,8 +1291,10 @@ export default class TransactionService {
     }
 
     if (
-      form.type === "expense" &&
-      form.sourceAccountId.trim()
+      form.type ===
+        "expense" &&
+      form.sourceAccountId
+        .trim()
     ) {
       validateAccount(
         form.sourceAccountId,
@@ -955,7 +1303,10 @@ export default class TransactionService {
       );
     }
 
-    if (form.type === "transfer") {
+    if (
+      form.type ===
+      "transfer"
+    ) {
       validateAccount(
         form.sourceAccountId,
         "sourceAccountId",
@@ -979,16 +1330,19 @@ export default class TransactionService {
     form: TransactionForm,
     householdId: string
   ): Record<string, string> {
-    const errors: Record<string, string> = {};
+    const errors:
+      Record<string, string> = {};
 
     const selectedMemberId =
-      form.paidByMemberId.trim();
+      form.paidByMemberId
+        .trim();
 
     if (selectedMemberId) {
       const selectedMember =
-        HouseholdMemberService.getMemberById(
-          selectedMemberId
-        );
+        HouseholdMemberService
+          .getMemberById(
+            selectedMemberId
+          );
 
       if (!selectedMember) {
         errors.paidByMemberId =
@@ -1009,7 +1363,10 @@ export default class TransactionService {
       }
     }
 
-    if (form.type !== "expense") {
+    if (
+      form.type !==
+      "expense"
+    ) {
       return errors;
     }
 
@@ -1028,25 +1385,32 @@ export default class TransactionService {
       form.allocations
     ) {
       const memberId =
-        allocation.memberId.trim();
+        allocation.memberId
+          .trim();
 
       if (
         !memberId ||
-        seenMemberIds.has(memberId)
+        seenMemberIds.has(
+          memberId
+        )
       ) {
         continue;
       }
 
-      seenMemberIds.add(memberId);
+      seenMemberIds.add(
+        memberId
+      );
 
       const member =
-        HouseholdMemberService.getMemberById(
-          memberId
-        );
+        HouseholdMemberService
+          .getMemberById(
+            memberId
+          );
 
       if (
         !member ||
-        member.householdId !== householdId ||
+        member.householdId !==
+          householdId ||
         !member.isActive
       ) {
         errors.allocations =
@@ -1069,28 +1433,35 @@ export default class TransactionService {
     const accountIds = [
       form.sourceAccountId.trim(),
       form.destinationAccountId.trim(),
-    ].filter(Boolean);
+    ].filter(
+      Boolean
+    );
 
     const hasPrivateAccount =
-      accountIds.some((accountId) => {
-        const account =
-          AccountService.getAccountById(
-            accountId
-          );
+      accountIds.some(
+        (accountId) => {
+          const account =
+            AccountService
+              .getAccountById(
+                accountId
+              );
 
-        return (
-          account?.visibility ===
-          "private"
-        );
-      });
+          return (
+            account?.visibility ===
+            "private"
+          );
+        }
+      );
 
     if (!hasPrivateAccount) {
       return form.visibility;
     }
 
     const isSharedExpense =
-      form.type === "expense" &&
-      form.splitMethod !== "none" &&
+      form.type ===
+        "expense" &&
+      form.splitMethod !==
+        "none" &&
       form.allocations.some(
         (allocation) =>
           allocation.isIncluded
@@ -1105,11 +1476,17 @@ export default class TransactionService {
 
   /**
    * Applies transaction accounting effects.
+   *
+   * Historical restoration may update an inactive account
+   * without changing the account's activation status.
    */
   private static applyBalanceEffects(
-    transaction: Transaction
+    transaction: Transaction,
+    historicalAdjustment = false
   ): OperationResult<boolean> {
-    if (!transaction.isActive) {
+    if (
+      !transaction.isActive
+    ) {
       return OperationResults.success(
         true
       );
@@ -1121,8 +1498,12 @@ export default class TransactionService {
         false
       );
 
-    if (!operations.success) {
-      return OperationResults.failure<boolean>(
+    if (
+      !operations.success
+    ) {
+      return OperationResults.failure<
+        boolean
+      >(
         operations.errors,
         operations.message ??
           "Unable to build account operations."
@@ -1130,17 +1511,23 @@ export default class TransactionService {
     }
 
     return this.executeAccountOperations(
-      operations.data ?? []
+      operations.data ?? [],
+      historicalAdjustment
     );
   }
 
   /**
    * Reverses transaction accounting effects.
+   *
+   * Reversal is a historical correction and may therefore
+   * update an inactive account.
    */
   private static reverseBalanceEffects(
     transaction: Transaction
   ): OperationResult<boolean> {
-    if (!transaction.isActive) {
+    if (
+      !transaction.isActive
+    ) {
       return OperationResults.success(
         true
       );
@@ -1152,8 +1539,12 @@ export default class TransactionService {
         true
       );
 
-    if (!operations.success) {
-      return OperationResults.failure<boolean>(
+    if (
+      !operations.success
+    ) {
+      return OperationResults.failure<
+        boolean
+      >(
         operations.errors,
         operations.message ??
           "Unable to build reversal operations."
@@ -1161,7 +1552,8 @@ export default class TransactionService {
     }
 
     return this.executeAccountOperations(
-      operations.data ?? []
+      operations.data ?? [],
+      true
     );
   }
 
@@ -1177,8 +1569,12 @@ export default class TransactionService {
         updated
       );
 
-    if (!updatedReversal.success) {
-      return OperationResults.failure<boolean>(
+    if (
+      !updatedReversal.success
+    ) {
+      return OperationResults.failure<
+        boolean
+      >(
         updatedReversal.errors,
         "Unable to reverse the updated transaction effects."
       );
@@ -1186,11 +1582,16 @@ export default class TransactionService {
 
     const originalRestoration =
       this.applyBalanceEffects(
-        existing
+        existing,
+        true
       );
 
-    if (!originalRestoration.success) {
-      return OperationResults.failure<boolean>(
+    if (
+      !originalRestoration.success
+    ) {
+      return OperationResults.failure<
+        boolean
+      >(
         originalRestoration.errors,
         "Unable to restore the original transaction effects."
       );
@@ -1207,8 +1608,13 @@ export default class TransactionService {
   private static buildAccountOperations(
     transaction: Transaction,
     reverse: boolean
-  ): OperationResult<AccountOperation[]> {
-    if (transaction.type === "income") {
+  ): OperationResult<
+    AccountOperation[]
+  > {
+    if (
+      transaction.type ===
+      "income"
+    ) {
       if (
         !transaction.destinationAccountId
       ) {
@@ -1228,9 +1634,10 @@ export default class TransactionService {
           accountId:
             transaction.destinationAccountId,
 
-          type: reverse
-            ? "credit"
-            : "debit",
+          type:
+            reverse
+              ? "credit"
+              : "debit",
 
           amount:
             transaction.amount,
@@ -1238,8 +1645,13 @@ export default class TransactionService {
       ]);
     }
 
-    if (transaction.type === "expense") {
-      if (!transaction.sourceAccountId) {
+    if (
+      transaction.type ===
+      "expense"
+    ) {
+      if (
+        !transaction.sourceAccountId
+      ) {
         return OperationResults.success(
           []
         );
@@ -1250,9 +1662,10 @@ export default class TransactionService {
           accountId:
             transaction.sourceAccountId,
 
-          type: reverse
-            ? "debit"
-            : "credit",
+          type:
+            reverse
+              ? "debit"
+              : "credit",
 
           amount:
             transaction.amount,
@@ -1281,7 +1694,8 @@ export default class TransactionService {
           accountId:
             transaction.destinationAccountId,
 
-          type: "credit",
+          type:
+            "credit",
 
           amount:
             transaction.amount,
@@ -1290,7 +1704,8 @@ export default class TransactionService {
           accountId:
             transaction.sourceAccountId,
 
-          type: "debit",
+          type:
+            "debit",
 
           amount:
             transaction.amount,
@@ -1303,7 +1718,8 @@ export default class TransactionService {
         accountId:
           transaction.sourceAccountId,
 
-        type: "credit",
+        type:
+          "credit",
 
         amount:
           transaction.amount,
@@ -1312,7 +1728,8 @@ export default class TransactionService {
         accountId:
           transaction.destinationAccountId,
 
-        type: "debit",
+        type:
+          "debit",
 
         amount:
           transaction.amount,
@@ -1322,29 +1739,40 @@ export default class TransactionService {
 
   /**
    * Executes account operations sequentially.
+   *
+   * Historical operations may update inactive accounts.
    */
   private static executeAccountOperations(
-    operations: AccountOperation[]
+    operations:
+      AccountOperation[],
+    historicalAdjustment = false
   ): OperationResult<boolean> {
     const completedOperations:
       AccountOperation[] = [];
 
     for (
-      const operation of operations
+      const operation of
+      operations
     ) {
       const result =
         this.executeAccountOperation(
-          operation
+          operation,
+          historicalAdjustment
         );
 
       if (!result.success) {
         const rollbackResult =
           this.rollbackAccountOperations(
-            completedOperations
+            completedOperations,
+            historicalAdjustment
           );
 
-        if (!rollbackResult.success) {
-          return OperationResults.failure<boolean>(
+        if (
+          !rollbackResult.success
+        ) {
+          return OperationResults.failure<
+            boolean
+          >(
             {
               general:
                 "The transaction failed and completed account operations could not be fully rolled back.",
@@ -1353,7 +1781,9 @@ export default class TransactionService {
           );
         }
 
-        return OperationResults.failure<boolean>(
+        return OperationResults.failure<
+          boolean
+        >(
           result.errors,
           result.message ??
             "Unable to update the account balance."
@@ -1374,21 +1804,37 @@ export default class TransactionService {
    * Executes one accounting debit or credit.
    */
   private static executeAccountOperation(
-    operation: AccountOperation
+    operation: AccountOperation,
+    historicalAdjustment = false
   ) {
     if (
-      operation.type === "debit"
+      operation.type ===
+      "debit"
     ) {
-      return AccountService.debitAccount(
-        operation.accountId,
-        operation.amount
-      );
+      return historicalAdjustment
+        ? AccountService
+            .debitAccountForHistoricalAdjustment(
+              operation.accountId,
+              operation.amount
+            )
+        : AccountService
+            .debitAccount(
+              operation.accountId,
+              operation.amount
+            );
     }
 
-    return AccountService.creditAccount(
-      operation.accountId,
-      operation.amount
-    );
+    return historicalAdjustment
+      ? AccountService
+          .creditAccountForHistoricalAdjustment(
+            operation.accountId,
+            operation.amount
+          )
+      : AccountService
+          .creditAccount(
+            operation.accountId,
+            operation.amount
+          );
   }
 
   /**
@@ -1396,32 +1842,38 @@ export default class TransactionService {
    */
   private static rollbackAccountOperations(
     completedOperations:
-      AccountOperation[]
+      AccountOperation[],
+    historicalAdjustment = false
   ): OperationResult<boolean> {
     const reversedOperations = [
       ...completedOperations,
     ].reverse();
 
     for (
-      const operation of reversedOperations
+      const operation of
+      reversedOperations
     ) {
       const inverseOperation:
         AccountOperation = {
           ...operation,
 
           type:
-            operation.type === "debit"
+            operation.type ===
+            "debit"
               ? "credit"
               : "debit",
         };
 
       const result =
         this.executeAccountOperation(
-          inverseOperation
+          inverseOperation,
+          historicalAdjustment
         );
 
       if (!result.success) {
-        return OperationResults.failure<boolean>(
+        return OperationResults.failure<
+          boolean
+        >(
           result.errors,
           result.message ??
             "Unable to roll back an account operation."

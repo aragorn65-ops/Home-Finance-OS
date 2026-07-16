@@ -256,28 +256,17 @@ export default function SettlementForm({
 
   const sourceAccounts =
     useMemo(() => {
+      if (!form.fromMemberId) {
+        return [];
+      }
+
       return accounts.filter(
-        (account) => {
-          if (
-            !account.isActive ||
-            account.householdId !==
-              householdId
-          ) {
-            return false;
-          }
-
-          if (
-            account.visibility ===
-            "household"
-          ) {
-            return true;
-          }
-
-          return (
-            account.ownerMemberId ===
+        (account) =>
+          account.isActive &&
+          account.householdId ===
+            householdId &&
+          account.ownerMemberId ===
             form.fromMemberId
-          );
-        }
       );
     }, [
       accounts,
@@ -287,28 +276,17 @@ export default function SettlementForm({
 
   const destinationAccounts =
     useMemo(() => {
+      if (!form.toMemberId) {
+        return [];
+      }
+
       return accounts.filter(
-        (account) => {
-          if (
-            !account.isActive ||
-            account.householdId !==
-              householdId
-          ) {
-            return false;
-          }
-
-          if (
-            account.visibility ===
-            "household"
-          ) {
-            return true;
-          }
-
-          return (
-            account.ownerMemberId ===
+        (account) =>
+          account.isActive &&
+          account.householdId ===
+            householdId &&
+          account.ownerMemberId ===
             form.toMemberId
-          );
-        }
       );
     }, [
       accounts,
@@ -428,10 +406,16 @@ export default function SettlementForm({
         );
 
       const shouldClearSource =
-        sourceAccount?.visibility ===
-          "private" &&
-        sourceAccount.ownerMemberId !==
-          fromMemberId;
+        Boolean(
+          sourceAccount &&
+          (
+            !sourceAccount.isActive ||
+            sourceAccount.householdId !==
+              householdId ||
+            sourceAccount.ownerMemberId !==
+              fromMemberId
+          )
+        );
 
       return {
         ...current,
@@ -478,12 +462,16 @@ export default function SettlementForm({
         );
 
       const shouldClearDestination =
-        destinationAccount
-          ?.visibility ===
-          "private" &&
-        destinationAccount
-          .ownerMemberId !==
-          toMemberId;
+        Boolean(
+          destinationAccount &&
+          (
+            !destinationAccount.isActive ||
+            destinationAccount.householdId !==
+              householdId ||
+            destinationAccount.ownerMemberId !==
+              toMemberId
+          )
+        );
 
       return {
         ...current,
@@ -876,16 +864,21 @@ export default function SettlementForm({
             value={
               form.sourceAccountId
             }
+            disabled={
+              !form.fromMemberId
+            }
             onChange={(event) =>
               updateField(
                 "sourceAccountId",
                 event.target.value
               )
             }
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="">
-              No linked source account
+              {form.fromMemberId
+                ? "No linked source account"
+                : "Select paying member first"}
             </option>
 
             {sourceAccounts.map(
@@ -928,16 +921,21 @@ export default function SettlementForm({
             value={
               form.destinationAccountId
             }
+            disabled={
+              !form.toMemberId
+            }
             onChange={(event) =>
               updateField(
                 "destinationAccountId",
                 event.target.value
               )
             }
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="">
-              No linked destination account
+              {form.toMemberId
+                ? "No linked destination account"
+                : "Select receiving member first"}
             </option>
 
             {destinationAccounts.map(

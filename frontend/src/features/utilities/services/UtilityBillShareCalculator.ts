@@ -206,17 +206,32 @@ export default class UtilityBillShareCalculator {
       );
     }
 
+    const equalShareEligibility =
+      form.memberShares.map(
+        (
+          memberShare,
+          index
+        ) =>
+          memberShare.sharesRemainder &&
+          fixedCompensationCents[
+            index
+          ] === 0
+      );
+
     const equalShareMemberIndexes =
-      form.memberShares
+      equalShareEligibility
         .map(
-          (memberShare, index) => ({
-            memberShare,
+          (
+            isEligible,
+            index
+          ) => ({
+            isEligible,
             index,
           })
         )
         .filter(
-          ({ memberShare }) =>
-            memberShare.sharesRemainder
+          ({ isEligible }) =>
+            isEligible
         )
         .map(
           ({ index }) =>
@@ -239,9 +254,9 @@ export default class UtilityBillShareCalculator {
     }
 
     const equalShareWeights =
-      form.memberShares.map(
-        (memberShare) =>
-          memberShare.sharesRemainder
+      equalShareEligibility.map(
+        (isEligible) =>
+          isEligible
             ? 1
             : 0
       );
@@ -267,7 +282,9 @@ export default class UtilityBillShareCalculator {
             memberShare.memberId.trim(),
 
           sharesRemainder:
-            memberShare.sharesRemainder,
+            equalShareEligibility[
+              index
+            ],
 
           submeterConsumption:
             submeterConsumption[index],
