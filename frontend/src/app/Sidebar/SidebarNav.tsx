@@ -1,7 +1,13 @@
 import SidebarItem from "./SidebarItem";
 import { navigation } from "./navigation";
 
-export default function SidebarNav() {
+interface SidebarNavProps {
+  onNavigate?: () => void;
+}
+
+export default function SidebarNav({
+  onNavigate,
+}: SidebarNavProps) {
   return (
     <nav className="sidebar-nav">
       {navigation.map((group, index) => (
@@ -16,6 +22,7 @@ export default function SidebarNav() {
               icon={item.icon}
               label={item.label}
               path={item.path}
+              onNavigate={onNavigate}
             />
           ))}
 

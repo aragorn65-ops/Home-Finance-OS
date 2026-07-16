@@ -460,3 +460,68 @@ All notable changes to HFOS are documented here.
 * Verified ESLint completes with zero errors.
 * Verified `git diff --check` completes with no whitespace errors.
 * Confirmed the Vite bundle-size message remains a non-blocking optimization warning.
+
+## [0.12.0-alpha] - 2026-07-16
+
+### Added
+
+* Added centralized semantic design tokens for colors, typography, spacing, borders, radii, controls, focus states, shadows, layout dimensions, motion, and layering.
+* Added scoped CSS styling for the Dashboard summary and Savings dashboard widget.
+* Added scoped CSS styling for Savings summary, goal lists, and goal cards.
+* Added a shared responsive Dialog stylesheet with default, medium, and large size variants.
+* Added a shared currency-formatting utility using `Intl.NumberFormat`.
+* Added responsive off-canvas sidebar navigation for tablet and mobile layouts.
+* Added sidebar backdrop, Escape-key closing, route-change closing, and navigation-selection closing behavior.
+* Added responsive Dashboard widget sizing through a 12-column grid.
+* Added accessible progress semantics to refreshed Savings indicators.
+* Added documented styling, accessibility, responsive-layout, currency, and privacy standards to the HFOS UI guidelines.
+* Added Sprint 12 implementation documentation and v0.12.0-alpha release notes.
+
+### Changed
+
+* Updated the application shell to use semantic design tokens and responsive workspace padding.
+* Updated the Header with a mobile navigation control and accessible action labels.
+* Updated Sidebar components with responsive navigation behavior and scoped presentation.
+* Updated Dashboard routing so the Dashboard navigation item uses exact active matching.
+* Updated DashboardService to load the active household instead of relying on a hardcoded household record.
+* Updated Dashboard summary, net-worth, cash-flow, household, and Savings presentation.
+* Updated cash-flow visual bars to use safe non-negative magnitudes.
+* Updated Button, Card, PageHeader, Widget, StatCard, Badge, TimeContext, Dialog, and ConfirmDialog shared components.
+* Updated shared buttons to default to `type="button"`.
+* Updated TimeContext to appear as a noninteractive reporting-period indicator.
+* Updated Savings toolbar, summary, goal-list, and goal-card presentation for desktop and mobile layouts.
+* Updated refreshed monetary values to use the shared currency formatter.
+* Updated the global reset with token-based defaults, visible keyboard focus, and reduced-motion handling.
+* Updated the HFOS UI guidelines from version 1.0 to version 1.1.
+
+### Removed
+
+* Removed the unused Vite starter stylesheet `frontend/src/App.css`.
+* Removed the unused global stylesheet `frontend/src/index.css`.
+
+### Fixed
+
+* Fixed the Dashboard navigation item appearing active on nested application routes.
+* Fixed the application sidebar remaining permanently visible on narrow screens.
+* Fixed Dashboard widget size metadata not affecting layout.
+* Fixed Dashboard presentation depending on a hardcoded household identifier.
+* Fixed cash-flow bars potentially receiving invalid negative visual widths.
+* Fixed repeated hardcoded peso-symbol formatting in refreshed components.
+* Fixed unscoped shared component styles that could collide across features.
+* Fixed desktop-only Savings card layouts on narrow screens.
+* Fixed shared buttons potentially submitting forms when no button type was provided.
+
+### Verified
+
+* Verified the responsive application shell on desktop, tablet, and mobile layouts.
+* Verified the mobile sidebar opens from the Header menu control.
+* Verified the mobile sidebar closes through the backdrop, Escape key, route changes, and navigation selections.
+* Verified Dashboard widgets render without horizontal page scrolling.
+* Verified Dashboard household data and monetary values render correctly.
+* Verified Savings summaries, goal cards, progress indicators, and actions render responsively.
+* Verified dialogs remain within the viewport and support scrollable content.
+* Verified currency symbols render without broken encoding.
+* Verified the production TypeScript and Vite build completes with zero errors.
+* Verified ESLint completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+* Confirmed the Vite bundle-size message remains a non-blocking optimization warning.

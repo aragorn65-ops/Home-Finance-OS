@@ -1,3 +1,7 @@
+import "./SavingsSummary.css";
+
+import formatCurrency from "../../../shared/utils/formatCurrency";
+
 interface SavingsSummaryProps {
   totalSaved: number;
   totalTarget: number;
@@ -6,21 +10,6 @@ interface SavingsSummaryProps {
   activeGoalCount: number;
   completedGoalCount: number;
   currency?: string;
-}
-
-function formatCurrency(
-  amount: number,
-  currency: string
-): string {
-  return new Intl.NumberFormat(
-    undefined,
-    {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }
-  ).format(amount);
 }
 
 function formatPercentage(
@@ -53,39 +42,44 @@ export default function SavingsSummary({
       100
     );
 
+  const progressLabel =
+    formatPercentage(
+      overallProgressPercentage
+    );
+
   return (
-    <section className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-lg border bg-white p-5">
-          <p className="text-sm font-medium text-muted-foreground">
+    <section className="hfos-savings-summary">
+      <div className="hfos-savings-summary__grid">
+        <div className="hfos-savings-summary__card">
+          <p className="hfos-savings-summary__label">
             Total Saved
           </p>
 
-          <p className="mt-2 text-2xl font-semibold text-foreground">
+          <p className="hfos-savings-summary__value">
             {formatCurrency(
               totalSaved,
               currency
             )}
           </p>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="hfos-savings-summary__description">
             Reserved across active savings goals.
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-5">
-          <p className="text-sm font-medium text-muted-foreground">
+        <div className="hfos-savings-summary__card">
+          <p className="hfos-savings-summary__label">
             Total Target
           </p>
 
-          <p className="mt-2 text-2xl font-semibold text-foreground">
+          <p className="hfos-savings-summary__value">
             {formatCurrency(
               totalTarget,
               currency
             )}
           </p>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="hfos-savings-summary__description">
             Combined target for {activeGoalCount} active{" "}
             {activeGoalCount === 1
               ? "goal"
@@ -94,63 +88,68 @@ export default function SavingsSummary({
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-5">
-          <p className="text-sm font-medium text-muted-foreground">
+        <div className="hfos-savings-summary__card">
+          <p className="hfos-savings-summary__label">
             Remaining
           </p>
 
-          <p className="mt-2 text-2xl font-semibold text-foreground">
+          <p className="hfos-savings-summary__value">
             {formatCurrency(
               remainingAmount,
               currency
             )}
           </p>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="hfos-savings-summary__description">
             Still needed to fund active goals.
           </p>
         </div>
 
-        <div className="rounded-lg border bg-white p-5">
-          <p className="text-sm font-medium text-muted-foreground">
+        <div className="hfos-savings-summary__card">
+          <p className="hfos-savings-summary__label">
             Completed Goals
           </p>
 
-          <p className="mt-2 text-2xl font-semibold text-foreground">
+          <p className="hfos-savings-summary__value">
             {completedGoalCount}
           </p>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="hfos-savings-summary__description">
             Goals that reached or exceeded their target.
           </p>
         </div>
       </div>
 
-      <div className="rounded-lg border bg-white p-5">
-        <div className="flex items-center justify-between gap-4">
+      <div className="hfos-savings-summary__progress-card">
+        <div className="hfos-savings-summary__progress-header">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">
+            <p className="hfos-savings-summary__label">
               Overall Progress
             </p>
 
-            <p className="mt-1 text-lg font-semibold text-foreground">
-              {formatPercentage(
-                overallProgressPercentage
-              )}
-              %
+            <p className="hfos-savings-summary__progress-value">
+              {progressLabel}%
             </p>
           </div>
 
           {overallProgressPercentage > 100 && (
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <span className="hfos-savings-summary__status">
               Overfunded
             </span>
           )}
         </div>
 
-        <div className="mt-4 h-3 overflow-hidden rounded-full bg-muted">
+        <div
+          className="hfos-savings-summary__progress-track"
+          role="progressbar"
+          aria-label="Overall savings progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressBarWidth}
+          aria-valuetext={`${progressLabel}%`}
+        >
           <div
-            className="h-full rounded-full bg-primary transition-[width]"
+            className="hfos-savings-summary__progress-bar"
             style={{
               width:
                 `${progressBarWidth}%`,

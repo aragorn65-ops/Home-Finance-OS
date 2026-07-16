@@ -18,7 +18,12 @@ export default function Badge({
   variant = "neutral",
 }: BadgeProps) {
   return (
-    <span className={`hfos-badge ${variant}`}>
+    <span
+      className={[
+        "hfos-badge",
+        `hfos-badge--${variant}`,
+      ].join(" ")}
+    >
       {children}
     </span>
   );

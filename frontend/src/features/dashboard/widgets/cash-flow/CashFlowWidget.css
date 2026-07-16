@@ -1,28 +1,96 @@
-.cashflow-trend {
-  margin-top: 24px;
+.hfos-cash-flow__table {
+  width: 100%;
+  font-size: var(--font-size-sm);
 }
 
-.cashflow-trend h4 {
-  margin-bottom: 16px;
+.hfos-cash-flow__table td {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
-.trend-row {
+.hfos-cash-flow__table td:first-child {
+  color: var(--color-text-muted);
+}
+
+.hfos-cash-flow__table td:last-child {
+  color: var(--color-text-strong);
+  font-weight: var(--font-weight-semibold);
+  text-align: right;
+}
+
+.hfos-cash-flow__table tr:last-child td {
+  border-bottom: 0;
+}
+
+.hfos-cash-flow__total td {
+  padding-top: var(--space-4);
+  color: var(--color-text-strong);
+  font-weight: var(--font-weight-bold);
+}
+
+.hfos-cash-flow__trend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.hfos-cash-flow__trend-title {
+  color: var(--color-text-strong);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.hfos-cash-flow__trend-row {
   display: grid;
-  grid-template-columns: 40px 1fr 70px;
+  grid-template-columns:
+    minmax(2.5rem, auto)
+    minmax(4rem, 1fr)
+    minmax(5.5rem, auto);
   align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: var(--space-3);
 }
 
-.trend-bar-container {
-  height: 10px;
-  background: #ececec;
-  border-radius: 999px;
+.hfos-cash-flow__month {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.hfos-cash-flow__bar-track {
+  height: 0.625rem;
   overflow: hidden;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-full);
 }
 
-.trend-bar {
+.hfos-cash-flow__bar {
   height: 100%;
-  background: #3b82f6;
-  border-radius: 999px;
+  min-width: 0;
+  background: var(--color-brand-600);
+  border-radius: var(--radius-full);
+  transition:
+    width var(--duration-slow) var(--ease-standard);
+}
+
+.hfos-cash-flow__value {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 30rem) {
+  .hfos-cash-flow__trend-row {
+    grid-template-columns:
+      minmax(2.25rem, auto)
+      minmax(3rem, 1fr);
+  }
+
+  .hfos-cash-flow__value {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
 }

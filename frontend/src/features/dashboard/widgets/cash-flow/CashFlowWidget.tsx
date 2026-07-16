@@ -1,68 +1,125 @@
-import Widget from "../../../../shared/ui/Widget";
 import "./CashFlowWidget.css";
-import TransactionService from "../../../transactions/services/TransactionService";
-import TransactionAnalyticsService from "../../../transactions/services/TransactionAnalyticsService";
 
+import Widget from "../../../../shared/ui/Widget";
+import formatCurrency from "../../../../shared/utils/formatCurrency";
+
+import DashboardService from "../../services/DashboardService";
+import TransactionAnalyticsService from "../../../transactions/services/TransactionAnalyticsService";
+import TransactionService from "../../../transactions/services/TransactionService";
 
 export default function CashFlowWidget() {
-  // Summary comes from the service
-  const totalIncome = TransactionService.getTotalIncome();
-  const totalExpenses = TransactionService.getTotalExpenses();
-  const netCashFlow = TransactionService.getNetCashFlow();
+  const household =
+    DashboardService.getHouseholdSummary();
 
- const monthlyData = TransactionAnalyticsService.getMonthlyCashFlow();
+  const totalIncome =
+    TransactionService.getTotalIncome();
 
-  const maxNet = Math.max(
-    ...monthlyData.map((item) => item.income - item.expenses)
-  );
+  const totalExpenses =
+    TransactionService.getTotalExpenses();
+
+  const netCashFlow =
+    TransactionService.getNetCashFlow();
+
+  const monthlyData =
+    TransactionAnalyticsService
+      .getMonthlyCashFlow();
+
+  const maximumNetMagnitude =
+    Math.max(
+      1,
+      ...monthlyData.map(
+        (item) =>
+          Math.abs(
+            item.income -
+              item.expenses
+          )
+      )
+    );
 
   return (
     <Widget title="Cash Flow">
-      <table className="cashflow-table">
+      <table className="hfos-cash-flow__table">
         <tbody>
           <tr>
             <td>Total Income</td>
-            <td>₱{totalIncome.toLocaleString()}</td>
+
+            <td>
+              {formatCurrency(
+                totalIncome,
+                household.currency
+              )}
+            </td>
           </tr>
 
           <tr>
             <td>Total Expenses</td>
-            <td>₱{totalExpenses.toLocaleString()}</td>
+
+            <td>
+              {formatCurrency(
+                totalExpenses,
+                household.currency
+              )}
+            </td>
           </tr>
 
-          <tr className="cashflow-total">
+          <tr className="hfos-cash-flow__total">
             <td>Net Cash Flow</td>
-            <td>₱{netCashFlow.toLocaleString()}</td>
+
+            <td>
+              {formatCurrency(
+                netCashFlow,
+                household.currency
+              )}
+            </td>
           </tr>
         </tbody>
       </table>
 
-      <div className="cashflow-trend">
-        <h4>Last 6 Months</h4>
+      <div className="hfos-cash-flow__trend">
+        <h3 className="hfos-cash-flow__trend-title">
+          Last 6 Months
+        </h3>
 
         {monthlyData.map((item) => {
-          const net = item.income - item.expenses;
+          const net =
+            item.income -
+            item.expenses;
+
+          const widthPercentage =
+            Math.min(
+              Math.abs(net) /
+                maximumNetMagnitude *
+                100,
+              100
+            );
 
           return (
             <div
               key={item.month}
-              className="trend-row"
+              className="hfos-cash-flow__trend-row"
             >
-              <span className="trend-month">
+              <span className="hfos-cash-flow__month">
                 {item.month}
               </span>
 
-              <div className="trend-bar-container">
+              <div
+                className="hfos-cash-flow__bar-track"
+                aria-hidden="true"
+              >
                 <div
-                  className="trend-bar"
+                  className="hfos-cash-flow__bar"
                   style={{
-                    width: `${(net / maxNet) * 100}%`,
+                    width:
+                      `${widthPercentage}%`,
                   }}
                 />
               </div>
 
-              <span className="trend-value">
-                ₱{net.toLocaleString()}
+              <span className="hfos-cash-flow__value">
+                {formatCurrency(
+                  net,
+                  household.currency
+                )}
               </span>
             </div>
           );

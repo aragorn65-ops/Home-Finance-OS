@@ -1,17 +1,22 @@
 import "./TimeContext.css";
 
-import { CalendarDays, ChevronDown } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
 export default function TimeContext() {
   return (
-    <button className="time-context">
+    <div
+      className="time-context"
+      aria-label="Current reporting period: April 2026"
+    >
+      <CalendarDays
+        className="time-context__icon"
+        size={18}
+        aria-hidden="true"
+      />
 
-      <CalendarDays size={18} />
-
-      <span>April 2026</span>
-
-      <ChevronDown size={16} />
-
-    </button>
+      <span className="time-context__label">
+        April 2026
+      </span>
+    </div>
   );
 }

@@ -4,7 +4,8 @@ import DashboardGrid from "../components/DashboardGrid";
 import DashboardLayoutService from "../services/DashboardLayoutService";
 
 export default function DashboardPage() {
-  const widgets = DashboardLayoutService.getWidgets();
+  const widgets =
+    DashboardLayoutService.getWidgets();
 
   return (
     <>
@@ -14,8 +15,20 @@ export default function DashboardPage() {
       />
 
       <DashboardGrid>
-        {widgets.map(({ id, component: Component }) => (
-          <Component key={id} />
+        {widgets.map(({
+          id,
+          component: Component,
+          size,
+        }) => (
+          <div
+            key={id}
+            className={[
+              "dashboard-grid__item",
+              `dashboard-grid__item--${size}`,
+            ].join(" ")}
+          >
+            <Component />
+          </div>
         ))}
       </DashboardGrid>
     </>

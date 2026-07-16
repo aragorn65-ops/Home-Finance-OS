@@ -1,61 +1,204 @@
+/*
+ * HFOS Global Reset
+ *
+ * Provides predictable browser defaults while leaving visual decisions
+ * to semantic design tokens and shared UI components.
+ */
+
 /* ---------- Box Model ---------- */
 
 *,
 *::before,
-*::after{
-
-    box-sizing:border-box;
-
+*::after {
+  box-sizing: border-box;
 }
 
-/* ---------- Root ---------- */
+/* ---------- Document ---------- */
 
-html,
+html {
+  width: 100%;
+  min-width: 20rem;
+  min-height: 100%;
+  background: var(--color-canvas);
+  color-scheme: light;
+  font-family: var(--font-family-sans);
+  line-height: var(--line-height-normal);
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
 body,
-#root{
-
-    width:100%;
-
-    height:100%;
-
-    margin:0;
-
-    padding:0;
-
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
 }
 
-/* ---------- Body ---------- */
+body {
+  min-width: 20rem;
+  overflow-x: hidden;
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-body{
+/* ---------- Typography ---------- */
 
-    font-family:Inter,system-ui,sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
 
-    background:#F8FAFC;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-text-strong);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  text-wrap: balance;
+}
 
-    color:#0F172A;
+p {
+  text-wrap: pretty;
+}
 
+strong,
+b {
+  font-weight: var(--font-weight-semibold);
+}
+
+small {
+  font-size: var(--font-size-sm);
+}
+
+/* ---------- Lists ---------- */
+
+ul,
+ol {
+  margin: 0;
 }
 
 /* ---------- Links ---------- */
 
-a{
-
-    color:inherit;
-
-    text-decoration:none;
-
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-/* ---------- Buttons ---------- */
+a:not([class]) {
+  color: var(--color-link);
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+}
 
-button{
+a:not([class]):hover {
+  color: var(--color-link-hover);
+}
 
-    font:inherit;
+/* ---------- Media ---------- */
 
-    background:none;
+img,
+picture,
+svg,
+canvas,
+video {
+  display: block;
+  max-width: 100%;
+}
 
-    border:none;
+img,
+picture,
+video {
+  height: auto;
+}
 
-    cursor:pointer;
+/* ---------- Forms ---------- */
 
+button,
+input,
+select,
+textarea {
+  margin: 0;
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* ---------- Tables ---------- */
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* ---------- Focus ---------- */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* ---------- Selection ---------- */
+
+::selection {
+  background: var(--color-brand-200);
+  color: var(--color-text-strong);
+}
+
+/* ---------- Accessibility ---------- */
+
+[hidden] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

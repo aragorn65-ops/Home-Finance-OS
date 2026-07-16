@@ -1,4 +1,6 @@
-import type { HTMLAttributes } from "react";
+import type {
+  HTMLAttributes,
+} from "react";
 
 export type DialogBodyProps =
   HTMLAttributes<HTMLDivElement>;
@@ -8,15 +10,16 @@ export default function DialogBody({
   className = "",
   ...props
 }: DialogBodyProps) {
+  const classes = [
+    "hfos-dialog__body",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div
-      className={[
-        "px-6",
-        "py-5",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={classes}
       {...props}
     >
       {children}

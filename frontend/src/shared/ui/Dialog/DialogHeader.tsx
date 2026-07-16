@@ -10,16 +10,16 @@ export default function DialogHeader({
   actions,
 }: DialogHeaderProps) {
   return (
-    <div className="flex items-center justify-between border-b px-6 py-4">
-      <h2 className="text-lg font-semibold text-gray-900">
+    <header className="hfos-dialog__header">
+      <h2 className="hfos-dialog__title">
         {title}
       </h2>
 
       {actions && (
-        <div className="flex items-center gap-2">
+        <div className="hfos-dialog__actions">
           {actions}
         </div>
       )}
-    </div>
+    </header>
   );
 }

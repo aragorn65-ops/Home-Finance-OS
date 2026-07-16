@@ -1,0 +1,110 @@
+.hfos-savings-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.hfos-savings-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.hfos-savings-summary__card {
+  min-width: 0;
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+}
+
+.hfos-savings-summary__label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+}
+
+.hfos-savings-summary__value {
+  margin-top: var(--space-2);
+  overflow-wrap: anywhere;
+  color: var(--color-text-strong);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.hfos-savings-summary__description {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.hfos-savings-summary__progress-card {
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+}
+
+.hfos-savings-summary__progress-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.hfos-savings-summary__progress-value {
+  margin-top: var(--space-1);
+  color: var(--color-text-strong);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.hfos-savings-summary__status {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-info-background);
+  border: 1px solid var(--color-info-border);
+  border-radius: var(--radius-full);
+  color: var(--color-info-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.hfos-savings-summary__progress-track {
+  height: 0.75rem;
+  margin-top: var(--space-4);
+  overflow: hidden;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-full);
+}
+
+.hfos-savings-summary__progress-bar {
+  height: 100%;
+  background: var(--color-brand-600);
+  border-radius: var(--radius-full);
+  transition:
+    width var(--duration-slow) var(--ease-standard);
+}
+
+@media (max-width: 75rem) {
+  .hfos-savings-summary__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 36rem) {
+  .hfos-savings-summary__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hfos-savings-summary__progress-header {
+    flex-direction: column;
+  }
+}

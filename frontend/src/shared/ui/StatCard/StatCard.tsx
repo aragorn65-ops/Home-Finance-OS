@@ -12,17 +12,17 @@ export default function StatCard({
   subtitle,
 }: StatCardProps) {
   return (
-    <div className="stat-card">
-      <p className="stat-label">
+    <div className="hfos-stat-card">
+      <p className="hfos-stat-card__label">
         {label}
       </p>
 
-      <h2 className="stat-value">
+      <p className="hfos-stat-card__value">
         {value}
-      </h2>
+      </p>
 
       {subtitle && (
-        <p className="stat-subtitle">
+        <p className="hfos-stat-card__subtitle">
           {subtitle}
         </p>
       )}

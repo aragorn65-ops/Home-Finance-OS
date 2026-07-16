@@ -1,3 +1,5 @@
+import "./Dialog.css";
+
 import {
   useEffect,
   type HTMLAttributes,
@@ -21,56 +23,77 @@ export default function Dialog({
   ...props
 }: DialogProps) {
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const previousOverflow =
+      document.body.style.overflow;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
+    document.body.style.overflow =
+      "hidden";
+
+    const handleKeyDown = (
+      event: KeyboardEvent
+    ) => {
       if (event.key === "Escape") {
         onClose();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
 
     return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow =
+        previousOverflow;
+
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
     };
-  }, [open, onClose]);
+  }, [
+    open,
+    onClose,
+  ]);
 
   if (!open) {
     return null;
   }
 
+  const dialogClasses = [
+    "hfos-dialog",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/40 transition-opacity"
+        className="hfos-dialog-overlay"
         onClick={
-          closeOnBackdrop ? onClose : undefined
+          closeOnBackdrop
+            ? onClose
+            : undefined
         }
+        aria-hidden="true"
       />
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="hfos-dialog-viewport"
+        role="presentation"
+      >
         <div
           role="dialog"
           aria-modal="true"
-          className={[
-            "w-full",
-            "max-w-lg",
-            "rounded-xl",
-            "bg-white",
-            "shadow-xl",
-            "transition-all",
-            "duration-200",
-            "scale-100",
-            className,
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          onClick={(e) => e.stopPropagation()}
+          className={dialogClasses}
+          onClick={(event) =>
+            event.stopPropagation()
+          }
           {...props}
         >
           {children}
