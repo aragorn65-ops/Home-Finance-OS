@@ -407,3 +407,56 @@ All notable changes to HFOS are documented here.
 * Verified Savings and Reports routes render successfully.
 * Verified the production TypeScript and Vite build completes with zero errors.
 * Verified ESLint completes with zero errors.
+
+## [0.11.0-alpha] - 2026-07-16
+
+### Added
+
+* Added the complete Savings feature module with domain models, form models, repositories, services, validators, hooks, components, and page integration.
+* Added savings goals for emergency funds, vacations, annual insurance, home repairs, tuition, vehicle maintenance, appliance replacement, general savings, and custom purposes.
+* Added target amounts, optional target dates, priority levels, statuses, descriptions, and optional linked household asset accounts.
+* Added contribution, withdrawal, and signed adjustment activities.
+* Added derived saved amounts based on active savings activities rather than duplicated stored balances.
+* Added goal progress calculations showing saved amount, remaining amount, percentage complete, overfunding, overdue state, days remaining, and required monthly contribution.
+* Added active, completed, and archived savings-goal sections.
+* Added savings goal details with itemized activity history.
+* Added create, edit, archive, and delete workflows for savings goals.
+* Added create, edit, and delete workflows for savings activities.
+* Added optional account balance effects for savings contributions, withdrawals, and adjustments.
+* Added account-effect reversal and rollback protection when savings activities are edited or deleted.
+* Added savings-goal and savings-activity persistence through versioned localStorage repositories.
+* Added a household Savings summary showing total saved, combined targets, remaining amount, overall progress, active goals, and completed goals.
+* Added a Savings Goals widget to the main Dashboard.
+
+### Changed
+
+* Replaced the Sprint 10 Savings placeholder with the functional Savings page.
+* Updated Reset All Data to remove savings activities and savings goals.
+* Updated the shared storage key registry with versioned savings-goal and savings-activity keys.
+* Updated the Dashboard widget registry to include household savings progress.
+* Restricted goal-level linked accounts to active household asset accounts.
+* Restricted activity account selection to household accounts and private accounts owned by the selected member.
+* Updated completed goals so they remain visible and may still record withdrawals or adjustments.
+* Updated archived goals so their progress and activity history remain available for review while further changes are blocked.
+
+### Fixed
+
+* Prevented withdrawals and negative adjustments from reducing a savings goal below zero.
+* Prevented contributions and positive adjustments from exceeding the available balance of a selected asset account.
+* Prevented members from using another member's private account for savings activity.
+* Prevented savings goals with activity history from being deleted instead of archived.
+* Prevented savings activity edits from duplicating account balance effects.
+* Prevented savings activity deletion from leaving its linked account balance effect applied.
+* Prevented failed savings operations from leaving partially applied account or repository changes.
+* Prevented invalid or unsupported persisted savings records from being silently replaced.
+
+### Verified
+
+* Verified the Savings page and all Savings UI components compile successfully.
+* Verified savings repositories use versioned localStorage keys.
+* Verified Reset All Data includes savings goals and savings activities.
+* Verified the Dashboard Savings widget compiles and registers successfully.
+* Verified the production TypeScript and Vite build completes with zero errors.
+* Verified ESLint completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+* Confirmed the Vite bundle-size message remains a non-blocking optimization warning.

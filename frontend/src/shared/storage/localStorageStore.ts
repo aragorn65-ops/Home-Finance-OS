@@ -14,6 +14,12 @@ export const HFOS_STORAGE_KEYS = {
 
   settlementApplications:
     "hfos.v1.settlement-applications",
+
+  savingsGoals:
+    "hfos.v1.savings-goals",
+
+  savingsActivities:
+    "hfos.v1.savings-activities",
 } as const;
 
 export const HFOS_LEGACY_STORAGE_KEYS = {

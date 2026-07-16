@@ -2,6 +2,7 @@ import HouseholdSummary from "./widgets/HouseholdSummary";
 import NetWorth from "./widgets/NetWorth";
 import CashFlowWidget from "./widgets/cash-flow/CashFlowWidget";
 import DashboardSummary from "./widgets/dashboard-summary/DashboardSummary";
+import SavingsWidget from "./widgets/savings/SavingsWidget";
 
 import type { DashboardWidget } from "./models/DashboardWidget";
 
@@ -35,6 +36,14 @@ export const dashboardWidgets: DashboardWidget[] = [
     title: "Cash Flow",
     component: CashFlowWidget,
     order: 4,
+    size: "medium",
+    enabled: true,
+  },
+  {
+    id: "savings-goals",
+    title: "Savings Goals",
+    component: SavingsWidget,
+    order: 5,
     size: "medium",
     enabled: true,
   },

@@ -71,6 +71,22 @@ export function resetApplicationData():
   );
 
   removeCurrentRecord(
+    "Savings activities",
+    removeStoredData(
+      HFOS_STORAGE_KEYS
+        .savingsActivities
+    )
+  );
+
+  removeCurrentRecord(
+    "Savings goals",
+    removeStoredData(
+      HFOS_STORAGE_KEYS
+        .savingsGoals
+    )
+  );
+
+  removeCurrentRecord(
     "Accounts",
     removeStoredData(
       HFOS_STORAGE_KEYS.accounts
