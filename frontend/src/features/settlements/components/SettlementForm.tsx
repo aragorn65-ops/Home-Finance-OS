@@ -13,6 +13,9 @@ import type { HouseholdMember } from "../../household/models/HouseholdMember";
 import type {
   OperationResult,
 } from "../../../shared/types";
+import CurrencyInput from "../../../shared/ui/CurrencyInput";
+import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
+import formatCurrency from "../../../shared/utils/formatCurrency";
 
 import type { Settlement } from "../models/Settlement";
 
@@ -30,6 +33,7 @@ type SettlementFormProps = {
 
   accounts: Account[];
   members: HouseholdMember[];
+  currency?: string;
 
   allocationOptions:
     SettlementAllocationOption[];
@@ -44,16 +48,61 @@ type SettlementFormProps = {
   onCancel?: () => void;
 };
 
-const amountFormatter =
-  new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const settlementFieldLabels:
+  Record<string, string> = {
+    general: "General",
+    householdId: "Household",
+    fromMemberId: "Paying Member",
+    toMemberId: "Receiving Member",
+    amount: "Settlement Amount",
+    settlementDate: "Settlement Date",
+    sourceAccountId: "Source Account",
+    destinationAccountId:
+      "Destination Account",
+    applicationMethod:
+      "Application Method",
+    applications:
+      "Settlement Applications",
+    referenceNumber: "Reference Number",
+    notes: "Notes",
+    isActive: "Active settlement",
+  };
 
 function getTodayInputValue(): string {
   return new Date()
     .toISOString()
     .slice(0, 10);
+}
+
+function generateSettlementReference(
+  date: Date = new Date()
+): string {
+  const timestamp =
+    [
+      date.getFullYear(),
+      String(
+        date.getMonth() + 1
+      ).padStart(2, "0"),
+      String(date.getDate()).padStart(
+        2,
+        "0"
+      ),
+      "-",
+      String(date.getHours()).padStart(
+        2,
+        "0"
+      ),
+      String(date.getMinutes()).padStart(
+        2,
+        "0"
+      ),
+      String(date.getSeconds()).padStart(
+        2,
+        "0"
+      ),
+    ].join("");
+
+  return `SET-${timestamp}`;
 }
 
 function getDefaultFormValues(
@@ -91,14 +140,19 @@ function getDefaultFormValues(
 
     settlementDate:
       getTodayInputValue(),
+
+    referenceNumber:
+      generateSettlementReference(),
   };
 }
 
 function formatAmount(
-  amount: number
+  amount: number,
+  currency?: string
 ): string {
-  return amountFormatter.format(
-    amount
+  return formatCurrency(
+    amount,
+    currency
   );
 }
 
@@ -151,6 +205,7 @@ export default function SettlementForm({
 
   accounts,
   members,
+  currency,
 
   allocationOptions,
 
@@ -192,6 +247,43 @@ export default function SettlementForm({
   const [message, setMessage] =
     useState("");
 
+  const [
+    validationAlertErrors,
+    setValidationAlertErrors,
+  ] = useState<Record<string, string>>(
+    {}
+  );
+
+  const [
+    isValidationAlertOpen,
+    setIsValidationAlertOpen,
+  ] = useState(false);
+
+  const showValidationAlert = (
+    nextErrors:
+      Record<string, string> | undefined,
+    fallbackMessage =
+      "Please correct the highlighted fields."
+  ) => {
+    const visibleErrors =
+      nextErrors &&
+      Object.keys(nextErrors).length >
+        0
+        ? nextErrors
+        : {
+            general:
+              fallbackMessage,
+          };
+
+    setValidationAlertErrors(
+      visibleErrors
+    );
+
+    setIsValidationAlertOpen(
+      true
+    );
+  };
+
   useEffect(() => {
     const nextForm =
       initialValues
@@ -222,6 +314,8 @@ export default function SettlementForm({
 
     setForm(nextForm);
     setErrors({});
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
     setMessage("");
   }, [
     initialValues,
@@ -356,6 +450,7 @@ export default function SettlementForm({
     });
 
     setMessage("");
+    setIsValidationAlertOpen(false);
   };
 
   const updateField = <
@@ -376,17 +471,11 @@ export default function SettlementForm({
   };
 
   const handleAmountChange = (
-    event:
-      ChangeEvent<HTMLInputElement>
+    amount: number
   ) => {
-    const rawValue =
-      event.target.value;
-
     updateField(
       "amount",
-      rawValue === ""
-        ? 0
-        : Number(rawValue)
+      amount
     );
   };
 
@@ -565,33 +654,30 @@ export default function SettlementForm({
   };
 
   const handleApplicationSelection = (
-    expenseAllocationId: string,
+    option: SettlementAllocationOption,
     isSelected: boolean
   ) => {
     updateApplication(
-      expenseAllocationId,
+      option.expenseAllocationId,
       {
         isSelected,
-        appliedAmount: 0,
+        appliedAmount:
+          isSelected
+            ? option.outstandingAmount
+            : 0,
       }
     );
   };
 
   const handleApplicationAmountChange = (
     expenseAllocationId: string,
-    event:
-      ChangeEvent<HTMLInputElement>
+    amount: number
   ) => {
-    const rawValue =
-      event.target.value;
-
     updateApplication(
       expenseAllocationId,
       {
         appliedAmount:
-          rawValue === ""
-            ? 0
-            : Number(rawValue),
+          amount,
       }
     );
   };
@@ -648,10 +734,18 @@ export default function SettlementForm({
           "Unable to save the settlement."
       );
 
+      showValidationAlert(
+        result.errors,
+        result.message ??
+          "Unable to save the settlement."
+      );
+
       return;
     }
 
     setErrors({});
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
     setMessage(
       result.message ?? ""
     );
@@ -662,6 +756,19 @@ export default function SettlementForm({
       onSubmit={handleSubmit}
       className="space-y-6 rounded-lg border bg-white p-6"
     >
+      <FormValidationAlert
+        open={isValidationAlertOpen}
+        errors={validationAlertErrors}
+        fieldLabels={
+          settlementFieldLabels
+        }
+        onClose={() =>
+          setIsValidationAlertOpen(
+            false
+          )
+        }
+      />
+
       {message && (
         <div
           className={
@@ -782,41 +889,28 @@ export default function SettlementForm({
 
           <p className="text-xl font-semibold text-foreground">
             {formatAmount(
-              totalOutstanding
+              totalOutstanding,
+              currency
             )}
           </p>
         </div>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="space-y-2">
-          <label
-            htmlFor="settlement-amount"
-            className="text-sm font-medium text-foreground"
-          >
-            Settlement Amount
-          </label>
-
-          <input
+        <div>
+          <CurrencyInput
             id="settlement-amount"
-            type="number"
+            label="Settlement Amount"
             min="0"
-            step="0.01"
             value={
-              form.amount || ""
+              form.amount
             }
-            onChange={
+            onValueChange={
               handleAmountChange
             }
-            placeholder="0.00"
+            error={errors.amount}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
           />
-
-          {errors.amount && (
-            <p className="text-sm text-destructive">
-              {errors.amount}
-            </p>
-          )}
         </div>
 
         <div className="space-y-2">
@@ -1014,6 +1108,27 @@ export default function SettlementForm({
               {errors.applicationMethod}
             </p>
           )}
+
+          {form.applicationMethod ===
+            "manual" && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+              <span className="text-muted-foreground">
+                Selected application subtotal
+              </span>
+
+              <span className="font-semibold text-foreground">
+                {formatAmount(
+                  manualApplicationTotal,
+                  currency
+                )}
+                {" / "}
+                {formatAmount(
+                  form.amount,
+                  currency
+                )}
+              </span>
+            </div>
+          )}
         </div>
 
         {eligibleAllocationOptions.length ===
@@ -1074,7 +1189,8 @@ export default function SettlementForm({
 
                       <p className="font-semibold text-foreground">
                         {formatAmount(
-                          option.outstandingAmount
+                          option.outstandingAmount,
+                          currency
                         )}
                       </p>
                     </div>
@@ -1118,7 +1234,7 @@ export default function SettlementForm({
                               }
                               onChange={(event) =>
                                 handleApplicationSelection(
-                                  option.expenseAllocationId,
+                                  option,
                                   event.target.checked
                                 )
                               }
@@ -1147,7 +1263,8 @@ export default function SettlementForm({
 
                           <p className="font-semibold text-foreground">
                             {formatAmount(
-                              option.outstandingAmount
+                              option.outstandingAmount,
+                              currency
                             )}
                           </p>
                         </div>
@@ -1161,7 +1278,8 @@ export default function SettlementForm({
 
                           <p className="font-medium text-foreground">
                             {formatAmount(
-                              option.allocatedAmount
+                              option.allocatedAmount,
+                              currency
                             )}
                           </p>
                         </div>
@@ -1173,7 +1291,8 @@ export default function SettlementForm({
 
                           <p className="font-medium text-foreground">
                             {formatAmount(
-                              option.paidAmount
+                              option.paidAmount,
+                              currency
                             )}
                           </p>
                         </div>
@@ -1195,33 +1314,23 @@ export default function SettlementForm({
 
                       {application.isSelected && (
                         <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                          <div className="space-y-2">
-                            <label
-                              htmlFor={`settlement-application-${option.expenseAllocationId}`}
-                              className="text-sm font-medium text-foreground"
-                            >
-                              Applied Amount
-                            </label>
-
-                            <input
+                          <div>
+                            <CurrencyInput
                               id={`settlement-application-${option.expenseAllocationId}`}
-                              type="number"
+                              label="Applied Amount"
                               min="0"
                               max={
                                 option.outstandingAmount
                               }
-                              step="0.01"
                               value={
-                                application.appliedAmount ||
-                                ""
+                                application.appliedAmount
                               }
-                              onChange={(event) =>
+                              onValueChange={(nextValue) =>
                                 handleApplicationAmountChange(
                                   option.expenseAllocationId,
-                                  event
+                                  nextValue
                                 )
                               }
-                              placeholder="0.00"
                               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
                             />
                           </div>
@@ -1252,11 +1361,13 @@ export default function SettlementForm({
 
               <span className="font-semibold text-foreground">
                 {formatAmount(
-                  manualApplicationTotal
+                  manualApplicationTotal,
+                  currency
                 )}
                 {" / "}
                 {formatAmount(
-                  form.amount
+                  form.amount,
+                  currency
                 )}
               </span>
             </div>

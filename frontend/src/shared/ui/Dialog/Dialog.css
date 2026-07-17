@@ -13,10 +13,12 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .hfos-dialog {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 32rem;
   max-height: calc(100dvh - var(--space-8));
@@ -61,6 +63,8 @@
 }
 
 .hfos-dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: var(--space-5) var(--space-6);
   overflow-y: auto;
 }
@@ -77,7 +81,7 @@
 
 @media (max-width: 48rem) {
   .hfos-dialog-viewport {
-    align-items: flex-end;
+    align-items: center;
     padding: var(--space-2);
   }
 

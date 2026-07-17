@@ -22,6 +22,11 @@ import {
 } from "../../household/services/householdStorage";
 
 import {
+  normalizeCurrency,
+  roundCurrencyAmount,
+} from "../../../shared/utils/currencyConversion";
+
+import {
   HFOS_STORAGE_KEYS,
   loadStoredData,
   saveStoredData,
@@ -40,6 +45,12 @@ interface SerializedTransaction
     Transaction,
     | "attachments"
     | "transactionDate"
+    | "enteredAmount"
+    | "enteredCurrency"
+    | "baseCurrency"
+    | "baseAmount"
+    | "exchangeRate"
+    | "exchangeRateEffectiveDate"
     | "createdAt"
     | "updatedAt"
   > {
@@ -47,6 +58,12 @@ interface SerializedTransaction
     SerializedStoredAttachment[];
 
   transactionDate: string;
+  enteredAmount?: number;
+  enteredCurrency?: string;
+  baseCurrency?: string;
+  baseAmount?: number;
+  exchangeRate?: number;
+  exchangeRateEffectiveDate?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -643,6 +660,10 @@ export default class TransactionRepository {
       transactionDate:
         transaction.transactionDate.toISOString(),
 
+      exchangeRateEffectiveDate:
+        transaction.exchangeRateEffectiveDate
+          ?.toISOString(),
+
       createdAt:
         transaction.createdAt.toISOString(),
 
@@ -657,8 +678,48 @@ export default class TransactionRepository {
   private static deserializeTransaction(
     transaction: SerializedTransaction
   ): Transaction {
+    const household =
+      loadHousehold();
+
+    const baseCurrency =
+      normalizeCurrency(
+        transaction.baseCurrency,
+        household?.currency ??
+          "PHP"
+      );
+
     return {
       ...transaction,
+
+      enteredAmount:
+        transaction.enteredAmount ??
+        transaction.amount,
+
+      enteredCurrency:
+        normalizeCurrency(
+          transaction.enteredCurrency,
+          baseCurrency
+        ),
+
+      baseCurrency,
+
+      baseAmount:
+        transaction.baseAmount ??
+        roundCurrencyAmount(
+          transaction.amount
+        ),
+
+      exchangeRate:
+        transaction.exchangeRate ?? 1,
+
+      exchangeRateEffectiveDate:
+        transaction.exchangeRateEffectiveDate
+          ? new Date(
+              transaction.exchangeRateEffectiveDate
+            )
+          : new Date(
+              transaction.transactionDate
+            ),
 
       attachments:
         transaction.attachments?.map(
@@ -777,6 +838,36 @@ export default class TransactionRepository {
       ) &&
       this.isFiniteNumber(
         value.amount
+      ) &&
+      (
+        value.enteredAmount ===
+          undefined ||
+        this.isFiniteNumber(
+          value.enteredAmount
+        )
+      ) &&
+      this.isOptionalString(
+        value.enteredCurrency
+      ) &&
+      this.isOptionalString(
+        value.baseCurrency
+      ) &&
+      (
+        value.baseAmount ===
+          undefined ||
+        this.isFiniteNumber(
+          value.baseAmount
+        )
+      ) &&
+      (
+        value.exchangeRate ===
+          undefined ||
+        this.isFiniteNumber(
+          value.exchangeRate
+        )
+      ) &&
+      this.isOptionalDateString(
+        value.exchangeRateEffectiveDate
       ) &&
       this.isNullableString(
         value.sourceAccountId
@@ -952,6 +1043,15 @@ export default class TransactionRepository {
       !Number.isNaN(
         new Date(value).getTime()
       )
+    );
+  }
+
+  private static isOptionalDateString(
+    value: unknown
+  ): value is string | undefined {
+    return (
+      value === undefined ||
+      this.isDateString(value)
     );
   }
 

@@ -1,20 +1,36 @@
 import PageHeader from "../../../shared/ui/PageHeader";
+import Input from "../../../shared/ui/Input";
 
 type SettlementToolbarProps = {
+  selectedMonth: string;
+  onSelectedMonthChange: (
+    selectedMonth: string
+  ) => void;
   onAddSettlement?: () => void;
 };
 
 export default function SettlementToolbar({
+  selectedMonth,
+  onSelectedMonthChange,
   onAddSettlement,
 }: SettlementToolbarProps) {
   return (
-    <div className="mb-6 flex items-center justify-between">
-      <PageHeader
-        title="Settlements"
-        subtitle="Track outstanding balances and reimbursements between household members"
-      />
+    <PageHeader
+      title="Settlements"
+      subtitle="Track outstanding balances and reimbursements between household members"
+      actions={
+        <>
+          <Input
+            type="month"
+            aria-label="Reporting month"
+            value={selectedMonth}
+            onChange={(event) =>
+              onSelectedMonthChange(
+                event.target.value
+              )
+            }
+          />
 
-      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={onAddSettlement}
@@ -22,7 +38,8 @@ export default function SettlementToolbar({
         >
           + Record Settlement
         </button>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 }

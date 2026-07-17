@@ -1,4 +1,5 @@
 import type { Settlement } from "../models/Settlement";
+import formatCurrency from "../../../shared/utils/formatCurrency";
 
 import type { SettlementApplicationDetails } from "../models/SettlementApplicationDetails";
 
@@ -10,6 +11,7 @@ type SettlementDetailsProps = {
 
   sourceAccountName?: string;
   destinationAccountName?: string;
+  currency?: string;
 
   applicationDetails:
     SettlementApplicationDetails[];
@@ -21,17 +23,13 @@ type SettlementDetailsProps = {
   ) => void;
 };
 
-const amountFormatter =
-  new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
 function formatAmount(
-  amount: number
+  amount: number,
+  currency?: string
 ): string {
-  return amountFormatter.format(
-    amount
+  return formatCurrency(
+    amount,
+    currency
   );
 }
 
@@ -74,7 +72,7 @@ function getPaymentStatusClasses(
       return "bg-red-50 text-red-700";
 
     case "partially-paid":
-      return "bg-amber-50 text-amber-700";
+      return "bg-[#d2c02a] text-amber-700";
 
     case "paid":
       return "bg-green-50 text-green-700";
@@ -92,6 +90,7 @@ export default function SettlementDetails({
 
   sourceAccountName,
   destinationAccountName,
+  currency,
 
   applicationDetails,
 
@@ -100,7 +99,8 @@ export default function SettlementDetails({
 }: SettlementDetailsProps) {
   const formattedAmount =
     formatAmount(
-      settlement.amount
+      settlement.amount,
+      currency
     );
 
   const formattedSettlementDate =
@@ -299,7 +299,8 @@ export default function SettlementDetails({
 
             <p className="font-semibold text-foreground">
               {formatAmount(
-                appliedTotal
+                appliedTotal,
+                currency
               )}
             </p>
           </div>
@@ -370,7 +371,8 @@ export default function SettlementDetails({
 
                         <p className="text-lg font-semibold text-foreground">
                           {formatAmount(
-                            application.appliedAmount
+                            application.appliedAmount,
+                            currency
                           )}
                         </p>
                       </div>
@@ -384,7 +386,8 @@ export default function SettlementDetails({
 
                         <dd className="mt-1 font-medium text-foreground">
                           {formatAmount(
-                            application.allocatedAmount
+                            application.allocatedAmount,
+                            currency
                           )}
                         </dd>
                       </div>
@@ -396,7 +399,8 @@ export default function SettlementDetails({
 
                         <dd className="mt-1 font-medium text-foreground">
                           {formatAmount(
-                            application.paidAmount
+                            application.paidAmount,
+                            currency
                           )}
                         </dd>
                       </div>
@@ -408,7 +412,8 @@ export default function SettlementDetails({
 
                         <dd className="mt-1 font-medium text-foreground">
                           {formatAmount(
-                            application.outstandingAmount
+                            application.outstandingAmount,
+                            currency
                           )}
                         </dd>
                       </div>

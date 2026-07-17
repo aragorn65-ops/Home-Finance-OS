@@ -116,6 +116,9 @@ export default function SavingsGoalCard({
   onArchive,
   onDelete,
 }: SavingsGoalCardProps) {
+  const goalCurrency =
+    goal.goalCurrency || currency;
+
   const progressBarWidth =
     Math.min(
       Math.max(
@@ -257,7 +260,7 @@ export default function SavingsGoalCard({
           <p className="hfos-savings-goal-card__metric-value">
             {formatCurrency(
               progress.savedAmount,
-              currency
+              goalCurrency
             )}
           </p>
         </div>
@@ -270,7 +273,7 @@ export default function SavingsGoalCard({
           <p className="hfos-savings-goal-card__metric-value">
             {formatCurrency(
               progress.targetAmount,
-              currency
+              goalCurrency
             )}
           </p>
         </div>
@@ -283,7 +286,7 @@ export default function SavingsGoalCard({
           <p className="hfos-savings-goal-card__metric-value">
             {formatCurrency(
               progress.remainingAmount,
-              currency
+              goalCurrency
             )}
           </p>
         </div>
@@ -354,9 +357,23 @@ export default function SavingsGoalCard({
               ? formatCurrency(
                   progress
                     .requiredMonthlyContribution,
-                  currency
+                  goalCurrency
                 )
               : "Not applicable"}
+          </span>
+        </div>
+
+        <div className="hfos-savings-goal-card__detail">
+          <span>
+            Base equivalent:
+          </span>{" "}
+
+          <span className="hfos-savings-goal-card__detail-value">
+            {formatCurrency(
+              progress.savedBaseAmount,
+              goal.baseCurrency ||
+                currency
+            )}
           </span>
         </div>
 

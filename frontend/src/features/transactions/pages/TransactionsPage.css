@@ -1,0 +1,65 @@
+.hfos-transaction-dialog {
+  max-width: min(58rem, calc(100vw - var(--space-8)));
+  max-height: calc(100dvh - var(--space-4));
+  margin: auto;
+}
+
+.hfos-transaction-dialog__body {
+  min-height: 0;
+  padding: var(--space-3);
+  overflow-y: auto;
+}
+
+.hfos-transaction-form,
+.hfos-transaction-details {
+  padding: var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.hfos-transaction-form {
+  margin: 0;
+}
+
+.hfos-transaction-form :is(.space-y-6, .space-y-5) > :not([hidden]) ~ :not([hidden]),
+.hfos-transaction-details.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: var(--space-4);
+}
+
+.hfos-transaction-form :is(.gap-5) {
+  gap: var(--space-3);
+}
+
+.hfos-transaction-form :is(input, select, textarea) {
+  min-height: 2.25rem;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.hfos-transaction-form textarea {
+  min-height: 5rem;
+}
+
+.hfos-transaction-form section,
+.hfos-transaction-details section {
+  padding: var(--space-3);
+}
+
+.hfos-transaction-details .text-3xl {
+  font-size: var(--font-size-2xl);
+}
+
+@media (max-width: 48rem) {
+  .hfos-transaction-dialog {
+    max-width: none;
+    max-height: calc(100dvh - var(--space-2));
+  }
+
+  .hfos-transaction-dialog__body {
+    padding: var(--space-2);
+  }
+
+  .hfos-transaction-form,
+  .hfos-transaction-details {
+    padding: var(--space-3);
+  }
+}

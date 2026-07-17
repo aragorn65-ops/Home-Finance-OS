@@ -8,6 +8,14 @@ import {
   OperationResults,
   type OperationResult,
 } from "../../../shared/types";
+import {
+  normalizeCurrency,
+  normalizeExchangeRate,
+  roundCurrencyAmount,
+} from "../../../shared/utils/currencyConversion";
+import {
+  loadHousehold,
+} from "../../household/services/householdStorage";
 
 export default class AccountService {
   /**
@@ -56,7 +64,10 @@ export default class AccountService {
   static getTotalAssets(): number {
     return this.getAssetAccounts().reduce(
       (total, account) =>
-        total + account.currentBalance,
+        total +
+        this.getReportingBalance(
+          account
+        ),
       0
     );
   }
@@ -67,8 +78,23 @@ export default class AccountService {
   static getTotalLiabilities(): number {
     return this.getLiabilityAccounts().reduce(
       (total, account) =>
-        total + account.currentBalance,
+        total +
+        this.getReportingBalance(
+          account
+        ),
       0
+    );
+  }
+
+  /**
+   * Returns the balance used for household reporting.
+   */
+  static getReportingBalance(
+    account: Account
+  ): number {
+    return roundCurrencyAmount(
+      account.currentBaseBalance ??
+        account.currentBalance
     );
   }
 
@@ -121,6 +147,8 @@ export default class AccountService {
     }
 
     const now = new Date();
+    const currencyDetails =
+      this.resolveCurrencyDetails(form);
 
     const account: Account = {
       id: crypto.randomUUID(),
@@ -139,10 +167,24 @@ export default class AccountService {
       accountClass: form.accountClass,
       type: form.type,
 
-      currency: form.currency.trim(),
+      currency:
+        currencyDetails.currency,
+
+      baseCurrency:
+        currencyDetails.baseCurrency,
+
+      exchangeRate:
+        currencyDetails.exchangeRate,
+
+      exchangeRateEffectiveDate:
+        currencyDetails.exchangeRateEffectiveDate,
 
       openingBalance: form.balance,
       currentBalance: form.balance,
+      openingBaseBalance:
+        currencyDetails.openingBaseBalance,
+      currentBaseBalance:
+        currencyDetails.openingBaseBalance,
 
       accountNumber: undefined,
 
@@ -223,6 +265,9 @@ export default class AccountService {
       );
     }
 
+    const currencyDetails =
+      this.resolveCurrencyDetails(form);
+
     const updatedAccount: Account = {
       ...existing,
 
@@ -239,9 +284,33 @@ export default class AccountService {
       accountClass: form.accountClass,
       type: form.type,
 
-      currency: form.currency.trim(),
+      currency:
+        currencyDetails.currency,
 
-      openingBalance: form.balance,
+      baseCurrency:
+        currencyDetails.baseCurrency,
+
+      exchangeRate:
+        currencyDetails.exchangeRate,
+
+      exchangeRateEffectiveDate:
+        currencyDetails.exchangeRateEffectiveDate,
+
+      openingBalance:
+        existing.openingBalance,
+      openingBaseBalance:
+        existing.openingBaseBalance ??
+        roundCurrencyAmount(
+          existing.openingBalance *
+            currencyDetails.exchangeRate
+        ),
+      currentBalance:
+        form.balance,
+      currentBaseBalance:
+        roundCurrencyAmount(
+          form.balance *
+            currencyDetails.exchangeRate
+        ),
 
       creditLimit:
         form.accountClass === "liability"
@@ -571,6 +640,11 @@ export default class AccountService {
       ...account,
 
       currentBalance: nextBalance,
+      currentBaseBalance:
+        roundCurrencyAmount(
+          nextBalance *
+            (account.exchangeRate ?? 1)
+        ),
 
       updatedAt: new Date(),
     };
@@ -627,5 +701,58 @@ export default class AccountService {
       },
       "Unable to update account balance."
     );
+  }
+
+  private static resolveCurrencyDetails(
+    form: AccountForm
+  ): {
+    currency: string;
+    baseCurrency: string;
+    exchangeRate: number;
+    exchangeRateEffectiveDate?: Date;
+    openingBaseBalance: number;
+  } {
+    const household =
+      loadHousehold();
+
+    const baseCurrency =
+      normalizeCurrency(
+        form.baseCurrency ||
+          household?.currency ||
+          "PHP"
+      );
+
+    const currency =
+      normalizeCurrency(
+        form.currency,
+        baseCurrency
+      );
+
+    const exchangeRate =
+      normalizeExchangeRate(
+        form.exchangeRate,
+        currency,
+        baseCurrency
+      ) || 1;
+
+    const effectiveDate =
+      form.exchangeRateEffectiveDate
+        ? new Date(
+            `${form.exchangeRateEffectiveDate}T00:00:00`
+          )
+        : undefined;
+
+    return {
+      currency,
+      baseCurrency,
+      exchangeRate,
+      exchangeRateEffectiveDate:
+        effectiveDate,
+      openingBaseBalance:
+        roundCurrencyAmount(
+          form.balance *
+            exchangeRate
+        ),
+    };
   }
 }

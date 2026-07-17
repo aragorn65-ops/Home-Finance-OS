@@ -1,9 +1,19 @@
 import type { ChangeEvent } from "react";
 
 import {
+  CurrencyInput,
   Input,
   Select,
 } from "../../../shared/ui";
+
+import {
+  currencies,
+} from "../../../shared/data/currencies";
+import formatCurrency from "../../../shared/utils/formatCurrency";
+import {
+  normalizeCurrency,
+  roundCurrencyAmount,
+} from "../../../shared/utils/currencyConversion";
 
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
@@ -20,6 +30,8 @@ import type {
 interface AccountFormProps {
   value: AccountFormModel;
   members: HouseholdMember[];
+  baseCurrency?: string;
+  isEditing?: boolean;
   onChange: (
     value: AccountFormModel
   ) => void;
@@ -97,30 +109,34 @@ const accountVisibilities = [
   },
 ];
 
-const currencies = [
-  {
-    label: "PHP",
-    value: "PHP",
-  },
-  {
-    label: "USD",
-    value: "USD",
-  },
-  {
-    label: "EUR",
-    value: "EUR",
-  },
-  {
-    label: "GBP",
-    value: "GBP",
-  },
-];
-
 export default function AccountForm({
   value,
   members,
+  baseCurrency = "PHP",
+  isEditing = false,
   onChange,
 }: AccountFormProps) {
+  const normalizedBaseCurrency =
+    normalizeCurrency(baseCurrency);
+
+  const normalizedAccountCurrency =
+    normalizeCurrency(
+      value.currency,
+      normalizedBaseCurrency
+    );
+
+  const isForeignCurrencyAccount =
+    normalizedAccountCurrency !==
+    normalizedBaseCurrency;
+
+  const baseBalancePreview =
+    roundCurrencyAmount(
+      value.balance *
+        (isForeignCurrencyAccount
+          ? value.exchangeRate
+          : 1)
+    );
+
   const updateField = <
     Field extends keyof AccountFormModel,
   >(
@@ -181,6 +197,34 @@ export default function AccountForm({
     updateField("type", accountType);
   };
 
+  const handleCurrencyChange = (
+    event: ChangeEvent<HTMLSelectElement>
+  ) => {
+    const nextCurrency =
+      normalizeCurrency(
+        event.target.value,
+        normalizedBaseCurrency
+      );
+
+    onChange({
+      ...value,
+
+      currency:
+        nextCurrency,
+
+      baseCurrency:
+        normalizedBaseCurrency,
+
+      exchangeRate:
+        nextCurrency ===
+        normalizedBaseCurrency
+          ? 1
+          : value.exchangeRate > 0
+            ? value.exchangeRate
+            : 1,
+    });
+  };
+
   const memberOptions = members.map(
     (member) => ({
       label: member.displayName,
@@ -200,7 +244,9 @@ export default function AccountForm({
   const balanceLabel =
     value.accountClass === "liability"
       ? "Current Amount Owed"
-      : "Opening Balance";
+      : isEditing
+        ? "Current Balance"
+        : "Opening Balance";
 
   return (
     <div className="space-y-4">
@@ -272,27 +318,81 @@ export default function AccountForm({
       <Select
         label="Currency"
         value={value.currency}
-        options={currencies}
-        onChange={(event) =>
-          updateField(
-            "currency",
-            event.target.value
-          )
-        }
+        options={currencies.filter(
+          (currency) =>
+            currency.value
+        )}
+        onChange={handleCurrencyChange}
       />
 
-      <Input
+      {isForeignCurrencyAccount && (
+        <div className="space-y-4 rounded-lg border p-4">
+          <div>
+            <h3 className="font-medium text-foreground">
+              Base Currency Reporting
+            </h3>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Account balance stays in{" "}
+              {normalizedAccountCurrency}; summaries use{" "}
+              {normalizedBaseCurrency}.
+            </p>
+          </div>
+
+          <Input
+            label={`Exchange Rate to ${normalizedBaseCurrency}`}
+            type="number"
+            min="0.000001"
+            step="0.000001"
+            value={value.exchangeRate}
+            onChange={(
+              event: ChangeEvent<HTMLInputElement>
+            ) =>
+              updateField(
+                "exchangeRate",
+                Number(
+                  event.target.value
+                )
+              )
+            }
+          />
+
+          <Input
+            label="Rate Effective Date"
+            type="date"
+            value={
+              value.exchangeRateEffectiveDate
+            }
+            onChange={(
+              event: ChangeEvent<HTMLInputElement>
+            ) =>
+              updateField(
+                "exchangeRateEffectiveDate",
+                event.target.value
+              )
+            }
+          />
+
+          <p className="rounded-md bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+            Reporting equivalent:{" "}
+            <span className="font-medium text-foreground">
+              {formatCurrency(
+                baseBalancePreview,
+                normalizedBaseCurrency
+              )}
+            </span>
+          </p>
+        </div>
+      )}
+
+      <CurrencyInput
         label={balanceLabel}
-        type="number"
         min="0"
-        step="0.01"
         value={value.balance}
-        onChange={(
-          event: ChangeEvent<HTMLInputElement>
-        ) =>
+        onValueChange={(nextValue) =>
           updateField(
             "balance",
-            Number(event.target.value)
+            nextValue
           )
         }
       />
@@ -310,50 +410,38 @@ export default function AccountForm({
             </p>
           </div>
 
-          <Input
+          <CurrencyInput
             label="Credit Limit"
-            type="number"
             min="0"
-            step="0.01"
             value={value.creditLimit}
-            onChange={(
-              event: ChangeEvent<HTMLInputElement>
-            ) =>
+            onValueChange={(nextValue) =>
               updateField(
                 "creditLimit",
-                Number(event.target.value)
+                nextValue
               )
             }
           />
 
-          <Input
+          <CurrencyInput
             label="Current Statement Balance"
-            type="number"
             min="0"
-            step="0.01"
             value={value.statementBalance}
-            onChange={(
-              event: ChangeEvent<HTMLInputElement>
-            ) =>
+            onValueChange={(nextValue) =>
               updateField(
                 "statementBalance",
-                Number(event.target.value)
+                nextValue
               )
             }
           />
 
-          <Input
+          <CurrencyInput
             label="Minimum Payment"
-            type="number"
             min="0"
-            step="0.01"
             value={value.minimumPayment}
-            onChange={(
-              event: ChangeEvent<HTMLInputElement>
-            ) =>
+            onValueChange={(nextValue) =>
               updateField(
                 "minimumPayment",
-                Number(event.target.value)
+                nextValue
               )
             }
           />

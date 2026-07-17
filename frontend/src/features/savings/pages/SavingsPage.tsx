@@ -9,6 +9,7 @@ import {
   DialogBody,
   DialogFooter,
   DialogHeader,
+  FormValidationAlert,
 } from "../../../shared/ui";
 
 import AccountService from "../../accounts/services/AccountService";
@@ -69,6 +70,39 @@ type SavingsConfirmation =
     }
   | null;
 
+const savingsGoalFieldLabels:
+  Record<string, string> = {
+    general: "General",
+    householdId: "Household",
+    name: "Goal Name",
+    description: "Description or Notes",
+    goalType: "Goal Type",
+    targetAmount: "Target Amount",
+    goalCurrency: "Goal Currency",
+    exchangeRate: "Exchange Rate",
+    targetDate: "Target Date",
+    linkedAccountId: "Linked Savings Account",
+    priority: "Priority",
+    status: "Status",
+    isActive: "Active savings goal",
+  };
+
+const savingsActivityFieldLabels:
+  Record<string, string> = {
+    general: "General",
+    householdId: "Household",
+    savingsGoalId: "Savings Goal",
+    memberId: "Household Member",
+    activityType: "Activity Type",
+    amount: "Entered Amount",
+    enteredCurrency: "Entered Currency",
+    exchangeRate: "Exchange Rate",
+    activityDate: "Activity Date",
+    accountId: "Source or Destination Account",
+    notes: "Notes",
+    isActive: "Include in Goal Progress",
+  };
+
 function formatDateInput(
   date?: Date
 ): string {
@@ -93,12 +127,16 @@ function formatDateInput(
 }
 
 function createDefaultGoalForm(
-  householdId: string
+  householdId: string,
+  currency: string
 ): SavingsGoalFormModel {
   return {
     ...defaultSavingsGoalForm,
 
     householdId,
+    goalCurrency:
+      currency,
+    exchangeRate: 1,
   };
 }
 
@@ -120,6 +158,12 @@ function mapGoalToForm(
 
     targetAmount:
       goal.targetAmount,
+
+    goalCurrency:
+      goal.goalCurrency,
+
+    exchangeRate:
+      goal.exchangeRate,
 
     targetDate:
       formatDateInput(
@@ -143,7 +187,8 @@ function mapGoalToForm(
 function createDefaultActivityForm(
   householdId: string,
   savingsGoalId: string,
-  memberId: string
+  memberId: string,
+  enteredCurrency: string
 ): SavingsActivityFormModel {
   return {
     ...defaultSavingsActivityForm,
@@ -151,6 +196,8 @@ function createDefaultActivityForm(
     householdId,
     savingsGoalId,
     memberId,
+    enteredCurrency,
+    exchangeRate: 1,
 
     activityDate:
       formatDateInput(
@@ -176,7 +223,21 @@ function mapActivityToForm(
       activity.activityType,
 
     amount:
+      activity.enteredAmount ??
       activity.amount,
+
+    enteredAmount:
+      activity.enteredAmount ??
+      activity.amount,
+
+    enteredCurrency:
+      activity.enteredCurrency,
+
+    baseAmount:
+      activity.baseAmount,
+
+    exchangeRate:
+      activity.exchangeRate,
 
     activityDate:
       formatDateInput(
@@ -316,7 +377,8 @@ export default function SavingsPage() {
     setGoalForm,
   ] = useState<SavingsGoalFormModel>(
     createDefaultGoalForm(
-      householdId
+      householdId,
+      currency
     )
   );
 
@@ -327,7 +389,8 @@ export default function SavingsPage() {
     createDefaultActivityForm(
       householdId,
       "",
-      defaultMemberId
+      defaultMemberId,
+      currency
     )
   );
 
@@ -351,6 +414,18 @@ export default function SavingsPage() {
   ] = useState("");
 
   const [
+    validationAlertErrors,
+    setValidationAlertErrors,
+  ] = useState<Record<string, string>>(
+    {}
+  );
+
+  const [
+    isValidationAlertOpen,
+    setIsValidationAlertOpen,
+  ] = useState(false);
+
+  const [
     confirmation,
     setConfirmation,
   ] = useState<SavingsConfirmation>(
@@ -362,6 +437,31 @@ export default function SavingsPage() {
     setConfirmationError,
   ] = useState("");
 
+  const showValidationAlert = (
+    nextErrors:
+      Record<string, string> | undefined,
+    fallbackMessage =
+      "Please correct the highlighted fields."
+  ) => {
+    const visibleErrors =
+      nextErrors &&
+      Object.keys(nextErrors).length >
+        0
+        ? nextErrors
+        : {
+            general:
+              fallbackMessage,
+          };
+
+    setValidationAlertErrors(
+      visibleErrors
+    );
+
+    setIsValidationAlertOpen(
+      true
+    );
+  };
+
   const closeDialog = () => {
     setDialogMode(null);
     setSelectedActivity(null);
@@ -369,6 +469,8 @@ export default function SavingsPage() {
     setGoalErrors({});
     setActivityErrors({});
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
   };
 
   const closeAllDialogs = () => {
@@ -382,12 +484,15 @@ export default function SavingsPage() {
 
     setGoalForm(
       createDefaultGoalForm(
-        householdId
+        householdId,
+        currency
       )
     );
 
     setGoalErrors({});
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
 
     setDialogMode(
       "create-goal"
@@ -403,6 +508,8 @@ export default function SavingsPage() {
     setGoalErrors({});
     setActivityErrors({});
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
 
     setDialogMode(
       "view-goal"
@@ -421,6 +528,8 @@ export default function SavingsPage() {
 
     setGoalErrors({});
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
 
     setDialogMode(
       "edit-goal"
@@ -437,12 +546,15 @@ export default function SavingsPage() {
       createDefaultActivityForm(
         householdId,
         goal.id,
-        defaultMemberId
+        defaultMemberId,
+        goal.goalCurrency
       )
     );
 
     setActivityErrors({});
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
 
     setDialogMode(
       "create-activity"
@@ -482,6 +594,8 @@ export default function SavingsPage() {
 
     setActivityErrors({});
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
 
     setDialogMode(
       "edit-activity"
@@ -493,8 +607,17 @@ export default function SavingsPage() {
     setSaveError("");
 
     if (!household) {
+      const nextErrors = {
+        householdId:
+          "Complete household setup before creating a savings goal.",
+      };
+
+      setGoalErrors(nextErrors);
       setSaveError(
-        "Complete household setup before creating a savings goal."
+        nextErrors.householdId
+      );
+      showValidationAlert(
+        nextErrors
       );
 
       return;
@@ -525,12 +648,17 @@ export default function SavingsPage() {
         result.errors ?? {}
       );
 
-      setSaveError(
+      const nextSaveError =
         result.message ??
           getFirstError(
             result.errors
           ) ??
-          "Unable to save the savings goal."
+          "Unable to save the savings goal.";
+
+      setSaveError(nextSaveError);
+      showValidationAlert(
+        result.errors,
+        nextSaveError
       );
 
       return;
@@ -550,6 +678,8 @@ export default function SavingsPage() {
 
     setGoalErrors({});
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
   };
 
   const handleSaveActivity = () => {
@@ -560,8 +690,19 @@ export default function SavingsPage() {
       !household ||
       !selectedGoal
     ) {
+      const nextErrors = {
+        savingsGoalId:
+          "Select a savings goal before recording activity.",
+      };
+
+      setActivityErrors(
+        nextErrors
+      );
       setSaveError(
-        "Select a savings goal before recording activity."
+        nextErrors.savingsGoalId
+      );
+      showValidationAlert(
+        nextErrors
       );
 
       return;
@@ -595,12 +736,17 @@ export default function SavingsPage() {
         result.errors ?? {}
       );
 
-      setSaveError(
+      const nextSaveError =
         result.message ??
           getFirstError(
             result.errors
           ) ??
-          "Unable to save the savings activity."
+          "Unable to save the savings activity.";
+
+      setSaveError(nextSaveError);
+      showValidationAlert(
+        result.errors,
+        nextSaveError
       );
 
       return;
@@ -609,6 +755,8 @@ export default function SavingsPage() {
     setSelectedActivity(null);
     setActivityErrors({});
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
 
     setDialogMode(
       "view-goal"
@@ -805,7 +953,7 @@ export default function SavingsPage() {
         ? `Archive "${confirmation.goal.name}"? Its activity history will be preserved, but new activity will be blocked.`
         : confirmation?.type ===
             "delete-goal"
-          ? `Delete "${confirmation.goal.name}"? Goals with activity history must be archived instead.`
+          ? `Delete "${confirmation.goal.name}" and its activity history? Any linked account balance effects will be reversed.`
           : confirmation?.type ===
               "delete-activity"
             ? "Delete this savings activity? Any linked account balance effect will be reversed."
@@ -945,6 +1093,9 @@ export default function SavingsPage() {
               onView={
                 handleViewGoal
               }
+              onDelete={
+                requestDeleteGoal
+              }
             />
           </section>
         )}
@@ -965,6 +1116,21 @@ export default function SavingsPage() {
         />
 
         <DialogBody className="max-h-[70vh] overflow-y-auto">
+          <FormValidationAlert
+            open={isValidationAlertOpen}
+            errors={
+              validationAlertErrors
+            }
+            fieldLabels={
+              savingsGoalFieldLabels
+            }
+            onClose={() =>
+              setIsValidationAlertOpen(
+                false
+              )
+            }
+          />
+
           {saveError && (
             <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {saveError}
@@ -987,6 +1153,9 @@ export default function SavingsPage() {
 
                 setGoalErrors({});
                 setSaveError("");
+                setIsValidationAlertOpen(
+                  false
+                );
               }}
             />
           ) : (
@@ -1059,6 +1228,21 @@ export default function SavingsPage() {
         />
 
         <DialogBody className="max-h-[70vh] overflow-y-auto">
+          <FormValidationAlert
+            open={isValidationAlertOpen}
+            errors={
+              validationAlertErrors
+            }
+            fieldLabels={
+              savingsActivityFieldLabels
+            }
+            onClose={() =>
+              setIsValidationAlertOpen(
+                false
+              )
+            }
+          />
+
           {saveError && (
             <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {saveError}
@@ -1077,6 +1261,14 @@ export default function SavingsPage() {
               accounts={
                 accounts
               }
+              goalCurrency={
+                selectedGoal
+                  .goalCurrency
+              }
+              baseCurrency={
+                selectedGoal
+                  .baseCurrency
+              }
               errors={
                 activityErrors
               }
@@ -1092,6 +1284,9 @@ export default function SavingsPage() {
                 );
 
                 setSaveError("");
+                setIsValidationAlertOpen(
+                  false
+                );
               }}
             />
           ) : (

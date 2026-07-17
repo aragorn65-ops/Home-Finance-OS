@@ -40,6 +40,14 @@ export interface SavingsActivity {
    * - Negative adjustment decreases saved funds.
    */
   amount: number;
+  enteredAmount: number;
+  enteredCurrency: string;
+  goalCurrencyAmount: number;
+  goalCurrency: string;
+  baseCurrency: string;
+  baseAmount: number;
+  exchangeRate: number;
+  exchangeRateEffectiveDate: Date;
 
   activityDate: Date;
 

@@ -9,6 +9,12 @@ import {
   type OperationResult,
 } from "../../../shared/types";
 
+import {
+  convertEnteredAmount,
+  normalizeCurrency,
+  normalizeExchangeRate,
+} from "../../../shared/utils/currencyConversion";
+
 import type {
   SavingsActivity,
 } from "../models/SavingsActivity";
@@ -260,6 +266,33 @@ export default class SavingsActivityService {
         amount:
           normalizedForm.amount,
 
+        enteredAmount:
+          normalizedForm.enteredAmount,
+
+        enteredCurrency:
+          normalizedForm.enteredCurrency,
+
+        goalCurrencyAmount:
+          normalizedForm.amount,
+
+        goalCurrency:
+          savingsGoal?.goalCurrency ??
+          household.currency,
+
+        baseCurrency:
+          household.currency,
+
+        baseAmount:
+          normalizedForm.baseAmount,
+
+        exchangeRate:
+          normalizedForm.exchangeRate,
+
+        exchangeRateEffectiveDate:
+          new Date(
+            `${normalizedForm.activityDate}T00:00:00`
+          ),
+
         activityDate:
           new Date(
             `${normalizedForm.activityDate}T00:00:00`
@@ -508,6 +541,33 @@ export default class SavingsActivityService {
         amount:
           normalizedForm.amount,
 
+        enteredAmount:
+          normalizedForm.enteredAmount,
+
+        enteredCurrency:
+          normalizedForm.enteredCurrency,
+
+        goalCurrencyAmount:
+          normalizedForm.amount,
+
+        goalCurrency:
+          replacementGoal?.goalCurrency ??
+          household.currency,
+
+        baseCurrency:
+          household.currency,
+
+        baseAmount:
+          normalizedForm.baseAmount,
+
+        exchangeRate:
+          normalizedForm.exchangeRate,
+
+        exchangeRateEffectiveDate:
+          new Date(
+            `${normalizedForm.activityDate}T00:00:00`
+          ),
+
         activityDate:
           new Date(
             `${normalizedForm.activityDate}T00:00:00`
@@ -730,6 +790,47 @@ export default class SavingsActivityService {
     form: SavingsActivityForm,
     householdId: string
   ): SavingsActivityForm {
+    const savingsGoal =
+      SavingsGoalRepository.findById(
+        form.savingsGoalId.trim()
+      );
+
+    const baseCurrency =
+      normalizeCurrency(
+        savingsGoal?.baseCurrency
+      );
+
+    const goalCurrency =
+      normalizeCurrency(
+        savingsGoal?.goalCurrency,
+        baseCurrency
+      );
+
+    const enteredCurrency =
+      normalizeCurrency(
+        form.enteredCurrency,
+        goalCurrency
+      );
+
+    const exchangeRate =
+      normalizeExchangeRate(
+        form.exchangeRate,
+        enteredCurrency ===
+          baseCurrency
+          ? goalCurrency
+          : enteredCurrency,
+        baseCurrency
+      ) || 1;
+
+    const convertedAmount =
+      convertEnteredAmount(
+        form.amount,
+        enteredCurrency,
+        goalCurrency,
+        baseCurrency,
+        exchangeRate
+      );
+
     return {
       ...form,
 
@@ -742,9 +843,20 @@ export default class SavingsActivityService {
         form.memberId.trim(),
 
       amount:
+        convertedAmount
+          .goalCurrencyAmount,
+
+      enteredAmount:
         this.roundCurrency(
           form.amount
         ),
+
+      enteredCurrency,
+
+      exchangeRate,
+
+      baseAmount:
+        convertedAmount.baseAmount,
 
       activityDate:
         form.activityDate.trim(),
@@ -815,15 +927,14 @@ export default class SavingsActivityService {
       return undefined;
     }
 
-    const originalGoalEffect =
-      SavingsProgressService
-        .getActivityEffect(
-          existing
-        );
+    const originalAccountEffect =
+      this.getAccountEffect(
+        existing
+      );
 
     return this.roundCurrency(
       account.currentBalance +
-      originalGoalEffect
+      originalAccountEffect
     );
   }
 
@@ -841,13 +952,12 @@ export default class SavingsActivityService {
       return [];
     }
 
-    const goalEffect =
-      SavingsProgressService
-        .getActivityEffect(
-          activity
-        );
+    const accountEffect =
+      this.getAccountEffect(
+        activity
+      );
 
-    if (goalEffect === 0) {
+    if (accountEffect === 0) {
       return [];
     }
 
@@ -857,13 +967,13 @@ export default class SavingsActivityService {
           activity.accountId,
 
         type:
-          goalEffect > 0
+          accountEffect > 0
             ? "credit"
             : "debit",
 
         amount:
           Math.abs(
-            goalEffect
+            accountEffect
           ),
 
         isHistorical:
@@ -886,13 +996,12 @@ export default class SavingsActivityService {
       return [];
     }
 
-    const goalEffect =
-      SavingsProgressService
-        .getActivityEffect(
-          activity
-        );
+    const accountEffect =
+      this.getAccountEffect(
+        activity
+      );
 
-    if (goalEffect === 0) {
+    if (accountEffect === 0) {
       return [];
     }
 
@@ -902,13 +1011,13 @@ export default class SavingsActivityService {
           activity.accountId,
 
         type:
-          goalEffect > 0
+          accountEffect > 0
             ? "debit"
             : "credit",
 
         amount:
           Math.abs(
-            goalEffect
+            accountEffect
           ),
 
         isHistorical:
@@ -1080,5 +1189,21 @@ export default class SavingsActivityService {
       ) /
       100
     );
+  }
+
+  private static getAccountEffect(
+    activity: SavingsActivity
+  ): number {
+    const baseAmountActivity:
+      SavingsActivity = {
+        ...activity,
+        amount:
+          activity.baseAmount,
+      };
+
+    return SavingsProgressService
+      .getActivityEffect(
+        baseAmountActivity
+      );
   }
 }

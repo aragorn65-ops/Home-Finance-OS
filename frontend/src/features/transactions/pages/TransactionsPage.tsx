@@ -1,4 +1,9 @@
-import { useState } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
+
+import "./TransactionsPage.css";
 
 import {
   Dialog,
@@ -9,6 +14,13 @@ import {
 import {
   OperationResults,
 } from "../../../shared/types";
+
+import {
+  formatDateInput,
+  isSameMonth,
+  parseMonthInput,
+} from "../../../shared/utils/monthSelection";
+import useReportingMonth from "../../../shared/hooks/useReportingMonth";
 
 import AccountService from "../../accounts/services/AccountService";
 
@@ -35,29 +47,16 @@ import type {
   TransactionForm as TransactionFormData,
 } from "../models/TransactionForm";
 
+import {
+  defaultTransactionForm,
+} from "../models/TransactionForm";
+
 type TransactionDialogMode =
   | "create"
   | "edit"
   | "view"
   | "delete"
   | null;
-
-function formatDateInput(
-  date: Date
-): string {
-  const year =
-    date.getFullYear();
-
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
-
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
 
 function mapTransactionToForm(
   transaction: Transaction
@@ -74,7 +73,24 @@ function mapTransactionToForm(
       transaction.type,
 
     amount:
+      transaction.enteredAmount ??
       transaction.amount,
+
+    enteredAmount:
+      transaction.enteredAmount ??
+      transaction.amount,
+
+    enteredCurrency:
+      transaction.enteredCurrency ??
+      transaction.baseCurrency ??
+      "",
+
+    baseAmount:
+      transaction.baseAmount ??
+      transaction.amount,
+
+    exchangeRate:
+      transaction.exchangeRate ?? 1,
 
     paidByMemberId:
       transaction.paidByMemberId ??
@@ -163,7 +179,37 @@ function mapTransactionToForm(
   };
 }
 
+function defaultCreateTransactionForm(
+  currency = "PHP"
+):
+  TransactionFormData {
+  return {
+    ...defaultTransactionForm,
+
+    paidByMemberId: "",
+    enteredCurrency:
+      currency,
+    exchangeRate: 1,
+
+    attachments: [],
+
+    allocations: [],
+
+    isActive: true,
+  };
+}
+
 export default function TransactionsPage() {
+  const {
+    selectedMonthValue,
+    setSelectedMonthValue,
+  } = useReportingMonth();
+
+  const selectedMonth =
+    parseMonthInput(
+      selectedMonthValue
+    );
+
   const {
     transactions,
     create,
@@ -173,6 +219,9 @@ export default function TransactionsPage() {
 
   const household =
     loadHousehold();
+
+  const currency =
+    household?.currency ?? "PHP";
 
   const accounts =
     AccountService
@@ -212,6 +261,26 @@ export default function TransactionsPage() {
     deleteError,
     setDeleteError,
   ] = useState("");
+
+  const createTransactionInitialValues =
+    useMemo(
+      () => ({
+        ...defaultCreateTransactionForm(
+          currency
+        ),
+
+        transactionDate:
+          formatDateInput(
+            parseMonthInput(
+              selectedMonthValue
+            )
+          ),
+      }),
+      [
+        selectedMonthValue,
+        currency,
+      ]
+    );
 
   const closeDialog = () => {
     setDialogMode(null);
@@ -333,7 +402,11 @@ export default function TransactionsPage() {
     transactions.filter(
       (transaction) =>
         transaction.householdId ===
-        household?.id
+          household?.id &&
+        isSameMonth(
+          transaction.transactionDate,
+          selectedMonth
+        )
     );
 
   const paymentStatusByTransactionId =
@@ -365,6 +438,12 @@ export default function TransactionsPage() {
   return (
     <>
       <TransactionToolbar
+        selectedMonth={
+          selectedMonthValue
+        }
+        onSelectedMonthChange={
+          setSelectedMonthValue
+        }
         onAddTransaction={
           handleAddTransaction
         }
@@ -376,6 +455,7 @@ export default function TransactionsPage() {
             householdTransactions
           }
           accounts={accounts}
+          currency={currency}
           paymentStatusByTransactionId={
             paymentStatusByTransactionId
           }
@@ -394,6 +474,7 @@ export default function TransactionsPage() {
       <Dialog
         open={isFormDialogOpen}
         onClose={closeDialog}
+        className="hfos-transaction-dialog"
       >
         <DialogHeader
           title={
@@ -403,17 +484,18 @@ export default function TransactionsPage() {
           }
         />
 
-        <DialogBody>
+        <DialogBody className="hfos-transaction-dialog__body">
           <TransactionForm
             accounts={accounts}
             members={members}
+            currency={currency}
             initialValues={
               dialogMode === "edit" &&
               selectedTransaction
                 ? mapTransactionToForm(
                     selectedTransaction
                   )
-                : undefined
+                : createTransactionInitialValues
             }
             submitLabel={
               dialogMode === "edit"
@@ -436,12 +518,13 @@ export default function TransactionsPage() {
           selectedTransaction !== null
         }
         onClose={closeDialog}
+        className="hfos-transaction-dialog"
       >
         <DialogHeader
           title="Transaction Details"
         />
 
-        <DialogBody>
+        <DialogBody className="hfos-transaction-dialog__body">
           {selectedTransaction && (
             <TransactionDetails
               transaction={
@@ -459,6 +542,7 @@ export default function TransactionsPage() {
                     .destinationAccountId
                 )
               }
+              currency={currency}
               onClose={
                 closeDialog
               }
@@ -486,6 +570,7 @@ export default function TransactionsPage() {
               errorMessage={
                 deleteError
               }
+              currency={currency}
               onConfirm={
                 handleDeleteConfirm
               }

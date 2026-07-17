@@ -3,7 +3,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-6);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-5);
 }
 
 .hfos-page-header__content {
@@ -13,17 +13,17 @@
 .hfos-page-header__title {
   margin: 0;
   color: var(--color-text-strong);
-  font-size: var(--font-size-3xl);
+  font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
 }
 
 .hfos-page-header__subtitle {
   max-width: var(--layout-reading-max-width);
-  margin-top: var(--space-2);
+  margin-top: var(--space-1);
   color: var(--color-text-muted);
-  font-size: var(--font-size-md);
-  line-height: var(--line-height-relaxed);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
 }
 
 .hfos-page-header__actions {

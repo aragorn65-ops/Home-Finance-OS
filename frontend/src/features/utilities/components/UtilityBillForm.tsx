@@ -10,6 +10,9 @@ import type {
   StoredAttachment,
   StoredAttachmentCategory,
 } from "../../../shared/models/StoredAttachment";
+import CurrencyInput from "../../../shared/ui/CurrencyInput";
+import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
+import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
 
 import type {
   UtilityApplianceUsageForm,
@@ -47,6 +50,8 @@ interface UtilityBillFormProps {
 
   initialValue?: UtilityBillFormData;
 
+  defaultDate?: string;
+
   submitLabel?: string;
 
   onSubmit?: (
@@ -67,7 +72,32 @@ const acceptedAttachmentMimeTypes = [
 const maximumAttachmentCount = 3;
 
 const maximumAttachmentSizeBytes =
-  750 * 1024;
+  1024 * 1024;
+
+const utilityFieldLabels:
+  Record<string, string> = {
+    calculation: "Calculation",
+    utilityType: "Utility Type",
+    unit: "Unit",
+    billingDate: "Billing Date",
+    transactionDate: "Transaction Date",
+    totalBillAmount: "Total Bill Amount",
+    ratePerUnit: "Rate per Unit",
+    memberShares:
+      "Member Usage and Sharing",
+    applianceUsages:
+      "Appliance Usage",
+    directUsageAmount:
+      "Direct Usage Amount",
+    shares: "Member Shares",
+    paidByMemberId: "Paid By",
+    sourceAccountId: "Payment Account",
+    visibility: "Visibility",
+    description: "Description",
+    notes: "Notes",
+    attachments:
+      "Provider Bill or Receipt",
+  };
 
 function isAcceptedAttachmentMimeType(
   mimeType: string
@@ -158,6 +188,7 @@ export default function UtilityBillForm({
   members,
   accounts = [],
   initialValue,
+  defaultDate,
   submitLabel = "Save Utility Bill",
   onSubmit,
   onCancel,
@@ -167,7 +198,8 @@ export default function UtilityBillForm({
       () =>
         createInitialForm(
           members,
-          initialValue
+          initialValue,
+          defaultDate
         )
     );
 
@@ -183,6 +215,43 @@ export default function UtilityBillForm({
 
   const [message, setMessage] =
     useState("");
+
+  const [
+    validationAlertErrors,
+    setValidationAlertErrors,
+  ] = useState<Record<string, string>>(
+    {}
+  );
+
+  const [
+    isValidationAlertOpen,
+    setIsValidationAlertOpen,
+  ] = useState(false);
+
+  const showValidationAlert = (
+    nextErrors:
+      Record<string, string> | undefined,
+    fallbackMessage =
+      "Please correct the highlighted fields."
+  ): void => {
+    const visibleErrors =
+      nextErrors &&
+      Object.keys(nextErrors).length >
+        0
+        ? nextErrors
+        : {
+            calculation:
+              fallbackMessage,
+          };
+
+    setValidationAlertErrors(
+      visibleErrors
+    );
+
+    setIsValidationAlertOpen(
+      true
+    );
+  };
 
   const memberNames =
     useMemo(
@@ -311,15 +380,23 @@ export default function UtilityBillForm({
   const setAttachmentError = (
     attachmentError: string
   ): void => {
-    setErrors((current) => ({
-      ...current,
-
+    const nextErrors = {
       attachments:
         attachmentError,
+    };
+
+    setErrors((current) => ({
+      ...current,
+      ...nextErrors,
     }));
 
     setMessage(
       "Unable to add attachment."
+    );
+
+    showValidationAlert(
+      nextErrors,
+      attachmentError
     );
 
     setPreviewResult(
@@ -330,9 +407,9 @@ export default function UtilityBillForm({
   const clearAttachmentError =
     (): void => {
       setErrors((current) => {
-        if (!current.attachments) {
-          return current;
-        }
+      if (!current.attachments) {
+        return current;
+      }
 
         const nextErrors = {
           ...current,
@@ -340,10 +417,11 @@ export default function UtilityBillForm({
 
         delete nextErrors.attachments;
 
-        return nextErrors;
-      });
+      return nextErrors;
+    });
 
-      setMessage("");
+    setIsValidationAlertOpen(false);
+    setMessage("");
   };
 
   const addAttachmentFiles =
@@ -386,7 +464,7 @@ export default function UtilityBillForm({
           maximumAttachmentSizeBytes
         ) {
           setAttachmentError(
-            `${file.name} exceeds the 750 KB attachment limit.`
+            `${file.name} exceeds the 1 MB attachment limit.`
           );
 
           return;
@@ -568,11 +646,20 @@ export default function UtilityBillForm({
         );
 
       if (!result.success) {
+        const nextErrors =
+          result.errors ?? {};
+
         setErrors(
-          result.errors ?? {}
+          nextErrors
         );
 
         setMessage(
+          result.message ??
+            "Unable to calculate the utility bill."
+        );
+
+        showValidationAlert(
+          nextErrors,
           result.message ??
             "Unable to calculate the utility bill."
         );
@@ -593,6 +680,11 @@ export default function UtilityBillForm({
             "The utility calculation returned no result.",
         });
 
+        showValidationAlert({
+          calculation:
+            "The utility calculation returned no result.",
+        });
+
         setMessage(
           "Unable to calculate the utility bill."
         );
@@ -605,6 +697,8 @@ export default function UtilityBillForm({
       }
 
       setErrors({});
+      setValidationAlertErrors({});
+      setIsValidationAlertOpen(false);
 
       setMessage(
         result.message ??
@@ -639,11 +733,26 @@ export default function UtilityBillForm({
     );
 
     setErrors({});
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
     setMessage("");
   }
 
   return (
     <div className="space-y-6">
+      <FormValidationAlert
+        open={isValidationAlertOpen}
+        errors={validationAlertErrors}
+        fieldLabels={
+          utilityFieldLabels
+        }
+        onClose={() =>
+          setIsValidationAlertOpen(
+            false
+          )
+        }
+      />
+
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -709,24 +818,18 @@ export default function UtilityBillForm({
             label="Total Bill Amount"
             helper="The complete amount payable to the utility provider."
           >
-            <input
+            <CurrencyInput
               className={inputClassName}
-              type="number"
               min="0"
-              step="0.01"
               value={
-                form.totalBillAmount ||
-                ""
+                form.totalBillAmount
               }
-              onChange={(event) =>
+              onValueChange={(nextValue) =>
                 updateField(
                   "totalBillAmount",
-                  parseNumber(
-                    event.target.value
-                  )
+                  nextValue
                 )
               }
-              placeholder="0.00"
             />
           </Field>
 
@@ -881,21 +984,13 @@ export default function UtilityBillForm({
                     label="Fixed Compensation"
                     helper="A member with fixed compensation is excluded from the equal share of the remaining bill."
                   >
-                    <input
+                    <CurrencyInput
                       className={inputClassName}
-                      type="number"
                       min="0"
-                      step="0.01"
                       value={
-                        memberShare.fixedCompensationAmount ||
-                        ""
+                        memberShare.fixedCompensationAmount
                       }
-                      onChange={(event) => {
-                        const fixedCompensationAmount =
-                          parseNumber(
-                            event.target.value
-                          );
-
+                      onValueChange={(fixedCompensationAmount) => {
                         updateMemberShare(
                           memberIndex,
                           {
@@ -1248,7 +1343,7 @@ export default function UtilityBillForm({
             </span>
 
             <span className="mt-1 text-xs text-slate-500">
-              JPEG, PNG, WebP, or PDF — up to 750 KB
+              JPEG, PNG, WebP, or PDF - up to 1 MB
             </span>
 
             <input
@@ -1360,16 +1455,17 @@ export default function UtilityBillForm({
                   </div>
 
                   <div className="flex gap-2 md:flex-col">
-                    <a
-                      href={
-                        attachment.dataUrl
-                      }
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
                       className={secondaryButtonClassName}
+                      type="button"
+                      onClick={() =>
+                        openAttachmentPreview(
+                          attachment
+                        )
+                      }
                     >
                       Open
-                    </a>
+                    </button>
 
                     <button
                       className={dangerButtonClassName}
@@ -1774,6 +1870,9 @@ function createInitialForm(
   members: UtilityMemberOption[],
   initialValue:
     | UtilityBillFormData
+    | undefined,
+  defaultDate:
+    | string
     | undefined
 ): UtilityBillFormData {
   if (initialValue) {
@@ -1783,6 +1882,7 @@ function createInitialForm(
   }
 
   const today =
+    defaultDate ??
     formatDateInput(
       new Date()
     );
@@ -1912,10 +2012,10 @@ const inputClassName =
   "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
 
 const primaryButtonClassName =
-  "min-h-11 rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-700";
+  "min-h-11 min-w-48 rounded-lg bg-[#dbeafe] px-6 py-2 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-[#9fbce2] focus:outline-none focus:ring-2 focus:ring-blue-500/30";
 
 const secondaryButtonClassName =
-  "min-h-11 rounded-lg border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50";
+  "min-h-11 min-w-48 rounded-lg border border-slate-200 bg-white px-6 py-2 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
 
 const dangerButtonClassName =
   "min-h-11 w-full rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50";

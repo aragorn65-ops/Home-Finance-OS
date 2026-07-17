@@ -15,6 +15,8 @@ import {
 } from "../../features/household";
 
 import AccountsPage from "../../features/accounts/pages/AccountsPage";
+import AccountHolderPage from "../../features/account-holder/pages/AccountHolderPage";
+import AnalyticsPage from "../../features/analytics/pages/AnalyticsPage";
 import DashboardPage from "../../features/dashboard/pages/DashboardPage";
 import GovernancePage from "../../features/governance/pages/GovernancePage";
 import HouseholdMembersPage from "../../features/household/pages/HouseholdMembersPage";
@@ -74,6 +76,16 @@ export default function AppRouter() {
           <Route
             path="savings"
             element={<SavingsPage />}
+          />
+
+          <Route
+            path="analytics"
+            element={<AnalyticsPage />}
+          />
+
+          <Route
+            path="account-holder"
+            element={<AccountHolderPage />}
           />
 
           <Route

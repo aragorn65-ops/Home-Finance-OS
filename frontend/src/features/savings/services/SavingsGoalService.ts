@@ -7,6 +7,12 @@ import {
   type OperationResult,
 } from "../../../shared/types";
 
+import {
+  normalizeCurrency,
+  normalizeExchangeRate,
+  roundCurrencyAmount,
+} from "../../../shared/utils/currencyConversion";
+
 import type {
   SavingsGoal,
 } from "../models/SavingsGoal";
@@ -20,6 +26,8 @@ import SavingsActivityRepository from "../repositories/SavingsActivityRepository
 import SavingsGoalRepository from "../repositories/SavingsGoalRepository";
 
 import SavingsGoalValidator from "../validators/SavingsGoalValidator";
+
+import SavingsActivityService from "./SavingsActivityService";
 
 import SavingsProgressService from "./SavingsProgressService";
 
@@ -241,6 +249,29 @@ export default class SavingsGoalService {
     const now =
       new Date();
 
+    const baseCurrency =
+      normalizeCurrency(
+        household.currency
+      );
+
+    const goalCurrency =
+      normalizeCurrency(
+        normalizedForm.goalCurrency,
+        baseCurrency
+      );
+
+    const exchangeRate =
+      normalizeExchangeRate(
+        normalizedForm.exchangeRate,
+        goalCurrency,
+        baseCurrency
+      ) || 1;
+
+    const targetAmount =
+      this.roundCurrency(
+        normalizedForm.targetAmount
+      );
+
     const savingsGoal:
       SavingsGoal = {
         id:
@@ -260,10 +291,23 @@ export default class SavingsGoalService {
         goalType:
           normalizedForm.goalType,
 
-        targetAmount:
-          this.roundCurrency(
-            normalizedForm.targetAmount
-          ),
+        targetAmount,
+
+        goalCurrency,
+        baseCurrency,
+
+        targetBaseAmount:
+          goalCurrency === baseCurrency
+            ? targetAmount
+            : roundCurrencyAmount(
+                targetAmount *
+                  exchangeRate
+              ),
+
+        exchangeRate,
+
+        exchangeRateEffectiveDate:
+          now,
 
         targetDate:
           normalizedForm.targetDate
@@ -418,6 +462,29 @@ export default class SavingsGoalService {
       );
     }
 
+    const baseCurrency =
+      normalizeCurrency(
+        household.currency
+      );
+
+    const goalCurrency =
+      normalizeCurrency(
+        normalizedForm.goalCurrency,
+        baseCurrency
+      );
+
+    const exchangeRate =
+      normalizeExchangeRate(
+        normalizedForm.exchangeRate,
+        goalCurrency,
+        baseCurrency
+      ) || 1;
+
+    const targetAmount =
+      this.roundCurrency(
+        normalizedForm.targetAmount
+      );
+
     const updatedGoal:
       SavingsGoal = {
         ...existing,
@@ -436,10 +503,23 @@ export default class SavingsGoalService {
         goalType:
           normalizedForm.goalType,
 
-        targetAmount:
-          this.roundCurrency(
-            normalizedForm.targetAmount
-          ),
+        targetAmount,
+
+        goalCurrency,
+        baseCurrency,
+
+        targetBaseAmount:
+          goalCurrency === baseCurrency
+            ? targetAmount
+            : roundCurrencyAmount(
+                targetAmount *
+                  exchangeRate
+              ),
+
+        exchangeRate,
+
+        exchangeRateEffectiveDate:
+          new Date(),
 
         targetDate:
           normalizedForm.targetDate
@@ -562,10 +642,11 @@ export default class SavingsGoalService {
   }
 
   /**
-   * Deletes a savings goal only when it has no activity
-   * history.
+   * Deletes a savings goal and its activity history.
    *
-   * Goals with history should be archived instead.
+   * Activity deletion is routed through
+   * SavingsActivityService so linked account effects are
+   * reversed before the goal is removed.
    */
   static delete(
     id: string
@@ -589,16 +670,43 @@ export default class SavingsGoalService {
       SavingsActivityRepository
         .findBySavingsGoalId(id);
 
-    if (activities.length > 0) {
-      return OperationResults.failure<
-        boolean
-      >(
-        {
-          general:
-            "Savings goals with activity history cannot be deleted. Archive the goal instead.",
-        },
-        "Unable to delete savings goal."
-      );
+    const activitiesForDeletion = [
+      ...activities,
+    ].sort(
+      (
+        firstActivity,
+        secondActivity
+      ) =>
+        SavingsProgressService
+          .getActivityEffect(
+            firstActivity
+          ) -
+        SavingsProgressService
+          .getActivityEffect(
+            secondActivity
+          )
+    );
+
+    for (
+      const activity of
+      activitiesForDeletion
+    ) {
+      const activityResult =
+        SavingsActivityService
+          .delete(activity.id);
+
+      if (!activityResult.success) {
+        return OperationResults.failure<
+          boolean
+        >(
+          activityResult.errors ?? {
+            general:
+              "Savings goal activity could not be deleted.",
+          },
+          activityResult.message ??
+            "Unable to delete savings goal activity."
+        );
+      }
     }
 
     const deleted =

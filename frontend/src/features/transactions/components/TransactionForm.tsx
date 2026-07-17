@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type ClipboardEvent,
@@ -11,6 +12,13 @@ import type { Account } from "../../accounts/models/Account";
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
 import type { OperationResult } from "../../../shared/types";
+import {
+  currencies,
+} from "../../../shared/data/currencies";
+import CurrencyInput from "../../../shared/ui/CurrencyInput";
+import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
+import formatCurrency from "../../../shared/utils/formatCurrency";
+import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
 
 import type {
   StoredAttachment,
@@ -34,10 +42,16 @@ import {
   defaultTransactionForm,
   type TransactionForm as TransactionFormData,
 } from "../models/TransactionForm";
+import {
+  isCanonicalTransactionCategory,
+  normalizeTransactionCategory,
+  transactionCategories,
+} from "../models/TransactionCategory";
 
 type TransactionFormProps = {
   accounts: Account[];
   members?: HouseholdMember[];
+  currency?: string;
   initialValues?: TransactionFormData;
   submitLabel?: string;
 
@@ -60,15 +74,81 @@ interface SharedPersonalPreview {
 
 const acceptedAttachmentMimeTypes = [
   "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
   "image/png",
   "image/webp",
   "application/pdf",
 ] as const;
 
+const acceptedAttachmentExtensions = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".pdf",
+] as const;
+
 const maximumAttachmentCount = 3;
 
 const maximumAttachmentSizeBytes =
-  750 * 1024;
+  1024 * 1024;
+
+const maximumStoredImageDimension =
+  1600;
+
+const storedImageQuality =
+  0.78;
+
+const storedImageQualityFallbacks = [
+  storedImageQuality,
+  0.68,
+  0.58,
+  0.48,
+  0.38,
+] as const;
+
+const unlinkedPaymentAccountOptions = [
+  {
+    value: "__cash__",
+    label: "Cash",
+  },
+  {
+    value: "__other_account__",
+    label: "Other account (as registered by member)",
+  },
+] as const;
+
+const transactionFieldLabels:
+  Record<string, string> = {
+    general: "General",
+    type: "Transaction Type",
+    amount: "Amount",
+    enteredAmount: "Entered Amount",
+    enteredCurrency: "Income Currency",
+    baseAmount: "Base Amount",
+    exchangeRate: "Exchange Rate",
+    paidByMemberId: "Member",
+    visibility: "Visibility",
+    sourceAccountId: "Source or Payment Account",
+    destinationAccountId: "Destination Account",
+    category: "Category",
+    description: "Description",
+    transactionDate: "Transaction Date",
+    splitMethod: "Split Method",
+    allocations: "Allocation",
+    attachments: "Receipts and Bills",
+    isActive: "Active transaction",
+  };
+
+function isUnlinkedPaymentAccountOption(
+  accountId: string
+): boolean {
+  return unlinkedPaymentAccountOptions.some(
+    (option) =>
+      option.value === accountId
+  );
+}
 
 function isAcceptedAttachmentMimeType(
   mimeType: string
@@ -77,6 +157,67 @@ function isAcceptedAttachmentMimeType(
     mimeType as
       typeof acceptedAttachmentMimeTypes[number]
   );
+}
+
+function isAcceptedAttachmentFile(
+  file: File
+): boolean {
+  if (
+    file.type &&
+    isAcceptedAttachmentMimeType(
+      file.type
+    )
+  ) {
+    return true;
+  }
+
+  const fileName =
+    file.name.toLowerCase();
+
+  return acceptedAttachmentExtensions.some(
+    (extension) =>
+      fileName.endsWith(extension)
+  );
+}
+
+function getAttachmentMimeType(
+  file: File
+): string {
+  if (
+    file.type &&
+    isAcceptedAttachmentMimeType(
+      file.type
+    )
+  ) {
+    return file.type === "image/jpg" ||
+      file.type === "image/pjpeg"
+      ? "image/jpeg"
+      : file.type;
+  }
+
+  const fileName =
+    file.name.toLowerCase();
+
+  if (
+    fileName.endsWith(".jpg") ||
+    fileName.endsWith(".jpeg")
+  ) {
+    return "image/jpeg";
+  }
+
+  if (fileName.endsWith(".png")) {
+    return "image/png";
+  }
+
+  if (fileName.endsWith(".webp")) {
+    return "image/webp";
+  }
+
+  if (fileName.endsWith(".pdf")) {
+    return "application/pdf";
+  }
+
+  return file.type;
 }
 
 function getDefaultAttachmentCategory(
@@ -121,7 +262,7 @@ function formatFileSize(
 }
 
 function readFileAsDataUrl(
-  file: File
+  file: Blob
 ): Promise<string> {
   return new Promise(
     (
@@ -166,7 +307,211 @@ function readFileAsDataUrl(
   );
 }
 
-function getDefaultFormValues(): TransactionFormData {
+function loadImage(
+  source: string
+): Promise<HTMLImageElement> {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+      const image = new Image();
+
+      image.onload = () =>
+        resolve(image);
+
+      image.onerror = () =>
+        reject(
+          new Error(
+            "The selected image could not be prepared."
+          )
+        );
+
+      image.src = source;
+    }
+  );
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  quality: number
+): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      resolve,
+      "image/jpeg",
+      quality
+    );
+  });
+}
+
+async function compressCanvasToAttachmentBlob(
+  canvas: HTMLCanvasElement
+): Promise<Blob | null> {
+  let smallestBlob: Blob | null =
+    null;
+
+  for (const quality of storedImageQualityFallbacks) {
+    const blob =
+      await canvasToBlob(
+        canvas,
+        quality
+      );
+
+    if (!blob) {
+      continue;
+    }
+
+    if (
+      !smallestBlob ||
+      blob.size < smallestBlob.size
+    ) {
+      smallestBlob = blob;
+    }
+
+    if (
+      blob.size <=
+      maximumAttachmentSizeBytes
+    ) {
+      return blob;
+    }
+  }
+
+  return smallestBlob;
+}
+
+async function prepareAttachmentFile(
+  file: File
+): Promise<{
+  dataUrl: string;
+  mimeType: string;
+  sizeBytes: number;
+}> {
+  const mimeType =
+    getAttachmentMimeType(
+      file
+    );
+
+  if (!mimeType.startsWith("image/")) {
+    return {
+      dataUrl:
+        await readFileAsDataUrl(
+          file
+        ),
+      mimeType:
+        mimeType,
+      sizeBytes:
+        file.size,
+    };
+  }
+
+  const objectUrl =
+    URL.createObjectURL(file);
+
+  try {
+    const image =
+      await loadImage(objectUrl);
+
+    const scale =
+      Math.min(
+        1,
+        maximumStoredImageDimension /
+          Math.max(
+            image.naturalWidth,
+            image.naturalHeight
+          )
+      );
+
+    const width =
+      Math.max(
+        1,
+        Math.round(
+          image.naturalWidth * scale
+        )
+      );
+
+    const height =
+      Math.max(
+        1,
+        Math.round(
+          image.naturalHeight * scale
+        )
+      );
+
+    const canvas =
+      document.createElement(
+        "canvas"
+      );
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const context =
+      canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error(
+        "The selected image could not be prepared."
+      );
+    }
+
+    context.drawImage(
+      image,
+      0,
+      0,
+      width,
+      height
+    );
+
+    const compressedBlob =
+      await compressCanvasToAttachmentBlob(
+        canvas
+      );
+
+    if (!compressedBlob) {
+      throw new Error(
+        "The selected image could not be prepared."
+      );
+    }
+
+    return {
+      dataUrl:
+        await readFileAsDataUrl(
+          compressedBlob
+        ),
+      mimeType:
+        mimeType === "image/png" ||
+        mimeType === "image/webp"
+          ? compressedBlob.type ||
+            "image/jpeg"
+          : "image/jpeg",
+      sizeBytes:
+        compressedBlob.size,
+    };
+  } finally {
+    URL.revokeObjectURL(
+      objectUrl
+    );
+  }
+}
+
+function createAttachmentId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID ===
+      "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `attachment-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 9)}`;
+}
+
+function getDefaultFormValues(
+  currency = "PHP"
+): TransactionFormData {
   const today = new Date()
     .toISOString()
     .slice(0, 10);
@@ -175,6 +520,9 @@ function getDefaultFormValues(): TransactionFormData {
     ...defaultTransactionForm,
 
     paidByMemberId: "",
+    enteredCurrency:
+      currency,
+    exchangeRate: 1,
 
     transactionDate:
       today,
@@ -467,20 +815,19 @@ function calculateSharedPersonalPreview(
 }
 
 function formatAmount(
-  amount: number
+  amount: number,
+  currency?: string
 ): string {
-  return new Intl.NumberFormat(
-    undefined,
-    {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }
-  ).format(amount);
+  return formatCurrency(
+    amount,
+    currency
+  );
 }
 
 export default function TransactionForm({
   accounts,
   members = [],
+  currency,
   initialValues,
   submitLabel = "Save Transaction",
   onSubmit,
@@ -495,7 +842,9 @@ export default function TransactionForm({
   const [form, setForm] =
     useState<TransactionFormData>(
       initialValues ??
-        getDefaultFormValues()
+        getDefaultFormValues(
+          currency
+        )
     );
 
   const [errors, setErrors] = useState<
@@ -505,7 +854,68 @@ export default function TransactionForm({
   const [message, setMessage] =
     useState("");
 
+  const [
+    validationAlertErrors,
+    setValidationAlertErrors,
+  ] = useState<Record<string, string>>(
+    {}
+  );
+
+  const [
+    isValidationAlertOpen,
+    setIsValidationAlertOpen,
+  ] = useState(false);
+
+  const [
+    isPreparingAttachments,
+    setIsPreparingAttachments,
+  ] = useState(false);
+
+  const pendingAttachmentFilesRef =
+    useRef<Record<string, File>>({});
+
+  const localAttachmentUrlsRef =
+    useRef<Record<string, string>>({});
+
+  const clearPendingAttachments = () => {
+    Object.values(
+      localAttachmentUrlsRef.current
+    ).forEach((objectUrl) => {
+      URL.revokeObjectURL(objectUrl);
+    });
+
+    pendingAttachmentFilesRef.current = {};
+    localAttachmentUrlsRef.current = {};
+  };
+
+  const showValidationAlert = (
+    nextErrors:
+      Record<string, string> | undefined,
+    fallbackMessage =
+      "Please correct the highlighted fields."
+  ) => {
+    const visibleErrors =
+      nextErrors &&
+      Object.keys(nextErrors).length >
+        0
+        ? nextErrors
+        : {
+            general:
+              fallbackMessage,
+          };
+
+    setValidationAlertErrors(
+      visibleErrors
+    );
+
+    setIsValidationAlertOpen(
+      true
+    );
+  };
+
   useEffect(() => {
+    clearPendingAttachments();
+
     const nextForm =
       initialValues
         ? {
@@ -544,12 +954,23 @@ export default function TransactionForm({
                 })
               ) ?? [],
           }
-        : getDefaultFormValues();
+        : getDefaultFormValues(
+            currency
+          );
 
     setForm(nextForm);
     setErrors({});
     setMessage("");
-  }, [initialValues]);
+  }, [
+    initialValues,
+    currency,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      clearPendingAttachments();
+    };
+  }, []);
 
   const availableAccounts =
     useMemo(() => {
@@ -725,6 +1146,18 @@ export default function TransactionForm({
           ? ""
           : current.destinationAccountId,
 
+      enteredCurrency:
+        type === "income"
+          ? current.enteredCurrency ||
+            currency ||
+            "PHP"
+          : currency || "PHP",
+
+      exchangeRate:
+        type === "income"
+          ? current.exchangeRate || 1
+          : 1,
+
       splitMethod:
         type === "expense"
           ? current.splitMethod
@@ -740,18 +1173,70 @@ export default function TransactionForm({
     setMessage("");
   };
 
-  const handleAmountChange = (
-    event: ChangeEvent<HTMLInputElement>
+  const handleSourceAccountChange = (
+    event: ChangeEvent<HTMLSelectElement>
   ) => {
-    const rawValue =
+    const nextAccountId =
       event.target.value;
 
     updateField(
-      "amount",
-      rawValue === ""
-        ? 0
-        : Number(rawValue)
+      "sourceAccountId",
+      nextAccountId
     );
+  };
+
+  const handleDestinationAccountChange = (
+    event: ChangeEvent<HTMLSelectElement>
+  ) => {
+    const nextAccountId =
+      event.target.value;
+
+    const selectedAccount =
+      availableAccounts.find(
+        (account) =>
+          account.id === nextAccountId
+      );
+
+    setForm((current) => {
+      if (
+        current.type !== "income" ||
+        !selectedAccount
+      ) {
+        return {
+          ...current,
+          destinationAccountId:
+            nextAccountId,
+        };
+      }
+
+      return {
+        ...current,
+        destinationAccountId:
+          nextAccountId,
+        enteredCurrency:
+          selectedAccount.currency ||
+          currency ||
+          "PHP",
+        exchangeRate:
+          selectedAccount.exchangeRate ||
+          current.exchangeRate ||
+          1,
+      };
+    });
+
+    setErrors((current) => {
+      const nextErrors = {
+        ...current,
+      };
+
+      delete nextErrors.destinationAccountId;
+      delete nextErrors.enteredCurrency;
+      delete nextErrors.exchangeRate;
+
+      return nextErrors;
+    });
+
+    setMessage("");
   };
 
   const handleSplitMethodChange = (
@@ -915,18 +1400,13 @@ export default function TransactionForm({
 
   const handleAllocationAmountChange = (
     memberId: string,
-    event: ChangeEvent<HTMLInputElement>
+    amount: number
   ) => {
-    const rawValue =
-      event.target.value;
-
     updateAllocation(
       memberId,
       {
         allocatedAmount:
-          rawValue === ""
-            ? 0
-            : Number(rawValue),
+          amount,
       }
     );
   };
@@ -966,19 +1446,13 @@ export default function TransactionForm({
   const handlePersonalItemAmountChange = (
     memberId: string,
     itemId: string,
-    event: ChangeEvent<HTMLInputElement>
+    amount: number
   ) => {
-    const rawValue =
-      event.target.value;
-
     handlePersonalItemChange(
       memberId,
       itemId,
       {
-        amount:
-          rawValue === ""
-            ? 0
-            : Number(rawValue),
+        amount,
       }
     );
   };
@@ -1019,15 +1493,23 @@ export default function TransactionForm({
   const setAttachmentError = (
     attachmentError: string
   ) => {
-    setErrors((current) => ({
-      ...current,
-
+    const nextErrors = {
       attachments:
         attachmentError,
+    };
+
+    setErrors((current) => ({
+      ...current,
+      ...nextErrors,
     }));
 
     setMessage(
       "Unable to add attachment."
+    );
+
+    showValidationAlert(
+      nextErrors,
+      attachmentError
     );
   };
 
@@ -1040,7 +1522,7 @@ export default function TransactionForm({
       }
 
       if (
-        form.attachments.length +
+        (form.attachments?.length ?? 0) +
           files.length >
         maximumAttachmentCount
       ) {
@@ -1054,9 +1536,14 @@ export default function TransactionForm({
       for (
         const file of files
       ) {
+        const mimeType =
+          getAttachmentMimeType(
+            file
+          );
+
         if (
-          !isAcceptedAttachmentMimeType(
-            file.type
+          !isAcceptedAttachmentFile(
+            file
           )
         ) {
           setAttachmentError(
@@ -1068,10 +1555,13 @@ export default function TransactionForm({
 
         if (
           file.size >
-          maximumAttachmentSizeBytes
+            maximumAttachmentSizeBytes &&
+          !mimeType.startsWith(
+            "image/"
+          )
         ) {
           setAttachmentError(
-            `${file.name} exceeds the 750 KB attachment limit.`
+            `${file.name} exceeds the 1 MB attachment limit.`
           );
 
           return;
@@ -1086,14 +1576,28 @@ export default function TransactionForm({
         for (
           const file of files
         ) {
-          const dataUrl =
-            await readFileAsDataUrl(
+          const mimeType =
+            getAttachmentMimeType(
               file
             );
 
+          const attachmentId =
+            createAttachmentId();
+
+          const objectUrl =
+            URL.createObjectURL(file);
+
+          pendingAttachmentFilesRef.current[
+            attachmentId
+          ] = file;
+
+          localAttachmentUrlsRef.current[
+            attachmentId
+          ] = objectUrl;
+
           attachments.push({
             id:
-              crypto.randomUUID(),
+              attachmentId,
 
             category:
               getDefaultAttachmentCategory(
@@ -1104,12 +1608,13 @@ export default function TransactionForm({
               file.name,
 
             mimeType:
-              file.type,
+              mimeType,
 
             sizeBytes:
               file.size,
 
-            dataUrl,
+            dataUrl:
+              objectUrl,
 
             createdAt:
               new Date(),
@@ -1120,9 +1625,12 @@ export default function TransactionForm({
           ...current,
 
           attachments: [
-            ...current.attachments,
+            ...(current.attachments ?? []),
             ...attachments,
-          ],
+          ].slice(
+            0,
+            maximumAttachmentCount
+          ),
         }));
 
         clearAttachmentError();
@@ -1161,6 +1669,12 @@ export default function TransactionForm({
       event:
         ClipboardEvent<HTMLDivElement>
     ) => {
+      if (isPreparingAttachments) {
+        event.preventDefault();
+
+        return;
+      }
+
       const imageFiles =
         Array.from(
           event.clipboardData.items
@@ -1210,7 +1724,7 @@ export default function TransactionForm({
       ...current,
 
       attachments:
-        current.attachments.map(
+        (current.attachments ?? []).map(
           (attachment) =>
             attachment.id ===
             attachmentId
@@ -1228,11 +1742,26 @@ export default function TransactionForm({
   const removeAttachment = (
     attachmentId: string
   ) => {
+    const objectUrl =
+      localAttachmentUrlsRef.current[
+        attachmentId
+      ];
+
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+    }
+
+    delete pendingAttachmentFilesRef
+      .current[attachmentId];
+
+    delete localAttachmentUrlsRef
+      .current[attachmentId];
+
     setForm((current) => ({
       ...current,
 
       attachments:
-        current.attachments.filter(
+        (current.attachments ?? []).filter(
           (attachment) =>
             attachment.id !==
             attachmentId
@@ -1242,13 +1771,89 @@ export default function TransactionForm({
     clearAttachmentError();
   };
 
-  const handleSubmit = (
+  const resolvePendingAttachments =
+    async (
+      attachments:
+        StoredAttachment[]
+    ): Promise<StoredAttachment[]> => {
+      const resolvedAttachments:
+        StoredAttachment[] = [];
+
+      for (const attachment of attachments) {
+        const pendingFile =
+          pendingAttachmentFilesRef
+            .current[
+              attachment.id
+            ];
+
+        if (!pendingFile) {
+          resolvedAttachments.push(
+            attachment
+          );
+
+          continue;
+        }
+
+        const preparedFile =
+          await prepareAttachmentFile(
+            pendingFile
+          );
+
+        if (
+          preparedFile.sizeBytes >
+          maximumAttachmentSizeBytes
+        ) {
+          throw new Error(
+            `${pendingFile.name} is still larger than 1 MB after image preparation.`
+          );
+        }
+
+        resolvedAttachments.push({
+          ...attachment,
+
+          dataUrl:
+            preparedFile.dataUrl,
+
+          mimeType:
+            preparedFile.mimeType,
+
+          sizeBytes:
+            preparedFile.sizeBytes,
+        });
+      }
+
+      return resolvedAttachments;
+    };
+
+  const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     let submissionForm =
       form;
+
+    if (isPreparingAttachments) {
+      const nextErrors = {
+        attachments:
+          "Please wait until attachments finish preparing.",
+      };
+
+      setErrors((current) => ({
+        ...current,
+        ...nextErrors,
+      }));
+
+      setMessage(
+        "Unable to save the transaction."
+      );
+
+      showValidationAlert(
+        nextErrors
+      );
+
+      return;
+    }
 
     if (
       form.type === "expense" &&
@@ -1345,6 +1950,42 @@ export default function TransactionForm({
       };
     }
 
+    try {
+      setIsPreparingAttachments(
+        true
+      );
+
+      submissionForm = {
+        ...submissionForm,
+
+        sourceAccountId:
+          submissionForm.type ===
+            "expense" &&
+          isUnlinkedPaymentAccountOption(
+            submissionForm.sourceAccountId
+          )
+            ? ""
+            : submissionForm.sourceAccountId,
+
+        attachments:
+          await resolvePendingAttachments(
+            submissionForm.attachments ?? []
+          ),
+      };
+    } catch (error) {
+      setAttachmentError(
+        error instanceof Error
+          ? error.message
+          : "The selected attachment could not be prepared."
+      );
+
+      return;
+    } finally {
+      setIsPreparingAttachments(
+        false
+      );
+    }
+
     const result =
       onSubmit(submissionForm);
 
@@ -1358,13 +1999,23 @@ export default function TransactionForm({
           "Unable to save the transaction."
       );
 
+      showValidationAlert(
+        result.errors,
+        result.message ??
+          "Unable to save the transaction."
+      );
+
       return;
     }
 
     setErrors({});
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
     setMessage(
       result.message ?? ""
     );
+
+    clearPendingAttachments();
   };
 
   const showAllocationAmountInputs =
@@ -1376,23 +2027,45 @@ export default function TransactionForm({
     "shared-personal";
 
   const normalizedCategory =
-    form.category
-      .trim()
-      .toLowerCase();
+    normalizeTransactionCategory(
+      form.category
+    );
 
   const isUtilityCategory =
-    normalizedCategory.includes(
-      "electricity"
-    ) ||
-    normalizedCategory.includes(
-      "water"
-    );
+    normalizedCategory ===
+      "Electricity" ||
+    normalizedCategory === "Water";
+
+  const selectedCategoryValue =
+    isCanonicalTransactionCategory(
+      form.category
+    )
+      ? form.category
+      : normalizeTransactionCategory(
+          form.category
+        );
+
+  const showCustomCategoryInput =
+    selectedCategoryValue === "Other";
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-lg border bg-white p-6"
+      className="hfos-transaction-form space-y-6 rounded-lg border bg-white p-6"
     >
+      <FormValidationAlert
+        open={isValidationAlertOpen}
+        errors={validationAlertErrors}
+        fieldLabels={
+          transactionFieldLabels
+        }
+        onClose={() =>
+          setIsValidationAlertOpen(
+            false
+          )
+        }
+      />
+
       {message && (
         <div
           className={
@@ -1446,32 +2119,109 @@ export default function TransactionForm({
           )}
         </div>
 
-        <div className="space-y-2">
-          <label
-            htmlFor="transaction-amount"
-            className="text-sm font-medium text-foreground"
-          >
-            Amount
-          </label>
-
-          <input
+        <div>
+          <CurrencyInput
             id="transaction-amount"
-            type="number"
+            label={
+              form.type === "income"
+                ? `Entered Amount (${form.enteredCurrency || currency || "PHP"})`
+                : "Amount"
+            }
             min="0"
-            step="0.01"
-            value={form.amount || ""}
-            onChange={handleAmountChange}
-            placeholder="0.00"
+            value={form.amount}
+            onValueChange={(nextValue) =>
+              updateField(
+                "amount",
+                nextValue
+              )
+            }
+            error={errors.amount}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
           />
-
-          {errors.amount && (
-            <p className="text-sm text-destructive">
-              {errors.amount}
-            </p>
-          )}
         </div>
       </div>
+
+      {form.type === "income" && (
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="space-y-2">
+            <label
+              htmlFor="transaction-entered-currency"
+              className="text-sm font-medium text-foreground"
+            >
+              Income Currency
+            </label>
+
+            <select
+              id="transaction-entered-currency"
+              value={form.enteredCurrency}
+              onChange={(event) =>
+                updateField(
+                  "enteredCurrency",
+                  event.target.value
+                )
+              }
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+            >
+              {currencies
+                .filter(
+                  (option) =>
+                    option.value
+                )
+                .map((option) => (
+                  <option
+                    key={option.value}
+                    value={option.value}
+                  >
+                    {option.label}
+                  </option>
+                ))}
+            </select>
+
+            {errors.enteredCurrency && (
+              <p className="text-sm text-destructive">
+                {errors.enteredCurrency}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="transaction-exchange-rate"
+              className="text-sm font-medium text-foreground"
+            >
+              Exchange Rate
+            </label>
+
+            <input
+              id="transaction-exchange-rate"
+              type="number"
+              min="0.000001"
+              step="0.000001"
+              value={form.exchangeRate}
+              onChange={(event) =>
+                updateField(
+                  "exchangeRate",
+                  Number(
+                    event.target.value
+                  )
+                )
+              }
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+            />
+
+            <p className="text-xs text-muted-foreground">
+              Base currency value for 1 unit of the
+              income currency.
+            </p>
+
+            {errors.exchangeRate && (
+              <p className="text-sm text-destructive">
+                {errors.exchangeRate}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-5 md:grid-cols-2">
         <div className="space-y-2">
@@ -1570,9 +2320,8 @@ export default function TransactionForm({
             id="source-account"
             value={form.sourceAccountId}
             onChange={(event) =>
-              updateField(
-                "sourceAccountId",
-                event.target.value
+              handleSourceAccountChange(
+                event
               )
             }
             disabled={
@@ -1582,9 +2331,23 @@ export default function TransactionForm({
           >
             <option value="">
               {form.paidByMemberId
-                ? "Select account"
+                ? form.type === "expense"
+                  ? "Select payment account"
+                  : "Select account"
                 : "Select member first"}
             </option>
+
+            {form.type === "expense" &&
+              unlinkedPaymentAccountOptions.map(
+                (option) => (
+                  <option
+                    key={option.value}
+                    value={option.value}
+                  >
+                    {option.label}
+                  </option>
+                )
+              )}
 
             {availableAccounts.map(
               (account) => (
@@ -1592,7 +2355,7 @@ export default function TransactionForm({
                   key={account.id}
                   value={account.id}
                 >
-                  {account.name}
+                  {account.name} - {account.currency}
                   {account.visibility ===
                   "private"
                     ? " — Private"
@@ -1630,9 +2393,8 @@ export default function TransactionForm({
               form.destinationAccountId
             }
             onChange={(event) =>
-              updateField(
-                "destinationAccountId",
-                event.target.value
+              handleDestinationAccountChange(
+                event
               )
             }
             disabled={
@@ -1658,7 +2420,7 @@ export default function TransactionForm({
                       form.sourceAccountId
                   }
                 >
-                  {account.name}
+                  {account.name} - {account.currency}
                   {account.visibility ===
                   "private"
                     ? " — Private"
@@ -1689,19 +2451,64 @@ export default function TransactionForm({
             Category
           </label>
 
-          <input
+          <select
             id="transaction-category"
-            type="text"
-            value={form.category}
+            value={selectedCategoryValue}
             onChange={(event) =>
               updateField(
                 "category",
-                event.target.value
+                normalizeTransactionCategory(
+                  event.target.value
+                )
               )
             }
-            placeholder="Example: Electricity or Groceries"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
-          />
+          >
+            <option value="">
+              Select category
+            </option>
+
+            {transactionCategories.map(
+              (category) => (
+                <option
+                  key={category}
+                  value={category}
+                >
+                  {category}
+                </option>
+              )
+            )}
+          </select>
+
+          {showCustomCategoryInput && (
+            <div className="space-y-2">
+              <label
+                htmlFor="transaction-custom-category"
+                className="text-sm font-medium text-foreground"
+              >
+                Other Category
+              </label>
+
+              <input
+                id="transaction-custom-category"
+                type="text"
+                value={
+                  form.category === "Other"
+                    ? ""
+                    : form.category
+                }
+                onChange={(event) =>
+                  updateField(
+                    "category",
+                    event.target.value ||
+                      "Other"
+                  )
+                }
+                placeholder="Example: Pet Care"
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+              />
+            </div>
+          )}
 
           {errors.category && (
             <p className="text-sm text-destructive">
@@ -1835,7 +2642,8 @@ export default function TransactionForm({
                                 {formatAmount(
                                   equalPreview[
                                     index
-                                  ] ?? 0
+                                  ] ?? 0,
+                                  currency
                                 )}
                               </p>
                             )}
@@ -1850,7 +2658,8 @@ export default function TransactionForm({
                                     sharedPersonalPreview
                                       .commonShareAmounts[
                                         index
-                                      ] ?? 0
+                                      ] ?? 0,
+                                    currency
                                   )}
                                 </p>
 
@@ -1860,7 +2669,8 @@ export default function TransactionForm({
                                     sharedPersonalPreview
                                       .finalAmounts[
                                         index
-                                      ] ?? 0
+                                      ] ?? 0,
+                                    currency
                                   )}
                                 </p>
                               </div>
@@ -1977,33 +2787,23 @@ export default function TransactionForm({
                                     />
                                   </div>
 
-                                  <div className="space-y-2">
-                                    <label
-                                      htmlFor={`personal-item-amount-${item.id}`}
-                                      className="text-xs font-medium text-foreground"
-                                    >
-                                      Amount
-                                    </label>
-
-                                    <input
+                                  <div>
+                                    <CurrencyInput
                                       id={`personal-item-amount-${item.id}`}
-                                      type="number"
+                                      label="Amount"
                                       min="0"
-                                      step="0.01"
                                       value={
-                                        item.amount ||
-                                        ""
+                                        item.amount
                                       }
-                                      onChange={(
-                                        event
+                                      onValueChange={(
+                                        nextValue
                                       ) =>
                                         handlePersonalItemAmountChange(
                                           allocation.memberId,
                                           item.id,
-                                          event
+                                          nextValue
                                         )
                                       }
-                                      placeholder="0.00"
                                       className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
                                     />
                                   </div>
@@ -2033,7 +2833,8 @@ export default function TransactionForm({
 
                               <span className="font-semibold text-foreground">
                                 {formatAmount(
-                                  allocation.personalAmount
+                                  allocation.personalAmount,
+                                  currency
                                 )}
                               </span>
                             </div>
@@ -2042,29 +2843,20 @@ export default function TransactionForm({
 
                       {showAllocationAmountInputs &&
                         allocation.isIncluded && (
-                          <div className="mt-4 space-y-2">
-                            <label
-                              htmlFor={`allocation-${allocation.memberId}`}
-                              className="text-sm font-medium text-foreground"
-                            >
-                              Allocated Amount
-                            </label>
-
-                            <input
+                          <div className="mt-4">
+                            <CurrencyInput
                               id={`allocation-${allocation.memberId}`}
-                              type="number"
+                              label="Allocated Amount"
                               min="0"
-                              step="0.01"
                               value={
-                                allocation.allocatedAmount ||
-                                ""
+                                allocation.allocatedAmount
                               }
-                              onChange={(
-                                event
+                              onValueChange={(
+                                nextValue
                               ) =>
                                 handleAllocationAmountChange(
                                   allocation.memberId,
-                                  event
+                                  nextValue
                                 )
                               }
                               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
@@ -2121,7 +2913,8 @@ export default function TransactionForm({
 
                     <span className="font-medium text-foreground">
                       {formatAmount(
-                        form.amount
+                        form.amount,
+                        currency
                       )}
                     </span>
                   </div>
@@ -2134,7 +2927,8 @@ export default function TransactionForm({
                     <span className="font-medium text-foreground">
                       {formatAmount(
                         sharedPersonalPreview
-                          .personalTotal
+                          .personalTotal,
+                        currency
                       )}
                     </span>
                   </div>
@@ -2147,7 +2941,8 @@ export default function TransactionForm({
                     <span className="font-medium text-foreground">
                       {formatAmount(
                         sharedPersonalPreview
-                          .commonAmount
+                          .commonAmount,
+                        currency
                       )}
                     </span>
                   </div>
@@ -2172,11 +2967,13 @@ export default function TransactionForm({
 
                     <span className="font-semibold text-foreground">
                       {formatAmount(
-                        sharedPersonalFinalTotal
+                        sharedPersonalFinalTotal,
+                        currency
                       )}{" "}
                       /{" "}
                       {formatAmount(
-                        form.amount
+                        form.amount,
+                        currency
                       )}
                     </span>
                   </div>
@@ -2188,7 +2985,8 @@ export default function TransactionForm({
                       expense by{" "}
                       {formatAmount(
                         sharedPersonalPreview
-                          .excessAmount
+                          .excessAmount,
+                        currency
                       )}
                       .
                     </p>
@@ -2204,11 +3002,13 @@ export default function TransactionForm({
 
                   <span className="font-semibold text-foreground">
                     {formatAmount(
-                      enteredAllocationTotal
+                      enteredAllocationTotal,
+                      currency
                     )}{" "}
                     /{" "}
                     {formatAmount(
-                      form.amount
+                      form.amount,
+                      currency
                     )}
                   </span>
                 </div>
@@ -2285,18 +3085,26 @@ export default function TransactionForm({
           <p className="mt-1 text-sm text-muted-foreground">
             Upload JPEG, PNG, WebP, or PDF files, or paste
             an image from the clipboard. Maximum 3 files,
-            750 KB each.
+            1 MB each.
           </p>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 px-4 py-5 text-center hover:bg-muted/40">
+          <label
+            className={`flex min-h-24 flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 px-4 py-5 text-center hover:bg-muted/40 ${
+              isPreparingAttachments
+                ? "cursor-wait opacity-70"
+                : "cursor-pointer"
+            }`}
+          >
             <span className="text-sm font-medium text-foreground">
-              Upload receipt or bill
+              {isPreparingAttachments
+                ? "Preparing attachment..."
+                : "Upload receipt or bill"}
             </span>
 
             <span className="mt-1 text-xs text-muted-foreground">
-              Choose images or PDF files
+              Images are compressed on save
             </span>
 
             <input
@@ -2304,6 +3112,9 @@ export default function TransactionForm({
               accept="image/jpeg,image/png,image/webp,application/pdf"
               multiple
               className="sr-only"
+              disabled={
+                isPreparingAttachments
+              }
               onChange={
                 handleAttachmentInputChange
               }
@@ -2313,29 +3124,47 @@ export default function TransactionForm({
           <div
             tabIndex={0}
             role="button"
+            aria-disabled={
+              isPreparingAttachments
+            }
             onPaste={
               handleAttachmentPaste
             }
-            className="flex min-h-24 cursor-text flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 px-4 py-5 text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className={`flex min-h-24 flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 px-4 py-5 text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+              isPreparingAttachments
+                ? "cursor-wait opacity-70"
+                : "cursor-text"
+            }`}
           >
             <span className="text-sm font-medium text-foreground">
               Paste receipt image
             </span>
 
             <span className="mt-1 text-xs text-muted-foreground">
-              Click here, then press Ctrl + V
+              {isPreparingAttachments
+                ? "Please wait before pasting again"
+                : "Click here, then press Ctrl + V"}
             </span>
           </div>
         </div>
 
-        {form.attachments.length ===
+        {isPreparingAttachments && (
+          <p
+            role="status"
+            className="text-sm text-muted-foreground"
+          >
+            Preparing attachment. Tall receipt images and PDFs may take a few seconds.
+          </p>
+        )}
+
+        {(form.attachments?.length ?? 0) ===
         0 ? (
           <p className="rounded-md border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
             No receipt or bill attached.
           </p>
         ) : (
           <div className="space-y-3">
-            {form.attachments.map(
+            {(form.attachments ?? []).map(
               (attachment) => (
                 <article
                   key={
@@ -2344,23 +3173,13 @@ export default function TransactionForm({
                   className="grid gap-4 rounded-md border p-3 md:grid-cols-[6rem_minmax(0,1fr)_auto]"
                 >
                   <div className="flex h-24 items-center justify-center overflow-hidden rounded-md bg-muted">
-                    {attachment.mimeType.startsWith(
-                      "image/"
-                    ) ? (
-                      <img
-                        src={
-                          attachment.dataUrl
-                        }
-                        alt={
-                          attachment.fileName
-                        }
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm font-semibold text-muted-foreground">
-                        PDF
-                      </span>
-                    )}
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {attachment.mimeType.startsWith(
+                        "image/"
+                      )
+                        ? "IMG"
+                        : "PDF"}
+                    </span>
                   </div>
 
                   <div className="min-w-0 space-y-3">
@@ -2416,16 +3235,17 @@ export default function TransactionForm({
                   </div>
 
                   <div className="flex gap-2 md:flex-col">
-                    <a
-                      href={
-                        attachment.dataUrl
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openAttachmentPreview(
+                          attachment
+                        )
                       }
-                      target="_blank"
-                      rel="noreferrer"
                       className="rounded-md border px-3 py-2 text-center text-sm font-medium text-foreground hover:bg-muted"
                     >
                       Open
-                    </a>
+                    </button>
 
                     <button
                       type="button"
@@ -2483,9 +3303,14 @@ export default function TransactionForm({
 
         <button
           type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+          disabled={
+            isPreparingAttachments
+          }
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-wait disabled:opacity-70"
         >
-          {submitLabel}
+          {isPreparingAttachments
+            ? "Preparing..."
+            : submitLabel}
         </button>
       </div>
     </form>

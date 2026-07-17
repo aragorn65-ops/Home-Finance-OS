@@ -1,4 +1,5 @@
 import { Button } from "../../../shared/ui";
+import formatCurrency from "../../../shared/utils/formatCurrency";
 import type { Account } from "../models/Account";
 
 interface AccountCardProps {
@@ -12,6 +13,17 @@ export default function AccountCard({
   onEdit,
   onDelete,
 }: AccountCardProps) {
+  const baseCurrency =
+    account.baseCurrency ??
+    account.currency;
+
+  const baseBalance =
+    account.currentBaseBalance ??
+    account.currentBalance;
+
+  const showBaseEquivalent =
+    account.currency !== baseCurrency;
+
   return (
     <div className="rounded-lg border p-4">
       <div className="flex items-start justify-between">
@@ -50,9 +62,21 @@ export default function AccountCard({
       </div>
 
       <div className="mt-3 text-xl font-bold">
-        ₱
-        {account.currentBalance.toLocaleString()}
+        {formatCurrency(
+          account.currentBalance,
+          account.currency
+        )}
       </div>
+
+      {showBaseEquivalent && (
+        <div className="mt-1 text-sm text-gray-500">
+          Reporting equivalent:{" "}
+          {formatCurrency(
+            baseBalance,
+            baseCurrency
+          )}
+        </div>
+      )}
 
       <div className="mt-2 text-sm text-gray-600">
         {account.type}

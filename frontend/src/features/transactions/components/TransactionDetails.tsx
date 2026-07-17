@@ -3,33 +3,36 @@ import type { Transaction } from "../models/Transaction";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
 import TransactionService from "../services/TransactionService";
+import formatCurrency from "../../../shared/utils/formatCurrency";
+import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
+import {
+  normalizeTransactionCategory,
+} from "../models/TransactionCategory";
 
 type TransactionDetailsProps = {
   transaction: Transaction;
   sourceAccountName?: string;
   destinationAccountName?: string;
+  currency?: string;
   onClose?: () => void;
   onEdit?: (
     transaction: Transaction
   ) => void;
 };
 
-const amountFormatter =
-  new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
 function formatAmount(
-  amount: number
+  amount: number,
+  currency?: string
 ): string {
-  return amountFormatter.format(
-    amount
+  return formatCurrency(
+    amount,
+    currency
   );
 }
 
 export default function TransactionDetails({
   transaction,
+  currency,
   onClose,
   onEdit,
 }: TransactionDetailsProps) {
@@ -49,8 +52,17 @@ export default function TransactionDetails({
     transaction.transactionDate
       .toLocaleDateString();
 
+  const showEnteredIncome =
+    transaction.type === "income" &&
+    transaction.enteredCurrency &&
+    transaction.enteredCurrency !==
+      (
+        transaction.baseCurrency ??
+        currency
+      );
+
   return (
-    <div className="space-y-6 rounded-lg border bg-white p-6">
+    <div className="hfos-transaction-details space-y-6 rounded-lg border bg-white p-6">
       <div className="border-b pb-5">
         <p className="text-sm font-medium text-muted-foreground">
           Total Transaction
@@ -58,7 +70,8 @@ export default function TransactionDetails({
 
         <p className="mt-1 text-3xl font-semibold text-foreground">
           {formatAmount(
-            transaction.amount
+            transaction.amount,
+            currency
           )}
         </p>
       </div>
@@ -90,8 +103,9 @@ export default function TransactionDetails({
           </dt>
 
           <dd className="mt-1 text-sm text-foreground">
-            {transaction.category ||
-              "Uncategorized"}
+            {normalizeTransactionCategory(
+              transaction.category
+            )}
           </dd>
         </div>
 
@@ -105,6 +119,39 @@ export default function TransactionDetails({
               "No description"}
           </dd>
         </div>
+
+        {showEnteredIncome && (
+          <>
+            <div>
+              <dt className="text-sm font-medium text-muted-foreground">
+                Entered Income
+              </dt>
+
+              <dd className="mt-1 text-sm text-foreground">
+                {formatAmount(
+                  transaction.enteredAmount ??
+                    transaction.amount,
+                  transaction.enteredCurrency
+                )}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-sm font-medium text-muted-foreground">
+                Exchange Rate
+              </dt>
+
+              <dd className="mt-1 text-sm text-foreground">
+                1 {transaction.enteredCurrency} ={" "}
+                {formatAmount(
+                  transaction.exchangeRate ?? 1,
+                  transaction.baseCurrency ??
+                    currency
+                )}
+              </dd>
+            </div>
+          </>
+        )}
       </dl>
 
       <div className="space-y-4">
@@ -188,7 +235,8 @@ export default function TransactionDetails({
                         <p className="font-semibold text-foreground">
                           {formatAmount(
                             allocation
-                              .allocatedAmount
+                              .allocatedAmount,
+                            currency
                           )}
                         </p>
                       </div>
@@ -202,7 +250,8 @@ export default function TransactionDetails({
 
                         <span className="text-sm font-semibold text-foreground">
                           {formatAmount(
-                            sharedAmount
+                            sharedAmount,
+                            currency
                           )}
                         </span>
                       </div>
@@ -215,9 +264,10 @@ export default function TransactionDetails({
                         </h5>
 
                         <span className="text-sm font-semibold text-foreground">
-                          {formatAmount(
-                            personalSubtotal
-                          )}
+                        {formatAmount(
+                          personalSubtotal,
+                          currency
+                        )}
                         </span>
                       </div>
 
@@ -243,7 +293,8 @@ export default function TransactionDetails({
 
                                 <span className="text-sm font-medium text-foreground">
                                   {formatAmount(
-                                    item.amount
+                                    item.amount,
+                                    currency
                                   )}
                                 </span>
                               </div>
@@ -256,8 +307,9 @@ export default function TransactionDetails({
                             </span>
 
                             <span className="text-sm font-semibold text-foreground">
-                              {formatAmount(
-                                personalSubtotal
+                             {formatAmount(
+                                personalSubtotal,
+                                currency
                               )}
                             </span>
                           </div>
@@ -338,16 +390,17 @@ export default function TransactionDetails({
                       </p>
                     </div>
 
-                    <a
-                      href={
-                        attachment.dataUrl
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openAttachmentPreview(
+                          attachment
+                        )
                       }
-                      target="_blank"
-                      rel="noreferrer"
                       className="inline-flex rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
                     >
                       Open Attachment
-                    </a>
+                    </button>
                   </div>
                 </article>
               )

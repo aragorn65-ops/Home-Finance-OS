@@ -7,8 +7,6 @@ import {
   Search,
 } from "lucide-react";
 
-import TimeContext from "../../shared/ui/TimeContext";
-
 interface HeaderProps {
   isMenuOpen?: boolean;
   onMenuToggle?: () => void;
@@ -38,8 +36,6 @@ export default function Header({
             aria-hidden="true"
           />
         </button>
-
-        <TimeContext />
       </div>
 
       <div

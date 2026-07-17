@@ -42,6 +42,11 @@ export interface SavingsGoal {
    * It is derived from active savings activities.
    */
   targetAmount: number;
+  goalCurrency: string;
+  baseCurrency: string;
+  targetBaseAmount: number;
+  exchangeRate: number;
+  exchangeRateEffectiveDate: Date;
 
   targetDate?: Date;
 

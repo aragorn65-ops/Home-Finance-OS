@@ -1,5 +1,9 @@
 import AccountService from "../../accounts/services/AccountService";
 
+import {
+  currencies,
+} from "../../../shared/data/currencies";
+
 import type {
   SavingsGoalPriority,
   SavingsGoalStatus,
@@ -93,6 +97,11 @@ export default class SavingsGoalValidator {
 
     this.validateTargetDate(
       form.targetDate,
+      errors
+    );
+
+    this.validateCurrency(
+      form,
       errors
     );
 
@@ -200,6 +209,39 @@ export default class SavingsGoalValidator {
     ) {
       errors.linkedAccountId =
         "Savings goals may only link to asset accounts.";
+    }
+  }
+
+  private static validateCurrency(
+    form: SavingsGoalForm,
+    errors: Record<string, string>
+  ): void {
+    const validCurrencies =
+      currencies
+        .map(
+          (currency) =>
+            currency.value
+        )
+        .filter(Boolean);
+
+    if (
+      !form.goalCurrency ||
+      !validCurrencies.includes(
+        form.goalCurrency
+      )
+    ) {
+      errors.goalCurrency =
+        "Select a valid goal currency.";
+    }
+
+    if (
+      !Number.isFinite(
+        form.exchangeRate
+      ) ||
+      form.exchangeRate <= 0
+    ) {
+      errors.exchangeRate =
+        "Enter a valid exchange rate.";
     }
   }
 }

@@ -4,6 +4,12 @@ import {
 } from "react";
 
 import PageHeader from "../../../shared/ui/PageHeader";
+import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
+import useReportingMonth from "../../../shared/hooks/useReportingMonth";
+import {
+  formatDateInput,
+  parseMonthInput,
+} from "../../../shared/utils/monthSelection";
 
 import AccountService from "../../accounts/services/AccountService";
 
@@ -22,6 +28,10 @@ import type {
 import UtilityBillPersistenceService from "../services/UtilityBillPersistenceService";
 
 export default function UtilitiesPage() {
+  const {
+    selectedMonthValue,
+  } = useReportingMonth();
+
   const [
     saveMessage,
     setSaveMessage,
@@ -31,6 +41,18 @@ export default function UtilitiesPage() {
     saveError,
     setSaveError,
   ] = useState("");
+
+  const [
+    validationAlertErrors,
+    setValidationAlertErrors,
+  ] = useState<Record<string, string>>(
+    {}
+  );
+
+  const [
+    isValidationAlertOpen,
+    setIsValidationAlertOpen,
+  ] = useState(false);
 
   /**
    * Changing this key recreates the utility form after
@@ -113,6 +135,18 @@ export default function UtilitiesPage() {
           "Unable to save the utility bill."
       );
 
+      setValidationAlertErrors(
+        Object.keys(errors).length > 0
+          ? errors
+          : {
+              general:
+                result.message ??
+                "Unable to save the utility bill.",
+            }
+      );
+
+      setIsValidationAlertOpen(true);
+
       showNotification();
 
       return;
@@ -122,6 +156,8 @@ export default function UtilitiesPage() {
       result.message ??
         "Utility bill saved successfully."
     );
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
 
     /**
      * Clear the completed form only after persistence
@@ -140,6 +176,23 @@ export default function UtilitiesPage() {
       <PageHeader
         title="Utilities"
         subtitle="Calculate and save electricity or water bill shares."
+      />
+
+      <FormValidationAlert
+        open={isValidationAlertOpen}
+        errors={validationAlertErrors}
+        fieldLabels={{
+          general: "General",
+          transaction:
+            "Generated Transaction",
+          allocations: "Allocations",
+          attachments: "Attachments",
+          sourceAccountId:
+            "Payment Account",
+        }}
+        onClose={() =>
+          setIsValidationAlertOpen(false)
+        }
       />
 
       <div className="space-y-6">
@@ -207,6 +260,13 @@ export default function UtilitiesPage() {
             key={formKey}
             members={memberOptions}
             accounts={accountOptions}
+            defaultDate={
+              formatDateInput(
+                parseMonthInput(
+                  selectedMonthValue
+                )
+              )
+            }
             submitLabel="Save Utility Bill"
             onSubmit={handleSave}
           />

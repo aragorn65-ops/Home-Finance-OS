@@ -85,11 +85,32 @@ export default class SavingsProgressService {
         savingsActivities
       );
 
+    const targetBaseAmount =
+      this.roundCurrency(
+        savingsGoal.targetBaseAmount ??
+        savingsGoal.targetAmount
+      );
+
+    const savedBaseAmount =
+      this.calculateSavedBaseAmount(
+        savingsGoal,
+        savingsActivities
+      );
+
     const remainingAmount =
       this.roundCurrency(
         Math.max(
           targetAmount -
             savedAmount,
+          0
+        )
+      );
+
+    const remainingBaseAmount =
+      this.roundCurrency(
+        Math.max(
+          targetBaseAmount -
+            savedBaseAmount,
           0
         )
       );
@@ -147,6 +168,9 @@ export default class SavingsProgressService {
       targetAmount,
       savedAmount,
       remainingAmount,
+      targetBaseAmount,
+      savedBaseAmount,
+      remainingBaseAmount,
 
       progressPercentage,
 
@@ -204,6 +228,37 @@ export default class SavingsProgressService {
     );
   }
 
+  static calculateSavedBaseAmount(
+    savingsGoal: SavingsGoal,
+    savingsActivities: SavingsActivity[]
+  ): number {
+    const total =
+      savingsActivities
+        .filter(
+          (activity) =>
+            activity.isActive &&
+            activity.householdId ===
+              savingsGoal.householdId &&
+            activity.savingsGoalId ===
+              savingsGoal.id
+        )
+        .reduce(
+          (
+            currentTotal,
+            activity
+          ) =>
+            currentTotal +
+            this.getActivityBaseEffect(
+              activity
+            ),
+          0
+        );
+
+    return this.roundCurrency(
+      total
+    );
+  }
+
   /**
    * Returns the amount one activity adds to or removes
    * from a savings goal.
@@ -226,6 +281,17 @@ export default class SavingsProgressService {
     }
 
     return savingsActivity.amount;
+  }
+
+  static getActivityBaseEffect(
+    savingsActivity: SavingsActivity
+  ): number {
+    return this.getActivityEffect({
+      ...savingsActivity,
+      amount:
+        savingsActivity.baseAmount ??
+        savingsActivity.amount,
+    });
   }
 
   /**

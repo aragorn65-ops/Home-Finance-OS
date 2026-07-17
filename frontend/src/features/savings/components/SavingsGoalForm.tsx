@@ -3,9 +3,14 @@ import type {
 } from "react";
 
 import {
+  CurrencyInput,
   Input,
   Select,
 } from "../../../shared/ui";
+
+import {
+  currencies,
+} from "../../../shared/data/currencies";
 
 import type {
   Account,
@@ -232,19 +237,56 @@ export default function SavingsGoalForm({
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input
+        <CurrencyInput
           label="Target Amount"
-          type="number"
           min="0.01"
-          step="0.01"
           value={value.targetAmount}
           error={errors.targetAmount}
+          onValueChange={(nextValue) =>
+            updateField(
+              "targetAmount",
+              nextValue
+            )
+          }
+        />
+
+        <Select
+          label="Goal Currency"
+          value={value.goalCurrency}
+          options={
+            currencies.filter(
+              (currency) =>
+                currency.value
+            )
+          }
+          error={errors.goalCurrency}
+          onChange={(
+            event:
+              ChangeEvent<HTMLSelectElement>
+          ) =>
+            updateField(
+              "goalCurrency",
+              event.target.value
+            )
+          }
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input
+          label="Exchange Rate"
+          type="number"
+          step="0.000001"
+          min="0.000001"
+          value={value.exchangeRate}
+          error={errors.exchangeRate}
+          helperText="Base currency value for 1 unit of the goal currency."
           onChange={(
             event:
               ChangeEvent<HTMLInputElement>
           ) =>
             updateField(
-              "targetAmount",
+              "exchangeRate",
               Number(
                 event.target.value
               )

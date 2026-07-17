@@ -1,4 +1,5 @@
 import type { Settlement } from "../models/Settlement";
+import formatCurrency from "../../../shared/utils/formatCurrency";
 
 type SettlementDeleteConfirmationProps = {
   settlement: Settlement;
@@ -8,6 +9,7 @@ type SettlementDeleteConfirmationProps = {
 
   isDeleting?: boolean;
   errorMessage?: string;
+  currency?: string;
 
   onConfirm: (
     settlement: Settlement
@@ -15,12 +17,6 @@ type SettlementDeleteConfirmationProps = {
 
   onCancel: () => void;
 };
-
-const amountFormatter =
-  new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
 function getApplicationMethodLabel(
   method:
@@ -41,13 +37,15 @@ export default function SettlementDeleteConfirmation({
 
   isDeleting = false,
   errorMessage,
+  currency,
 
   onConfirm,
   onCancel,
 }: SettlementDeleteConfirmationProps) {
   const formattedAmount =
-    amountFormatter.format(
-      settlement.amount
+    formatCurrency(
+      settlement.amount,
+      currency
     );
 
   const applicationMethodLabel =

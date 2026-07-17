@@ -209,6 +209,51 @@ export function saveHouseholdMembers(
 }
 
 /**
+ * Updates the household base currency without changing
+ * historical record amounts.
+ */
+export function saveHouseholdCurrency(
+  currency: string
+): StoredHousehold | null {
+  const household =
+    loadHousehold();
+
+  const normalizedCurrency =
+    currency.trim().toUpperCase();
+
+  if (
+    !household ||
+    !normalizedCurrency
+  ) {
+    return null;
+  }
+
+  const updatedHousehold:
+    StoredHousehold = {
+      ...household,
+
+      currency:
+        normalizedCurrency,
+
+      updatedAt:
+        new Date(),
+    };
+
+  const saved =
+    persistHousehold(
+      updatedHousehold
+    );
+
+  if (!saved) {
+    return null;
+  }
+
+  return cloneHousehold(
+    updatedHousehold
+  );
+}
+
+/**
  * Removes the current and legacy household records.
  *
  * Related financial storage is removed separately by

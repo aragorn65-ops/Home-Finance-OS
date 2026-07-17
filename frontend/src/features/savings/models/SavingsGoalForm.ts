@@ -13,6 +13,8 @@ export interface SavingsGoalForm {
   goalType: SavingsGoalType;
 
   targetAmount: number;
+  goalCurrency: string;
+  exchangeRate: number;
   targetDate: string;
 
   /**
@@ -38,6 +40,8 @@ export const defaultSavingsGoalForm:
     goalType: "general",
 
     targetAmount: 0,
+    goalCurrency: "",
+    exchangeRate: 1,
     targetDate: "",
 
     linkedAccountId: "",

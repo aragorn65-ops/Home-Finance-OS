@@ -8,6 +8,7 @@ import TransactionListItem from "./TransactionListItem";
 type TransactionListProps = {
   transactions: Transaction[];
   accounts: Account[];
+  currency?: string;
   paymentStatusByTransactionId: Record<
     string,
     AllocationPaymentStatus | undefined
@@ -20,11 +21,30 @@ type TransactionListProps = {
 export default function TransactionList({
   transactions,
   accounts,
+  currency,
   paymentStatusByTransactionId,
   onView,
   onEdit,
   onDelete,
 }: TransactionListProps) {
+  const sortedTransactions =
+    [...transactions].sort(
+      (first, second) => {
+        const dateDifference =
+          second.transactionDate.getTime() -
+          first.transactionDate.getTime();
+
+        if (dateDifference !== 0) {
+          return dateDifference;
+        }
+
+        return (
+          second.createdAt.getTime() -
+          first.createdAt.getTime()
+        );
+      }
+    );
+
   const getAccountName = (
     accountId: string | null
   ): string | undefined => {
@@ -54,7 +74,7 @@ export default function TransactionList({
 
   return (
     <div className="space-y-3">
-      {transactions.map((transaction) => (
+      {sortedTransactions.map((transaction) => (
         <TransactionListItem
           key={transaction.id}
           transaction={transaction}
@@ -63,6 +83,7 @@ export default function TransactionList({
               transaction.id
             ]
           }
+          currency={currency}
           sourceAccountName={getAccountName(
             transaction.sourceAccountId
           )}

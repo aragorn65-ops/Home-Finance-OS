@@ -3,9 +3,14 @@ import type {
 } from "react";
 
 import {
+  CurrencyInput,
   Input,
   Select,
 } from "../../../shared/ui";
+
+import {
+  currencies,
+} from "../../../shared/data/currencies";
 
 import type {
   Account,
@@ -28,6 +33,8 @@ interface SavingsActivityFormProps {
 
   members: HouseholdMember[];
   accounts: Account[];
+  goalCurrency: string;
+  baseCurrency: string;
 
   errors?: Record<string, string>;
 
@@ -55,6 +62,8 @@ export default function SavingsActivityForm({
   value,
   members,
   accounts,
+  goalCurrency,
+  baseCurrency,
   errors = {},
   onChange,
 }: SavingsActivityFormProps) {
@@ -221,33 +230,71 @@ export default function SavingsActivityForm({
         }
       />
 
-      <Input
-        label="Amount"
-        type="number"
+      <CurrencyInput
+        label="Entered Amount"
         min={
           value.activityType ===
           "adjustment"
             ? undefined
             : "0.01"
         }
-        step="0.01"
         value={value.amount}
         error={errors.amount}
         helperText={
           amountHelperText
         }
-        onChange={(
-          event:
-            ChangeEvent<HTMLInputElement>
-        ) =>
+        onValueChange={(nextValue) =>
           updateField(
             "amount",
-            Number(
-              event.target.value
-            )
+            nextValue
           )
         }
       />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Select
+          label="Entered Currency"
+          value={value.enteredCurrency}
+          options={
+            currencies.filter(
+              (currency) =>
+                currency.value
+            )
+          }
+          error={errors.enteredCurrency}
+          helperText={`Goal currency: ${goalCurrency}. Base currency: ${baseCurrency}.`}
+          onChange={(
+            event:
+              ChangeEvent<HTMLSelectElement>
+          ) =>
+            updateField(
+              "enteredCurrency",
+              event.target.value
+            )
+          }
+        />
+
+        <Input
+          label="Exchange Rate"
+          type="number"
+          step="0.000001"
+          min="0.000001"
+          value={value.exchangeRate}
+          error={errors.exchangeRate}
+          helperText="Base currency value for 1 unit of the foreign currency."
+          onChange={(
+            event:
+              ChangeEvent<HTMLInputElement>
+          ) =>
+            updateField(
+              "exchangeRate",
+              Number(
+                event.target.value
+              )
+            )
+          }
+        />
+      </div>
 
       <Input
         label="Activity Date"

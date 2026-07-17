@@ -8,6 +8,11 @@ import {
   saveStoredData,
 } from "../../../shared/storage/localStorageStore";
 
+import {
+  normalizeCurrency,
+  roundCurrencyAmount,
+} from "../../../shared/utils/currencyConversion";
+
 import type {
   SavingsActivity,
   SavingsActivityType,
@@ -17,10 +22,26 @@ interface SerializedSavingsActivity
   extends Omit<
     SavingsActivity,
     | "activityDate"
+    | "enteredAmount"
+    | "enteredCurrency"
+    | "goalCurrencyAmount"
+    | "goalCurrency"
+    | "baseCurrency"
+    | "baseAmount"
+    | "exchangeRate"
+    | "exchangeRateEffectiveDate"
     | "createdAt"
     | "updatedAt"
   > {
   activityDate: string;
+  enteredAmount?: number;
+  enteredCurrency?: string;
+  goalCurrencyAmount?: number;
+  goalCurrency?: string;
+  baseCurrency?: string;
+  baseAmount?: number;
+  exchangeRate?: number;
+  exchangeRateEffectiveDate?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -415,6 +436,10 @@ export default class SavingsActivityRepository {
       activityDate:
         savingsActivity.activityDate.toISOString(),
 
+      exchangeRateEffectiveDate:
+        savingsActivity.exchangeRateEffectiveDate
+          .toISOString(),
+
       createdAt:
         savingsActivity.createdAt.toISOString(),
 
@@ -429,8 +454,66 @@ export default class SavingsActivityRepository {
   private static deserializeSavingsActivity(
     savingsActivity: SerializedSavingsActivity
   ): SavingsActivity {
+    const household =
+      loadHousehold();
+
+    const baseCurrency =
+      normalizeCurrency(
+        savingsActivity.baseCurrency,
+        household?.currency ??
+          "PHP"
+      );
+
+    const goalCurrency =
+      normalizeCurrency(
+        savingsActivity.goalCurrency,
+        baseCurrency
+      );
+
+    const enteredCurrency =
+      normalizeCurrency(
+        savingsActivity.enteredCurrency,
+        goalCurrency
+      );
+
+    const goalCurrencyAmount =
+      savingsActivity.goalCurrencyAmount ??
+      savingsActivity.amount;
+
     return {
       ...savingsActivity,
+
+      enteredAmount:
+        savingsActivity.enteredAmount ??
+        savingsActivity.amount,
+
+      enteredCurrency,
+
+      goalCurrencyAmount:
+        roundCurrencyAmount(
+          goalCurrencyAmount
+        ),
+
+      goalCurrency,
+      baseCurrency,
+
+      baseAmount:
+        savingsActivity.baseAmount ??
+        roundCurrencyAmount(
+          goalCurrencyAmount
+        ),
+
+      exchangeRate:
+        savingsActivity.exchangeRate ?? 1,
+
+      exchangeRateEffectiveDate:
+        savingsActivity.exchangeRateEffectiveDate
+          ? new Date(
+              savingsActivity.exchangeRateEffectiveDate
+            )
+          : new Date(
+              savingsActivity.activityDate
+            ),
 
       activityDate:
         new Date(
@@ -518,6 +601,46 @@ export default class SavingsActivityRepository {
       this.isFiniteNumber(
         value.amount
       ) &&
+      (
+        value.enteredAmount ===
+          undefined ||
+        this.isFiniteNumber(
+          value.enteredAmount
+        )
+      ) &&
+      this.isOptionalString(
+        value.enteredCurrency
+      ) &&
+      (
+        value.goalCurrencyAmount ===
+          undefined ||
+        this.isFiniteNumber(
+          value.goalCurrencyAmount
+        )
+      ) &&
+      this.isOptionalString(
+        value.goalCurrency
+      ) &&
+      this.isOptionalString(
+        value.baseCurrency
+      ) &&
+      (
+        value.baseAmount ===
+          undefined ||
+        this.isFiniteNumber(
+          value.baseAmount
+        )
+      ) &&
+      (
+        value.exchangeRate ===
+          undefined ||
+        this.isFiniteNumber(
+          value.exchangeRate
+        )
+      ) &&
+      this.isOptionalDateString(
+        value.exchangeRateEffectiveDate
+      ) &&
       this.isDateString(
         value.activityDate
       ) &&
@@ -579,6 +702,15 @@ export default class SavingsActivityRepository {
       !Number.isNaN(
         new Date(value).getTime()
       )
+    );
+  }
+
+  private static isOptionalDateString(
+    value: unknown
+  ): value is string | undefined {
+    return (
+      value === undefined ||
+      this.isDateString(value)
     );
   }
 

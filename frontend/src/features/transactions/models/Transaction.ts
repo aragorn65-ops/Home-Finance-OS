@@ -48,6 +48,12 @@ export interface Transaction {
 
   type: TransactionType;
   amount: number;
+  enteredAmount?: number;
+  enteredCurrency?: string;
+  baseCurrency?: string;
+  baseAmount?: number;
+  exchangeRate?: number;
+  exchangeRateEffectiveDate?: Date;
 
   sourceAccountId: string | null;
   destinationAccountId: string | null;

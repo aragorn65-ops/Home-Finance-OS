@@ -15,6 +15,9 @@ export interface AccountForm {
   type: AccountType;
 
   currency: string;
+  baseCurrency: string;
+  exchangeRate: number;
+  exchangeRateEffectiveDate: string;
 
   /**
    * Asset account:
@@ -49,6 +52,9 @@ export const defaultAccountForm: AccountForm = {
   type: "checking",
 
   currency: "PHP",
+  baseCurrency: "PHP",
+  exchangeRate: 1,
+  exchangeRateEffectiveDate: "",
 
   balance: 0,
 

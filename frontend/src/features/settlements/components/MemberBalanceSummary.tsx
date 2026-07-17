@@ -6,24 +6,22 @@ import type {
 } from "../models/MemberSettlementBalance";
 
 import type { SettlementAllocationOption } from "../models/SettlementAllocationOption";
+import formatCurrency from "../../../shared/utils/formatCurrency";
 
 type MemberBalanceSummaryProps = {
   balances: MemberSettlementBalance[];
   members: HouseholdMember[];
   allocations: SettlementAllocationOption[];
+  currency?: string;
 };
 
-const amountFormatter =
-  new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
 function formatAmount(
-  amount: number
+  amount: number,
+  currency?: string
 ): string {
-  return amountFormatter.format(
-    amount
+  return formatCurrency(
+    amount,
+    currency
   );
 }
 
@@ -89,7 +87,7 @@ function getPaymentStatusClasses(
       return "bg-green-50 text-green-700";
 
     case "partially-paid":
-      return "bg-amber-50 text-amber-700";
+      return "bg-[#d2c02a] text-amber-700";
 
     case "unpaid":
     default:
@@ -101,6 +99,7 @@ export default function MemberBalanceSummary({
   balances,
   members,
   allocations,
+  currency,
 }: MemberBalanceSummaryProps) {
   const getMemberName = (
     memberId: string
@@ -200,7 +199,8 @@ export default function MemberBalanceSummary({
 
                     <dd className="font-medium text-foreground">
                       {formatAmount(
-                        balance.amountToReceive
+                        balance.amountToReceive,
+                        currency
                       )}
                     </dd>
                   </div>
@@ -212,7 +212,8 @@ export default function MemberBalanceSummary({
 
                     <dd className="font-medium text-foreground">
                       {formatAmount(
-                        balance.amountToPay
+                        balance.amountToPay,
+                        currency
                       )}
                     </dd>
                   </div>
@@ -231,7 +232,8 @@ export default function MemberBalanceSummary({
                       {formatAmount(
                         Math.abs(
                           balance.netPosition
-                        )
+                        ),
+                        currency
                       )}
                     </dd>
                   </div>
@@ -311,7 +313,8 @@ export default function MemberBalanceSummary({
 
                                     <dd className="mt-1 font-medium text-foreground">
                                       {formatAmount(
-                                        allocation.allocatedAmount
+                                        allocation.allocatedAmount,
+                                        currency
                                       )}
                                     </dd>
                                   </div>
@@ -323,7 +326,8 @@ export default function MemberBalanceSummary({
 
                                     <dd className="mt-1 font-medium text-foreground">
                                       {formatAmount(
-                                        allocation.paidAmount
+                                        allocation.paidAmount,
+                                        currency
                                       )}
                                     </dd>
                                   </div>
@@ -335,7 +339,8 @@ export default function MemberBalanceSummary({
 
                                     <dd className="mt-1 font-semibold text-foreground">
                                       {formatAmount(
-                                        allocation.outstandingAmount
+                                        allocation.outstandingAmount,
+                                        currency
                                       )}
                                     </dd>
                                   </div>
@@ -398,7 +403,8 @@ export default function MemberBalanceSummary({
 
                                     <dd className="mt-1 font-medium text-foreground">
                                       {formatAmount(
-                                        allocation.allocatedAmount
+                                        allocation.allocatedAmount,
+                                        currency
                                       )}
                                     </dd>
                                   </div>
@@ -410,7 +416,8 @@ export default function MemberBalanceSummary({
 
                                     <dd className="mt-1 font-medium text-foreground">
                                       {formatAmount(
-                                        allocation.paidAmount
+                                        allocation.paidAmount,
+                                        currency
                                       )}
                                     </dd>
                                   </div>
@@ -422,7 +429,8 @@ export default function MemberBalanceSummary({
 
                                     <dd className="mt-1 font-semibold text-foreground">
                                       {formatAmount(
-                                        allocation.outstandingAmount
+                                        allocation.outstandingAmount,
+                                        currency
                                       )}
                                     </dd>
                                   </div>

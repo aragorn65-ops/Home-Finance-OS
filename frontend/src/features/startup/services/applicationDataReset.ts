@@ -3,6 +3,7 @@ import {
   HFOS_STORAGE_KEYS,
   removeLegacyStoredData,
   removeStoredData,
+  saveStoredData,
   type StorageWriteResult,
 } from "../../../shared/storage/localStorageStore";
 
@@ -15,9 +16,10 @@ export interface ApplicationDataResetResult {
 /**
  * Removes all locally persisted HFOS application data.
  *
- * Financial records are removed before the household
- * record so a partial failure is less likely to leave
- * orphaned data attached to a missing household.
+ * Financial collections are cleared with explicit empty
+ * storage records before the household record is removed.
+ * This prevents repositories from treating the next
+ * household setup as a first-run demo seed.
  *
  * Repository in-memory state is intentionally cleared
  * by reloading the application after a successful reset.
@@ -40,56 +42,77 @@ export function resetApplicationData():
     );
   };
 
-  removeCurrentRecord(
+  const clearCurrentCollection = (
+    label: string,
+    result: StorageWriteResult
+  ): void => {
+    if (result.success) {
+      return;
+    }
+
+    errors.push(
+      result.message ??
+        `${label} could not be cleared.`
+    );
+  };
+
+  clearCurrentCollection(
     "Settlement applications",
-    removeStoredData(
+    saveStoredData(
       HFOS_STORAGE_KEYS
-        .settlementApplications
+        .settlementApplications,
+      []
     )
   );
 
-  removeCurrentRecord(
+  clearCurrentCollection(
     "Settlements",
-    removeStoredData(
-      HFOS_STORAGE_KEYS.settlements
+    saveStoredData(
+      HFOS_STORAGE_KEYS.settlements,
+      []
     )
   );
 
-  removeCurrentRecord(
+  clearCurrentCollection(
     "Expense allocations",
-    removeStoredData(
+    saveStoredData(
       HFOS_STORAGE_KEYS
-        .expenseAllocations
+        .expenseAllocations,
+      []
     )
   );
 
-  removeCurrentRecord(
+  clearCurrentCollection(
     "Transactions",
-    removeStoredData(
-      HFOS_STORAGE_KEYS.transactions
+    saveStoredData(
+      HFOS_STORAGE_KEYS.transactions,
+      []
     )
   );
 
-  removeCurrentRecord(
+  clearCurrentCollection(
     "Savings activities",
-    removeStoredData(
+    saveStoredData(
       HFOS_STORAGE_KEYS
-        .savingsActivities
+        .savingsActivities,
+      []
     )
   );
 
-  removeCurrentRecord(
+  clearCurrentCollection(
     "Savings goals",
-    removeStoredData(
+    saveStoredData(
       HFOS_STORAGE_KEYS
-        .savingsGoals
+        .savingsGoals,
+      []
     )
   );
 
-  removeCurrentRecord(
+  clearCurrentCollection(
     "Accounts",
-    removeStoredData(
-      HFOS_STORAGE_KEYS.accounts
+    saveStoredData(
+      HFOS_STORAGE_KEYS.accounts,
+      []
     )
   );
 
