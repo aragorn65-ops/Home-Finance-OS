@@ -5,7 +5,7 @@
 **Release:** v0.14.0-alpha
 **Date:** July 17, 2026
 **Branch:** sprint-14-analytics-settings
-**Status:** In Progress
+**Status:** Closed
 
 ---
 
@@ -218,6 +218,6 @@ Before closing Sprint 14, verify:
 
 ## Sprint Result
 
-Sprint 14 is in progress.
+Sprint 14 is officially closed on July 18, 2026.
 
 The Analytics first slice, theme Settings groundwork, base-currency Settings groundwork, mixed-currency account and savings support, validation popups, and current UI polish items are implemented.

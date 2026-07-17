@@ -2,8 +2,8 @@
 
 ## Analytics and Household Preferences
 
-**Release Date:** TBD
-**Status:** In Progress
+**Release Date:** July 18, 2026
+**Status:** Alpha Release
 **Sprint:** Sprint 14
 
 ---
