@@ -29,7 +29,7 @@ import UtilitiesPage from "../../features/utilities/pages/UtilitiesPage";
 
 export default function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         {/* Startup */}
         <Route
