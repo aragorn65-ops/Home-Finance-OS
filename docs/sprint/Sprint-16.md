@@ -44,6 +44,16 @@ Recommended first slice:
 * Include display preferences only when they are useful and non-sensitive, such as theme preference.
 * Do not include browser-only temporary session state such as the selected reporting month.
 
+Implemented:
+
+* Added a local backup service that exports a versioned HFOS `.hfos-backup.json` file.
+* Included household, accounts, transactions, expense allocations, settlements, settlement applications, savings goals, savings activities, and theme preference in the backup file.
+* Added Settings Data & Backup controls for Export Backup and Import Backup.
+* Added Restore from Backup on the household setup screen so a clean browser can restore without creating a temporary household.
+* Added restore validation for JSON parsing, HFOS backup identity, backup version, storage schema version, required records, collection shape, household shape, and theme preference shape.
+* Added a restore confirmation before replacing current browser-local HFOS data.
+* Reloaded the app after successful restore so repositories hydrate from restored storage.
+
 Deferred:
 
 * Google Drive backup.
@@ -106,6 +116,7 @@ Manual QA should include:
 
 * Export from a household with accounts and transactions.
 * Restore into a clean browser state.
+* Restore from the household setup screen before creating a new household.
 * Restore after Clear Test Data.
 * Reject invalid JSON.
 * Reject a JSON file that is not an HFOS backup.
@@ -116,5 +127,4 @@ Manual QA should include:
 
 ## Sprint Result
 
-Sprint 16 is open.
-
+Sprint 16 is open. The first local export/import backup slice is implemented and ready for manual QA.

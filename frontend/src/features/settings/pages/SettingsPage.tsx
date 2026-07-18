@@ -2,6 +2,7 @@ import "./SettingsPage.css";
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -28,6 +29,11 @@ import {
   resetApplicationData,
   resetHouseholdTestData,
 } from "../../startup/services/applicationDataReset";
+import {
+  createApplicationBackup,
+  restoreApplicationBackup,
+  validateApplicationBackup,
+} from "../../startup/services/applicationBackup";
 import TransactionService from "../../transactions/services/TransactionService";
 
 const customPreferenceValue =
@@ -36,6 +42,11 @@ const customPreferenceValue =
 export default function SettingsPage() {
   const household =
     loadHousehold();
+
+  const backupFileInputRef =
+    useRef<HTMLInputElement | null>(
+      null
+    );
 
   const [
     themePreference,
@@ -104,6 +115,36 @@ export default function SettingsPage() {
     testDataResetError,
     setTestDataResetError,
   ] = useState("");
+
+  const [
+    backupMessage,
+    setBackupMessage,
+  ] = useState("");
+
+  const [
+    backupError,
+    setBackupError,
+  ] = useState("");
+
+  const [
+    restoreFilename,
+    setRestoreFilename,
+  ] = useState("");
+
+  const [
+    restoreJson,
+    setRestoreJson,
+  ] = useState("");
+
+  const [
+    isConfirmingRestore,
+    setIsConfirmingRestore,
+  ] = useState(false);
+
+  const [
+    isRestoringBackup,
+    setIsRestoringBackup,
+  ] = useState(false);
 
   const countryOptions =
     countries.filter(
@@ -217,6 +258,120 @@ export default function SettingsPage() {
       );
 
       setIsClearingTestData(false);
+
+      return;
+    }
+
+    reloadAfterApplicationReset();
+  };
+
+  const handleExportBackup = (): void => {
+    setBackupMessage("");
+    setBackupError("");
+
+    const result =
+      createApplicationBackup();
+
+    if (
+      !result.success ||
+      !result.json ||
+      !result.filename
+    ) {
+      setBackupError(
+        result.message ??
+          "Backup could not be exported."
+      );
+
+      return;
+    }
+
+    downloadBackupFile(
+      result.filename,
+      result.json
+    );
+
+    setBackupMessage(
+      "Backup exported successfully."
+    );
+  };
+
+  const handleSelectBackupFile = async (
+    file: File | undefined
+  ): Promise<void> => {
+    setBackupMessage("");
+    setBackupError("");
+    setRestoreFilename("");
+    setRestoreJson("");
+    setIsConfirmingRestore(false);
+
+    if (!file) {
+      return;
+    }
+
+    let json: string;
+
+    try {
+      json =
+        await file.text();
+    } catch {
+      setBackupError(
+        "Backup file could not be read."
+      );
+
+      return;
+    }
+
+    const validation =
+      validateApplicationBackup(
+        json
+      );
+
+    if (!validation.success) {
+      setBackupError(
+        validation.message
+      );
+
+      return;
+    }
+
+    setRestoreFilename(
+      file.name
+    );
+    setRestoreJson(json);
+    setIsConfirmingRestore(true);
+  };
+
+  const handleCancelRestore = (): void => {
+    setBackupMessage("");
+    setBackupError("");
+    setRestoreFilename("");
+    setRestoreJson("");
+    setIsConfirmingRestore(false);
+
+    if (
+      backupFileInputRef.current
+    ) {
+      backupFileInputRef
+        .current
+        .value = "";
+    }
+  };
+
+  const handleConfirmRestore = (): void => {
+    setBackupMessage("");
+    setBackupError("");
+    setIsRestoringBackup(true);
+
+    const result =
+      restoreApplicationBackup(
+        restoreJson
+      );
+
+    if (!result.success) {
+      setBackupError(
+        result.message
+      );
+      setIsRestoringBackup(false);
 
       return;
     }
@@ -621,6 +776,105 @@ export default function SettingsPage() {
           <div className="space-y-5">
             <div>
               <h2 className="text-lg font-semibold text-foreground">
+                Data & Backup
+              </h2>
+
+              <p className="mt-2 text-sm text-muted-foreground">
+                Export a local HFOS backup file or restore from
+                a validated backup file saved on this device.
+              </p>
+            </div>
+
+            {(backupMessage || backupError) && (
+              <div
+                role={
+                  backupError
+                    ? "alert"
+                    : "status"
+                }
+                className={[
+                  "settings-alert",
+                  backupError
+                    ? "settings-alert--danger"
+                    : "settings-alert--success",
+                ].join(" ")}
+              >
+                {backupError ||
+                  backupMessage}
+              </div>
+            )}
+
+            <div className="settings-data-actions">
+              <button
+                type="button"
+                onClick={handleExportBackup}
+                disabled={!household}
+                className="settings-secondary-button"
+              >
+                Export Backup
+              </button>
+
+              <label className="settings-file-button">
+                <span>
+                  Import Backup
+                </span>
+
+                <input
+                  ref={backupFileInputRef}
+                  type="file"
+                  accept=".json,.hfos-backup.json,application/json"
+                  onChange={(event) => {
+                    void handleSelectBackupFile(
+                      event.target
+                        .files?.[0]
+                    );
+                  }}
+                  disabled={!household}
+                />
+              </label>
+            </div>
+
+            {isConfirmingRestore && (
+              <div className="settings-confirmation">
+                <p className="settings-confirmation__title">
+                  Confirm backup restore
+                </p>
+
+                <p className="settings-confirmation__copy">
+                  Restoring {restoreFilename} will replace
+                  the current HFOS data in this browser.
+                </p>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleConfirmRestore}
+                    disabled={isRestoringBackup}
+                    className="settings-confirm-button"
+                  >
+                    {isRestoringBackup
+                      ? "Restoring..."
+                      : "Restore Backup"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCancelRestore}
+                    disabled={isRestoringBackup}
+                    className="settings-secondary-button"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
                 Clear Test Data
               </h2>
 
@@ -766,4 +1020,30 @@ export default function SettingsPage() {
       </div>
     </>
   );
+}
+
+function downloadBackupFile(
+  filename: string,
+  json: string
+): void {
+  const blob =
+    new Blob([json], {
+      type: "application/json",
+    });
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
 }

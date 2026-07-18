@@ -16,12 +16,13 @@ This release will add local backup export and restore workflows before moving to
 
 ---
 
-## Planned Highlights
+## Highlights
 
-* Add a Settings Data & Backup section.
-* Export browser-local HFOS data as a versioned `.hfos-backup.json` file.
-* Restore from a validated HFOS backup file.
-* Warn before restore replaces current local data.
+* Added a Settings Data & Backup section.
+* Added Export Backup for browser-local HFOS data as a versioned `.hfos-backup.json` file.
+* Added Import Backup with validation before restore.
+* Added Restore from Backup on the household setup screen for clean-browser recovery.
+* Added restore confirmation before replacing current local data.
 * Keep Clear Test Data for QA cleanup without deleting the household.
 * Keep Reset All Application Data for full delete-and-return-to-setup.
 
@@ -33,6 +34,7 @@ This release will add local backup export and restore workflows before moving to
 * Backup files should include an app backup version and export timestamp.
 * Backup files should include the current storage schema version.
 * Backup files should include household, account, transaction, allocation, settlement, settlement application, savings goal, and savings activity records.
+* Backup files include local theme preference.
 * Temporary browser session state should not be included.
 
 ---
@@ -44,6 +46,7 @@ This release will add local backup export and restore workflows before moving to
 * Unsupported backup versions should be rejected.
 * Malformed required records should be rejected before current data is changed.
 * Successful restore should reload the app.
+* Restore replaces current browser-local HFOS data; it does not merge with current data.
 
 ---
 
@@ -64,9 +67,9 @@ Before finalizing this alpha, manually verify:
 
 * Export creates a backup file with the expected `.hfos-backup.json` shape.
 * Restore works after clearing browser data.
+* Restore works from the household setup screen before creating a new household.
 * Restore works after Clear Test Data.
 * Invalid JSON restore shows a clear error.
 * Non-HFOS JSON restore shows a clear error.
 * Restored transaction currency/rate fields remain unchanged.
 * Settings Data & Backup controls remain usable on mobile widths.
-

@@ -47,7 +47,7 @@ Country, base currency, and time zone can be changed later in Settings. Choosing
 
 For repeated QA, use Settings -> Clear Test Data to remove accounts, transactions, settlements, savings records, utility-bill records, and leftover preview keys while keeping the household setup. Use Reset All Application Data only when you want to delete the household and return to first-time setup.
 
-Sprint 16 will add local Export Backup and Import Backup workflows before any Google Drive or cloud backup integration.
+Use Settings -> Data & Backup -> Export Backup to download a local `.hfos-backup.json` file. Use Import Backup to choose a validated HFOS backup file, confirm restore, and replace the current browser-local data. If the browser has no household yet, use Restore from Backup on the household setup screen. Google Drive and cloud backup are deferred until local backup/restore is stable.
 
 ---
 

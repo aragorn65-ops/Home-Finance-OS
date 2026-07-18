@@ -87,6 +87,12 @@
   font-size: var(--font-size-sm);
 }
 
+.settings-alert--success {
+  border-color: var(--color-success);
+  background: var(--color-success-background);
+  color: var(--color-success-text);
+}
+
 .settings-confirmation {
   padding: var(--space-4);
 }
@@ -120,8 +126,12 @@
 
 .settings-danger-button,
 .settings-confirm-button,
-.settings-secondary-button {
+.settings-secondary-button,
+.settings-file-button {
+  display: inline-flex;
   min-height: var(--control-height-md);
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-button);
   padding: var(--space-2) var(--space-4);
   font-size: var(--font-size-sm);
@@ -163,8 +173,41 @@
   color: var(--color-text-strong);
 }
 
+.settings-data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.settings-file-button {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.settings-file-button:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-strong);
+}
+
+.settings-file-button input {
+  display: none;
+}
+
 .settings-confirm-button:disabled,
-.settings-secondary-button:disabled {
+.settings-secondary-button:disabled,
+.settings-file-button:has(input:disabled) {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+@media (max-width: 40rem) {
+  .settings-data-actions,
+  .settings-data-actions > *,
+  .settings-data-actions .settings-secondary-button,
+  .settings-data-actions .settings-file-button {
+    width: 100%;
+  }
 }
