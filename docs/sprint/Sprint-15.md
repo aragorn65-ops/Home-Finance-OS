@@ -43,7 +43,7 @@ Recommended first slice:
 
 Implemented:
 
-* Added a shared currency-rate provider abstraction backed by the Frankfurter API for date-specific exchange rates.
+* Added a shared currency-rate provider abstraction backed by the Frankfurter API for date-specific exchange rates, with jsDelivr and Cloudflare currency API fallback paths for resilience.
 * Added a reusable rate lookup control that lets users explicitly apply a suggested API rate while preserving manual entry as fallback.
 * Added suggested-rate lookup to foreign-currency accounts, foreign-currency income and expense transactions, savings goals, and savings activities.
 * Stored rate source metadata on accounts, income and expense transactions, savings goals, and savings activities.
