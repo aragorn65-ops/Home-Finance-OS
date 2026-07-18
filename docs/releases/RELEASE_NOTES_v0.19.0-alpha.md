@@ -48,6 +48,7 @@ The goal is to calculate member shares when the bill is entered, keep provider p
 * Payment fields in Utilities are optional while the provider bill is unpaid.
 * Backup restore accepts older HFOS backups that do not yet contain provider-bill records.
 * Provider payment creates the utility transaction and settlement obligations from the saved bill share snapshot.
+* Google Drive restore now shows the final restore confirmation directly after the backup actions and scrolls to it when a Drive backup is selected.
 
 ---
 

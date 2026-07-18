@@ -48,6 +48,7 @@ Sprint 19 candidates include:
 * Mark Paid creates the utility expense transaction and settlement obligations from the saved share snapshot.
 * Utilities shows a Provider Payments summary for paid provider bills before backup/restore QA.
 * Backup/restore includes provider bills, while older backups without this collection still restore with an empty provider-bill list.
+* Google Drive restore now brings the final confirmation immediately into view so a selected Drive backup is clearly previewed before replacing browser data.
 
 ---
 

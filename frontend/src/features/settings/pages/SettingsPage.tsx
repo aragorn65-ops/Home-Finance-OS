@@ -63,6 +63,11 @@ export default function SettingsPage() {
       null
     );
 
+  const restoreConfirmationRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
   const [
     themePreference,
     setThemePreference,
@@ -276,6 +281,17 @@ export default function SettingsPage() {
       themePreference
     );
   }, [themePreference]);
+
+  useEffect(() => {
+    if (!isConfirmingRestore) {
+      return;
+    }
+
+    restoreConfirmationRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [isConfirmingRestore]);
 
   const handleBeginReset = (): void => {
     setResetError("");
@@ -1137,6 +1153,51 @@ export default function SettingsPage() {
               </label>
             </div>
 
+            {isConfirmingRestore && (
+              <div
+                ref={restoreConfirmationRef}
+                className="settings-confirmation settings-confirmation--success"
+              >
+                <p className="settings-confirmation__title settings-confirmation__title--success">
+                  Backup ready to restore
+                </p>
+
+                <p className="settings-confirmation__copy settings-confirmation__copy--success">
+                  Review the backup summary, then press Restore
+                  Backup to replace the current HFOS data in this
+                  browser with {restoreFilename}.
+                </p>
+
+                {restoreSummary && (
+                  <BackupSummaryList
+                    summary={restoreSummary}
+                  />
+                )}
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleConfirmRestore}
+                    disabled={isRestoringBackup}
+                    className="settings-confirm-button"
+                  >
+                    {isRestoringBackup
+                      ? "Restoring..."
+                      : "Restore Backup"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCancelRestore}
+                    disabled={isRestoringBackup}
+                    className="settings-secondary-button"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
             {!isGoogleDriveConfigured && (
               <div className="settings-cloud-note">
                 Google Drive backup and restore need a configured
@@ -1234,47 +1295,6 @@ export default function SettingsPage() {
                 }
               />
             </div>
-
-            {isConfirmingRestore && (
-              <div className="settings-confirmation settings-confirmation--success">
-                <p className="settings-confirmation__title settings-confirmation__title--success">
-                  Backup ready to restore
-                </p>
-
-                <p className="settings-confirmation__copy settings-confirmation__copy--success">
-                  Restoring {restoreFilename} will replace
-                  the current HFOS data in this browser.
-                </p>
-
-                {restoreSummary && (
-                  <BackupSummaryList
-                    summary={restoreSummary}
-                  />
-                )}
-
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={handleConfirmRestore}
-                    disabled={isRestoringBackup}
-                    className="settings-confirm-button"
-                  >
-                    {isRestoringBackup
-                      ? "Restoring..."
-                      : "Restore Backup"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleCancelRestore}
-                    disabled={isRestoringBackup}
-                    className="settings-secondary-button"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </Card>
 
