@@ -2,11 +2,13 @@ import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
 export type UtilityType =
   | "electricity"
-  | "water";
+  | "water"
+  | "internet";
 
 export type UtilityUnit =
   | "kWh"
-  | "m3";
+  | "m3"
+  | "fixed";
 
 export interface UtilityMeter {
   id: string;

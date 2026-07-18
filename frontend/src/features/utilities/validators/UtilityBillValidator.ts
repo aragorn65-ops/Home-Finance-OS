@@ -79,6 +79,14 @@ export default class UtilityBillValidator {
         "Water usage must use m3.";
     }
 
+    if (
+      form.utilityType === "internet" &&
+      form.unit !== "fixed"
+    ) {
+      errors.unit =
+        "Internet bills must use fixed amount sharing.";
+    }
+
     if (!form.providerName.trim()) {
       errors.providerName =
         "Enter the utility provider name.";
@@ -105,6 +113,12 @@ export default class UtilityBillValidator {
           "Water consumption must be greater than zero.";
       }
 
+      return;
+    }
+
+    if (
+      form.utilityType === "internet"
+    ) {
       return;
     }
 
@@ -338,11 +352,11 @@ export default class UtilityBillValidator {
     errors: Record<string, string>
   ): void {
     if (
-      form.utilityType === "water" &&
+      form.utilityType !== "electricity" &&
       form.applianceUsages.length > 0
     ) {
       errors.applianceUsages =
-        "Appliance usage is supported only for electricity.";
+        "Appliance usage is supported only for electricity bills.";
 
       return;
     }
@@ -428,6 +442,7 @@ export default class UtilityBillValidator {
     errors: Record<string, string>
   ): void {
     if (
+      form.utilityType === "internet" ||
       !Number.isFinite(
         form.totalBillAmount
       ) ||
@@ -527,6 +542,12 @@ export default class UtilityBillValidator {
   private static getEffectiveRatePerUnit(
     form: UtilityBillForm
   ): number {
+    if (
+      form.utilityType === "internet"
+    ) {
+      return 0;
+    }
+
     if (
       form.utilityType === "water"
     ) {

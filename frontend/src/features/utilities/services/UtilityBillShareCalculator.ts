@@ -481,6 +481,12 @@ export default class UtilityBillShareCalculator {
     form: UtilityBillForm
   ): number {
     if (
+      form.utilityType === "internet"
+    ) {
+      return 0;
+    }
+
+    if (
       form.utilityType === "water"
     ) {
       return form.totalBillAmount /

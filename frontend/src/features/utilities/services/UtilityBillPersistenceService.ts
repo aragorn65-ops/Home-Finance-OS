@@ -140,7 +140,10 @@ export default class UtilityBillPersistenceService {
       form.utilityType ===
       "electricity"
         ? "Electricity"
-        : "Water";
+        : form.utilityType ===
+          "water"
+          ? "Water"
+          : "Internet";
 
     return {
       type: "expense",
@@ -269,9 +272,16 @@ export default class UtilityBillPersistenceService {
             )} ${calculation.unit}`,
           ]
         : []),
-      `Rate per ${calculation.unit}: ${this.formatAmount(
-        calculation.ratePerUnit
-      )}`,
+      ...(form.utilityType !==
+      "internet"
+        ? [
+            `Rate per ${calculation.unit}: ${this.formatAmount(
+              calculation.ratePerUnit
+            )}`,
+          ]
+        : [
+            "Fixed provider bill: shared without meter readings.",
+          ]),
       `Total direct usage: ${this.formatAmount(
         calculation.totalDirectUsageAmount
       )}`,

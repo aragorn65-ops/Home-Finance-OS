@@ -70,7 +70,9 @@ export default function UtilityBillSharePreview({
 
         <SummaryCard
           label={
-            result.utilityType === "water"
+            result.utilityType === "internet"
+              ? "Sharing Basis"
+              : result.utilityType === "water"
               ? (
                   <>
                     Derived rate per{" "}
@@ -85,10 +87,16 @@ export default function UtilityBillSharePreview({
                 )
           }
           value={formatCurrency(
-            result.ratePerUnit
+            result.utilityType ===
+              "internet"
+              ? result.totalBillAmount
+              : result.ratePerUnit
           )}
           helper={
-            result.utilityType === "water"
+            result.utilityType ===
+            "internet"
+              ? "Fixed provider bill shared by selected members."
+              : result.utilityType === "water"
               ? "Calculated from total bill amount divided by consumption."
               : undefined
           }

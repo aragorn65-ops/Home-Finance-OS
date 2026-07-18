@@ -775,7 +775,9 @@ export default function UtilityBillForm({
             Enter the total amount payable and the
             {form.utilityType === "water"
               ? " provider consumption used to derive the sharing rate."
-              : " provider rate used to calculate direct member usage."}
+              : form.utilityType === "internet"
+                ? " fixed amount to divide among household members."
+                : " provider rate used to calculate direct member usage."}
           </p>
         </header>
 
@@ -799,8 +801,37 @@ export default function UtilityBillForm({
                   utilityType ===
                     "electricity"
                     ? "kWh"
-                    : "m3"
+                    : utilityType ===
+                      "water"
+                      ? "m3"
+                      : "fixed"
                 );
+
+                if (
+                  utilityType === "internet"
+                ) {
+                  setForm(
+                    (current) => ({
+                      ...current,
+                      utilityType,
+                      unit: "fixed",
+                      ratePerUnit: 0,
+                      totalConsumption: 0,
+                      applianceUsages: [],
+                      memberShares:
+                        current.memberShares.map(
+                          (memberShare) => ({
+                            ...memberShare,
+                            previousReading: 0,
+                            currentReading: 0,
+                            isMeterReset: false,
+                            meterResetReason: "",
+                            resetUsageQuantity: 0,
+                          })
+                        ),
+                    })
+                  );
+                }
               }}
             >
               <option value="electricity">
@@ -809,6 +840,10 @@ export default function UtilityBillForm({
 
               <option value="water">
                 Water
+              </option>
+
+              <option value="internet">
+                Internet
               </option>
             </select>
           </Field>
@@ -876,6 +911,18 @@ export default function UtilityBillForm({
           </Field>
 
           {form.utilityType ===
+          "internet" ? (
+            <Field
+              label="Sharing Basis"
+              helper="Internet bills are fixed provider bills. Use member sharing below to divide the amount."
+            >
+              <input
+                className={`${inputClassName} bg-slate-50 text-slate-500`}
+                value="Fixed amount"
+                readOnly
+              />
+            </Field>
+          ) : form.utilityType ===
           "water" ? (
             <Field
               label={
@@ -978,8 +1025,10 @@ export default function UtilityBillForm({
                     </h3>
 
                     <p className="mt-1 text-xs text-slate-500">
-                      Leave meter readings at zero when
-                      this member has no submeter.
+                      {form.utilityType ===
+                      "internet"
+                        ? "Use sharing or fixed compensation for this fixed provider bill."
+                        : "Leave meter readings at zero when this member has no submeter."}
                     </p>
                   </div>
 
@@ -995,75 +1044,80 @@ export default function UtilityBillForm({
                 </div>
 
                 <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-                  <Field label="Saved Submeter">
-                    <input
-                      className={inputClassName}
-                      type="text"
-                      value={
-                        memberShare.utilityMeterId
-                      }
-                      onChange={(event) =>
-                        updateMemberShare(
-                          memberIndex,
-                          {
-                            utilityMeterId:
-                              event.target.value,
+                  {form.utilityType !==
+                    "internet" && (
+                    <>
+                      <Field label="Saved Submeter">
+                        <input
+                          className={inputClassName}
+                          type="text"
+                          value={
+                            memberShare.utilityMeterId
                           }
-                        )
-                      }
-                      placeholder="Optional meter ID"
-                    />
-                  </Field>
+                          onChange={(event) =>
+                            updateMemberShare(
+                              memberIndex,
+                              {
+                                utilityMeterId:
+                                  event.target.value,
+                              }
+                            )
+                          }
+                          placeholder="Optional meter ID"
+                        />
+                      </Field>
 
-                  <Field label="Previous Reading">
-                    <input
-                      className={inputClassName}
-                      type="number"
-                      min="0"
-                      step="0.001"
-                      value={
-                        memberShare.previousReading ||
-                        ""
-                      }
-                      onChange={(event) =>
-                        updateMemberShare(
-                          memberIndex,
-                          {
-                            previousReading:
-                              parseNumber(
-                                event.target.value
-                              ),
+                      <Field label="Previous Reading">
+                        <input
+                          className={inputClassName}
+                          type="number"
+                          min="0"
+                          step="0.001"
+                          value={
+                            memberShare.previousReading ||
+                            ""
                           }
-                        )
-                      }
-                      placeholder="0"
-                    />
-                  </Field>
+                          onChange={(event) =>
+                            updateMemberShare(
+                              memberIndex,
+                              {
+                                previousReading:
+                                  parseNumber(
+                                    event.target.value
+                                  ),
+                              }
+                            )
+                          }
+                          placeholder="0"
+                        />
+                      </Field>
 
-                  <Field label="Current Reading">
-                    <input
-                      className={inputClassName}
-                      type="number"
-                      min="0"
-                      step="0.001"
-                      value={
-                        memberShare.currentReading ||
-                        ""
-                      }
-                      onChange={(event) =>
-                        updateMemberShare(
-                          memberIndex,
-                          {
-                            currentReading:
-                              parseNumber(
-                                event.target.value
-                              ),
+                      <Field label="Current Reading">
+                        <input
+                          className={inputClassName}
+                          type="number"
+                          min="0"
+                          step="0.001"
+                          value={
+                            memberShare.currentReading ||
+                            ""
                           }
-                        )
-                      }
-                      placeholder="0"
-                    />
-                  </Field>
+                          onChange={(event) =>
+                            updateMemberShare(
+                              memberIndex,
+                              {
+                                currentReading:
+                                  parseNumber(
+                                    event.target.value
+                                  ),
+                              }
+                            )
+                          }
+                          placeholder="0"
+                        />
+                      </Field>
+                    </>
+                  )}
 
                   <Field
                     label="Fixed Compensation"
@@ -1121,42 +1175,47 @@ export default function UtilityBillForm({
                     </label>
                   </div>
 
-                  <div className="flex items-end">
-                    <label className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={
-                          memberShare.isMeterReset
-                        }
-                        onChange={(event) =>
-                          updateMemberShare(
-                            memberIndex,
-                            {
-                              isMeterReset:
-                                event.target
-                                  .checked,
+                  {form.utilityType !==
+                    "internet" && (
+                    <div className="flex items-end">
+                      <label className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={
+                            memberShare.isMeterReset
+                          }
+                          onChange={(event) =>
+                            updateMemberShare(
+                              memberIndex,
+                              {
+                                isMeterReset:
+                                  event.target
+                                    .checked,
 
-                              meterResetReason:
-                                event.target
-                                  .checked
-                                  ? memberShare.meterResetReason
-                                  : "",
+                                meterResetReason:
+                                  event.target
+                                    .checked
+                                    ? memberShare.meterResetReason
+                                    : "",
 
-                              resetUsageQuantity:
-                                event.target
-                                  .checked
-                                  ? memberShare.resetUsageQuantity
-                                  : 0,
-                            }
-                          )
-                        }
-                      />
+                                resetUsageQuantity:
+                                  event.target
+                                    .checked
+                                    ? memberShare.resetUsageQuantity
+                                    : 0,
+                              }
+                            )
+                          }
+                        />
 
-                      Meter reset or replaced
-                    </label>
-                  </div>
+                        Meter reset or replaced
+                      </label>
+                    </div>
+                  )}
 
-                  {memberShare.isMeterReset && (
+                  {form.utilityType !==
+                    "internet" &&
+                    memberShare.isMeterReset && (
                     <>
                       <Field label="Reset Reason">
                         <input
@@ -1216,7 +1275,7 @@ export default function UtilityBillForm({
         </div>
       </section>
 
-      {form.utilityType ===
+        {form.utilityType ===
         "electricity" && (
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <SectionHeader

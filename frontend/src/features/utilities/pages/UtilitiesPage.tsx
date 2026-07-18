@@ -489,7 +489,7 @@ export default function UtilitiesPage() {
     <>
       <PageHeader
         title="Utilities"
-        subtitle="Calculate and save electricity or water bill shares."
+        subtitle="Calculate and save provider bill shares before payment."
       />
 
       <FormValidationAlert
@@ -586,7 +586,10 @@ export default function UtilitiesPage() {
                             (providerBill.utilityType ===
                             "electricity"
                               ? "Electricity provider"
-                              : "Water provider")}
+                              : providerBill.utilityType ===
+                                "water"
+                                ? "Water provider"
+                                : "Internet provider")}
                         </h3>
 
                         <p className="mt-1 text-sm text-slate-500">
