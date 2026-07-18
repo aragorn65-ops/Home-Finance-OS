@@ -117,8 +117,21 @@ Implemented:
 * Tightened Analytics mobile layout for dense amounts, category rows, settlement rows, savings goal rows, and drilldown items.
 * Reduced overflow risk in Analytics by allowing long values and labels to wrap at narrow widths.
 * Improved transaction attachment/detail cards so actions stack cleanly in narrow dialogs.
+* Fixed Settings household-preference dropdown overflow and long selected values in dark and narrow layouts.
 * Made mobile dialogs top-anchored and viewport-scrollable so tall forms remain reachable after browser viewport changes.
 * Kept mobile and tablet page layouts on single-column grids where summary panels would otherwise compress.
+
+---
+
+## Settings Preference Refinement
+
+Implemented:
+
+* Let users edit country, base currency, and time zone in Settings after household setup.
+* Added country defaults that auto-select currency and time zone for listed countries during setup and later Settings edits.
+* Added manual override paths for country, currency, and time zone when a household preference is not listed.
+* Expanded setup preferences with Japan, United Kingdom, Germany, Saudi Arabia, and their corresponding currency and time-zone options.
+* Preserved the no-history-recomputation rule when base currency is changed from Settings.
 
 ---
 
@@ -157,4 +170,4 @@ Expected result:
 
 Sprint 15 is officially closed on July 18, 2026.
 
-The currency automation first slice, attachment workflow cleanup, route-level code splitting, the first Analytics drilldown, utility water-bill consumption entry, and mobile/tablet responsive hardening are implemented and verified.
+The currency automation first slice, attachment workflow cleanup, route-level code splitting, the first Analytics drilldown, Settings household-preference refinement, utility water-bill consumption entry, and mobile/tablet responsive hardening are implemented and verified.
