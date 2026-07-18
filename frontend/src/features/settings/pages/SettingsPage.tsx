@@ -281,7 +281,7 @@ export default function SettingsPage() {
                       .value as ThemePreference
                   )
                 }
-                className="max-w-xs rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+                className="settings-preferences-select max-w-xs"
               >
                 <option value="system">
                   System Default
