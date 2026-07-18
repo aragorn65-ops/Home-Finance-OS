@@ -520,8 +520,8 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              <div className="settings-preferences-note">
-                {hasSavedTransactions && (
+              {hasSavedTransactions && (
+                <div className="settings-preferences-note">
                   <p>
                     <strong>
                       Historical records stay locked.
@@ -536,23 +536,23 @@ export default function SettingsPage() {
                     transactions keep their saved currency,
                     exchange rate, and converted amount.
                   </p>
-                )}
 
-                <p>
-                  These are the preferences chosen during
-                  household setup. Base currency changes apply
-                  going forward and do not convert or recompute
-                  historical records. Some countries have
-                  multiple regional time zones, so confirm the
-                  time zone after selecting a country.
-                </p>
+                  <p>
+                    These are the preferences chosen during
+                    household setup. Base currency changes apply
+                    going forward and do not convert or recompute
+                    historical records. Some countries have
+                    multiple regional time zones, so confirm the
+                    time zone after selecting a country.
+                  </p>
 
-                <p>
-                  Future API conversion will store the rate
-                  effective on the date a record is created
-                  or used.
-                </p>
-              </div>
+                  <p>
+                    Future API conversion will store the rate
+                    effective on the date a record is created
+                    or used.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-2">

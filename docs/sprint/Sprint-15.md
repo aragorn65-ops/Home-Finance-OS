@@ -135,7 +135,7 @@ Implemented:
 * Expanded setup preferences with Japan, United Kingdom, Germany, Saudi Arabia, and their corresponding currency and time-zone options.
 * Added Australia/Melbourne as a listed time-zone option and clarified that country defaults may still need regional time-zone confirmation.
 * Preserved the no-history-recomputation rule when base currency is changed from Settings and kept historical Dashboard totals labeled with their saved reporting currency.
-* Added contextual Settings warning guidance inside the preference box when saved transactions exist, explaining that base-currency changes affect future defaults only while historical records stay locked.
+* Added contextual Settings warning guidance inside the preference box when saved transactions exist, explaining that base-currency changes affect future defaults only while historical records stay locked; the warning is hidden for households with no transactions.
 
 ---
 
