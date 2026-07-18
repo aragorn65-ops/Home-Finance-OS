@@ -1,0 +1,91 @@
+.app-unlock {
+  display: grid;
+  min-height: 100vh;
+  min-height: 100dvh;
+  place-items: center;
+  padding: var(--layout-page-padding);
+  background: var(--color-canvas);
+}
+
+.app-unlock__panel {
+  display: grid;
+  width: min(100%, 24rem);
+  gap: var(--space-5);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-md);
+}
+
+.app-unlock__icon {
+  display: inline-flex;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--color-info-background);
+  color: var(--color-info-text);
+}
+
+.app-unlock h1 {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-tight);
+}
+
+.app-unlock p {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.app-unlock label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-text-strong);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.app-unlock input {
+  min-height: var(--control-height-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  padding: var(--space-2) var(--space-3);
+}
+
+.app-unlock input:focus-visible,
+.app-unlock button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.app-unlock__error {
+  color: var(--color-danger-text);
+  font-weight: var(--font-weight-medium);
+}
+
+.app-unlock button {
+  min-height: var(--control-height-md);
+  border-radius: var(--radius-button);
+  background: var(--color-brand-600);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-2) var(--space-4);
+}
+
+.app-unlock button:hover:not(:disabled) {
+  background: var(--color-brand-700);
+}
+
+.app-unlock button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

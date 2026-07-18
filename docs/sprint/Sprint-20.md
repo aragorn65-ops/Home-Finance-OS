@@ -23,10 +23,11 @@ Sprint 20 candidates include:
 
 * [x] Add a dashboard quick action for unpaid provider bills.
 * [x] Show an empty Bills to Pay state when no unpaid provider bills exist.
-* [ ] Add an optional local app lock / PIN.
-* [ ] Support manual lock from the app shell.
-* [ ] Lock the app after browser refresh or inactivity when app lock is enabled.
-* [ ] Add clear privacy/session controls in Settings.
+* [x] Add an optional local app lock / PIN.
+* [x] Support manual lock from the app shell.
+* [x] Lock the app after browser refresh when app lock is enabled.
+* [x] Add clear privacy/session controls in Settings.
+* [ ] Lock the app after inactivity when app lock is enabled.
 * [ ] Explore password-protected backup export/import.
 * [ ] Keep Google Drive backup/restore compatible with current backups.
 * [ ] Document the future full-auth path separately from local app lock.
@@ -66,8 +67,10 @@ Manual QA should include:
 * Confirm Unpaid Bills opens Utilities at Bills to Pay.
 * Confirm Bills to Pay shows an empty state when there are no unpaid provider bills.
 * Enable app lock and set a PIN.
+* Confirm the header shows a Lock HFOS action after app lock is enabled.
 * Refresh the browser and confirm the app locks.
 * Unlock with the correct PIN.
 * Reject an incorrect PIN.
 * Disable app lock from Settings.
+* Confirm Clear Test Data keeps app lock enabled.
 * Confirm backup/restore still works with app lock settings present.

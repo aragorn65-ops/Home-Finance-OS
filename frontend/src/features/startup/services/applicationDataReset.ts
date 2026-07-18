@@ -1,4 +1,7 @@
 import {
+  APP_LOCK_STORAGE_KEY,
+} from "../../security/services/appLockService";
+import {
   HFOS_LEGACY_STORAGE_KEYS,
   HFOS_STORAGE_KEYS,
   removeLegacyStoredData,
@@ -35,6 +38,7 @@ const testDataResetPreservedLocalStorageKeys =
   new Set<string>([
     ...resetPreservedLocalStorageKeys,
     HFOS_STORAGE_KEYS.household,
+    APP_LOCK_STORAGE_KEY,
   ]);
 
 /**

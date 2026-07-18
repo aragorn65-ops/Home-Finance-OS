@@ -47,6 +47,11 @@ import {
   type GoogleDriveBackupFile,
 } from "../../startup/services/googleDriveBackup";
 import TransactionService from "../../transactions/services/TransactionService";
+import {
+  disableAppLock,
+  enableAppLock,
+  isAppLockEnabled,
+} from "../../security/services/appLockService";
 
 const customPreferenceValue =
   "__custom__";
@@ -203,6 +208,43 @@ export default function SettingsPage() {
   const [
     isRestoringBackup,
     setIsRestoringBackup,
+  ] = useState(false);
+
+  const [
+    isAppLockCurrentlyEnabled,
+    setIsAppLockCurrentlyEnabled,
+  ] = useState(() =>
+    isAppLockEnabled()
+  );
+
+  const [
+    appLockPin,
+    setAppLockPin,
+  ] = useState("");
+
+  const [
+    appLockPinConfirmation,
+    setAppLockPinConfirmation,
+  ] = useState("");
+
+  const [
+    appLockDisablePin,
+    setAppLockDisablePin,
+  ] = useState("");
+
+  const [
+    appLockMessage,
+    setAppLockMessage,
+  ] = useState("");
+
+  const [
+    appLockError,
+    setAppLockError,
+  ] = useState("");
+
+  const [
+    isSavingAppLock,
+    setIsSavingAppLock,
   ] = useState(false);
 
   const countryOptions =
@@ -659,6 +701,81 @@ export default function SettingsPage() {
     navigate("/app");
   };
 
+  const handleEnableAppLock =
+    async (): Promise<void> => {
+      setAppLockMessage("");
+      setAppLockError("");
+
+      if (
+        appLockPin !==
+        appLockPinConfirmation
+      ) {
+        setAppLockError(
+          "PIN entries do not match."
+        );
+
+        return;
+      }
+
+      setIsSavingAppLock(true);
+
+      const result =
+        await enableAppLock(
+          appLockPin
+        );
+
+      setIsSavingAppLock(false);
+
+      if (!result.success) {
+        setAppLockError(
+          result.message
+        );
+
+        return;
+      }
+
+      setIsAppLockCurrentlyEnabled(
+        true
+      );
+      setAppLockPin("");
+      setAppLockPinConfirmation("");
+      setAppLockMessage(
+        result.message
+      );
+      notifyAppLockSettingsChanged();
+    };
+
+  const handleDisableAppLock =
+    async (): Promise<void> => {
+      setAppLockMessage("");
+      setAppLockError("");
+      setIsSavingAppLock(true);
+
+      const result =
+        await disableAppLock(
+          appLockDisablePin
+        );
+
+      setIsSavingAppLock(false);
+
+      if (!result.success) {
+        setAppLockError(
+          result.message
+        );
+
+        return;
+      }
+
+      setIsAppLockCurrentlyEnabled(
+        false
+      );
+      setAppLockDisablePin("");
+      setAppLockMessage(
+        result.message
+      );
+      notifyAppLockSettingsChanged();
+    };
+
   const handleCountryPreferenceChange = (
     nextCountry: string
   ): void => {
@@ -1050,6 +1167,171 @@ export default function SettingsPage() {
                 </p>
               )}
             </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                App Lock
+              </h2>
+
+              <p className="mt-2 text-sm text-muted-foreground">
+                Add a local PIN before household data is shown in
+                this browser. This protects casual access on this
+                device; it is not a cloud login.
+              </p>
+            </div>
+
+            {(appLockMessage ||
+              appLockError) && (
+              <div
+                role={
+                  appLockError
+                    ? "alert"
+                    : "status"
+                }
+                className={[
+                  "settings-alert",
+                  appLockError
+                    ? "settings-alert--danger"
+                    : "settings-alert--success",
+                ].join(" ")}
+              >
+                {appLockError ||
+                  appLockMessage}
+              </div>
+            )}
+
+            <div className="settings-app-lock-status">
+              <span>
+                Status
+              </span>
+
+              <strong>
+                {isAppLockCurrentlyEnabled
+                  ? "Enabled"
+                  : "Off"}
+              </strong>
+            </div>
+
+            {!isAppLockCurrentlyEnabled ? (
+              <div className="settings-app-lock-grid">
+                <label className="settings-preferences-field">
+                  <span className="text-sm font-medium text-foreground">
+                    New PIN
+                  </span>
+
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="new-password"
+                    value={appLockPin}
+                    onChange={(event) => {
+                      setAppLockPin(
+                        event.target.value
+                      );
+                      setAppLockError("");
+                      setAppLockMessage("");
+                    }}
+                    className="settings-preferences-input"
+                    placeholder="4 to 8 digits"
+                  />
+                </label>
+
+                <label className="settings-preferences-field">
+                  <span className="text-sm font-medium text-foreground">
+                    Confirm PIN
+                  </span>
+
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="new-password"
+                    value={
+                      appLockPinConfirmation
+                    }
+                    onChange={(event) => {
+                      setAppLockPinConfirmation(
+                        event.target.value
+                      );
+                      setAppLockError("");
+                      setAppLockMessage("");
+                    }}
+                    className="settings-preferences-input"
+                    placeholder="Repeat PIN"
+                  />
+                </label>
+
+                <div className="settings-app-lock-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleEnableAppLock();
+                    }}
+                    disabled={
+                      isSavingAppLock ||
+                      appLockPin.length ===
+                        0 ||
+                      appLockPinConfirmation.length ===
+                        0
+                    }
+                    className="settings-secondary-button"
+                  >
+                    {isSavingAppLock
+                      ? "Saving..."
+                      : "Enable App Lock"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="settings-app-lock-grid">
+                <label className="settings-preferences-field">
+                  <span className="text-sm font-medium text-foreground">
+                    Current PIN
+                  </span>
+
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="current-password"
+                    value={appLockDisablePin}
+                    onChange={(event) => {
+                      setAppLockDisablePin(
+                        event.target.value
+                      );
+                      setAppLockError("");
+                      setAppLockMessage("");
+                    }}
+                    className="settings-preferences-input"
+                    placeholder="Enter PIN to disable"
+                  />
+                </label>
+
+                <div className="settings-app-lock-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleDisableAppLock();
+                    }}
+                    disabled={
+                      isSavingAppLock ||
+                      appLockDisablePin.length ===
+                        0
+                    }
+                    className="settings-secondary-button"
+                  >
+                    {isSavingAppLock
+                      ? "Checking..."
+                      : "Disable App Lock"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -1730,4 +2012,20 @@ function downloadBackupFile(
   link.remove();
 
   URL.revokeObjectURL(url);
+}
+
+function notifyAppLockSettingsChanged():
+  void {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return;
+  }
+
+  window.dispatchEvent(
+    new Event(
+      "hfos-app-lock-settings-changed"
+    )
+  );
 }

@@ -17,15 +17,61 @@ import Sidebar from "../Sidebar/Sidebar";
 import {
   loadHousehold,
 } from "../../features/household/services/householdStorage";
+import AppUnlockScreen from "../../features/security/components/AppUnlockScreen";
+import {
+  isAppLockEnabled,
+} from "../../features/security/services/appLockService";
 
 export default function AppShell() {
   const household = loadHousehold();
   const location = useLocation();
 
   const [
+    isLockEnabled,
+    setIsLockEnabled,
+  ] = useState(() =>
+    isAppLockEnabled()
+  );
+
+  const [
+    isLocked,
+    setIsLocked,
+  ] = useState(() =>
+    isAppLockEnabled()
+  );
+
+  const [
     isSidebarOpen,
     setIsSidebarOpen,
   ] = useState(false);
+
+  useEffect(() => {
+    const handleAppLockSettingsChanged =
+      () => {
+        const nextIsEnabled =
+          isAppLockEnabled();
+
+        setIsLockEnabled(
+          nextIsEnabled
+        );
+
+        if (!nextIsEnabled) {
+          setIsLocked(false);
+        }
+      };
+
+    window.addEventListener(
+      "hfos-app-lock-settings-changed",
+      handleAppLockSettingsChanged
+    );
+
+    return () => {
+      window.removeEventListener(
+        "hfos-app-lock-settings-changed",
+        handleAppLockSettingsChanged
+      );
+    };
+  }, []);
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -66,6 +112,22 @@ export default function AppShell() {
     );
   }
 
+  if (
+    isLockEnabled &&
+    isLocked
+  ) {
+    return (
+      <AppUnlockScreen
+        householdName={
+          household.householdName
+        }
+        onUnlock={() =>
+          setIsLocked(false)
+        }
+      />
+    );
+  }
+
   const closeSidebar = () => {
     setIsSidebarOpen(false);
   };
@@ -85,6 +147,14 @@ export default function AppShell() {
         <Header
           isMenuOpen={isSidebarOpen}
           onMenuToggle={toggleSidebar}
+          onLock={
+            isLockEnabled
+              ? () => {
+                  setIsSidebarOpen(false);
+                  setIsLocked(true);
+                }
+              : undefined
+          }
         />
 
         <main className="app-content">

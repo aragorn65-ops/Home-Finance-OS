@@ -28,7 +28,7 @@ The goal is to protect data when the browser or device is shared, while keeping 
 
 ---
 
-## Planned Additions
+## Added
 
 * Dashboard quick action for unpaid provider bills.
 * Empty Bills to Pay message when every provider bill has been paid.
@@ -36,6 +36,11 @@ The goal is to protect data when the browser or device is shared, while keeping 
 * Unlock screen before household data is shown.
 * Privacy/session settings.
 * Documentation for local lock limitations.
+
+## Planned
+
+* Inactivity lock timer.
+* Backup password protection exploration.
 
 ---
 
