@@ -39,6 +39,7 @@ This release adds date-specific currency-rate lookup, preserves manual exchange-
 * Added country-based currency and time-zone defaults with manual override options.
 * Added Japan, United Kingdom, Germany, and Saudi Arabia setup preferences with matching currencies and time zones.
 * Fixed Settings preference dropdown overflow in constrained layouts.
+* Added contextual Settings warning guidance when changing base currency after transactions exist.
 
 ---
 
@@ -93,6 +94,7 @@ Before finalizing this alpha, manually verify:
 
 * Suggested exchange-rate lookup and manual fallback for accounts, income transactions, expense transactions, savings goals, and savings activities.
 * Settings country changes auto-select the expected currency and time zone while still allowing manual overrides.
+* Settings warning appears inside the preferences box when transactions exist, without dropdown overlap in constrained layouts.
 * Historical records keep their saved rate, effective date, and converted amounts until edited.
 * Transaction attachments work via file picker, paste, and drag/drop.
 * Attachment preview remains centered and constrained for images and PDFs.

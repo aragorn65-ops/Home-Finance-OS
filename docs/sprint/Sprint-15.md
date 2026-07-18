@@ -134,6 +134,7 @@ Implemented:
 * Added manual override paths for country, currency, and time zone when a household preference is not listed.
 * Expanded setup preferences with Japan, United Kingdom, Germany, Saudi Arabia, and their corresponding currency and time-zone options.
 * Preserved the no-history-recomputation rule when base currency is changed from Settings and kept historical Dashboard totals labeled with their saved reporting currency.
+* Added contextual Settings warning guidance inside the preference box when saved transactions exist, explaining that base-currency changes affect future defaults only while historical records stay locked.
 
 ---
 
