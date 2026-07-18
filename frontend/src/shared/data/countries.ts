@@ -22,6 +22,18 @@ export const countries: SelectOption[] = [
     label: "Australia",
   },
   {
+    value: "JP",
+    label: "Japan",
+  },
+  {
+    value: "GB",
+    label: "United Kingdom",
+  },
+  {
+    value: "DE",
+    label: "Germany",
+  },
+  {
     value: "QA",
     label: "Qatar",
   },

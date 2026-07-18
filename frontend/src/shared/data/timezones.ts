@@ -30,6 +30,18 @@ export const timezones: SelectOption[] = [
     label: "Australia/Sydney (UTC+10:00 / +11:00)",
   },
   {
+    value: "Asia/Tokyo",
+    label: "Asia/Tokyo (UTC+09:00)",
+  },
+  {
+    value: "Europe/London",
+    label: "Europe/London (UTC+00:00 / +01:00)",
+  },
+  {
+    value: "Europe/Berlin",
+    label: "Europe/Berlin (UTC+01:00 / +02:00)",
+  },
+  {
     value: "Asia/Qatar",
     label: "Asia/Qatar (UTC+03:00)",
   },
