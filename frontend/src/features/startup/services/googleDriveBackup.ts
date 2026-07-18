@@ -16,6 +16,13 @@ const googleDriveFilesUrl =
 const googleDriveFileScope =
   "https://www.googleapis.com/auth/drive.file";
 
+let cachedGoogleDriveAccess:
+  | {
+      accessToken: string;
+      expiresAt: number;
+    }
+  | undefined;
+
 export interface GoogleDriveBackupUpload {
   filename: string;
 
@@ -74,6 +81,8 @@ export type GoogleDriveBackupDownloadResult =
 interface GoogleTokenResponse {
   access_token?: string;
 
+  expires_in?: number;
+
   error?: string;
 
   error_description?: string;
@@ -131,35 +140,15 @@ export async function saveBackupToGoogleDrive({
   filename,
   json,
 }: GoogleDriveBackupUpload): Promise<GoogleDriveBackupResult> {
-  const clientId =
-    googleClientId?.trim();
+  const accessResult =
+    await requestGoogleDriveAccess();
 
-  if (!clientId) {
-    return {
-      success: false,
-      message:
-        "Google Drive backup needs VITE_GOOGLE_CLIENT_ID configured for this app.",
-    };
-  }
-
-  const scriptResult =
-    await loadGoogleIdentityScript();
-
-  if (!scriptResult.success) {
-    return scriptResult;
-  }
-
-  const tokenResult =
-    await requestGoogleAccessToken(
-      clientId
-    );
-
-  if (!tokenResult.success) {
-    return tokenResult;
+  if (!accessResult.success) {
+    return accessResult;
   }
 
   return uploadBackupFileToDrive(
-    tokenResult.accessToken,
+    accessResult.accessToken,
     filename,
     json
   );
@@ -207,6 +196,18 @@ async function requestGoogleDriveAccess(): Promise<
   const clientId =
     googleClientId?.trim();
 
+  if (
+    cachedGoogleDriveAccess &&
+    cachedGoogleDriveAccess.expiresAt >
+      Date.now()
+  ) {
+    return {
+      success: true,
+      accessToken:
+        cachedGoogleDriveAccess.accessToken,
+    };
+  }
+
   if (!clientId) {
     return {
       success: false,
@@ -222,9 +223,28 @@ async function requestGoogleDriveAccess(): Promise<
     return scriptResult;
   }
 
-  return requestGoogleAccessToken(
-    clientId
-  );
+  const tokenResult =
+    await requestGoogleAccessToken(
+      clientId
+    );
+
+  if (!tokenResult.success) {
+    return tokenResult;
+  }
+
+  cachedGoogleDriveAccess = {
+    accessToken:
+      tokenResult.accessToken,
+    expiresAt:
+      Date.now() +
+      tokenResult.expiresInMs,
+  };
+
+  return {
+    success: true,
+    accessToken:
+      tokenResult.accessToken,
+  };
 }
 
 async function loadGoogleIdentityScript(): Promise<
@@ -341,6 +361,7 @@ function requestGoogleAccessToken(
   | {
       success: true;
       accessToken: string;
+      expiresInMs: number;
     }
   | {
       success: false;
@@ -396,6 +417,11 @@ function requestGoogleAccessToken(
             success: true,
             accessToken:
               response.access_token,
+            expiresInMs:
+              getTokenExpiryMs(
+                response
+                  .expires_in
+              ),
           });
         },
       });
@@ -460,6 +486,10 @@ async function uploadBackupFileToDrive(
   }
 
   if (!response.ok) {
+    clearCachedAccessIfUnauthorized(
+      response
+    );
+
     return {
       success: false,
       message:
@@ -535,6 +565,10 @@ async function listBackupFilesFromDrive(
   }
 
   if (!response.ok) {
+    clearCachedAccessIfUnauthorized(
+      response
+    );
+
     return {
       success: false,
       message:
@@ -593,6 +627,10 @@ async function downloadBackupFileFromDrive(
   }
 
   if (!response.ok) {
+    clearCachedAccessIfUnauthorized(
+      response
+    );
+
     return {
       success: false,
       message:
@@ -632,4 +670,32 @@ function isGoogleDriveBackupFile(
     typeof file.name ===
       "string"
   );
+}
+
+function getTokenExpiryMs(
+  expiresInSeconds: number | undefined
+): number {
+  if (
+    typeof expiresInSeconds !==
+      "number" ||
+    !Number.isFinite(
+      expiresInSeconds
+    ) ||
+    expiresInSeconds <= 60
+  ) {
+    return 50 * 60 * 1000;
+  }
+
+  return (
+    expiresInSeconds - 60
+  ) * 1000;
+}
+
+function clearCachedAccessIfUnauthorized(
+  response: Response
+): void {
+  if (response.status === 401) {
+    cachedGoogleDriveAccess =
+      undefined;
+  }
 }
