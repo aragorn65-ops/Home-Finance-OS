@@ -254,6 +254,68 @@ export function saveHouseholdCurrency(
 }
 
 /**
+ * Updates setup preferences after household creation.
+ *
+ * Changing the base currency only affects future display
+ * defaults. Existing financial records keep their stored
+ * amounts and exchange-rate metadata.
+ */
+export function saveHouseholdPreferences(
+  preferences: Pick<
+    HouseholdSetupState,
+    "country" | "currency" | "timezone"
+  >
+): StoredHousehold | null {
+  const household =
+    loadHousehold();
+
+  const country =
+    preferences.country.trim();
+
+  const currency =
+    preferences.currency
+      .trim()
+      .toUpperCase();
+
+  const timezone =
+    preferences.timezone.trim();
+
+  if (
+    !household ||
+    !country ||
+    !currency ||
+    !timezone
+  ) {
+    return null;
+  }
+
+  const updatedHousehold:
+    StoredHousehold = {
+      ...household,
+
+      country,
+      currency,
+      timezone,
+
+      updatedAt:
+        new Date(),
+    };
+
+  const saved =
+    persistHousehold(
+      updatedHousehold
+    );
+
+  if (!saved) {
+    return null;
+  }
+
+  return cloneHousehold(
+    updatedHousehold
+  );
+}
+
+/**
  * Removes the current and legacy household records.
  *
  * Related financial storage is removed separately by

@@ -33,11 +33,15 @@ Then open the local URL shown in the terminal.
 1. Create or open a household.
 2. Add household members.
 3. Open Settings and confirm:
+   * Country.
    * Theme: Light, Dark, or System Default.
    * Base currency: the household reporting currency.
+   * Time zone.
 4. Add accounts for cash, bank, wallet, or savings balances.
 
 Tip: The base currency is the main household reporting currency. Foreign-currency accounts can still be added with an exchange rate for reporting. When a suggested rate is available, you can apply it from the rate lookup button or keep your manual rate.
+
+Country, base currency, and time zone can be changed later in Settings. Currency changes apply going forward and do not recompute historical records.
 
 ---
 

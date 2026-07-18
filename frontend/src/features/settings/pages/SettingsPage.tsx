@@ -7,7 +7,9 @@ import {
 
 import PageHeader from "../../../shared/ui/PageHeader";
 import Card from "../../../shared/ui/Card";
+import { countries } from "../../../shared/data/countries";
 import { currencies } from "../../../shared/data/currencies";
+import { timezones } from "../../../shared/data/timezones";
 import {
   getStoredThemePreference,
   storeThemePreference,
@@ -15,7 +17,7 @@ import {
 } from "../../../shared/theme/themePreference";
 import {
   loadHousehold,
-  saveHouseholdCurrency,
+  saveHouseholdPreferences,
 } from "../../household/services/householdStorage";
 
 import {
@@ -35,6 +37,13 @@ export default function SettingsPage() {
   );
 
   const [
+    country,
+    setCountry,
+  ] = useState(
+    household?.country ?? ""
+  );
+
+  const [
     baseCurrency,
     setBaseCurrency,
   ] = useState(
@@ -42,13 +51,20 @@ export default function SettingsPage() {
   );
 
   const [
-    currencyMessage,
-    setCurrencyMessage,
+    timezone,
+    setTimezone,
+  ] = useState(
+    household?.timezone ?? ""
+  );
+
+  const [
+    preferencesMessage,
+    setPreferencesMessage,
   ] = useState("");
 
   const [
-    currencyError,
-    setCurrencyError,
+    preferencesError,
+    setPreferencesError,
   ] = useState("");
 
   const [
@@ -102,31 +118,52 @@ export default function SettingsPage() {
     reloadAfterApplicationReset();
   };
 
-  const handleBaseCurrencyChange = (
-    nextCurrency: string
+  const savePreferences = (
+    nextPreferences: {
+      country?: string;
+      currency?: string;
+      timezone?: string;
+    }
   ): void => {
-    setBaseCurrency(
-      nextCurrency
-    );
+    const nextCountry =
+      nextPreferences.country ??
+      country;
 
-    setCurrencyMessage("");
-    setCurrencyError("");
+    const nextCurrency =
+      nextPreferences.currency ??
+      baseCurrency;
+
+    const nextTimezone =
+      nextPreferences.timezone ??
+      timezone;
+
+    setCountry(nextCountry);
+    setBaseCurrency(nextCurrency);
+    setTimezone(nextTimezone);
+
+    setPreferencesMessage("");
+    setPreferencesError("");
 
     const result =
-      saveHouseholdCurrency(
-        nextCurrency
-      );
+      saveHouseholdPreferences({
+        country:
+          nextCountry,
+        currency:
+          nextCurrency,
+        timezone:
+          nextTimezone,
+      });
 
     if (!result) {
-      setCurrencyError(
-        "Unable to update the household base currency."
+      setPreferencesError(
+        "Unable to update household preferences."
       );
 
       return;
     }
 
-    setCurrencyMessage(
-      `Base currency updated to ${result.currency}. Historical amounts were not recomputed.`
+    setPreferencesMessage(
+      "Household preferences updated. Historical financial records were not recomputed."
     );
   };
 
@@ -189,7 +226,52 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="grid gap-2 border-t pt-4">
+            <div className="grid gap-5 border-t pt-4 md:grid-cols-3">
+              <div className="grid gap-2">
+                <label
+                  htmlFor="settings-country"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Country
+                </label>
+
+                <select
+                  id="settings-country"
+                  value={country}
+                  onChange={(event) =>
+                    savePreferences({
+                      country:
+                        event.target.value,
+                    })
+                  }
+                  disabled={!household}
+                  className="rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {countries
+                    .filter(
+                      (countryOption) =>
+                        countryOption.value
+                    )
+                    .map(
+                      (countryOption) => (
+                        <option
+                          key={
+                            countryOption.value
+                          }
+                          value={
+                            countryOption.value
+                          }
+                        >
+                          {
+                            countryOption.label
+                          }
+                        </option>
+                      )
+                    )}
+                </select>
+              </div>
+
+              <div className="grid gap-2">
               <label
                 htmlFor="settings-base-currency"
                 className="text-sm font-medium text-foreground"
@@ -201,12 +283,13 @@ export default function SettingsPage() {
                 id="settings-base-currency"
                 value={baseCurrency}
                 onChange={(event) =>
-                  handleBaseCurrencyChange(
-                    event.target.value
-                  )
+                  savePreferences({
+                    currency:
+                      event.target.value,
+                  })
                 }
                 disabled={!household}
-                className="max-w-xs rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {currencies
                   .filter(
@@ -222,11 +305,59 @@ export default function SettingsPage() {
                     </option>
                   ))}
               </select>
+              </div>
 
+              <div className="grid gap-2">
+                <label
+                  htmlFor="settings-timezone"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Time Zone
+                </label>
+
+                <select
+                  id="settings-timezone"
+                  value={timezone}
+                  onChange={(event) =>
+                    savePreferences({
+                      timezone:
+                        event.target.value,
+                    })
+                  }
+                  disabled={!household}
+                  className="rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {timezones
+                    .filter(
+                      (timezoneOption) =>
+                        timezoneOption.value
+                    )
+                    .map(
+                      (timezoneOption) => (
+                        <option
+                          key={
+                            timezoneOption.value
+                          }
+                          value={
+                            timezoneOption.value
+                          }
+                        >
+                          {
+                            timezoneOption.label
+                          }
+                        </option>
+                      )
+                    )}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
               <p className="text-xs text-muted-foreground">
-                This changes the household base display
-                currency going forward. It does not convert
-                or recompute historical records.
+                These are the preferences chosen during
+                household setup. Base currency changes apply
+                going forward and do not convert or recompute
+                historical records.
               </p>
 
               <p className="text-xs text-muted-foreground">
@@ -235,15 +366,15 @@ export default function SettingsPage() {
                 or used.
               </p>
 
-              {currencyMessage && (
+              {preferencesMessage && (
                 <p className="text-sm font-medium text-success">
-                  {currencyMessage}
+                  {preferencesMessage}
                 </p>
               )}
 
-              {currencyError && (
+              {preferencesError && (
                 <p className="text-sm font-medium text-destructive">
-                  {currencyError}
+                  {preferencesError}
                 </p>
               )}
             </div>
