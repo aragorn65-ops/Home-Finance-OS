@@ -161,7 +161,7 @@ Analytics respects the selected reporting month.
 
 Top Expense Categories can be opened to review the transactions behind a selected category for the current reporting month.
 
-The remittance calculator in Dashboard Quick Actions is display-only. It converts the selected month's locked household totals into another currency to help estimate how much to remit, but it does not change saved transactions, settlements, accounts, or Analytics history.
+The remittance calculator in Dashboard Quick Actions is display-only. It converts the selected month's locked household expense total into another currency and rounds the ballpark remittance up to the next 100 in the estimate currency, so the estimate is not lower than the calculated need. It does not include outstanding settlements and does not change saved transactions, settlements, accounts, or Analytics history.
 
 ---
 

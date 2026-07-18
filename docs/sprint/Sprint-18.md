@@ -58,6 +58,7 @@ Implemented:
 * Reused the existing rollback-protected local restore confirmation and reload flow after Drive backup selection.
 * Reused the short-lived Google Drive access token in memory so listing and selecting a backup behave like one restore session.
 * Added a clear empty state when no app-visible Google Drive backups are found.
+* Updated the Dashboard remittance calculator to exclude outstanding settlements and round the ballpark estimate up to the next 100.
 
 ---
 

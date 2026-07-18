@@ -205,6 +205,21 @@ function roundCurrency(
   );
 }
 
+function roundUpToNearestHundred(
+  amount: number
+): number {
+  if (amount <= 0) {
+    return 0;
+  }
+
+  return (
+    Math.ceil(
+      roundCurrencyAmount(amount) /
+        100
+    ) * 100
+  );
+}
+
 function getTransactionReportingCurrency(
   transactions: Transaction[],
   fallbackCurrency: string
@@ -1116,8 +1131,7 @@ export default function DashboardPage() {
               <span>Locked dashboard totals</span>
               <strong>
                 {formatCurrency(
-                  monthlyExpenses +
-                    totalOutstanding,
+                  monthlyExpenses,
                   lockedExpenseCurrency
                 )}
               </strong>
@@ -1219,31 +1233,15 @@ export default function DashboardPage() {
                 </strong>
               </div>
 
-              <div>
-                <span>Outstanding settlements</span>
-                <strong>
-                  {hasRemittanceRate
-                    ? formatCurrency(
-                        roundCurrencyAmount(
-                          totalOutstanding *
-                            effectiveRemittanceRate
-                        ),
-                        remittanceCurrency
-                      )
-                    : "Enter rate"}
-                </strong>
-              </div>
-
               <div className="remittance-estimate__total">
-                <span>Ballpark remittance</span>
+                <span>
+                  Ballpark remittance rounded up
+                </span>
                 <strong>
                   {hasRemittanceRate
                     ? formatCurrency(
-                        roundCurrencyAmount(
-                          (
-                            monthlyExpenses +
-                            totalOutstanding
-                          ) *
+                        roundUpToNearestHundred(
+                          monthlyExpenses *
                             effectiveRemittanceRate
                         ),
                         remittanceCurrency
@@ -1255,8 +1253,11 @@ export default function DashboardPage() {
 
             <p className="remittance-estimate__note">
               Display-only estimate from locked{" "}
-              {lockedExpenseCurrency} dashboard totals.
-              Saved transactions are not recomputed.
+              {lockedExpenseCurrency} monthly expenses,
+              rounded up to the next 100 in the estimate
+              currency so the remittance is not lower than
+              the calculated need. Saved transactions are not
+              recomputed.
             </p>
           </div>
         </DialogBody>
