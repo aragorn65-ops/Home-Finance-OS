@@ -16,6 +16,8 @@ import {
   loadHousehold,
 } from "../../household/services/householdStorage";
 
+import { currencies } from "../../../shared/data/currencies";
+
 import {
   OperationResults,
   type OperationResult,
@@ -91,11 +93,16 @@ export default class UtilityBillPersistenceService {
       );
     }
 
+    const householdCurrency =
+      this.resolveHouseholdCurrency(
+        household.currency
+      );
+
     const transactionForm =
       this.buildTransactionForm(
         form,
         calculation,
-        household.currency
+        householdCurrency
       );
 
     const result =
@@ -335,6 +342,27 @@ export default class UtilityBillPersistenceService {
     return Math.round(
       amount * 100
     );
+  }
+
+  private static resolveHouseholdCurrency(
+    currency: string
+  ): string {
+    const normalizedCurrency =
+      currency.trim().toUpperCase();
+
+    const validCurrencies =
+      currencies
+        .map(
+          (option) =>
+            option.value
+        )
+        .filter(Boolean);
+
+    return validCurrencies.includes(
+      normalizedCurrency
+    )
+      ? normalizedCurrency
+      : "PHP";
   }
 
   private static formatAmount(
