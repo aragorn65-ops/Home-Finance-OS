@@ -34,12 +34,14 @@ The goal is to calculate member shares when the bill is entered, keep provider p
 * Provider bill entry now captures provider name and due date.
 * Utilities now shows a Bills to Pay section for active unpaid provider bills.
 * Provider bills are included in new local and Google Drive backups.
+* Bills to Pay now supports Mark Paid with payer, optional account, payment date, reference, and payment receipt.
 
 ## Changed
 
 * Utility bill saving no longer creates a transaction or settlement obligation immediately.
 * Payment fields in Utilities are optional while the provider bill is unpaid.
 * Backup restore accepts older HFOS backups that do not yet contain provider-bill records.
+* Provider payment creates the utility transaction and settlement obligations from the saved bill share snapshot.
 
 ---
 

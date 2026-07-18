@@ -71,6 +71,7 @@ export interface UtilityProviderBill {
   paidByMemberId: string;
   sourceAccountId: string;
   paidAt: Date | null;
+  paymentReferenceNumber: string;
   transactionId: string;
 
   visibility: TransactionVisibility;

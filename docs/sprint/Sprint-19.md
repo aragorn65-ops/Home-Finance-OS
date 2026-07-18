@@ -25,8 +25,8 @@ Sprint 19 candidates include:
 * [x] Track provider name, amount, billing date, due date, notes, and bill attachments.
 * [x] Store member share snapshots at bill-entry time.
 * [x] Show Bills to Pay in Utilities.
-* Add Mark as Paid with payer, payment account, payment date, reference, and receipt proof.
-* Create the transaction and settlement obligations only when the provider bill is marked paid.
+* [x] Add Mark as Paid with payer, payment account, payment date, reference, and receipt proof.
+* [x] Create the transaction and settlement obligations only when the provider bill is marked paid.
 * [x] Include provider bills in local backup and Google Drive backup/restore.
 
 ---
@@ -39,6 +39,8 @@ Sprint 19 candidates include:
 * Utilities now saves calculated bills as unpaid provider bills without requiring Paid By.
 * Provider name and due date are part of bill entry.
 * Bills to Pay appears in Utilities for active unpaid provider bills.
+* Mark Paid now captures payer, account, payment date, reference, and provider-payment receipt.
+* Mark Paid creates the utility expense transaction and settlement obligations from the saved share snapshot.
 * Backup/restore includes provider bills, while older backups without this collection still restore with an empty provider-bill list.
 
 ---
@@ -75,6 +77,6 @@ Manual QA should include:
 * Enter an electricity provider bill with no payer and save it as unpaid.
 * Confirm member shares are shown before payment.
 * Confirm unpaid provider bills appear in Utilities.
-* Mark a provider bill as paid with payer, account, reference, and receipt. (Next increment)
-* Confirm payment creates the transaction and settlement obligations. (Next increment)
+* Mark a provider bill as paid with payer, account, reference, and receipt.
+* Confirm payment creates the transaction and settlement obligations.
 * Confirm backup/restore preserves unpaid and paid provider bills.

@@ -8,8 +8,14 @@ import {
 } from "../../../shared/types";
 
 import type {
+  StoredAttachment,
+} from "../../../shared/models/StoredAttachment";
+
+import type {
   UtilityBillForm,
 } from "../models/UtilityBillForm";
+
+import UtilityBillPersistenceService from "./UtilityBillPersistenceService";
 
 import type {
   UtilityBillShareResult,
@@ -34,6 +40,10 @@ export default class UtilityProviderBillService {
     return UtilityProviderBillRepository
       .findActiveByHouseholdId(
         household.id
+      )
+      .filter(
+        (providerBill) =>
+          providerBill.status === "unpaid"
       )
       .sort(
         (left, right) =>
@@ -134,6 +144,7 @@ export default class UtilityProviderBillService {
       paidByMemberId: "",
       sourceAccountId: "",
       paidAt: null,
+      paymentReferenceNumber: "",
       transactionId: "",
 
       visibility:
@@ -159,6 +170,132 @@ export default class UtilityProviderBillService {
     return OperationResults.success(
       savedProviderBill,
       "Provider bill saved as unpaid. Member shares are ready, and no payment transaction was created yet."
+    );
+  }
+
+  static markPaid(
+    providerBillId: string,
+    payment: {
+      paidByMemberId: string;
+      sourceAccountId: string;
+      paidAt: string;
+      referenceNumber: string;
+      paymentAttachments: StoredAttachment[];
+    }
+  ): OperationResult<UtilityProviderBill> {
+    const providerBill =
+      UtilityProviderBillRepository.findById(
+        providerBillId
+      );
+
+    if (!providerBill) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          providerBill:
+            "Select a valid provider bill.",
+        },
+        "Provider bill was not found."
+      );
+    }
+
+    if (providerBill.status === "paid") {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          providerBill:
+            "This provider bill is already marked paid.",
+        },
+        "Provider bill is already paid."
+      );
+    }
+
+    if (!payment.paidByMemberId.trim()) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          paidByMemberId:
+            "Select the household member who paid the provider.",
+        },
+        "Unable to mark the provider bill paid."
+      );
+    }
+
+    if (!isValidDate(payment.paidAt)) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          paidAt:
+            "Enter a valid provider payment date.",
+        },
+        "Unable to mark the provider bill paid."
+      );
+    }
+
+    const transactionForm =
+      buildPaidUtilityForm(
+        providerBill,
+        payment
+      );
+
+    const saveResult =
+      UtilityBillPersistenceService.save(
+        transactionForm,
+        providerBill.calculationSnapshot
+      );
+
+    if (!saveResult.success) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        saveResult.errors,
+        saveResult.message ??
+          "Unable to create the provider payment transaction."
+      );
+    }
+
+    const updatedProviderBill:
+      UtilityProviderBill = {
+      ...providerBill,
+      status: "paid",
+      paidByMemberId:
+        payment.paidByMemberId.trim(),
+      sourceAccountId:
+        payment.sourceAccountId.trim(),
+      paidAt:
+        parseDateInput(
+          payment.paidAt
+        ),
+      paymentReferenceNumber:
+        payment.referenceNumber.trim(),
+      paymentAttachments:
+        payment.paymentAttachments.map(
+          (attachment) => ({
+            ...attachment,
+            createdAt:
+              new Date(
+                attachment.createdAt
+              ),
+          })
+        ),
+      transactionId:
+        saveResult.data?.id ?? "",
+      updatedAt:
+        new Date(),
+    };
+
+    const savedProviderBill =
+      UtilityProviderBillRepository.update(
+        updatedProviderBill
+      );
+
+    return OperationResults.success(
+      savedProviderBill,
+      "Provider bill marked paid. HFOS created the transaction and settlement obligations."
     );
   }
 }
@@ -208,6 +345,88 @@ function buildFormSnapshot(
   };
 }
 
+function buildPaidUtilityForm(
+  providerBill: UtilityProviderBill,
+  payment: {
+    paidByMemberId: string;
+    sourceAccountId: string;
+    paidAt: string;
+    referenceNumber: string;
+    paymentAttachments: StoredAttachment[];
+  }
+): UtilityBillForm {
+  const paymentNote =
+    payment.referenceNumber.trim()
+      ? `Payment reference: ${payment.referenceNumber.trim()}`
+      : "";
+
+  return {
+    utilityType:
+      providerBill.formSnapshot.utilityType,
+    unit:
+      providerBill.formSnapshot.unit,
+
+    providerName:
+      providerBill.formSnapshot.providerName,
+    billingDate:
+      providerBill.formSnapshot.billingDate,
+    dueDate:
+      providerBill.formSnapshot.dueDate,
+
+    totalBillAmount:
+      providerBill.formSnapshot.totalBillAmount,
+    ratePerUnit:
+      providerBill.formSnapshot.ratePerUnit,
+    totalConsumption:
+      providerBill.formSnapshot.totalConsumption,
+
+    memberShares:
+      providerBill.formSnapshot.memberShares.map(
+        (memberShare) => ({
+          ...memberShare,
+        })
+      ),
+    applianceUsages:
+      providerBill.formSnapshot.applianceUsages.map(
+        (usage) => ({
+          ...usage,
+        })
+      ),
+
+    paidByMemberId:
+      payment.paidByMemberId.trim(),
+    sourceAccountId:
+      payment.sourceAccountId.trim(),
+
+    visibility:
+      providerBill.formSnapshot.visibility,
+    description:
+      providerBill.formSnapshot.description,
+    notes: [
+      providerBill.formSnapshot.notes,
+      paymentNote,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+
+    attachments: [
+      ...providerBill.billAttachments,
+      ...payment.paymentAttachments,
+    ].map((attachment) => ({
+      ...attachment,
+      createdAt:
+        new Date(
+          attachment.createdAt
+        ),
+    })),
+
+    transactionDate:
+      payment.paidAt,
+    isActive:
+      providerBill.isActive,
+  };
+}
+
 function cloneCalculation(
   calculation: UtilityBillShareResult
 ): UtilityBillShareResult {
@@ -233,6 +452,17 @@ function parseDateInput(
   )
     ? new Date()
     : date;
+}
+
+function isValidDate(
+  value: string
+): boolean {
+  return (
+    Boolean(value) &&
+    !Number.isNaN(
+      new Date(value).getTime()
+    )
+  );
 }
 
 function createProviderBillId():

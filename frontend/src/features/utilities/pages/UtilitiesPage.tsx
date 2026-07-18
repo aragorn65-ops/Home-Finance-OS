@@ -1,10 +1,14 @@
 import {
   useRef,
   useState,
+  type ChangeEvent,
 } from "react";
 
 import PageHeader from "../../../shared/ui/PageHeader";
 import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
+import type {
+  StoredAttachment,
+} from "../../../shared/models/StoredAttachment";
 import useReportingMonth from "../../../shared/hooks/useReportingMonth";
 import {
   formatDateInput,
@@ -30,6 +34,14 @@ import UtilityProviderBillService from "../services/UtilityProviderBillService";
 import type {
   UtilityProviderBill,
 } from "../models/UtilityProviderBill";
+
+interface ProviderPaymentForm {
+  paidByMemberId: string;
+  sourceAccountId: string;
+  paidAt: string;
+  referenceNumber: string;
+  paymentAttachments: StoredAttachment[];
+}
 
 export default function UtilitiesPage() {
   const {
@@ -75,6 +87,13 @@ export default function UtilitiesPage() {
       UtilityProviderBillService.getActiveProviderBills()
   );
 
+  const [
+    providerPaymentForms,
+    setProviderPaymentForms,
+  ] = useState<
+    Record<string, ProviderPaymentForm>
+  >({});
+
   const notificationRef =
     useRef<HTMLDivElement | null>(
       null
@@ -117,6 +136,184 @@ export default function UtilitiesPage() {
             behavior: "smooth",
             block: "center",
           });
+      }
+    );
+  };
+
+  const getProviderPaymentForm = (
+    providerBillId: string
+  ): ProviderPaymentForm =>
+    providerPaymentForms[
+      providerBillId
+    ] ?? {
+      paidByMemberId: "",
+      sourceAccountId: "",
+      paidAt:
+        formatDateInput(new Date()),
+      referenceNumber: "",
+      paymentAttachments: [],
+    };
+
+  const updateProviderPaymentForm = (
+    providerBillId: string,
+    updates:
+      Partial<ProviderPaymentForm>
+  ): void => {
+    setProviderPaymentForms(
+      (current) => ({
+        ...current,
+
+        [providerBillId]: {
+          ...(
+            current[providerBillId] ??
+            getProviderPaymentForm(
+              providerBillId
+            )
+          ),
+          ...updates,
+        },
+      })
+    );
+  };
+
+  const handleMarkProviderBillPaid = (
+    providerBillId: string
+  ): void => {
+    setSaveMessage("");
+    setSaveError("");
+
+    const result =
+      UtilityProviderBillService.markPaid(
+        providerBillId,
+        getProviderPaymentForm(
+          providerBillId
+        )
+      );
+
+    if (!result.success) {
+      const errors =
+        result.errors ?? {};
+
+      const firstError =
+        Object.values(errors)[0];
+
+      setSaveError(
+        firstError ??
+          result.message ??
+          "Unable to mark the provider bill paid."
+      );
+
+      setValidationAlertErrors(
+        Object.keys(errors).length > 0
+          ? errors
+          : {
+              general:
+                result.message ??
+                "Unable to mark the provider bill paid.",
+            }
+      );
+
+      setIsValidationAlertOpen(true);
+      showNotification();
+
+      return;
+    }
+
+    setSaveMessage(
+      result.message ??
+        "Provider bill marked paid."
+    );
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
+    setProviderBills(
+      UtilityProviderBillService.getActiveProviderBills()
+    );
+    setProviderPaymentForms(
+      (current) => {
+        const next = {
+          ...current,
+        };
+
+        delete next[providerBillId];
+
+        return next;
+      }
+    );
+
+    showNotification();
+  };
+
+  const handlePaymentReceiptChange = (
+    providerBillId: string,
+    event:
+      ChangeEvent<HTMLInputElement>
+  ): void => {
+    const file =
+      event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    void readFileAsDataUrl(file)
+      .then((dataUrl) => {
+        const currentForm =
+          getProviderPaymentForm(
+            providerBillId
+          );
+
+        updateProviderPaymentForm(
+          providerBillId,
+          {
+            paymentAttachments: [
+              ...currentForm
+                .paymentAttachments,
+              {
+                id:
+                  createAttachmentId(),
+                category: "receipt",
+                fileName:
+                  file.name,
+                mimeType:
+                  file.type ||
+                  "application/octet-stream",
+                sizeBytes:
+                  file.size,
+                dataUrl,
+                createdAt:
+                  new Date(),
+              },
+            ],
+          }
+        );
+      })
+      .catch(() => {
+        setSaveError(
+          "Payment receipt could not be attached."
+        );
+      });
+  };
+
+  const handleRemovePaymentReceipt = (
+    providerBillId: string,
+    attachmentId: string
+  ): void => {
+    const currentForm =
+      getProviderPaymentForm(
+        providerBillId
+      );
+
+    updateProviderPaymentForm(
+      providerBillId,
+      {
+        paymentAttachments:
+          currentForm.paymentAttachments.filter(
+            (attachment) =>
+              attachment.id !==
+              attachmentId
+          ),
       }
     );
   };
@@ -311,6 +508,29 @@ export default function UtilitiesPage() {
                         </p>
                       </div>
                     </div>
+
+                    <ProviderBillPaymentControls
+                      providerBillId={
+                        providerBill.id
+                      }
+                      paymentForm={getProviderPaymentForm(
+                        providerBill.id
+                      )}
+                      members={memberOptions}
+                      accounts={accountOptions}
+                      onChange={
+                        updateProviderPaymentForm
+                      }
+                      onMarkPaid={
+                        handleMarkProviderBillPaid
+                      }
+                      onAttachReceipt={
+                        handlePaymentReceiptChange
+                      }
+                      onRemoveReceipt={
+                        handleRemovePaymentReceipt
+                      }
+                    />
                   </article>
                 )
               )}
@@ -348,6 +568,279 @@ export default function UtilitiesPage() {
       </div>
     </>
   );
+}
+
+interface ProviderBillPaymentControlsProps {
+  providerBillId: string;
+  paymentForm: ProviderPaymentForm;
+  members: {
+    id: string;
+    name: string;
+  }[];
+  accounts: {
+    id: string;
+    name: string;
+    ownerMemberId: string;
+  }[];
+  onChange: (
+    providerBillId: string,
+    updates: Partial<ProviderPaymentForm>
+  ) => void;
+  onMarkPaid: (
+    providerBillId: string
+  ) => void;
+  onAttachReceipt: (
+    providerBillId: string,
+    event: ChangeEvent<HTMLInputElement>
+  ) => void;
+  onRemoveReceipt: (
+    providerBillId: string,
+    attachmentId: string
+  ) => void;
+}
+
+function ProviderBillPaymentControls({
+  providerBillId,
+  paymentForm,
+  members,
+  accounts,
+  onChange,
+  onMarkPaid,
+  onAttachReceipt,
+  onRemoveReceipt,
+}: ProviderBillPaymentControlsProps) {
+  const paymentAccounts =
+    accounts.filter(
+      (account) =>
+        account.ownerMemberId ===
+        paymentForm.paidByMemberId
+    );
+
+  return (
+    <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-6">
+      <label className="text-sm font-medium text-slate-700">
+        Paid By
+        <select
+          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          value={paymentForm.paidByMemberId}
+          onChange={(event) =>
+            onChange(
+              providerBillId,
+              {
+                paidByMemberId:
+                  event.target.value,
+                sourceAccountId: "",
+              }
+            )
+          }
+        >
+          <option value="">
+            Select payer
+          </option>
+
+          {members.map((member) => (
+            <option
+              key={member.id}
+              value={member.id}
+            >
+              {member.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="text-sm font-medium text-slate-700">
+        Account
+        <select
+          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+          value={
+            paymentForm.sourceAccountId
+          }
+          disabled={
+            !paymentForm.paidByMemberId
+          }
+          onChange={(event) =>
+            onChange(
+              providerBillId,
+              {
+                sourceAccountId:
+                  event.target.value,
+              }
+            )
+          }
+        >
+          <option value="">
+            {paymentForm.paidByMemberId
+              ? "No account"
+              : "Select payer first"}
+          </option>
+
+          {paymentAccounts.map(
+            (account) => (
+              <option
+                key={account.id}
+                value={account.id}
+              >
+                {account.name}
+              </option>
+            )
+          )}
+        </select>
+      </label>
+
+      <label className="text-sm font-medium text-slate-700">
+        Payment Date
+        <input
+          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          type="date"
+          value={paymentForm.paidAt}
+          onChange={(event) =>
+            onChange(
+              providerBillId,
+              {
+                paidAt:
+                  event.target.value,
+              }
+            )
+          }
+        />
+      </label>
+
+      <label className="text-sm font-medium text-slate-700">
+        Reference
+        <input
+          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          type="text"
+          value={
+            paymentForm.referenceNumber
+          }
+          onChange={(event) =>
+            onChange(
+              providerBillId,
+              {
+                referenceNumber:
+                  event.target.value,
+              }
+            )
+          }
+          placeholder="Optional"
+        />
+      </label>
+
+      <label className="text-sm font-medium text-slate-700">
+        Receipt
+        <input
+          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          type="file"
+          accept="image/*,application/pdf"
+          onChange={(event) =>
+            onAttachReceipt(
+              providerBillId,
+              event
+            )
+          }
+        />
+      </label>
+
+      <div className="flex items-end">
+        <button
+          type="button"
+          className="h-10 w-full rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
+          onClick={() =>
+            onMarkPaid(providerBillId)
+          }
+        >
+          Mark Paid
+        </button>
+      </div>
+
+      {paymentForm.paymentAttachments.length >
+        0 && (
+        <div className="md:col-span-2 lg:col-span-6">
+          <div className="flex flex-wrap gap-2">
+            {paymentForm.paymentAttachments.map(
+              (attachment) => (
+                <span
+                  key={attachment.id}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600"
+                >
+                  {attachment.fileName}
+
+                  <button
+                    type="button"
+                    className="font-semibold text-red-600"
+                    onClick={() =>
+                      onRemoveReceipt(
+                        providerBillId,
+                        attachment.id
+                      )
+                    }
+                  >
+                    Remove
+                  </button>
+                </span>
+              )
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function readFileAsDataUrl(
+  file: File
+): Promise<string> {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+      const reader =
+        new FileReader();
+
+      reader.onload = () => {
+        if (
+          typeof reader.result ===
+          "string"
+        ) {
+          resolve(reader.result);
+
+          return;
+        }
+
+        reject(
+          new Error(
+            "File could not be read."
+          )
+        );
+      };
+
+      reader.onerror = () => {
+        reject(
+          reader.error ??
+            new Error(
+              "File could not be read."
+            )
+        );
+      };
+
+      reader.readAsDataURL(file);
+    }
+  );
+}
+
+function createAttachmentId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    "randomUUID" in crypto
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `payment-receipt-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
 }
 
 function formatCurrency(

@@ -72,6 +72,21 @@ export default class UtilityProviderBillRepository {
       );
   }
 
+  static findById(
+    id: string
+  ): UtilityProviderBill | undefined {
+    this.ensureInitialized();
+
+    const providerBill =
+      this.providerBills.find(
+        (item) => item.id === id
+      );
+
+    return providerBill
+      ? this.clone(providerBill)
+      : undefined;
+  }
+
   static create(
     providerBill:
       UtilityProviderBill
@@ -82,6 +97,24 @@ export default class UtilityProviderBillRepository {
       ...this.providerBills,
       this.clone(providerBill),
     ];
+
+    this.persist();
+
+    return this.clone(providerBill);
+  }
+
+  static update(
+    providerBill:
+      UtilityProviderBill
+  ): UtilityProviderBill {
+    this.ensureInitialized();
+
+    this.providerBills =
+      this.providerBills.map((item) =>
+        item.id === providerBill.id
+          ? this.clone(providerBill)
+          : item
+      );
 
     this.persist();
 
