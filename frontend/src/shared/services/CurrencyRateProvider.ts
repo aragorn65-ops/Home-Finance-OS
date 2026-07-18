@@ -31,10 +31,10 @@ export interface CurrencyRateRequest {
 }
 
 interface FrankfurterResponse {
-  amount?: number;
   base?: string;
+  quote?: string;
   date?: string;
-  rates?: Record<string, number>;
+  rate?: number;
 }
 
 class FrankfurterRateProvider
@@ -69,9 +69,10 @@ class FrankfurterRateProvider
     }
 
     const url =
-      `https://api.frankfurter.app/${request.effectiveDate}` +
-      `?from=${encodeURIComponent(fromCurrency)}` +
-      `&to=${encodeURIComponent(toCurrency)}`;
+      `https://api.frankfurter.dev/v2/rate/` +
+      `${encodeURIComponent(fromCurrency)}/` +
+      `${encodeURIComponent(toCurrency)}` +
+      `?date=${encodeURIComponent(request.effectiveDate)}`;
 
     const response =
       await fetch(url);
@@ -86,7 +87,7 @@ class FrankfurterRateProvider
       (await response.json()) as FrankfurterResponse;
 
     const rate =
-      payload.rates?.[toCurrency];
+      payload.rate;
 
     if (
       !Number.isFinite(rate) ||

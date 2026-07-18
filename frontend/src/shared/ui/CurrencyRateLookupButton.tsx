@@ -70,9 +70,11 @@ export default function CurrencyRateLookupButton({
         `${rate.providerName ?? "Provider"} rate applied for ${rate.effectiveDate}.`
       );
     }
-    catch {
+    catch (error) {
       setMessage(
-        "Rate lookup unavailable. Enter the rate manually."
+        error instanceof Error
+          ? `${error.message} Enter the rate manually.`
+          : "Rate lookup unavailable. Enter the rate manually."
       );
     }
     finally {
