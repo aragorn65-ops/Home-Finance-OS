@@ -448,25 +448,6 @@ export default function SettingsPage() {
                   />
                 )}
 
-                {hasSavedTransactions && (
-                  <div className="settings-currency-warning">
-                    <strong>
-                      Historical records stay locked.
-                    </strong>
-
-                    <span>
-                      This household already has{" "}
-                      {transactionCount} transaction
-                      {transactionCount === 1
-                        ? ""
-                        : "s"}
-                      . Changing the base currency updates
-                      future defaults only; existing
-                      transactions keep their saved currency,
-                      exchange rate, and converted amount.
-                    </span>
-                  </div>
-                )}
               </div>
 
               <div className="settings-preferences-field">
@@ -540,6 +521,23 @@ export default function SettingsPage() {
               </div>
 
               <div className="settings-preferences-note">
+                {hasSavedTransactions && (
+                  <p>
+                    <strong>
+                      Historical records stay locked.
+                    </strong>{" "}
+                    This household already has{" "}
+                    {transactionCount} transaction
+                    {transactionCount === 1
+                      ? ""
+                      : "s"}
+                    . Changing the base currency updates
+                    future defaults only; existing
+                    transactions keep their saved currency,
+                    exchange rate, and converted amount.
+                  </p>
+                )}
+
                 <p>
                   These are the preferences chosen during
                   household setup. Base currency changes apply
