@@ -43,6 +43,7 @@ This release adds date-specific currency-rate lookup, preserves manual exchange-
 * Added contextual Settings warning guidance when changing base currency after transactions exist, hidden for households with no transactions.
 * Added a household-preserving Clear Test Data action for repeated QA cleanup.
 * Kept Reset All Application Data as the full delete-and-return-to-setup path.
+* New households now start with empty financial collections and zero transactions.
 
 ---
 
@@ -101,6 +102,7 @@ Before finalizing this alpha, manually verify:
 * Settings warning appears inside the preferences box when transactions exist, stays hidden when there are no transactions, and has no dropdown overlap in constrained layouts.
 * Clear Test Data removes financial records and leftover HFOS preview/test-data keys while keeping the household setup.
 * Reset All Application Data removes the household and returns to first-time setup.
+* Creating a new household starts with zero transactions.
 * Historical records keep their saved rate, effective date, and converted amounts until edited.
 * Transaction attachments work via file picker, paste, and drag/drop.
 * Attachment preview remains centered and constrained for images and PDFs.

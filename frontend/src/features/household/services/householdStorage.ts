@@ -69,6 +69,9 @@ export function saveHousehold(
   const existing =
     loadHousehold();
 
+  const isNewHousehold =
+    !existing;
+
   const now =
     new Date();
 
@@ -114,6 +117,10 @@ export function saveHousehold(
   persistHousehold(
     storedHousehold
   );
+
+  if (isNewHousehold) {
+    initializeEmptyFinancialCollections();
+  }
 
   return cloneHousehold(
     storedHousehold
@@ -745,5 +752,46 @@ function isRecord(
     typeof value ===
       "object" &&
     value !== null
+  );
+}
+
+function initializeEmptyFinancialCollections():
+  void {
+  saveStoredData(
+    HFOS_STORAGE_KEYS.accounts,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.transactions,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS
+      .expenseAllocations,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.settlements,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS
+      .settlementApplications,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.savingsGoals,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS
+      .savingsActivities,
+    []
   );
 }

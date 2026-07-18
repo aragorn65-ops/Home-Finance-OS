@@ -138,6 +138,7 @@ Implemented:
 * Added contextual Settings warning guidance inside the preference box when saved transactions exist, explaining that base-currency changes affect future defaults only while historical records stay locked; the warning is hidden for households with no transactions.
 * Added a household-preserving Clear Test Data action for repeated QA cleanup of accounts, transactions, settlements, savings, utility-bill records, and leftover HFOS preview keys.
 * Kept Reset All Application Data as the full delete-and-return-to-setup path while preserving display-only preferences such as theme.
+* Initialized new households with empty financial collections so first-time setup starts with zero transactions instead of demo records.
 
 ---
 
