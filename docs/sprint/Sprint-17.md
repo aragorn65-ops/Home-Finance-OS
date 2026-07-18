@@ -46,6 +46,12 @@ Recommended first slice:
 * Keep restore all-or-nothing.
 * Do not upload to third-party storage yet.
 
+Implemented:
+
+* Added a reusable application data-health summary derived from the same storage package used by local backup export.
+* Exposed current browser package details in Settings Data & Backup, including household, schema version, theme preference, and collection counts.
+* Disabled Export Backup when the current browser data is not exportable.
+
 ---
 
 ## Deferred
@@ -72,6 +78,7 @@ git diff --check
 Manual QA should include:
 
 * Confirm Settings data health or package metadata matches the current browser data.
+* Confirm Export Backup is disabled when there is no exportable household data.
 * Export a backup and confirm package details match the app preview.
 * Restore a valid backup after Clear Test Data.
 * Reject invalid JSON.

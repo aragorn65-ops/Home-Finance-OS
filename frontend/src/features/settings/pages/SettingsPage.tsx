@@ -33,8 +33,10 @@ import {
 } from "../../startup/services/applicationDataReset";
 import {
   createApplicationBackup,
+  getApplicationDataHealthSummary,
   restoreApplicationBackup,
   validateApplicationBackup,
+  type ApplicationDataHealthSummary,
   type ApplicationBackupSummary,
 } from "../../startup/services/applicationBackup";
 import TransactionService from "../../transactions/services/TransactionService";
@@ -218,6 +220,9 @@ export default function SettingsPage() {
 
   const hasSavedTransactions =
     transactionCount > 0;
+
+  const dataHealthSummary =
+    getApplicationDataHealthSummary();
 
   const hasPreferenceChanges =
     Boolean(household) &&
@@ -887,7 +892,10 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={handleExportBackup}
-                disabled={!household}
+                disabled={
+                  !dataHealthSummary
+                    .isExportable
+                }
                 className="settings-secondary-button"
               >
                 Export Backup
@@ -911,6 +919,27 @@ export default function SettingsPage() {
                   disabled={!household}
                 />
               </label>
+            </div>
+
+            <div className="settings-data-health">
+              <div>
+                <h3>
+                  Current Browser Data
+                </h3>
+
+                <p>
+                  {
+                    dataHealthSummary
+                      .message
+                  }
+                </p>
+              </div>
+
+              <DataHealthSummaryList
+                summary={
+                  dataHealthSummary
+                }
+              />
             </div>
 
             {isConfirmingRestore && (
@@ -1107,6 +1136,81 @@ export default function SettingsPage() {
   );
 }
 
+function DataHealthSummaryList({
+  summary,
+}: {
+  summary: ApplicationDataHealthSummary;
+}) {
+  return (
+    <dl className="settings-backup-summary">
+      <div>
+        <dt>Household</dt>
+        <dd>{summary.householdName}</dd>
+      </div>
+
+      <div>
+        <dt>Schema</dt>
+        <dd>
+          v{summary.storageSchemaVersion}
+        </dd>
+      </div>
+
+      <div>
+        <dt>Theme</dt>
+        <dd>
+          {formatThemePreference(
+            summary.themePreference
+          )}
+        </dd>
+      </div>
+
+      <div>
+        <dt>Accounts</dt>
+        <dd>{summary.accountCount}</dd>
+      </div>
+
+      <div>
+        <dt>Transactions</dt>
+        <dd>{summary.transactionCount}</dd>
+      </div>
+
+      <div>
+        <dt>Allocations</dt>
+        <dd>
+          {summary.expenseAllocationCount}
+        </dd>
+      </div>
+
+      <div>
+        <dt>Settlements</dt>
+        <dd>{summary.settlementCount}</dd>
+      </div>
+
+      <div>
+        <dt>Applications</dt>
+        <dd>
+          {
+            summary
+              .settlementApplicationCount
+          }
+        </dd>
+      </div>
+
+      <div>
+        <dt>Savings Goals</dt>
+        <dd>{summary.savingsGoalCount}</dd>
+      </div>
+
+      <div>
+        <dt>Savings Activity</dt>
+        <dd>
+          {summary.savingsActivityCount}
+        </dd>
+      </div>
+    </dl>
+  );
+}
+
 function BackupSummaryList({
   summary,
 }: {
@@ -1149,6 +1253,15 @@ function BackupSummaryList({
       </div>
     </dl>
   );
+}
+
+function formatThemePreference(
+  value: string
+): string {
+  return value
+    .replace(/^\w/, (letter) =>
+      letter.toUpperCase()
+    );
 }
 
 function formatBackupDate(

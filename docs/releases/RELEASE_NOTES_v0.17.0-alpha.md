@@ -26,6 +26,14 @@ This release should keep HFOS browser-local while making exported data easier to
 
 ---
 
+## Implemented
+
+* Added a current browser data-health summary in Settings Data & Backup.
+* Showed household, storage schema version, theme preference, and collection counts before export.
+* Disabled Export Backup when the current browser data is not exportable.
+
+---
+
 ## Package Rules
 
 * Package metadata should identify the household.
@@ -53,6 +61,7 @@ This release should keep HFOS browser-local while making exported data easier to
 Before finalizing this alpha, manually verify:
 
 * Settings data health or package metadata matches current browser data.
+* Export Backup is disabled when there is no exportable household data.
 * Exported backup details match the app preview.
 * Valid backup restore works after Clear Test Data.
 * Invalid JSON restore shows a clear error.

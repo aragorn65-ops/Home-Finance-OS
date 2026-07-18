@@ -61,6 +61,32 @@ export interface ApplicationBackupSummary {
   savingsGoalCount: number;
 }
 
+export interface ApplicationDataHealthSummary {
+  householdName: string;
+
+  storageSchemaVersion: number;
+
+  themePreference: ThemePreference;
+
+  accountCount: number;
+
+  transactionCount: number;
+
+  expenseAllocationCount: number;
+
+  settlementCount: number;
+
+  settlementApplicationCount: number;
+
+  savingsGoalCount: number;
+
+  savingsActivityCount: number;
+
+  isExportable: boolean;
+
+  message: string;
+}
+
 export type ApplicationRestoreResult =
   | {
       success: true;
@@ -195,6 +221,42 @@ export function createApplicationBackup():
         2
       ),
   };
+}
+
+export function getApplicationDataHealthSummary():
+  ApplicationDataHealthSummary {
+  const storage =
+    getLocalStorage();
+
+  if (!storage) {
+    return createUnavailableDataHealthSummary(
+      "Browser local storage is unavailable."
+    );
+  }
+
+  const records:
+    ApplicationBackupFile["records"] = {};
+
+  for (const key of backupStorageKeys) {
+    const readResult =
+      readStoredEnvelopeData(
+        storage,
+        key
+      );
+
+    if (!readResult.success) {
+      return createUnavailableDataHealthSummary(
+        readResult.message
+      );
+    }
+
+    records[key] =
+      readResult.data;
+  }
+
+  return createDataHealthSummary(
+    records
+  );
 }
 
 export function restoreApplicationBackup(
@@ -632,6 +694,99 @@ function createBackupSummary(
   };
 }
 
+function createDataHealthSummary(
+  records: ApplicationBackupFile["records"]
+): ApplicationDataHealthSummary {
+  const household =
+    records[
+      HFOS_STORAGE_KEYS.household
+    ];
+
+  const householdName =
+    isRecord(household) &&
+    typeof household.householdName ===
+      "string"
+      ? household.householdName
+      : "No household";
+
+  const hasHousehold =
+    isRecord(household);
+
+  return {
+    householdName,
+    storageSchemaVersion:
+      HFOS_STORAGE_SCHEMA_VERSION,
+    themePreference:
+      getStoredThemePreference(),
+    accountCount:
+      getRecordCollectionCount(
+        records,
+        HFOS_STORAGE_KEYS.accounts
+      ),
+    transactionCount:
+      getRecordCollectionCount(
+        records,
+        HFOS_STORAGE_KEYS.transactions
+      ),
+    expenseAllocationCount:
+      getRecordCollectionCount(
+        records,
+        HFOS_STORAGE_KEYS
+          .expenseAllocations
+      ),
+    settlementCount:
+      getRecordCollectionCount(
+        records,
+        HFOS_STORAGE_KEYS.settlements
+      ),
+    settlementApplicationCount:
+      getRecordCollectionCount(
+        records,
+        HFOS_STORAGE_KEYS
+          .settlementApplications
+      ),
+    savingsGoalCount:
+      getRecordCollectionCount(
+        records,
+        HFOS_STORAGE_KEYS.savingsGoals
+      ),
+    savingsActivityCount:
+      getRecordCollectionCount(
+        records,
+        HFOS_STORAGE_KEYS
+          .savingsActivities
+      ),
+    isExportable:
+      hasHousehold,
+    message:
+      hasHousehold
+        ? "Current browser data is ready for local backup export."
+        : "Create or restore a household before exporting a backup.",
+  };
+}
+
+function createUnavailableDataHealthSummary(
+  message: string
+): ApplicationDataHealthSummary {
+  return {
+    householdName:
+      "Unavailable",
+    storageSchemaVersion:
+      HFOS_STORAGE_SCHEMA_VERSION,
+    themePreference:
+      "system",
+    accountCount: 0,
+    transactionCount: 0,
+    expenseAllocationCount: 0,
+    settlementCount: 0,
+    settlementApplicationCount: 0,
+    savingsGoalCount: 0,
+    savingsActivityCount: 0,
+    isExportable: false,
+    message,
+  };
+}
+
 function isBackupSummary(
   value: unknown
 ): value is ApplicationBackupSummary {
@@ -677,6 +832,18 @@ function getCollectionCount(
 ): number {
   const value =
     backup.records[key];
+
+  return Array.isArray(value)
+    ? value.length
+    : 0;
+}
+
+function getRecordCollectionCount(
+  records: ApplicationBackupFile["records"],
+  key: HfosStorageKey
+): number {
+  const value =
+    records[key];
 
   return Array.isArray(value)
     ? value.length
