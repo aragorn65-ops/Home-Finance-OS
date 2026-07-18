@@ -32,9 +32,15 @@ const collectionKeys =
     HFOS_STORAGE_KEYS.settlements,
     HFOS_STORAGE_KEYS
       .settlementApplications,
+    HFOS_STORAGE_KEYS.providerBills,
     HFOS_STORAGE_KEYS.savingsGoals,
     HFOS_STORAGE_KEYS
       .savingsActivities,
+  ]);
+
+const optionalBackupStorageKeys =
+  new Set<HfosStorageKey>([
+    HFOS_STORAGE_KEYS.providerBills,
   ]);
 
 export interface ApplicationBackupResult {
@@ -71,6 +77,8 @@ export interface ApplicationBackupSummary {
   savingsGoalCount: number;
 
   savingsActivityCount?: number;
+
+  providerBillCount?: number;
 }
 
 export interface ApplicationDataHealthSummary {
@@ -93,6 +101,8 @@ export interface ApplicationDataHealthSummary {
   savingsGoalCount: number;
 
   savingsActivityCount: number;
+
+  providerBillCount: number;
 
   isExportable: boolean;
 
@@ -312,6 +322,15 @@ export function restoreApplicationBackup(
   const backup =
     validation.backup;
 
+  const recordsToRestore = {
+    ...backup.records,
+
+    [HFOS_STORAGE_KEYS.providerBills]:
+      backup.records[
+        HFOS_STORAGE_KEYS.providerBills
+      ] ?? [],
+  };
+
   const snapshot =
     createRestoreSnapshot(storage);
 
@@ -319,7 +338,7 @@ export function restoreApplicationBackup(
     const writeResult =
       saveStoredData(
         key,
-        backup.records[key]
+        recordsToRestore[key]
       );
 
     if (!writeResult.success) {
@@ -586,7 +605,10 @@ function validateBackupFile(
   }
 
   for (const key of backupStorageKeys) {
-    if (!(key in backup.records)) {
+    if (
+      !(key in backup.records) &&
+      !optionalBackupStorageKeys.has(key)
+    ) {
       return {
         success: false,
         message:
@@ -610,6 +632,13 @@ function validateBackupFile(
   }
 
   for (const key of collectionKeys) {
+    if (
+      !(key in backup.records) &&
+      optionalBackupStorageKeys.has(key)
+    ) {
+      continue;
+    }
+
     if (
       !Array.isArray(
         backup.records[key]
@@ -743,6 +772,11 @@ function createBackupSummary(
         HFOS_STORAGE_KEYS
           .savingsActivities
       ),
+    providerBillCount:
+      getCollectionCount(
+        backup,
+        HFOS_STORAGE_KEYS.providerBills
+      ),
   };
 }
 
@@ -808,6 +842,11 @@ function createDataHealthSummary(
         HFOS_STORAGE_KEYS
           .savingsActivities
       ),
+    providerBillCount:
+      getRecordCollectionCount(
+        records,
+        HFOS_STORAGE_KEYS.providerBills
+      ),
     isExportable:
       hasHousehold,
     message:
@@ -834,6 +873,7 @@ function createUnavailableDataHealthSummary(
     settlementApplicationCount: 0,
     savingsGoalCount: 0,
     savingsActivityCount: 0,
+    providerBillCount: 0,
     isExportable: false,
     message,
   };
@@ -852,6 +892,7 @@ function isBackupSummary(
     "expenseAllocationCount",
     "settlementApplicationCount",
     "savingsActivityCount",
+    "providerBillCount",
   ];
 
   const optionalNumbersAreValid =

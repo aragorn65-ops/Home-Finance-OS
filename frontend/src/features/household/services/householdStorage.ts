@@ -793,6 +793,11 @@ function initializeEmptyFinancialCollections():
   );
 
   saveStoredData(
+    HFOS_STORAGE_KEYS.providerBills,
+    []
+  );
+
+  saveStoredData(
     HFOS_STORAGE_KEYS.savingsGoals,
     []
   );

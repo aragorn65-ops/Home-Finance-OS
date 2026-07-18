@@ -79,6 +79,11 @@ export default class UtilityBillValidator {
         "Water usage must use m3.";
     }
 
+    if (!form.providerName.trim()) {
+      errors.providerName =
+        "Enter the utility provider name.";
+    }
+
     if (
       !Number.isFinite(
         form.totalBillAmount
@@ -129,6 +134,16 @@ export default class UtilityBillValidator {
     ) {
       errors.billingDate =
         "Enter a valid billing date.";
+    }
+
+    if (
+      !form.dueDate ||
+      !this.isValidDate(
+        form.dueDate
+      )
+    ) {
+      errors.dueDate =
+        "Enter a valid due date.";
     }
 
     if (
@@ -477,11 +492,6 @@ export default class UtilityBillValidator {
     form: UtilityBillForm,
     errors: Record<string, string>
   ): void {
-    if (!form.paidByMemberId.trim()) {
-      errors.paidByMemberId =
-        "Select the household member who paid the utility bill.";
-    }
-
     const memberIds =
       new Set(
         form.memberShares.map(

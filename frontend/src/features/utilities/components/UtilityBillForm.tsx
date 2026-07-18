@@ -79,7 +79,9 @@ const utilityFieldLabels:
     calculation: "Calculation",
     utilityType: "Utility Type",
     unit: "Unit",
+    providerName: "Provider Name",
     billingDate: "Billing Date",
+    dueDate: "Due Date",
     transactionDate: "Transaction Date",
     totalBillAmount: "Total Bill Amount",
     ratePerUnit: "Rate per Unit",
@@ -811,6 +813,21 @@ export default function UtilityBillForm({
             </select>
           </Field>
 
+          <Field label="Provider Name">
+            <input
+              className={inputClassName}
+              type="text"
+              value={form.providerName}
+              onChange={(event) =>
+                updateField(
+                  "providerName",
+                  event.target.value
+                )
+              }
+              placeholder="Meralco, Maynilad, provider"
+            />
+          </Field>
+
           <Field label="Billing Date">
             <input
               className={inputClassName}
@@ -819,6 +836,20 @@ export default function UtilityBillForm({
               onChange={(event) =>
                 updateField(
                   "billingDate",
+                  event.target.value
+                )
+              }
+            />
+          </Field>
+
+          <Field label="Due Date">
+            <input
+              className={inputClassName}
+              type="date"
+              value={form.dueDate}
+              onChange={(event) =>
+                updateField(
+                  "dueDate",
                   event.target.value
                 )
               }
@@ -1549,12 +1580,13 @@ export default function UtilityBillForm({
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
-            Payment and Transaction Details
+            Payment Details
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Select who paid the provider and optionally
-            link the payment account.
+            Leave these blank while the bill is unpaid.
+            Add the payer, account, and receipt after a
+            member pays the provider.
           </p>
         </header>
 
@@ -1945,6 +1977,7 @@ function createInitialForm(
     ...defaultUtilityBillForm,
 
     billingDate: today,
+    dueDate: today,
     transactionDate: today,
 
     memberShares:

@@ -15,6 +15,9 @@ export const HFOS_STORAGE_KEYS = {
   settlementApplications:
     "hfos.v1.settlement-applications",
 
+  providerBills:
+    "hfos.v1.provider-bills",
+
   savingsGoals:
     "hfos.v1.savings-goals",
 

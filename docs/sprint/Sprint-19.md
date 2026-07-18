@@ -21,13 +21,25 @@ HFOS should let a household enter a utility/provider bill when it is received, c
 
 Sprint 19 candidates include:
 
-* Save calculated utility bills as unpaid provider bills without requiring a payer.
-* Track provider name, amount, billing date, due date, notes, and bill attachments.
-* Store member share snapshots at bill-entry time.
-* Show Bills to Pay in Utilities.
+* [x] Save calculated utility bills as unpaid provider bills without requiring a payer.
+* [x] Track provider name, amount, billing date, due date, notes, and bill attachments.
+* [x] Store member share snapshots at bill-entry time.
+* [x] Show Bills to Pay in Utilities.
 * Add Mark as Paid with payer, payment account, payment date, reference, and receipt proof.
 * Create the transaction and settlement obligations only when the provider bill is marked paid.
-* Include provider bills in local backup and Google Drive backup/restore.
+* [x] Include provider bills in local backup and Google Drive backup/restore.
+
+---
+
+## Progress Notes
+
+### July 19, 2026
+
+* Added a provider-bill repository and storage key.
+* Utilities now saves calculated bills as unpaid provider bills without requiring Paid By.
+* Provider name and due date are part of bill entry.
+* Bills to Pay appears in Utilities for active unpaid provider bills.
+* Backup/restore includes provider bills, while older backups without this collection still restore with an empty provider-bill list.
 
 ---
 
@@ -63,6 +75,6 @@ Manual QA should include:
 * Enter an electricity provider bill with no payer and save it as unpaid.
 * Confirm member shares are shown before payment.
 * Confirm unpaid provider bills appear in Utilities.
-* Mark a provider bill as paid with payer, account, reference, and receipt.
-* Confirm payment creates the transaction and settlement obligations.
+* Mark a provider bill as paid with payer, account, reference, and receipt. (Next increment)
+* Confirm payment creates the transaction and settlement obligations. (Next increment)
 * Confirm backup/restore preserves unpaid and paid provider bills.

@@ -89,6 +89,9 @@ export interface UtilityBillForm {
    */
   billingDate: string;
 
+  providerName: string;
+  dueDate: string;
+
   /**
    * Actual amount payable to the utility provider.
    */
@@ -114,6 +117,8 @@ export interface UtilityBillForm {
 
   /**
    * Household member who paid the provider bill.
+   *
+   * Optional while the bill is still unpaid.
    */
   paidByMemberId: string;
 
@@ -146,6 +151,8 @@ export const defaultUtilityBillForm:
     unit: "kWh",
 
     billingDate: "",
+    providerName: "",
+    dueDate: "",
 
     totalBillAmount: 0,
     ratePerUnit: 0,

@@ -24,6 +24,7 @@ const resetPreservedLocalStorageKeys =
     HFOS_STORAGE_KEYS.settlements,
     HFOS_STORAGE_KEYS
       .settlementApplications,
+    HFOS_STORAGE_KEYS.providerBills,
     HFOS_STORAGE_KEYS.savingsGoals,
     HFOS_STORAGE_KEYS
       .savingsActivities,
@@ -232,6 +233,15 @@ function clearFinancialCollections(
     "Transactions",
     saveStoredData(
       HFOS_STORAGE_KEYS.transactions,
+      []
+    )
+  );
+
+  clearCurrentCollection(
+    errors,
+    "Provider bills",
+    saveStoredData(
+      HFOS_STORAGE_KEYS.providerBills,
       []
     )
   );

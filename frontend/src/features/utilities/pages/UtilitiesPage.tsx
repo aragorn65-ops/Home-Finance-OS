@@ -25,7 +25,11 @@ import type {
   UtilityBillShareResult,
 } from "../models/UtilityBillShareResult";
 
-import UtilityBillPersistenceService from "../services/UtilityBillPersistenceService";
+import UtilityProviderBillService from "../services/UtilityProviderBillService";
+
+import type {
+  UtilityProviderBill,
+} from "../models/UtilityProviderBill";
 
 export default function UtilitiesPage() {
   const {
@@ -62,6 +66,14 @@ export default function UtilitiesPage() {
     formKey,
     setFormKey,
   ] = useState(0);
+
+  const [
+    providerBills,
+    setProviderBills,
+  ] = useState<UtilityProviderBill[]>(
+    () =>
+      UtilityProviderBillService.getActiveProviderBills()
+  );
 
   const notificationRef =
     useRef<HTMLDivElement | null>(
@@ -117,7 +129,7 @@ export default function UtilitiesPage() {
     setSaveError("");
 
     const result =
-      UtilityBillPersistenceService.save(
+      UtilityProviderBillService.createUnpaid(
         form,
         calculation
       );
@@ -141,7 +153,7 @@ export default function UtilitiesPage() {
           : {
               general:
                 result.message ??
-                "Unable to save the utility bill.",
+        "Unable to save the utility bill.",
             }
       );
 
@@ -154,10 +166,13 @@ export default function UtilitiesPage() {
 
     setSaveMessage(
       result.message ??
-        "Utility bill saved successfully."
+        "Provider bill saved successfully."
     );
     setValidationAlertErrors({});
     setIsValidationAlertOpen(false);
+    setProviderBills(
+      UtilityProviderBillService.getActiveProviderBills()
+    );
 
     /**
      * Clear the completed form only after persistence
@@ -198,14 +213,14 @@ export default function UtilitiesPage() {
       <div className="space-y-6">
         <section className="rounded-xl border border-blue-200 bg-blue-50 p-5">
           <h2 className="font-semibold text-blue-900">
-            Bill Share Calculator
+            Provider Bill Share Calculator
           </h2>
 
           <p className="mt-1 text-sm text-blue-800">
             Enter the total provider bill, usage basis,
-            direct member usage, and fixed compensation.
-            The remaining bill is divided equally among
-            the selected members.
+            direct member usage, fixed compensation,
+            and due date. Saving the bill records the
+            shares first; payment can happen later.
           </p>
         </section>
 
@@ -228,7 +243,7 @@ export default function UtilitiesPage() {
           {saveMessage && (
             <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
               <h2 className="font-semibold text-emerald-900">
-                Utility bill saved
+                Provider bill saved
               </h2>
 
               <p className="mt-1 text-sm text-emerald-800">
@@ -236,13 +251,72 @@ export default function UtilitiesPage() {
               </p>
 
               <p className="mt-2 text-sm text-emerald-700">
-                The expense is now available in Transactions,
-                and its member allocations are available to
-                Settlements.
+                It is listed as unpaid below. No provider
+                payment transaction or settlement obligation
+                is created until the bill is marked paid.
               </p>
             </section>
           )}
         </div>
+
+        {providerBills.length > 0 && (
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div>
+              <h2 className="font-semibold text-slate-900">
+                Bills to Pay
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Entered provider bills with calculated
+                shares, waiting for an actual household
+                payment.
+              </p>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              {providerBills.map(
+                (providerBill) => (
+                  <article
+                    key={providerBill.id}
+                    className="rounded-lg border border-slate-200 p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-medium text-slate-900">
+                          {providerBill.providerName ||
+                            (providerBill.utilityType ===
+                            "electricity"
+                              ? "Electricity provider"
+                              : "Water provider")}
+                        </h3>
+
+                        <p className="mt-1 text-sm text-slate-500">
+                          Due{" "}
+                          {providerBill.dueDate.toLocaleDateString()}{" "}
+                          ·{" "}
+                          {providerBill.memberShareSnapshot.length}{" "}
+                          member shares calculated
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="font-semibold text-slate-900">
+                          {formatCurrency(
+                            providerBill.totalBillAmount
+                          )}
+                        </p>
+
+                        <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
+                          Unpaid
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                )
+              )}
+            </div>
+          </section>
+        )}
 
         {memberOptions.length === 0 ? (
           <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
@@ -267,11 +341,25 @@ export default function UtilitiesPage() {
                 )
               )
             }
-            submitLabel="Save Utility Bill"
+            submitLabel="Save Provider Bill"
             onSubmit={handleSave}
           />
         )}
       </div>
     </>
   );
+}
+
+function formatCurrency(
+  amount: number
+): string {
+  return new Intl.NumberFormat(
+    "en-PH",
+    {
+      style: "currency",
+      currency: "PHP",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }
+  ).format(amount);
 }
