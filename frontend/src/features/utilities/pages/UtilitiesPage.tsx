@@ -88,6 +88,14 @@ export default function UtilitiesPage() {
   );
 
   const [
+    paidProviderBills,
+    setPaidProviderBills,
+  ] = useState<UtilityProviderBill[]>(
+    () =>
+      UtilityProviderBillService.getPaidProviderBills()
+  );
+
+  const [
     providerPaymentForms,
     setProviderPaymentForms,
   ] = useState<
@@ -237,6 +245,9 @@ export default function UtilitiesPage() {
     setIsValidationAlertOpen(false);
     setProviderBills(
       UtilityProviderBillService.getActiveProviderBills()
+    );
+    setPaidProviderBills(
+      UtilityProviderBillService.getPaidProviderBills()
     );
     setProviderPaymentForms(
       (current) => {
@@ -412,6 +423,9 @@ export default function UtilitiesPage() {
 
     setProviderBills(
       UtilityProviderBillService.getActiveProviderBills()
+    );
+    setPaidProviderBills(
+      UtilityProviderBillService.getPaidProviderBills()
     );
     setSaveError("");
     setSaveMessage(
@@ -655,6 +669,13 @@ export default function UtilitiesPage() {
           </section>
         )}
 
+        {paidProviderBills.length > 0 && (
+          <ProviderPaymentsSummary
+            providerBills={paidProviderBills}
+            memberNames={memberNames}
+          />
+        )}
+
         {memberOptions.length === 0 ? (
           <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
             <h2 className="font-semibold text-amber-900">
@@ -685,6 +706,122 @@ export default function UtilitiesPage() {
       </div>
     </>
   );
+}
+
+function ProviderPaymentsSummary({
+  providerBills,
+  memberNames,
+}: {
+  providerBills: UtilityProviderBill[];
+  memberNames: Record<string, string>;
+}) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div>
+        <h2 className="font-semibold text-slate-900">
+          Provider Payments
+        </h2>
+
+        <p className="mt-1 text-sm text-slate-500">
+          Paid provider bills with payment proof and linked
+          transaction references.
+        </p>
+      </div>
+
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[760px] text-left text-sm">
+          <thead className="text-xs uppercase text-slate-500">
+            <tr>
+              <th className="py-2 pr-3">
+                Paid Date
+              </th>
+              <th className="py-2 pr-3">
+                Provider
+              </th>
+              <th className="py-2 pr-3">
+                Paid By
+              </th>
+              <th className="py-2 pr-3 text-right">
+                Amount
+              </th>
+              <th className="py-2 pr-3">
+                Reference
+              </th>
+              <th className="py-2 pr-3">
+                Proof
+              </th>
+              <th className="py-2">
+                Transaction
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-slate-200 text-slate-700">
+            {providerBills.map(
+              (providerBill) => (
+                <tr key={providerBill.id}>
+                  <td className="py-3 pr-3">
+                    {providerBill.paidAt
+                      ? providerBill.paidAt.toLocaleDateString()
+                      : "Paid"}
+                  </td>
+                  <td className="py-3 pr-3 font-medium text-slate-900">
+                    {providerBill.providerName ||
+                      getProviderFallbackLabel(
+                        providerBill
+                      )}
+                  </td>
+                  <td className="py-3 pr-3">
+                    {memberNames[
+                      providerBill.paidByMemberId
+                    ] ?? "Household member"}
+                  </td>
+                  <td className="py-3 pr-3 text-right font-semibold text-slate-900">
+                    {formatCurrency(
+                      providerBill.totalBillAmount
+                    )}
+                  </td>
+                  <td className="py-3 pr-3">
+                    {providerBill.paymentReferenceNumber ||
+                      "None"}
+                  </td>
+                  <td className="py-3 pr-3">
+                    {providerBill.paymentAttachments
+                      .length > 0
+                      ? `${providerBill.paymentAttachments.length} receipt`
+                      : "No receipt"}
+                  </td>
+                  <td className="py-3">
+                    {providerBill.transactionId ||
+                      "Created"}
+                  </td>
+                </tr>
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function getProviderFallbackLabel(
+  providerBill: UtilityProviderBill
+): string {
+  if (
+    providerBill.utilityType ===
+    "electricity"
+  ) {
+    return "Electricity provider";
+  }
+
+  if (
+    providerBill.utilityType === "water"
+  ) {
+    return "Water provider";
+  }
+
+  return "Internet provider";
 }
 
 interface ProviderBillPaymentControlsProps {

@@ -52,6 +52,30 @@ export default class UtilityProviderBillService {
       );
   }
 
+  static getPaidProviderBills():
+    UtilityProviderBill[] {
+    const household =
+      loadHousehold();
+
+    if (!household) {
+      return [];
+    }
+
+    return UtilityProviderBillRepository
+      .findActiveByHouseholdId(
+        household.id
+      )
+      .filter(
+        (providerBill) =>
+          providerBill.status === "paid"
+      )
+      .sort(
+        (left, right) =>
+          (right.paidAt?.getTime() ?? 0) -
+          (left.paidAt?.getTime() ?? 0)
+      );
+  }
+
   static createUnpaid(
     form: UtilityBillForm,
     calculation: UtilityBillShareResult

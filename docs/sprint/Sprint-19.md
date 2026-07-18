@@ -44,6 +44,7 @@ Sprint 19 candidates include:
 * Internet can be entered as a fixed provider bill without meter readings or rate input.
 * Mark Paid now captures payer, account, payment date, reference, and provider-payment receipt.
 * Mark Paid creates the utility expense transaction and settlement obligations from the saved share snapshot.
+* Utilities shows a Provider Payments summary for paid provider bills before backup/restore QA.
 * Backup/restore includes provider bills, while older backups without this collection still restore with an empty provider-bill list.
 
 ---
@@ -81,5 +82,6 @@ Manual QA should include:
 * Confirm member shares are shown before payment.
 * Confirm unpaid provider bills appear in Utilities.
 * Mark a provider bill as paid with payer, account, reference, and receipt.
+* Confirm paid provider bills appear in Utilities > Provider Payments.
 * Confirm payment creates the transaction and settlement obligations.
 * Confirm backup/restore preserves unpaid and paid provider bills.
