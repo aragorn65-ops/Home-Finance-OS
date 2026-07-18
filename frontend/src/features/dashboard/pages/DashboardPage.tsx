@@ -23,6 +23,12 @@ import {
 
 import { currencies } from "../../../shared/data/currencies";
 import CurrencyRateLookupButton from "../../../shared/ui/CurrencyRateLookupButton";
+import {
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
+} from "../../../shared/ui/Dialog";
 import Input from "../../../shared/ui/Input";
 import PageHeader from "../../../shared/ui/PageHeader";
 import useReportingMonth from "../../../shared/hooks/useReportingMonth";
@@ -476,6 +482,11 @@ export default function DashboardPage() {
     setRemittanceRateDate,
   ] = useState(today);
 
+  const [
+    isRemittanceToolOpen,
+    setIsRemittanceToolOpen,
+  ] = useState(false);
+
   const monthlyExpenses =
     useMemo(
       () => {
@@ -697,150 +708,6 @@ export default function DashboardPage() {
           tone="warning"
           icon={WalletCards}
         />
-      </section>
-
-      <section className="dashboard-panel dashboard-panel--remittance">
-        <div className="dashboard-panel__header">
-          <h2>Remittance Estimate</h2>
-        </div>
-
-        <div className="remittance-estimate">
-          <div className="remittance-estimate__controls">
-            <div>
-              <label htmlFor="remittance-currency">
-                Estimate Currency
-              </label>
-
-              <select
-                id="remittance-currency"
-                value={remittanceCurrency}
-                onChange={(event) => {
-                  setRemittanceCurrency(
-                    event.target.value
-                  );
-                  setRemittanceRate(0);
-                }}
-              >
-                {currencies
-                  .filter(
-                    (option) =>
-                      option.value
-                  )
-                  .map((option) => (
-                    <option
-                      key={option.value}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="remittance-rate">
-                Rate
-              </label>
-
-              <input
-                id="remittance-rate"
-                type="number"
-                min="0"
-                step="0.000001"
-                value={remittanceRate || ""}
-                onChange={(event) =>
-                  setRemittanceRate(
-                    roundExchangeRate(
-                      Number(
-                        event.target.value
-                      )
-                    )
-                  )
-                }
-                placeholder={`1 ${lockedExpenseCurrency} = ${remittanceCurrency}`}
-              />
-            </div>
-          </div>
-
-          {lockedExpenseCurrency !==
-            remittanceCurrency && (
-            <CurrencyRateLookupButton
-              fromCurrency={
-                lockedExpenseCurrency
-              }
-              toCurrency={
-                remittanceCurrency
-              }
-              effectiveDate={
-                remittanceRateDate
-              }
-              onRateSelected={(rate) => {
-                setRemittanceRate(
-                  rate.rate
-                );
-                setRemittanceRateDate(
-                  rate.effectiveDate
-                );
-              }}
-            />
-          )}
-
-          <div className="remittance-estimate__totals">
-            <div>
-              <span>Monthly expenses</span>
-              <strong>
-                {hasRemittanceRate
-                  ? formatCurrency(
-                      roundCurrencyAmount(
-                        monthlyExpenses *
-                          effectiveRemittanceRate
-                      ),
-                      remittanceCurrency
-                    )
-                  : "Enter rate"}
-              </strong>
-            </div>
-
-            <div>
-              <span>Outstanding settlements</span>
-              <strong>
-                {hasRemittanceRate
-                  ? formatCurrency(
-                      roundCurrencyAmount(
-                        totalOutstanding *
-                          effectiveRemittanceRate
-                      ),
-                      remittanceCurrency
-                    )
-                  : "Enter rate"}
-              </strong>
-            </div>
-
-            <div className="remittance-estimate__total">
-              <span>Ballpark remittance</span>
-              <strong>
-                {hasRemittanceRate
-                  ? formatCurrency(
-                      roundCurrencyAmount(
-                        (
-                          monthlyExpenses +
-                          totalOutstanding
-                        ) *
-                          effectiveRemittanceRate
-                      ),
-                      remittanceCurrency
-                    )
-                  : "Enter rate"}
-              </strong>
-            </div>
-          </div>
-
-          <p className="remittance-estimate__note">
-            Display-only estimate from locked{" "}
-            {lockedExpenseCurrency} dashboard totals. Saved
-            transactions are not recomputed.
-          </p>
-        </div>
       </section>
 
       {settlementPreviews.length === 0 ? (
@@ -1114,6 +981,21 @@ export default function DashboardPage() {
                 Record Settlement
               </Link>
 
+              <button
+                type="button"
+                onClick={() =>
+                  setIsRemittanceToolOpen(
+                    true
+                  )
+                }
+              >
+                <WalletCards
+                  size={18}
+                  aria-hidden="true"
+                />
+                Estimate Remittance
+              </button>
+
               <Link to="/app/savings">
                 <Target
                   size={18}
@@ -1218,6 +1100,181 @@ export default function DashboardPage() {
             </div>
         </section>
       </section>
+
+      <Dialog
+        open={isRemittanceToolOpen}
+        onClose={() =>
+          setIsRemittanceToolOpen(false)
+        }
+        className="dashboard-tool-dialog"
+      >
+        <DialogHeader title="Remittance Calculator" />
+
+        <DialogBody>
+          <div className="remittance-estimate">
+            <div className="remittance-estimate__source">
+              <span>Locked dashboard totals</span>
+              <strong>
+                {formatCurrency(
+                  monthlyExpenses +
+                    totalOutstanding,
+                  lockedExpenseCurrency
+                )}
+              </strong>
+            </div>
+
+            <div className="remittance-estimate__controls">
+              <div>
+                <label htmlFor="remittance-currency">
+                  Estimate Currency
+                </label>
+
+                <select
+                  id="remittance-currency"
+                  value={remittanceCurrency}
+                  onChange={(event) => {
+                    setRemittanceCurrency(
+                      event.target.value
+                    );
+                    setRemittanceRate(0);
+                  }}
+                >
+                  {currencies
+                    .filter(
+                      (option) =>
+                        option.value
+                    )
+                    .map((option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="remittance-rate">
+                  Rate
+                </label>
+
+                <input
+                  id="remittance-rate"
+                  type="number"
+                  min="0"
+                  step="0.000001"
+                  value={remittanceRate || ""}
+                  onChange={(event) =>
+                    setRemittanceRate(
+                      roundExchangeRate(
+                        Number(
+                          event.target.value
+                        )
+                      )
+                    )
+                  }
+                  placeholder={`1 ${lockedExpenseCurrency} = ${remittanceCurrency}`}
+                />
+              </div>
+            </div>
+
+            {lockedExpenseCurrency !==
+              remittanceCurrency && (
+              <CurrencyRateLookupButton
+                fromCurrency={
+                  lockedExpenseCurrency
+                }
+                toCurrency={
+                  remittanceCurrency
+                }
+                effectiveDate={
+                  remittanceRateDate
+                }
+                onRateSelected={(rate) => {
+                  setRemittanceRate(
+                    rate.rate
+                  );
+                  setRemittanceRateDate(
+                    rate.effectiveDate
+                  );
+                }}
+              />
+            )}
+
+            <div className="remittance-estimate__totals">
+              <div>
+                <span>Monthly expenses</span>
+                <strong>
+                  {hasRemittanceRate
+                    ? formatCurrency(
+                        roundCurrencyAmount(
+                          monthlyExpenses *
+                            effectiveRemittanceRate
+                        ),
+                        remittanceCurrency
+                      )
+                    : "Enter rate"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Outstanding settlements</span>
+                <strong>
+                  {hasRemittanceRate
+                    ? formatCurrency(
+                        roundCurrencyAmount(
+                          totalOutstanding *
+                            effectiveRemittanceRate
+                        ),
+                        remittanceCurrency
+                      )
+                    : "Enter rate"}
+                </strong>
+              </div>
+
+              <div className="remittance-estimate__total">
+                <span>Ballpark remittance</span>
+                <strong>
+                  {hasRemittanceRate
+                    ? formatCurrency(
+                        roundCurrencyAmount(
+                          (
+                            monthlyExpenses +
+                            totalOutstanding
+                          ) *
+                            effectiveRemittanceRate
+                        ),
+                        remittanceCurrency
+                      )
+                    : "Enter rate"}
+                </strong>
+              </div>
+            </div>
+
+            <p className="remittance-estimate__note">
+              Display-only estimate from locked{" "}
+              {lockedExpenseCurrency} dashboard totals.
+              Saved transactions are not recomputed.
+            </p>
+          </div>
+        </DialogBody>
+
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={() =>
+              setIsRemittanceToolOpen(
+                false
+              )
+            }
+            className="dashboard-tool-dialog__close"
+          >
+            Close
+          </button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 }
