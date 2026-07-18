@@ -1153,8 +1153,10 @@ export default function SettingsPage() {
                   </h3>
 
                   <p>
-                    Choose a backup to download, validate, and preview
-                    before restore.
+                    Choose a backup saved by this app to download,
+                    validate, and preview before restore. For a
+                    manually uploaded Drive file, download it first and
+                    use Import Backup.
                   </p>
                 </div>
 
@@ -1203,7 +1205,10 @@ export default function SettingsPage() {
 
                     <p>
                       Use Save to Google Drive first, then return here
-                      to restore a backup saved by this app.
+                      to restore a backup saved by this app. Manually
+                      uploaded Drive files are not visible to this
+                      low-permission restore list; download them and use
+                      Import Backup instead.
                     </p>
                   </div>
                 </div>
