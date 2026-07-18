@@ -24,6 +24,7 @@ This release will add local backup export and restore workflows before moving to
 * Added Restore from Backup on the household setup screen for clean-browser recovery.
 * Added restore confirmation before replacing current local data.
 * Added restore preview metadata showing household name, export date, and record counts.
+* Embedded the same summary metadata in exported backup files.
 * Keep Clear Test Data for QA cleanup without deleting the household.
 * Keep Reset All Application Data for full delete-and-return-to-setup.
 
@@ -36,6 +37,7 @@ This release will add local backup export and restore workflows before moving to
 * Backup files should include the current storage schema version.
 * Backup files should include household, account, transaction, allocation, settlement, settlement application, savings goal, and savings activity records.
 * Backup files include local theme preference.
+* Backup files include summary metadata for restore preview and external inspection.
 * Temporary browser session state should not be included.
 
 ---

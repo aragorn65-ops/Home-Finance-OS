@@ -111,6 +111,8 @@ interface ApplicationBackupFile {
 
   storageSchemaVersion: number;
 
+  summary?: ApplicationBackupSummary;
+
   records: Partial<
     Record<HfosStorageKey, unknown>
   >;
@@ -176,6 +178,9 @@ export function createApplicationBackup():
         getStoredThemePreference(),
     },
   };
+
+  backup.summary =
+    createBackupSummary(backup);
 
   return {
     success: true,
@@ -475,6 +480,19 @@ function validateBackupFile(
     };
   }
 
+  if (
+    backup.summary &&
+    !isBackupSummary(
+      backup.summary
+    )
+  ) {
+    return {
+      success: false,
+      message:
+        "Backup summary is malformed.",
+    };
+  }
+
   return {
     success: true,
     message:
@@ -496,6 +514,15 @@ function createBackupFilename(
 function createBackupSummary(
   backup: ApplicationBackupFile
 ): ApplicationBackupSummary {
+  if (
+    backup.summary &&
+    isBackupSummary(
+      backup.summary
+    )
+  ) {
+    return backup.summary;
+  }
+
   const household =
     backup.records[
       HFOS_STORAGE_KEYS.household
@@ -533,6 +560,45 @@ function createBackupSummary(
         HFOS_STORAGE_KEYS.savingsGoals
       ),
   };
+}
+
+function isBackupSummary(
+  value: unknown
+): value is ApplicationBackupSummary {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.householdName ===
+      "string" &&
+    typeof value.exportedAt ===
+      "string" &&
+    typeof value.accountCount ===
+      "number" &&
+    Number.isInteger(
+      value.accountCount
+    ) &&
+    value.accountCount >= 0 &&
+    typeof value.transactionCount ===
+      "number" &&
+    Number.isInteger(
+      value.transactionCount
+    ) &&
+    value.transactionCount >= 0 &&
+    typeof value.settlementCount ===
+      "number" &&
+    Number.isInteger(
+      value.settlementCount
+    ) &&
+    value.settlementCount >= 0 &&
+    typeof value.savingsGoalCount ===
+      "number" &&
+    Number.isInteger(
+      value.savingsGoalCount
+    ) &&
+    value.savingsGoalCount >= 0
+  );
 }
 
 function getCollectionCount(

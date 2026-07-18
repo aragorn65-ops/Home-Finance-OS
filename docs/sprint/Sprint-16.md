@@ -51,6 +51,7 @@ Implemented:
 * Added Settings Data & Backup controls for Export Backup and Import Backup.
 * Added Restore from Backup on the household setup screen so a clean browser can restore without creating a temporary household.
 * Added restore validation for JSON parsing, HFOS backup identity, backup version, storage schema version, required records, collection shape, household shape, and theme preference shape.
+* Added an embedded backup summary with household name, export date, and record counts, while keeping preview derivation compatible with earlier Sprint 16 backups.
 * Added a restore confirmation before replacing current browser-local HFOS data.
 * Added restore preview metadata showing household name, export date, and record counts before confirmation.
 * Reloaded the app after successful restore so repositories hydrate from restored storage.
