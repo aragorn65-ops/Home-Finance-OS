@@ -2,8 +2,8 @@
 
 ## Google Drive Restore
 
-**Release Date:** TBD
-**Status:** In Progress
+**Release Date:** July 18, 2026
+**Status:** Ready
 **Sprint:** Sprint 18
 
 ---
@@ -65,13 +65,13 @@ Sprint 17 added optional Drive backup upload. This release should complete the f
 
 ## Manual QA Focus
 
-Before finalizing this alpha, manually verify:
+Manual QA verified:
 
 * Drive restore is disabled or clearly explained when `VITE_GOOGLE_CLIENT_ID` is missing.
 * Drive backup listing requires Google consent.
 * Drive backup listing shows app-created HFOS backup files.
 * Selecting a Drive backup shows validated package metadata before restore.
 * Restoring a Drive backup reloads the app and hydrates restored local data.
-* Invalid or malformed Drive backup files are rejected.
+* Manually copied Drive backups are restored through local Import Backup after downloading from Drive.
 * Local Import Backup still works.
 * Settings controls remain usable on mobile widths.

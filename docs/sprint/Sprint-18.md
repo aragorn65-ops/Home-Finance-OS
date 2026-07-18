@@ -5,7 +5,7 @@
 **Release:** v0.18.0-alpha
 **Date:** July 18, 2026
 **Branch:** sprint-18-google-drive-restore
-**Status:** Open
+**Status:** Closed
 
 ---
 
@@ -100,4 +100,13 @@ Manual QA should include:
 
 ## Sprint Result
 
-Sprint 18 is open. The first target is Drive backup discovery and validated restore without introducing auto-sync or merge behavior.
+Sprint 18 closed on July 18, 2026. Google Drive backup and restore now complete the first manual cloud backup loop: HFOS can save a validated backup to Drive, discover app-visible Drive backups, download and validate a selected backup, preview the package, and restore it through the existing all-or-nothing local restore path.
+
+Manual QA confirmed:
+
+* Save to Google Drive works with the configured OAuth client and Drive API.
+* Restore from Google Drive lists HFOS-created backups.
+* Selecting a Drive backup shows the validated restore preview.
+* Restoring from Drive hydrates browser-local household data in a fresh/private browser session.
+* Manually copied Drive files remain supported through Import Backup after downloading them from Drive.
+* Mobile Settings layout remains usable for the Data & Backup flow.
