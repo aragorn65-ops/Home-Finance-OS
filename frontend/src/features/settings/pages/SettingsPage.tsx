@@ -27,6 +27,7 @@ import {
   reloadAfterApplicationReset,
   resetApplicationData,
 } from "../../startup/services/applicationDataReset";
+import TransactionService from "../../transactions/services/TransactionService";
 
 const customPreferenceValue =
   "__custom__";
@@ -126,6 +127,20 @@ export default function SettingsPage() {
         timezoneOption.value ===
         timezone
     );
+
+  const transactionCount =
+    household
+      ? TransactionService
+          .getTransactions()
+          .filter(
+            (transaction) =>
+              transaction.householdId ===
+              household.id
+          ).length
+      : 0;
+
+  const hasSavedTransactions =
+    transactionCount > 0;
 
   useEffect(() => {
     storeThemePreference(
@@ -431,6 +446,26 @@ export default function SettingsPage() {
                     className="settings-preferences-input"
                     maxLength={8}
                   />
+                )}
+
+                {hasSavedTransactions && (
+                  <div className="settings-currency-warning">
+                    <strong>
+                      Historical records stay locked.
+                    </strong>
+
+                    <span>
+                      This household already has{" "}
+                      {transactionCount} transaction
+                      {transactionCount === 1
+                        ? ""
+                        : "s"}
+                      . Changing the base currency updates
+                      future defaults only; existing
+                      transactions keep their saved currency,
+                      exchange rate, and converted amount.
+                    </span>
+                  </div>
                 )}
               </div>
 
