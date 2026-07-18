@@ -1,9 +1,6 @@
 .settings-preferences-grid {
   display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(min(100%, 14rem), 1fr)
-  );
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-5);
   border-top: 1px solid var(--color-border);
   padding-top: var(--space-4);
@@ -58,6 +55,35 @@
 .settings-currency-warning strong {
   color: var(--color-warning-text);
   font-weight: var(--font-weight-semibold);
+}
+
+.settings-preferences-note {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+  padding: var(--space-3);
+}
+
+.settings-preferences-note p {
+  margin: 0;
+}
+
+@media (max-width: 58rem) {
+  .settings-preferences-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .settings-preferences-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .settings-alert,

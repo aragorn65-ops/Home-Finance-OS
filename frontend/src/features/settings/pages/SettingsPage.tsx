@@ -538,22 +538,24 @@ export default function SettingsPage() {
                   />
                 )}
               </div>
+
+              <div className="settings-preferences-note">
+                <p>
+                  These are the preferences chosen during
+                  household setup. Base currency changes apply
+                  going forward and do not convert or recompute
+                  historical records.
+                </p>
+
+                <p>
+                  Future API conversion will store the rate
+                  effective on the date a record is created
+                  or used.
+                </p>
+              </div>
             </div>
 
             <div className="grid gap-2">
-              <p className="text-xs text-muted-foreground">
-                These are the preferences chosen during
-                household setup. Base currency changes apply
-                going forward and do not convert or recompute
-                historical records.
-              </p>
-
-              <p className="text-xs text-muted-foreground">
-                Future API conversion will store the rate
-                effective on the date a record is created
-                or used.
-              </p>
-
               {preferencesMessage && (
                 <p className="text-sm font-medium text-success">
                   {preferencesMessage}
