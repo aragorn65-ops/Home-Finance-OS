@@ -220,18 +220,33 @@ export function createApplicationBackup():
   backup.summary =
     createBackupSummary(backup);
 
+  const json =
+    JSON.stringify(
+      backup,
+      null,
+      2
+    );
+
+  const validation =
+    validateApplicationBackup(
+      json
+    );
+
+  if (!validation.success) {
+    return {
+      success: false,
+      message:
+        `Backup package failed integrity validation. ${validation.message}`,
+    };
+  }
+
   return {
     success: true,
     filename:
       createBackupFilename(
         exportedAt
       ),
-    json:
-      JSON.stringify(
-        backup,
-        null,
-        2
-      ),
+    json,
   };
 }
 

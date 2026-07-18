@@ -37,6 +37,7 @@ This release should keep HFOS browser-local while making exported data easier to
 * Added a workflow warning when `VITE_GOOGLE_CLIENT_ID` is missing from the build.
 * Disabled the Google Drive backup action and showed a setup note when the deployed app has no Google client ID.
 * Expanded backup summary metadata and restore previews with package version, storage schema, theme preference, and all major collection counts.
+* Added backup package integrity validation before local export or Google Drive upload.
 
 ---
 
@@ -71,6 +72,7 @@ Before finalizing this alpha, manually verify:
 * Save to Google Drive is disabled and Settings explains missing configuration when `VITE_GOOGLE_CLIENT_ID` is not set.
 * Save to Google Drive uploads a backup file when a Google OAuth client ID is configured.
 * Exported backup details match the app preview.
+* Local export and Google Drive upload use only backup packages that pass restore validation.
 * Restore previews show package version, schema, theme, and all major collection counts for new backups.
 * Valid backup restore works after Clear Test Data.
 * Invalid JSON restore shows a clear error.
