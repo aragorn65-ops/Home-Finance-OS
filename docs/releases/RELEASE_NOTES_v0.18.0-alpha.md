@@ -36,6 +36,7 @@ Sprint 17 added optional Drive backup upload. This release should complete the f
 * Reused the short-lived Google Drive access token in memory so listing and selecting a backup behave like one restore session.
 * Added a clear empty state when no app-visible Google Drive backups are found.
 * Updated the Dashboard remittance calculator to exclude outstanding settlements and round the ballpark estimate up to the next 100.
+* Surfaced Google Drive API rejection status and message details in Settings alerts to make OAuth and API setup failures easier to diagnose.
 
 ---
 

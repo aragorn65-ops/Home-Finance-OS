@@ -493,7 +493,10 @@ async function uploadBackupFileToDrive(
     return {
       success: false,
       message:
-        "Google Drive rejected the backup upload.",
+        await formatGoogleDriveError(
+          response,
+          "Google Drive rejected the backup upload."
+        ),
     };
   }
 
@@ -572,7 +575,10 @@ async function listBackupFilesFromDrive(
     return {
       success: false,
       message:
-        "Google Drive rejected the backup list request.",
+        await formatGoogleDriveError(
+          response,
+          "Google Drive rejected the backup list request."
+        ),
     };
   }
 
@@ -634,7 +640,10 @@ async function downloadBackupFileFromDrive(
     return {
       success: false,
       message:
-        "Google Drive rejected the backup download request.",
+        await formatGoogleDriveError(
+          response,
+          "Google Drive rejected the backup download request."
+        ),
     };
   }
 
@@ -698,4 +707,60 @@ function clearCachedAccessIfUnauthorized(
     cachedGoogleDriveAccess =
       undefined;
   }
+}
+
+async function formatGoogleDriveError(
+  response: Response,
+  fallbackMessage: string
+): Promise<string> {
+  const detail =
+    await readGoogleDriveErrorDetail(
+      response
+    );
+
+  return detail
+    ? `${fallbackMessage} (${response.status}: ${detail})`
+    : `${fallbackMessage} (${response.status})`;
+}
+
+async function readGoogleDriveErrorDetail(
+  response: Response
+): Promise<string> {
+  try {
+    const body =
+      (await response
+        .clone()
+        .json()) as unknown;
+
+    if (!isRecord(body)) {
+      return "";
+    }
+
+    const error = body.error;
+
+    if (isRecord(error)) {
+      const message =
+        error.message;
+
+      if (
+        typeof message ===
+        "string"
+      ) {
+        return message;
+      }
+    }
+
+    return "";
+  } catch {
+    return "";
+  }
+}
+
+function isRecord(
+  value: unknown
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null
+  );
 }
