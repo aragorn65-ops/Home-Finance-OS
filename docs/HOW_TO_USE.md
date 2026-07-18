@@ -33,6 +33,7 @@ Then open the local URL shown in the terminal.
 1. Create or open a household.
 2. Add household members.
 3. Open Settings and confirm:
+   * Household name.
    * Country.
    * Theme: Light, Dark, or System Default.
    * Base currency: the household reporting currency.
@@ -43,7 +44,7 @@ Tip: The base currency is the main household reporting currency. Foreign-currenc
 
 New households start empty with zero transactions. Add accounts and records manually for each QA scenario.
 
-Country, base currency, and time zone can be changed later in Settings. Choosing a listed country can apply its default currency and time zone. Some countries have multiple regional time zones, so confirm the time zone after selecting a country, such as Australia/Melbourne for a Melbourne household. Use Other / manual when your country, currency, or time zone is not listed. Currency changes apply going forward and do not recompute historical records. When transactions already exist, Settings shows a warning before base-currency changes. Existing transactions keep their saved reporting currency and converted amount.
+Household name, country, base currency, and time zone can be changed later in Settings. Changing the household name is non-destructive and does not affect accounts, transactions, settlements, savings records, or reports. Choosing a listed country can apply its default currency and time zone. Some countries have multiple regional time zones, so confirm the time zone after selecting a country, such as Australia/Melbourne for a Melbourne household. Use Other / manual when your country, currency, or time zone is not listed. Currency changes apply going forward and do not recompute historical records. When transactions already exist, Settings shows a warning before base-currency changes. Existing transactions keep their saved reporting currency and converted amount.
 
 For repeated QA, use Settings -> Clear Test Data to remove accounts, transactions, settlements, savings records, utility-bill records, and leftover preview keys while keeping the household setup. Use Reset All Application Data only when you want to delete the household and return to first-time setup.
 

@@ -270,11 +270,17 @@ export function saveHouseholdCurrency(
 export function saveHouseholdPreferences(
   preferences: Pick<
     HouseholdSetupState,
-    "country" | "currency" | "timezone"
+    | "householdName"
+    | "country"
+    | "currency"
+    | "timezone"
   >
 ): StoredHousehold | null {
   const household =
     loadHousehold();
+
+  const householdName =
+    preferences.householdName.trim();
 
   const country =
     preferences.country.trim();
@@ -289,6 +295,7 @@ export function saveHouseholdPreferences(
 
   if (
     !household ||
+    !householdName ||
     !country ||
     !currency ||
     !timezone
@@ -300,6 +307,7 @@ export function saveHouseholdPreferences(
     StoredHousehold = {
       ...household,
 
+      householdName,
       country,
       currency,
       timezone,

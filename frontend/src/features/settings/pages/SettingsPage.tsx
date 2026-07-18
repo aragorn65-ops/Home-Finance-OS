@@ -57,6 +57,13 @@ export default function SettingsPage() {
   );
 
   const [
+    householdName,
+    setHouseholdName,
+  ] = useState(
+    household?.householdName ?? ""
+  );
+
+  const [
     country,
     setCountry,
   ] = useState(
@@ -400,11 +407,16 @@ export default function SettingsPage() {
 
   const savePreferences = (
     nextPreferences: {
+      householdName?: string;
       country?: string;
       currency?: string;
       timezone?: string;
     }
   ): void => {
+    const nextHouseholdName =
+      nextPreferences.householdName ??
+      householdName;
+
     const nextCountry =
       nextPreferences.country ??
       country;
@@ -417,6 +429,9 @@ export default function SettingsPage() {
       nextPreferences.timezone ??
       timezone;
 
+    setHouseholdName(
+      nextHouseholdName
+    );
     setCountry(nextCountry);
     setBaseCurrency(nextCurrency);
     setTimezone(nextTimezone);
@@ -426,6 +441,8 @@ export default function SettingsPage() {
 
     const result =
       saveHouseholdPreferences({
+        householdName:
+          nextHouseholdName,
         country:
           nextCountry,
         currency:
@@ -443,7 +460,7 @@ export default function SettingsPage() {
     }
 
     setPreferencesMessage(
-      "Household preferences updated. Historical financial records were not recomputed."
+      "Household preferences updated. Historical financial records were not changed."
     );
   };
 
@@ -538,6 +555,30 @@ export default function SettingsPage() {
             </div>
 
             <div className="settings-preferences-grid">
+              <div className="settings-preferences-field settings-preferences-field--wide">
+                <label
+                  htmlFor="settings-household-name"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Household Name
+                </label>
+
+                <input
+                  id="settings-household-name"
+                  type="text"
+                  value={householdName}
+                  onChange={(event) =>
+                    savePreferences({
+                      householdName:
+                        event.target.value,
+                    })
+                  }
+                  disabled={!household}
+                  placeholder="Enter household name"
+                  className="settings-preferences-input"
+                />
+              </div>
+
               <div className="settings-preferences-field">
                 <label
                   htmlFor="settings-country"

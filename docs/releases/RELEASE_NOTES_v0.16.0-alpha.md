@@ -28,6 +28,7 @@ This release will add local backup export and restore workflows before moving to
 * Added rollback protection for restore write failures.
 * Improved import retry behavior by clearing the selected file after failed validation.
 * Styled valid restore-ready prompts with success coloring and kept failures red.
+* Added non-destructive household name editing in Settings.
 * Keep Clear Test Data for QA cleanup without deleting the household.
 * Keep Reset All Application Data for full delete-and-return-to-setup.
 
@@ -83,4 +84,5 @@ Before finalizing this alpha, manually verify:
 * Re-selecting the same rejected backup file runs validation again.
 * Valid restore-ready prompts use success styling; failed restore/read/validation messages remain red.
 * Restored transaction currency/rate fields remain unchanged.
+* Household name changes in Settings do not alter accounts, transactions, reports, or backup restore.
 * Settings Data & Backup controls remain usable on mobile widths.
