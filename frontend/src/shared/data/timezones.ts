@@ -34,6 +34,10 @@ export const timezones: SelectOption[] = [
     label: "Australia/Sydney (UTC+10:00 / +11:00)",
   },
   {
+    value: "Australia/Melbourne",
+    label: "Australia/Melbourne (UTC+10:00 / +11:00)",
+  },
+  {
     value: "Asia/Tokyo",
     label: "Asia/Tokyo (UTC+09:00)",
   },

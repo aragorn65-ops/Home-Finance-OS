@@ -542,7 +542,9 @@ export default function SettingsPage() {
                   These are the preferences chosen during
                   household setup. Base currency changes apply
                   going forward and do not convert or recompute
-                  historical records.
+                  historical records. Some countries have
+                  multiple regional time zones, so confirm the
+                  time zone after selecting a country.
                 </p>
 
                 <p>
