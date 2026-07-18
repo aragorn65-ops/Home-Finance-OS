@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Wizard from "../../../shared/ui/Wizard";
+import {
+  getCountryDefaults,
+} from "../../../shared/data/countryDefaults";
 
 import HouseholdNameStep from "../components/HouseholdNameStep";
 import CountryStep from "../components/CountryStep";
@@ -40,6 +43,26 @@ export default function HouseholdPage() {
     );
   }
 
+  function handleCountryChange(
+    country: string
+  ) {
+    const defaults =
+      getCountryDefaults(country);
+
+    update("country", country);
+
+    if (defaults) {
+      update(
+        "currency",
+        defaults.currency
+      );
+      update(
+        "timezone",
+        defaults.timezone
+      );
+    }
+  }
+
   function createHousehold() {
     saveHousehold(state);
 
@@ -71,7 +94,7 @@ export default function HouseholdPage() {
         <CountryStep
           value={state.country}
           onChange={(value) =>
-            update("country", value)
+            handleCountryChange(value)
           }
           onNext={nextStep}
           onBack={previousStep}

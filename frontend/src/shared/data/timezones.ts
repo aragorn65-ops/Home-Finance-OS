@@ -14,6 +14,10 @@ export const timezones: SelectOption[] = [
     label: "America/New_York (UTC-05:00 / -04:00)",
   },
   {
+    value: "America/Toronto",
+    label: "America/Toronto (UTC-05:00 / -04:00)",
+  },
+  {
     value: "America/Chicago",
     label: "America/Chicago (UTC-06:00 / -05:00)",
   },

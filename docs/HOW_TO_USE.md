@@ -41,7 +41,7 @@ Then open the local URL shown in the terminal.
 
 Tip: The base currency is the main household reporting currency. Foreign-currency accounts can still be added with an exchange rate for reporting. When a suggested rate is available, you can apply it from the rate lookup button or keep your manual rate.
 
-Country, base currency, and time zone can be changed later in Settings. Currency changes apply going forward and do not recompute historical records.
+Country, base currency, and time zone can be changed later in Settings. Choosing a listed country can apply its default currency and time zone. Use Other / manual when your country, currency, or time zone is not listed. Currency changes apply going forward and do not recompute historical records.
 
 ---
 

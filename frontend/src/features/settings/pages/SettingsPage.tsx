@@ -7,6 +7,9 @@ import {
 
 import PageHeader from "../../../shared/ui/PageHeader";
 import Card from "../../../shared/ui/Card";
+import {
+  getCountryDefaults,
+} from "../../../shared/data/countryDefaults";
 import { countries } from "../../../shared/data/countries";
 import { currencies } from "../../../shared/data/currencies";
 import { timezones } from "../../../shared/data/timezones";
@@ -24,6 +27,9 @@ import {
   reloadAfterApplicationReset,
   resetApplicationData,
 } from "../../startup/services/applicationDataReset";
+
+const customPreferenceValue =
+  "__custom__";
 
 export default function SettingsPage() {
   const household =
@@ -81,6 +87,45 @@ export default function SettingsPage() {
     resetError,
     setResetError,
   ] = useState("");
+
+  const countryOptions =
+    countries.filter(
+      (countryOption) =>
+        countryOption.value
+    );
+
+  const currencyOptions =
+    currencies.filter(
+      (currencyOption) =>
+        currencyOption.value
+    );
+
+  const timezoneOptions =
+    timezones.filter(
+      (timezoneOption) =>
+        timezoneOption.value
+    );
+
+  const isKnownCountry =
+    countryOptions.some(
+      (countryOption) =>
+        countryOption.value ===
+        country
+    );
+
+  const isKnownCurrency =
+    currencyOptions.some(
+      (currencyOption) =>
+        currencyOption.value ===
+        baseCurrency
+    );
+
+  const isKnownTimezone =
+    timezoneOptions.some(
+      (timezoneOption) =>
+        timezoneOption.value ===
+        timezone
+    );
 
   useEffect(() => {
     storeThemePreference(
@@ -167,6 +212,37 @@ export default function SettingsPage() {
     );
   };
 
+  const handleCountryPreferenceChange = (
+    nextCountry: string
+  ): void => {
+    if (
+      nextCountry ===
+      customPreferenceValue
+    ) {
+      setCountry("");
+      setPreferencesMessage("");
+      setPreferencesError("");
+
+      return;
+    }
+
+    const defaults =
+      getCountryDefaults(
+        nextCountry
+      );
+
+    savePreferences({
+      country:
+        nextCountry,
+      currency:
+        defaults?.currency ??
+        baseCurrency,
+      timezone:
+        defaults?.timezone ??
+        timezone,
+    });
+  };
+
   return (
     <>
       <PageHeader
@@ -237,38 +313,60 @@ export default function SettingsPage() {
 
                 <select
                   id="settings-country"
-                  value={country}
+                  value={
+                    isKnownCountry
+                      ? country
+                      : customPreferenceValue
+                  }
                   onChange={(event) =>
-                    savePreferences({
-                      country:
-                        event.target.value,
-                    })
+                    handleCountryPreferenceChange(
+                      event.target.value
+                    )
                   }
                   disabled={!household}
                   className="settings-preferences-select"
                 >
-                  {countries
-                    .filter(
-                      (countryOption) =>
-                        countryOption.value
+                  {countryOptions.map(
+                    (countryOption) => (
+                      <option
+                        key={
+                          countryOption.value
+                        }
+                        value={
+                          countryOption.value
+                        }
+                      >
+                        {
+                          countryOption.label
+                        }
+                      </option>
                     )
-                    .map(
-                      (countryOption) => (
-                        <option
-                          key={
-                            countryOption.value
-                          }
-                          value={
-                            countryOption.value
-                          }
-                        >
-                          {
-                            countryOption.label
-                          }
-                        </option>
-                      )
-                    )}
+                  )}
+
+                  <option
+                    value={
+                      customPreferenceValue
+                    }
+                  >
+                    Other / manual
+                  </option>
                 </select>
+
+                {!isKnownCountry && (
+                  <input
+                    type="text"
+                    value={country}
+                    onChange={(event) =>
+                      savePreferences({
+                        country:
+                          event.target.value,
+                      })
+                    }
+                    disabled={!household}
+                    placeholder="Enter country"
+                    className="settings-preferences-input"
+                  />
+                )}
               </div>
 
               <div className="settings-preferences-field">
@@ -281,30 +379,59 @@ export default function SettingsPage() {
 
                 <select
                   id="settings-base-currency"
-                  value={baseCurrency}
+                  value={
+                    isKnownCurrency
+                      ? baseCurrency
+                      : customPreferenceValue
+                  }
                   onChange={(event) =>
-                    savePreferences({
-                      currency:
-                        event.target.value,
-                    })
+                    event.target.value ===
+                    customPreferenceValue
+                      ? setBaseCurrency("")
+                      : savePreferences({
+                          currency:
+                            event.target.value,
+                        })
                   }
                   disabled={!household}
                   className="settings-preferences-select"
                 >
-                  {currencies
-                    .filter(
-                      (currency) =>
-                        currency.value
-                    )
-                    .map((currency) => (
+                  {currencyOptions.map(
+                    (currency) => (
                       <option
                         key={currency.value}
                         value={currency.value}
                       >
                         {currency.label}
                       </option>
-                    ))}
+                    )
+                  )}
+
+                  <option
+                    value={
+                      customPreferenceValue
+                    }
+                  >
+                    Other / manual
+                  </option>
                 </select>
+
+                {!isKnownCurrency && (
+                  <input
+                    type="text"
+                    value={baseCurrency}
+                    onChange={(event) =>
+                      savePreferences({
+                        currency:
+                          event.target.value,
+                      })
+                    }
+                    disabled={!household}
+                    placeholder="Enter currency code"
+                    className="settings-preferences-input"
+                    maxLength={8}
+                  />
+                )}
               </div>
 
               <div className="settings-preferences-field">
@@ -317,38 +444,64 @@ export default function SettingsPage() {
 
                 <select
                   id="settings-timezone"
-                  value={timezone}
+                  value={
+                    isKnownTimezone
+                      ? timezone
+                      : customPreferenceValue
+                  }
                   onChange={(event) =>
-                    savePreferences({
-                      timezone:
-                        event.target.value,
-                    })
+                    event.target.value ===
+                    customPreferenceValue
+                      ? setTimezone("")
+                      : savePreferences({
+                          timezone:
+                            event.target.value,
+                        })
                   }
                   disabled={!household}
                   className="settings-preferences-select"
                 >
-                  {timezones
-                    .filter(
-                      (timezoneOption) =>
-                        timezoneOption.value
+                  {timezoneOptions.map(
+                    (timezoneOption) => (
+                      <option
+                        key={
+                          timezoneOption.value
+                        }
+                        value={
+                          timezoneOption.value
+                        }
+                      >
+                        {
+                          timezoneOption.label
+                        }
+                      </option>
                     )
-                    .map(
-                      (timezoneOption) => (
-                        <option
-                          key={
-                            timezoneOption.value
-                          }
-                          value={
-                            timezoneOption.value
-                          }
-                        >
-                          {
-                            timezoneOption.label
-                          }
-                        </option>
-                      )
-                    )}
+                  )}
+
+                  <option
+                    value={
+                      customPreferenceValue
+                    }
+                  >
+                    Other / manual
+                  </option>
                 </select>
+
+                {!isKnownTimezone && (
+                  <input
+                    type="text"
+                    value={timezone}
+                    onChange={(event) =>
+                      savePreferences({
+                        timezone:
+                          event.target.value,
+                      })
+                    }
+                    disabled={!household}
+                    placeholder="Enter IANA time zone"
+                    className="settings-preferences-input"
+                  />
+                )}
               </div>
             </div>
 
