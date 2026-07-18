@@ -8,6 +8,7 @@ import {
 
 import PageHeader from "../../../shared/ui/PageHeader";
 import Card from "../../../shared/ui/Card";
+import Button from "../../../shared/ui/Button";
 import {
   getCountryDefaults,
 } from "../../../shared/data/countryDefaults";
@@ -214,6 +215,18 @@ export default function SettingsPage() {
   const hasSavedTransactions =
     transactionCount > 0;
 
+  const hasPreferenceChanges =
+    Boolean(household) &&
+    (householdName !==
+      (household?.householdName ??
+        "") ||
+      country !==
+        (household?.country ?? "") ||
+      baseCurrency !==
+        (household?.currency ?? "") ||
+      timezone !==
+        (household?.timezone ?? ""));
+
   useEffect(() => {
     storeThemePreference(
       themePreference
@@ -405,50 +418,24 @@ export default function SettingsPage() {
     }
   };
 
-  const savePreferences = (
-    nextPreferences: {
-      householdName?: string;
-      country?: string;
-      currency?: string;
-      timezone?: string;
-    }
-  ): void => {
-    const nextHouseholdName =
-      nextPreferences.householdName ??
-      householdName;
-
-    const nextCountry =
-      nextPreferences.country ??
-      country;
-
-    const nextCurrency =
-      nextPreferences.currency ??
-      baseCurrency;
-
-    const nextTimezone =
-      nextPreferences.timezone ??
-      timezone;
-
-    setHouseholdName(
-      nextHouseholdName
-    );
-    setCountry(nextCountry);
-    setBaseCurrency(nextCurrency);
-    setTimezone(nextTimezone);
-
+  const clearPreferenceFeedback = (): void => {
     setPreferencesMessage("");
     setPreferencesError("");
+  };
+
+  const savePreferences = (): void => {
+    clearPreferenceFeedback();
 
     const result =
       saveHouseholdPreferences({
         householdName:
-          nextHouseholdName,
+          householdName,
         country:
-          nextCountry,
+          country,
         currency:
-          nextCurrency,
+          baseCurrency,
         timezone:
-          nextTimezone,
+          timezone,
       });
 
     if (!result) {
@@ -472,8 +459,7 @@ export default function SettingsPage() {
       customPreferenceValue
     ) {
       setCountry("");
-      setPreferencesMessage("");
-      setPreferencesError("");
+      clearPreferenceFeedback();
 
       return;
     }
@@ -481,18 +467,18 @@ export default function SettingsPage() {
     const defaults =
       getCountryDefaults(
         nextCountry
-      );
+    );
 
-    savePreferences({
-      country:
-        nextCountry,
-      currency:
-        defaults?.currency ??
-        baseCurrency,
-      timezone:
-        defaults?.timezone ??
-        timezone,
-    });
+    setCountry(nextCountry);
+    setBaseCurrency(
+      defaults?.currency ??
+        baseCurrency
+    );
+    setTimezone(
+      defaults?.timezone ??
+        timezone
+    );
+    clearPreferenceFeedback();
   };
 
   return (
@@ -567,12 +553,12 @@ export default function SettingsPage() {
                   id="settings-household-name"
                   type="text"
                   value={householdName}
-                  onChange={(event) =>
-                    savePreferences({
-                      householdName:
-                        event.target.value,
-                    })
-                  }
+                  onChange={(event) => {
+                    setHouseholdName(
+                      event.target.value
+                    );
+                    clearPreferenceFeedback();
+                  }}
                   disabled={!household}
                   placeholder="Enter household name"
                   className="settings-preferences-input"
@@ -632,12 +618,12 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={country}
-                    onChange={(event) =>
-                      savePreferences({
-                        country:
-                          event.target.value,
-                      })
-                    }
+                    onChange={(event) => {
+                      setCountry(
+                        event.target.value
+                      );
+                      clearPreferenceFeedback();
+                    }}
                     disabled={!household}
                     placeholder="Enter country"
                     className="settings-preferences-input"
@@ -660,15 +646,20 @@ export default function SettingsPage() {
                       ? baseCurrency
                       : customPreferenceValue
                   }
-                  onChange={(event) =>
-                    event.target.value ===
-                    customPreferenceValue
-                      ? setBaseCurrency("")
-                      : savePreferences({
-                          currency:
-                            event.target.value,
-                        })
-                  }
+                  onChange={(event) => {
+                    if (
+                      event.target.value ===
+                      customPreferenceValue
+                    ) {
+                      setBaseCurrency("");
+                    } else {
+                      setBaseCurrency(
+                        event.target.value
+                      );
+                    }
+
+                    clearPreferenceFeedback();
+                  }}
                   disabled={!household}
                   className="settings-preferences-select"
                 >
@@ -696,12 +687,12 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={baseCurrency}
-                    onChange={(event) =>
-                      savePreferences({
-                        currency:
-                          event.target.value,
-                      })
-                    }
+                    onChange={(event) => {
+                      setBaseCurrency(
+                        event.target.value
+                      );
+                      clearPreferenceFeedback();
+                    }}
                     disabled={!household}
                     placeholder="Enter currency code"
                     className="settings-preferences-input"
@@ -726,15 +717,20 @@ export default function SettingsPage() {
                       ? timezone
                       : customPreferenceValue
                   }
-                  onChange={(event) =>
-                    event.target.value ===
-                    customPreferenceValue
-                      ? setTimezone("")
-                      : savePreferences({
-                          timezone:
-                            event.target.value,
-                        })
-                  }
+                  onChange={(event) => {
+                    if (
+                      event.target.value ===
+                      customPreferenceValue
+                    ) {
+                      setTimezone("");
+                    } else {
+                      setTimezone(
+                        event.target.value
+                      );
+                    }
+
+                    clearPreferenceFeedback();
+                  }}
                   disabled={!household}
                   className="settings-preferences-select"
                 >
@@ -768,12 +764,12 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={timezone}
-                    onChange={(event) =>
-                      savePreferences({
-                        timezone:
-                          event.target.value,
-                      })
-                    }
+                    onChange={(event) => {
+                      setTimezone(
+                        event.target.value
+                      );
+                      clearPreferenceFeedback();
+                    }}
                     disabled={!household}
                     placeholder="Enter IANA time zone"
                     className="settings-preferences-input"
@@ -817,6 +813,23 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid gap-2">
+              <div className="settings-preferences-actions">
+                <Button
+                  onClick={savePreferences}
+                  disabled={
+                    !hasPreferenceChanges
+                  }
+                >
+                  Save Preferences
+                </Button>
+
+                {hasPreferenceChanges && (
+                  <p className="settings-preferences-unsaved">
+                    You have unsaved household preference changes.
+                  </p>
+                )}
+              </div>
+
               {preferencesMessage && (
                 <p className="text-sm font-medium text-success">
                   {preferencesMessage}

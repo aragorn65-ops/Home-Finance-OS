@@ -58,7 +58,7 @@ Implemented:
 * Cleared backup file pickers after failed validation/read attempts so testers can retry the same file immediately.
 * Showed the exported backup filename after a successful Settings export.
 * Styled validated restore-ready confirmations with success coloring while keeping failed restore/read/validation messages red.
-* Added non-destructive household name editing in Settings; financial history is preserved.
+* Added non-destructive household preference editing in Settings with an explicit Save Preferences confirmation; financial history is preserved.
 * Reloaded the app after successful restore so repositories hydrate from restored storage.
 
 Deferred:
@@ -133,6 +133,7 @@ Manual QA should include:
 * Retry the same rejected backup file and confirm validation runs again.
 * Confirm valid backup restore prompts use success styling and restore failures remain red.
 * Confirm restored historical currency fields remain unchanged.
+* Confirm household preference changes in Settings are not stored until Save Preferences is pressed.
 * Confirm household name changes in Settings do not affect accounts, transactions, reports, or backup restore.
 * Confirm Settings backup/restore controls fit mobile and tablet widths.
 
