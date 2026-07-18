@@ -41,6 +41,7 @@ Sprint 19 candidates include:
 * Bills to Pay appears in Utilities for active unpaid provider bills.
 * Bills to Pay shows the saved member-share breakdown for each unpaid provider bill.
 * Unpaid provider bill files can be added or removed when a wrong file was attached.
+* Duplicate unpaid provider bills can be deleted before any payment records are created.
 * Internet can be entered as a fixed provider bill without meter readings or rate input.
 * Utility/provider bill entry is separated into tabs for Bill, Members, Appliances, Files & Payment, and Review.
 * Mark Paid now captures payer, account, payment date, reference, and provider-payment receipt.

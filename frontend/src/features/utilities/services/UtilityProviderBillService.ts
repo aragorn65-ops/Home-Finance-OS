@@ -384,6 +384,57 @@ export default class UtilityProviderBillService {
       "Provider bill attachment updated."
     );
   }
+
+  static deleteUnpaid(
+    providerBillId: string
+  ): OperationResult<UtilityProviderBill> {
+    const providerBill =
+      UtilityProviderBillRepository.findById(
+        providerBillId
+      );
+
+    if (!providerBill) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          providerBill:
+            "Select a valid provider bill.",
+        },
+        "Provider bill was not found."
+      );
+    }
+
+    if (providerBill.status !== "unpaid") {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          providerBill:
+            "Paid provider bills cannot be deleted from Bills to Pay.",
+        },
+        "Provider bill was not deleted."
+      );
+    }
+
+    const updatedProviderBill:
+      UtilityProviderBill = {
+      ...providerBill,
+      isActive: false,
+      updatedAt:
+        new Date(),
+    };
+
+    const savedProviderBill =
+      UtilityProviderBillRepository.update(
+        updatedProviderBill
+      );
+
+    return OperationResults.success(
+      savedProviderBill,
+      "Unpaid provider bill deleted."
+    );
+  }
 }
 
 function buildFormSnapshot(

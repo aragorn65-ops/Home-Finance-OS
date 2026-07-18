@@ -434,6 +434,42 @@ export default function UtilitiesPage() {
     );
   };
 
+  const handleDeleteProviderBill = (
+    providerBill: UtilityProviderBill
+  ): void => {
+    const confirmed =
+      window.confirm(
+        `Delete unpaid provider bill "${providerBill.providerName || getProviderFallbackLabel(providerBill)}"? This does not affect transactions or settlements because the bill is not paid yet.`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const result =
+      UtilityProviderBillService.deleteUnpaid(
+        providerBill.id
+      );
+
+    if (!result.success) {
+      setSaveError(
+        result.message ??
+          "Provider bill was not deleted."
+      );
+
+      return;
+    }
+
+    setProviderBills(
+      UtilityProviderBillService.getActiveProviderBills()
+    );
+    setSaveError("");
+    setSaveMessage(
+      result.message ??
+        "Unpaid provider bill deleted."
+    );
+  };
+
   const handleSave = (
     form: UtilityBillFormData,
     calculation: UtilityBillShareResult
@@ -661,6 +697,9 @@ export default function UtilitiesPage() {
                       onRemoveBillFile={
                         handleRemoveBillAttachment
                       }
+                      onDeleteBill={
+                        handleDeleteProviderBill
+                      }
                     />
                   </article>
                 )
@@ -861,6 +900,9 @@ interface ProviderBillPaymentControlsProps {
     providerBill: UtilityProviderBill,
     attachmentId: string
   ) => void;
+  onDeleteBill: (
+    providerBill: UtilityProviderBill
+  ) => void;
 }
 
 function ProviderBillPaymentControls({
@@ -876,6 +918,7 @@ function ProviderBillPaymentControls({
   onRemoveReceipt,
   onAttachBillFile,
   onRemoveBillFile,
+  onDeleteBill,
 }: ProviderBillPaymentControlsProps) {
   const paymentAccounts =
     accounts.filter(
@@ -1068,6 +1111,18 @@ function ProviderBillPaymentControls({
             </div>
           </div>
         )}
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="rounded-lg border border-red-200 bg-background px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+          onClick={() =>
+            onDeleteBill(providerBill)
+          }
+        >
+          Delete Unpaid Bill
+        </button>
       </div>
     </div>
   );

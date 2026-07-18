@@ -35,6 +35,7 @@ The goal is to calculate member shares when the bill is entered, keep provider p
 * Utilities now shows a Bills to Pay section for active unpaid provider bills.
 * Bills to Pay now shows each member's saved calculated share.
 * Wrong provider bill files can be corrected while the bill is still unpaid.
+* Duplicate unpaid provider bills can now be deleted from Bills to Pay.
 * Internet bills can now be entered as fixed provider bills instead of manual transactions.
 * Utility bill entry now uses logical tabs with sticky calculate/save actions.
 * Utilities now includes a Provider Payments summary for paid provider bills.
