@@ -38,6 +38,7 @@ Sprint 17 added optional Drive backup upload. This release should complete the f
 * Updated the Dashboard remittance calculator to exclude outstanding settlements and round the ballpark estimate up to the next 100.
 * Surfaced Google Drive API rejection status and message details in Settings alerts to make OAuth and API setup failures easier to diagnose.
 * Clarified that Drive restore lists only low-permission app-visible backups; manually uploaded Drive files should be downloaded and restored with Import Backup.
+* Fixed utility bill saves after restore by giving utility-generated expense transactions the household base currency and a locked exchange rate of 1.
 
 ---
 

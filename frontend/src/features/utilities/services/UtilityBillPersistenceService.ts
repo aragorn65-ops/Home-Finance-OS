@@ -94,7 +94,8 @@ export default class UtilityBillPersistenceService {
     const transactionForm =
       this.buildTransactionForm(
         form,
-        calculation
+        calculation,
+        household.currency
       );
 
     const result =
@@ -125,7 +126,8 @@ export default class UtilityBillPersistenceService {
    */
   private static buildTransactionForm(
     form: UtilityBillForm,
-    calculation: UtilityBillShareResult
+    calculation: UtilityBillShareResult,
+    householdCurrency: string
   ): TransactionForm {
     const utilityLabel =
       form.utilityType ===
@@ -138,6 +140,25 @@ export default class UtilityBillPersistenceService {
 
       amount:
         calculation.totalBillAmount,
+
+      enteredAmount:
+        calculation.totalBillAmount,
+
+      enteredCurrency:
+        householdCurrency,
+
+      baseAmount:
+        calculation.totalBillAmount,
+
+      exchangeRate: 1,
+
+      exchangeRateEffectiveDate:
+        form.transactionDate,
+
+      exchangeRateSource:
+        "manual",
+
+      exchangeRateProvider: "",
 
       paidByMemberId:
         form.paidByMemberId.trim(),
