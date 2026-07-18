@@ -48,7 +48,9 @@ Household name, country, base currency, and time zone can be changed later in Se
 
 For repeated QA, use Settings -> Clear Test Data to remove accounts, transactions, settlements, savings records, utility-bill records, and leftover preview keys while keeping the household setup. Use Reset All Application Data only when you want to delete the household and return to first-time setup.
 
-Use Settings -> Data & Backup -> Export Backup to download a local `.hfos-backup.json` file. Use Import Backup to choose a validated HFOS backup file, confirm restore, and replace the current browser-local data. If the browser has no household yet, use Restore from Backup on the household setup screen. Google Drive and cloud backup are deferred until local backup/restore is stable.
+Use Settings -> Data & Backup -> Export Backup to download a local `.hfos-backup.json` file. Use Save to Google Drive to upload the same backup package to Google Drive when the app has a configured Google OAuth client. Use Import Backup to choose a validated HFOS backup file, confirm restore, and replace the current browser-local data. If the browser has no household yet, use Restore from Backup on the household setup screen.
+
+For Google Drive backup in a deployed preview, configure `VITE_GOOGLE_CLIENT_ID` for the frontend and add the preview origin to the Google OAuth web client. Without that client ID, the Drive button explains that Google Drive backup is not configured.
 
 ---
 
@@ -215,6 +217,6 @@ Good feedback examples:
 * Reset All Application Data deletes the household and returns the app to first-time setup.
 * No login or authentication yet.
 * No cloud sync.
-* Local backup export and restore are available, but Google Drive and cloud backup are not available yet.
+* Local backup export and restore are available. Google Drive backup is available only when a Google OAuth client ID is configured.
 * No shared household invite flow yet.
 * Use test data only for preview testing.

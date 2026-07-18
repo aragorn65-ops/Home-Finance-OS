@@ -39,6 +39,9 @@ import {
   type ApplicationDataHealthSummary,
   type ApplicationBackupSummary,
 } from "../../startup/services/applicationBackup";
+import {
+  saveBackupToGoogleDrive,
+} from "../../startup/services/googleDriveBackup";
 import TransactionService from "../../transactions/services/TransactionService";
 
 const customPreferenceValue =
@@ -140,6 +143,11 @@ export default function SettingsPage() {
     backupError,
     setBackupError,
   ] = useState("");
+
+  const [
+    isSavingCloudBackup,
+    setIsSavingCloudBackup,
+  ] = useState(false);
 
   const [
     restoreFilename,
@@ -331,6 +339,57 @@ export default function SettingsPage() {
       `Backup exported: ${result.filename}`
     );
   };
+
+  const handleSaveBackupToGoogleDrive =
+    async (): Promise<void> => {
+      setBackupMessage("");
+      setBackupError("");
+      setIsSavingCloudBackup(true);
+
+      try {
+        const backup =
+          createApplicationBackup();
+
+        if (
+          !backup.success ||
+          !backup.json ||
+          !backup.filename
+        ) {
+          setBackupError(
+            backup.message ??
+              "Backup could not be prepared for Google Drive."
+          );
+
+          return;
+        }
+
+        const result =
+          await saveBackupToGoogleDrive({
+            filename:
+              backup.filename,
+            json:
+              backup.json,
+          });
+
+        if (!result.success) {
+          setBackupError(
+            result.message
+          );
+
+          return;
+        }
+
+        setBackupMessage(
+          result.message
+        );
+      } catch {
+        setBackupError(
+          "Google Drive backup could not be completed."
+        );
+      } finally {
+        setIsSavingCloudBackup(false);
+      }
+    };
 
   const handleSelectBackupFile = async (
     file: File | undefined
@@ -899,6 +958,23 @@ export default function SettingsPage() {
                 className="settings-secondary-button"
               >
                 Export Backup
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSaveBackupToGoogleDrive();
+                }}
+                disabled={
+                  !dataHealthSummary
+                    .isExportable ||
+                  isSavingCloudBackup
+                }
+                className="settings-secondary-button"
+              >
+                {isSavingCloudBackup
+                  ? "Saving to Drive..."
+                  : "Save to Google Drive"}
               </button>
 
               <label className="settings-file-button">

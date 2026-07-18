@@ -51,12 +51,14 @@ Implemented:
 * Added a reusable application data-health summary derived from the same storage package used by local backup export.
 * Exposed current browser package details in Settings Data & Backup, including household, schema version, theme preference, and collection counts.
 * Disabled Export Backup when the current browser data is not exportable.
+* Added an optional Google Drive backup action that uploads the same local backup package when `VITE_GOOGLE_CLIENT_ID` is configured.
+* Added a frontend `.env.example` documenting the Google OAuth client ID setting.
 
 ---
 
 ## Deferred
 
-* Google Drive backup.
+* Google Drive restore picker.
 * Auto-backup scheduling.
 * Cross-device conflict resolution.
 * User authentication.
@@ -79,6 +81,8 @@ Manual QA should include:
 
 * Confirm Settings data health or package metadata matches the current browser data.
 * Confirm Export Backup is disabled when there is no exportable household data.
+* Confirm Save to Google Drive explains missing configuration when `VITE_GOOGLE_CLIENT_ID` is not set.
+* Confirm Save to Google Drive uploads a backup file when a Google OAuth client ID is configured.
 * Export a backup and confirm package details match the app preview.
 * Restore a valid backup after Clear Test Data.
 * Reject invalid JSON.

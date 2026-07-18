@@ -31,6 +31,8 @@ This release should keep HFOS browser-local while making exported data easier to
 * Added a current browser data-health summary in Settings Data & Backup.
 * Showed household, storage schema version, theme preference, and collection counts before export.
 * Disabled Export Backup when the current browser data is not exportable.
+* Added optional Save to Google Drive backup upload when `VITE_GOOGLE_CLIENT_ID` is configured.
+* Added a frontend `.env.example` for Google Drive backup configuration.
 
 ---
 
@@ -47,7 +49,7 @@ This release should keep HFOS browser-local while making exported data easier to
 
 ## Deferred
 
-* Google Drive backup.
+* Google Drive restore picker.
 * Auto-backup.
 * Cross-device conflict resolution.
 * Authentication.
@@ -62,6 +64,8 @@ Before finalizing this alpha, manually verify:
 
 * Settings data health or package metadata matches current browser data.
 * Export Backup is disabled when there is no exportable household data.
+* Save to Google Drive explains missing configuration when `VITE_GOOGLE_CLIENT_ID` is not set.
+* Save to Google Drive uploads a backup file when a Google OAuth client ID is configured.
 * Exported backup details match the app preview.
 * Valid backup restore works after Clear Test Data.
 * Invalid JSON restore shows a clear error.
