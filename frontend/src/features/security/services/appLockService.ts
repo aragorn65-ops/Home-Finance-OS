@@ -5,6 +5,7 @@ interface StoredAppLockSettings {
   enabled: true;
   pinHash: string;
   salt: string;
+  idleTimeoutMinutes: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -19,8 +20,17 @@ export function isAppLockEnabled():
   return getAppLockSettings() !== null;
 }
 
+export function getAppLockIdleTimeoutMinutes():
+  number {
+  return (
+    getAppLockSettings()
+      ?.idleTimeoutMinutes ?? 0
+  );
+}
+
 export async function enableAppLock(
-  pin: string
+  pin: string,
+  idleTimeoutMinutes = 0
 ): Promise<AppLockResult> {
   const normalizedPin =
     pin.trim();
@@ -57,6 +67,10 @@ export async function enableAppLock(
     enabled: true,
     pinHash,
     salt,
+    idleTimeoutMinutes:
+      normalizeIdleTimeoutMinutes(
+        idleTimeoutMinutes
+      ),
     createdAt: now,
     updatedAt: now,
   };
@@ -64,6 +78,31 @@ export async function enableAppLock(
   return saveAppLockSettings(
     settings
   );
+}
+
+export function updateAppLockIdleTimeout(
+  idleTimeoutMinutes: number
+): AppLockResult {
+  const settings =
+    getAppLockSettings();
+
+  if (!settings) {
+    return {
+      success: false,
+      message:
+        "Enable app lock before setting an inactivity timer.",
+    };
+  }
+
+  return saveAppLockSettings({
+    ...settings,
+    idleTimeoutMinutes:
+      normalizeIdleTimeoutMinutes(
+        idleTimeoutMinutes
+      ),
+    updatedAt:
+      new Date().toISOString(),
+  });
 }
 
 export async function verifyAppLockPin(
@@ -157,7 +196,13 @@ function getAppLockSettings():
     if (
       isStoredAppLockSettings(parsed)
     ) {
-      return parsed;
+      return {
+        ...parsed,
+        idleTimeoutMinutes:
+          normalizeIdleTimeoutMinutes(
+            parsed.idleTimeoutMinutes ?? 0
+          ),
+      };
     }
   } catch {
     return null;
@@ -286,11 +331,32 @@ function isStoredAppLockSettings(
     typeof record.pinHash ===
       "string" &&
     typeof record.salt === "string" &&
+    (typeof record.idleTimeoutMinutes ===
+      "number" ||
+      record.idleTimeoutMinutes ===
+        undefined) &&
     typeof record.createdAt ===
       "string" &&
     typeof record.updatedAt ===
       "string"
   );
+}
+
+function normalizeIdleTimeoutMinutes(
+  value: number
+): number {
+  const supportedValues =
+    new Set([
+      0,
+      1,
+      5,
+      15,
+      30,
+    ]);
+
+  return supportedValues.has(value)
+    ? value
+    : 0;
 }
 
 function getStorage():

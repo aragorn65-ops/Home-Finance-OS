@@ -19,6 +19,7 @@ import {
 } from "../../features/household/services/householdStorage";
 import AppUnlockScreen from "../../features/security/components/AppUnlockScreen";
 import {
+  getAppLockIdleTimeoutMinutes,
   isAppLockEnabled,
 } from "../../features/security/services/appLockService";
 
@@ -31,6 +32,13 @@ export default function AppShell() {
     setIsLockEnabled,
   ] = useState(() =>
     isAppLockEnabled()
+  );
+
+  const [
+    idleTimeoutMinutes,
+    setIdleTimeoutMinutes,
+  ] = useState(() =>
+    getAppLockIdleTimeoutMinutes()
   );
 
   const [
@@ -54,6 +62,9 @@ export default function AppShell() {
         setIsLockEnabled(
           nextIsEnabled
         );
+        setIdleTimeoutMinutes(
+          getAppLockIdleTimeoutMinutes()
+        );
 
         if (!nextIsEnabled) {
           setIsLocked(false);
@@ -72,6 +83,67 @@ export default function AppShell() {
       );
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      !isLockEnabled ||
+      isLocked ||
+      idleTimeoutMinutes <= 0
+    ) {
+      return;
+    }
+
+    let timeoutId:
+      ReturnType<typeof setTimeout>;
+
+    const lockAfterInactivity = () => {
+      setIsSidebarOpen(false);
+      setIsLocked(true);
+    };
+
+    const resetTimer = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(
+        lockAfterInactivity,
+        idleTimeoutMinutes * 60 * 1000
+      );
+    };
+
+    const activityEvents = [
+      "click",
+      "keydown",
+      "pointerdown",
+      "scroll",
+      "touchstart",
+    ] as const;
+
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(
+        eventName,
+        resetTimer,
+        {
+          passive: true,
+        }
+      );
+    });
+
+    resetTimer();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(
+          eventName,
+          resetTimer
+        );
+      });
+    };
+  }, [
+    idleTimeoutMinutes,
+    isLockEnabled,
+    isLocked,
+  ]);
 
   useEffect(() => {
     setIsSidebarOpen(false);

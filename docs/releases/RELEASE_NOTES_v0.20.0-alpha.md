@@ -34,12 +34,12 @@ The goal is to protect data when the browser or device is shared, while keeping 
 * Empty Bills to Pay message when every provider bill has been paid.
 * Local app lock setup.
 * Unlock screen before household data is shown.
+* Optional inactivity lock timing for app lock.
 * Privacy/session settings.
 * Documentation for local lock limitations.
 
 ## Planned
 
-* Inactivity lock timer.
 * Backup password protection exploration.
 
 ---

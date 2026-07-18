@@ -50,11 +50,36 @@ import TransactionService from "../../transactions/services/TransactionService";
 import {
   disableAppLock,
   enableAppLock,
+  getAppLockIdleTimeoutMinutes,
   isAppLockEnabled,
+  updateAppLockIdleTimeout,
 } from "../../security/services/appLockService";
 
 const customPreferenceValue =
   "__custom__";
+
+const appLockIdleTimeoutOptions = [
+  {
+    value: 0,
+    label: "Off",
+  },
+  {
+    value: 1,
+    label: "1 minute",
+  },
+  {
+    value: 5,
+    label: "5 minutes",
+  },
+  {
+    value: 15,
+    label: "15 minutes",
+  },
+  {
+    value: 30,
+    label: "30 minutes",
+  },
+];
 
 export default function SettingsPage() {
   const navigate =
@@ -231,6 +256,13 @@ export default function SettingsPage() {
     appLockDisablePin,
     setAppLockDisablePin,
   ] = useState("");
+
+  const [
+    appLockIdleTimeoutMinutes,
+    setAppLockIdleTimeoutMinutes,
+  ] = useState(() =>
+    getAppLockIdleTimeoutMinutes()
+  );
 
   const [
     appLockMessage,
@@ -721,7 +753,8 @@ export default function SettingsPage() {
 
       const result =
         await enableAppLock(
-          appLockPin
+          appLockPin,
+          appLockIdleTimeoutMinutes
         );
 
       setIsSavingAppLock(false);
@@ -741,6 +774,39 @@ export default function SettingsPage() {
       setAppLockPinConfirmation("");
       setAppLockMessage(
         result.message
+      );
+      notifyAppLockSettingsChanged();
+    };
+
+  const handleUpdateAppLockIdleTimeout =
+    (nextValue: number): void => {
+      setAppLockMessage("");
+      setAppLockError("");
+      setAppLockIdleTimeoutMinutes(
+        nextValue
+      );
+
+      if (!isAppLockCurrentlyEnabled) {
+        return;
+      }
+
+      const result =
+        updateAppLockIdleTimeout(
+          nextValue
+        );
+
+      if (!result.success) {
+        setAppLockError(
+          result.message
+        );
+
+        return;
+      }
+
+      setAppLockMessage(
+        nextValue > 0
+          ? `HFOS will lock after ${formatIdleTimeoutLabel(nextValue)} of inactivity.`
+          : "Inactivity lock is off."
       );
       notifyAppLockSettingsChanged();
     };
@@ -1266,6 +1332,37 @@ export default function SettingsPage() {
                   />
                 </label>
 
+                <label className="settings-preferences-field">
+                  <span className="text-sm font-medium text-foreground">
+                    Lock After Inactivity
+                  </span>
+
+                  <select
+                    value={
+                      appLockIdleTimeoutMinutes
+                    }
+                    onChange={(event) =>
+                      handleUpdateAppLockIdleTimeout(
+                        Number(
+                          event.target.value
+                        )
+                      )
+                    }
+                    className="settings-preferences-select"
+                  >
+                    {appLockIdleTimeoutOptions.map(
+                      (option) => (
+                        <option
+                          key={option.value}
+                          value={option.value}
+                        >
+                          {option.label}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </label>
+
                 <div className="settings-app-lock-actions">
                   <button
                     type="button"
@@ -1289,6 +1386,37 @@ export default function SettingsPage() {
               </div>
             ) : (
               <div className="settings-app-lock-grid">
+                <label className="settings-preferences-field">
+                  <span className="text-sm font-medium text-foreground">
+                    Lock After Inactivity
+                  </span>
+
+                  <select
+                    value={
+                      appLockIdleTimeoutMinutes
+                    }
+                    onChange={(event) =>
+                      handleUpdateAppLockIdleTimeout(
+                        Number(
+                          event.target.value
+                        )
+                      )
+                    }
+                    className="settings-preferences-select"
+                  >
+                    {appLockIdleTimeoutOptions.map(
+                      (option) => (
+                        <option
+                          key={option.value}
+                          value={option.value}
+                        >
+                          {option.label}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </label>
+
                 <label className="settings-preferences-field">
                   <span className="text-sm font-medium text-foreground">
                     Current PIN
@@ -1971,6 +2099,14 @@ function formatFileSize(
   }
 
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatIdleTimeoutLabel(
+  minutes: number
+): string {
+  return minutes === 1
+    ? "1 minute"
+    : `${minutes} minutes`;
 }
 
 function formatBackupDate(
