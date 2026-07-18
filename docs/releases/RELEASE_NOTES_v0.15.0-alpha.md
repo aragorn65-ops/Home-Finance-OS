@@ -23,6 +23,8 @@ This release adds date-specific currency-rate lookup, preserves manual exchange-
 * Preserved manual exchange-rate entry as fallback.
 * Stored rate source metadata so records show whether a rate was manually entered or API-provided.
 * Preserved the no-history-recomputation rule for saved rates and converted amounts.
+* Locked historical Dashboard expense displays to the saved transaction reporting currency when Settings base currency changes.
+* Added a display-only Dashboard remittance estimate for converting monthly totals into another currency.
 * Combined transaction upload, paste, and drag/drop into one attachment well.
 * Kept attachment support for JPEG, PNG, WebP, and PDF files.
 * Added inline attachment capacity feedback for the 3-file limit.

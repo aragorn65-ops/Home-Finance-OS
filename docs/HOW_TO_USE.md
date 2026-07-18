@@ -41,7 +41,7 @@ Then open the local URL shown in the terminal.
 
 Tip: The base currency is the main household reporting currency. Foreign-currency accounts can still be added with an exchange rate for reporting. When a suggested rate is available, you can apply it from the rate lookup button or keep your manual rate.
 
-Country, base currency, and time zone can be changed later in Settings. Choosing a listed country can apply its default currency and time zone. Use Other / manual when your country, currency, or time zone is not listed. Currency changes apply going forward and do not recompute historical records.
+Country, base currency, and time zone can be changed later in Settings. Choosing a listed country can apply its default currency and time zone. Use Other / manual when your country, currency, or time zone is not listed. Currency changes apply going forward and do not recompute historical records. Existing transactions keep their saved reporting currency and converted amount.
 
 ---
 
@@ -146,10 +146,13 @@ Use it to review:
 * Settlement status.
 * Savings progress.
 * Account position.
+* Ballpark remittance estimates in another currency.
 
 Analytics respects the selected reporting month.
 
 Top Expense Categories can be opened to review the transactions behind a selected category for the current reporting month.
+
+Dashboard remittance estimates are display-only. They convert the selected month's locked household totals into another currency to help estimate how much to remit, but they do not change saved transactions, settlements, accounts, or Analytics history.
 
 ---
 

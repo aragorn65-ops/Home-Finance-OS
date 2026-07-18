@@ -49,6 +49,8 @@ Implemented:
 * Stored rate source metadata on accounts, income and expense transactions, savings goals, and savings activities.
 * Preserved the no-history-recomputation rule: saved records keep their stored rate, effective date, and source until edited.
 * Displayed manual versus API rate source in account cards, foreign-currency transaction details, savings goal details, and savings activity history.
+* Locked Dashboard expense and settlement displays to saved transaction reporting currency so later base-currency preference changes do not relabel historical totals.
+* Added a display-only Dashboard remittance estimate that converts locked monthly expense and outstanding-settlement totals into another currency without rewriting history.
 
 Deferred:
 
@@ -131,7 +133,7 @@ Implemented:
 * Added country defaults that auto-select currency and time zone for listed countries during setup and later Settings edits.
 * Added manual override paths for country, currency, and time zone when a household preference is not listed.
 * Expanded setup preferences with Japan, United Kingdom, Germany, Saudi Arabia, and their corresponding currency and time-zone options.
-* Preserved the no-history-recomputation rule when base currency is changed from Settings.
+* Preserved the no-history-recomputation rule when base currency is changed from Settings and kept historical Dashboard totals labeled with their saved reporting currency.
 
 ---
 

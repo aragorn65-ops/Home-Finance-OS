@@ -18,12 +18,20 @@ import {
 } from "react-router-dom";
 import {
   useMemo,
+  useState,
 } from "react";
 
+import { currencies } from "../../../shared/data/currencies";
+import CurrencyRateLookupButton from "../../../shared/ui/CurrencyRateLookupButton";
 import Input from "../../../shared/ui/Input";
 import PageHeader from "../../../shared/ui/PageHeader";
 import useReportingMonth from "../../../shared/hooks/useReportingMonth";
 import formatCurrency from "../../../shared/utils/formatCurrency";
+import {
+  normalizeCurrency,
+  roundCurrencyAmount,
+  roundExchangeRate,
+} from "../../../shared/utils/currencyConversion";
 import {
   formatMonthLabel,
   isSameMonth,
@@ -191,6 +199,39 @@ function roundCurrency(
   );
 }
 
+function getTransactionReportingCurrency(
+  transactions: Transaction[],
+  fallbackCurrency: string
+): string {
+  const currencies =
+    transactions
+      .map((transaction) =>
+        normalizeCurrency(
+          transaction.baseCurrency,
+          fallbackCurrency
+        )
+      )
+      .filter(Boolean);
+
+  if (currencies.length === 0) {
+    return normalizeCurrency(
+      fallbackCurrency
+    );
+  }
+
+  const firstCurrency =
+    currencies[0];
+
+  return currencies.every(
+    (currency) =>
+      currency === firstCurrency
+  )
+    ? firstCurrency
+    : normalizeCurrency(
+        fallbackCurrency
+      );
+}
+
 function getSettlementPreviews(
   allocations: SettlementAllocationOption[]
 ): SettlementPreview[] {
@@ -345,6 +386,11 @@ export default function DashboardPage() {
   const currency =
     household?.currency ?? "PHP";
 
+  const today =
+    new Date()
+      .toISOString()
+      .slice(0, 10);
+
   const {
     selectedMonthValue,
     setSelectedMonthValue,
@@ -373,7 +419,7 @@ export default function DashboardPage() {
       [householdId]
     );
 
-  const monthlyExpenses =
+  const monthlyExpenseTransactions =
     useMemo(
       () => {
         const referenceMonth =
@@ -381,17 +427,59 @@ export default function DashboardPage() {
             selectedMonthValue
           );
 
-        return transactions
-          .filter(
-            (transaction) =>
-              transaction.isActive &&
-              transaction.type ===
-                "expense" &&
-              isSameMonth(
-                transaction.transactionDate,
-                referenceMonth
-              )
-          )
+        return transactions.filter(
+          (transaction) =>
+            transaction.isActive &&
+            transaction.type ===
+              "expense" &&
+            isSameMonth(
+              transaction.transactionDate,
+              referenceMonth
+            )
+        );
+      },
+      [
+        transactions,
+        selectedMonthValue,
+      ]
+    );
+
+  const lockedExpenseCurrency =
+    useMemo(
+      () =>
+        getTransactionReportingCurrency(
+          monthlyExpenseTransactions,
+          currency
+        ),
+      [
+        monthlyExpenseTransactions,
+        currency,
+      ]
+    );
+
+  const [
+    remittanceCurrency,
+    setRemittanceCurrency,
+  ] = useState(
+    currency === "PHP"
+      ? "SAR"
+      : "PHP"
+  );
+
+  const [
+    remittanceRate,
+    setRemittanceRate,
+  ] = useState(0);
+
+  const [
+    remittanceRateDate,
+    setRemittanceRateDate,
+  ] = useState(today);
+
+  const monthlyExpenses =
+    useMemo(
+      () => {
+        return monthlyExpenseTransactions
           .reduce(
             (total, transaction) =>
               total +
@@ -400,8 +488,7 @@ export default function DashboardPage() {
           );
       },
       [
-        transactions,
-        selectedMonthValue,
+        monthlyExpenseTransactions,
       ]
     );
 
@@ -501,6 +588,15 @@ export default function DashboardPage() {
       )
     );
 
+  const effectiveRemittanceRate =
+    lockedExpenseCurrency ===
+    remittanceCurrency
+      ? 1
+      : remittanceRate;
+
+  const hasRemittanceRate =
+    effectiveRemittanceRate > 0;
+
   const recentSettlements =
     useMemo(
       () =>
@@ -562,9 +658,9 @@ export default function DashboardPage() {
           label="Total Expenses"
           value={formatCurrency(
             monthlyExpenses,
-            currency
+            lockedExpenseCurrency
           )}
-          subtitle="This month"
+          subtitle={`This month in ${lockedExpenseCurrency}`}
           tone="danger"
           icon={ReceiptText}
         />
@@ -595,12 +691,156 @@ export default function DashboardPage() {
           label="Outstanding"
           value={formatCurrency(
             totalOutstanding,
-            currency
+            lockedExpenseCurrency
           )}
-          subtitle={`${settlementPreviews.length} pending`}
+          subtitle={`${settlementPreviews.length} pending in ${lockedExpenseCurrency}`}
           tone="warning"
           icon={WalletCards}
         />
+      </section>
+
+      <section className="dashboard-panel dashboard-panel--remittance">
+        <div className="dashboard-panel__header">
+          <h2>Remittance Estimate</h2>
+        </div>
+
+        <div className="remittance-estimate">
+          <div className="remittance-estimate__controls">
+            <div>
+              <label htmlFor="remittance-currency">
+                Estimate Currency
+              </label>
+
+              <select
+                id="remittance-currency"
+                value={remittanceCurrency}
+                onChange={(event) => {
+                  setRemittanceCurrency(
+                    event.target.value
+                  );
+                  setRemittanceRate(0);
+                }}
+              >
+                {currencies
+                  .filter(
+                    (option) =>
+                      option.value
+                  )
+                  .map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="remittance-rate">
+                Rate
+              </label>
+
+              <input
+                id="remittance-rate"
+                type="number"
+                min="0"
+                step="0.000001"
+                value={remittanceRate || ""}
+                onChange={(event) =>
+                  setRemittanceRate(
+                    roundExchangeRate(
+                      Number(
+                        event.target.value
+                      )
+                    )
+                  )
+                }
+                placeholder={`1 ${lockedExpenseCurrency} = ${remittanceCurrency}`}
+              />
+            </div>
+          </div>
+
+          {lockedExpenseCurrency !==
+            remittanceCurrency && (
+            <CurrencyRateLookupButton
+              fromCurrency={
+                lockedExpenseCurrency
+              }
+              toCurrency={
+                remittanceCurrency
+              }
+              effectiveDate={
+                remittanceRateDate
+              }
+              onRateSelected={(rate) => {
+                setRemittanceRate(
+                  rate.rate
+                );
+                setRemittanceRateDate(
+                  rate.effectiveDate
+                );
+              }}
+            />
+          )}
+
+          <div className="remittance-estimate__totals">
+            <div>
+              <span>Monthly expenses</span>
+              <strong>
+                {hasRemittanceRate
+                  ? formatCurrency(
+                      roundCurrencyAmount(
+                        monthlyExpenses *
+                          effectiveRemittanceRate
+                      ),
+                      remittanceCurrency
+                    )
+                  : "Enter rate"}
+              </strong>
+            </div>
+
+            <div>
+              <span>Outstanding settlements</span>
+              <strong>
+                {hasRemittanceRate
+                  ? formatCurrency(
+                      roundCurrencyAmount(
+                        totalOutstanding *
+                          effectiveRemittanceRate
+                      ),
+                      remittanceCurrency
+                    )
+                  : "Enter rate"}
+              </strong>
+            </div>
+
+            <div className="remittance-estimate__total">
+              <span>Ballpark remittance</span>
+              <strong>
+                {hasRemittanceRate
+                  ? formatCurrency(
+                      roundCurrencyAmount(
+                        (
+                          monthlyExpenses +
+                          totalOutstanding
+                        ) *
+                          effectiveRemittanceRate
+                      ),
+                      remittanceCurrency
+                    )
+                  : "Enter rate"}
+              </strong>
+            </div>
+          </div>
+
+          <p className="remittance-estimate__note">
+            Display-only estimate from locked{" "}
+            {lockedExpenseCurrency} dashboard totals. Saved
+            transactions are not recomputed.
+          </p>
+        </div>
       </section>
 
       {settlementPreviews.length === 0 ? (
@@ -688,7 +928,7 @@ export default function DashboardPage() {
                             {item.category}:{" "}
                             {formatCurrency(
                               item.amount,
-                              currency
+                              lockedExpenseCurrency
                             )}
                           </span>
                         ))}
@@ -698,7 +938,7 @@ export default function DashboardPage() {
                   <strong>
                     {formatCurrency(
                       preview.amount,
-                      currency
+                      lockedExpenseCurrency
                     )}
                   </strong>
                 </div>
@@ -743,7 +983,7 @@ export default function DashboardPage() {
                         <strong>
                           {formatCurrency(
                             categoryTotal.amount,
-                            currency
+                            lockedExpenseCurrency
                           )}
                           <span>
                             {
@@ -774,7 +1014,7 @@ export default function DashboardPage() {
                   <strong>
                     {formatCurrency(
                       monthlyExpenses,
-                      currency
+                      lockedExpenseCurrency
                     )}
                   </strong>
                 </div>
@@ -929,7 +1169,8 @@ export default function DashboardPage() {
                         <strong>
                           {formatCurrency(
                             transaction.amount,
-                            currency
+                            transaction.baseCurrency ??
+                              lockedExpenseCurrency
                           )}
                         </strong>
                       </div>
@@ -966,7 +1207,7 @@ export default function DashboardPage() {
                         <strong>
                           {formatCurrency(
                             settlement.amount,
-                            currency
+                            lockedExpenseCurrency
                           )}
                         </strong>
                       </div>
