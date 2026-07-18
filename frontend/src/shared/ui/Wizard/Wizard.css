@@ -32,7 +32,7 @@
 
     max-width:560px;
 
-    color:var(--text-secondary)
+    color:var(--text-secondary);
 
     line-height:1.7;
 
@@ -79,5 +79,41 @@
     width:28px;
 
     background:var(--primary);
+
+}
+
+@media (max-width: 48rem) {
+
+    .wizard {
+
+        padding-inline: var(--layout-page-padding-mobile);
+
+    }
+
+    .wizard-header {
+
+        text-align: center;
+
+    }
+
+    .wizard-header h1 {
+
+        font-size: 32px;
+
+    }
+
+    .wizard-header p {
+
+        margin-inline: auto;
+
+        text-align: center;
+
+    }
+
+    .wizard-dots {
+
+        justify-content: center;
+
+    }
 
 }

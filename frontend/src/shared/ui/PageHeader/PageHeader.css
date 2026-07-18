@@ -37,17 +37,29 @@
 
 @media (max-width: 48rem) {
   .hfos-page-header {
+    align-items: center;
     flex-direction: column;
     gap: var(--space-4);
     margin-bottom: var(--space-6);
+    text-align: center;
+  }
+
+  .hfos-page-header__content {
+    width: 100%;
   }
 
   .hfos-page-header__title {
     font-size: var(--font-size-2xl);
+    text-align: center;
+  }
+
+  .hfos-page-header__subtitle {
+    margin-inline: auto;
+    text-align: center;
   }
 
   .hfos-page-header__actions {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: center;
   }
 }
