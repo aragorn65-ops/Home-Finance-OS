@@ -47,6 +47,8 @@ Country, base currency, and time zone can be changed later in Settings. Choosing
 
 For repeated QA, use Settings -> Clear Test Data to remove accounts, transactions, settlements, savings records, utility-bill records, and leftover preview keys while keeping the household setup. Use Reset All Application Data only when you want to delete the household and return to first-time setup.
 
+Sprint 16 will add local Export Backup and Import Backup workflows before any Google Drive or cloud backup integration.
+
 ---
 
 ## Monthly Workflow
