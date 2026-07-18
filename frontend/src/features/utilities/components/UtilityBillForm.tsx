@@ -785,7 +785,7 @@ export default function UtilityBillForm({
         }
       />
 
-      <div className="sticky top-0 z-20 rounded-xl border border-slate-200 bg-white/95 p-2 shadow-sm backdrop-blur">
+      <div className="sticky top-0 z-20 rounded-xl border bg-card/95 p-2 shadow-sm backdrop-blur">
         <div
           className="flex gap-2 overflow-x-auto"
           role="tablist"
@@ -1943,7 +1943,7 @@ export default function UtilityBillForm({
         </section>
       )}
 
-      <div className="sticky bottom-0 z-20 flex flex-wrap justify-end gap-3 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
+      <div className="sticky bottom-0 z-20 flex flex-wrap justify-end gap-3 rounded-xl border bg-card/95 p-3 shadow-lg backdrop-blur">
         {onCancel && (
           <button
             className={secondaryButtonClassName}
@@ -2005,7 +2005,7 @@ function UtilityEntryTabButton({
       className={`shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition ${
         isActive
           ? "bg-blue-600 text-white"
-          : "text-slate-600 hover:bg-slate-100"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
       }`}
       onClick={onClick}
     >
@@ -2271,7 +2271,7 @@ const primaryButtonClassName =
   "min-h-11 min-w-48 rounded-lg bg-[#dbeafe] px-6 py-2 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-[#9fbce2] focus:outline-none focus:ring-2 focus:ring-blue-500/30";
 
 const secondaryButtonClassName =
-  "min-h-11 min-w-48 rounded-lg border border-slate-200 bg-white px-6 py-2 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+  "min-h-11 min-w-48 rounded-lg border bg-background px-6 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500/20";
 
 const dangerButtonClassName =
   "min-h-11 w-full rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50";
