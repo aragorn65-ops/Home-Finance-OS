@@ -30,6 +30,12 @@ const resetPreservedLocalStorageKeys =
     "hfos.themePreference",
   ]);
 
+const testDataResetPreservedLocalStorageKeys =
+  new Set<string>([
+    ...resetPreservedLocalStorageKeys,
+    HFOS_STORAGE_KEYS.household,
+  ]);
+
 /**
  * Removes all locally persisted HFOS application data.
  *
@@ -45,95 +51,12 @@ export function resetApplicationData():
   ApplicationDataResetResult {
   const errors: string[] = [];
 
-  const removeCurrentRecord = (
-    label: string,
-    result: StorageWriteResult
-  ): void => {
-    if (result.success) {
-      return;
-    }
-
-    errors.push(
-      result.message ??
-        `${label} could not be removed.`
-    );
-  };
-
-  const clearCurrentCollection = (
-    label: string,
-    result: StorageWriteResult
-  ): void => {
-    if (result.success) {
-      return;
-    }
-
-    errors.push(
-      result.message ??
-        `${label} could not be cleared.`
-    );
-  };
-
-  clearCurrentCollection(
-    "Settlement applications",
-    saveStoredData(
-      HFOS_STORAGE_KEYS
-        .settlementApplications,
-      []
-    )
-  );
-
-  clearCurrentCollection(
-    "Settlements",
-    saveStoredData(
-      HFOS_STORAGE_KEYS.settlements,
-      []
-    )
-  );
-
-  clearCurrentCollection(
-    "Expense allocations",
-    saveStoredData(
-      HFOS_STORAGE_KEYS
-        .expenseAllocations,
-      []
-    )
-  );
-
-  clearCurrentCollection(
-    "Transactions",
-    saveStoredData(
-      HFOS_STORAGE_KEYS.transactions,
-      []
-    )
-  );
-
-  clearCurrentCollection(
-    "Savings activities",
-    saveStoredData(
-      HFOS_STORAGE_KEYS
-        .savingsActivities,
-      []
-    )
-  );
-
-  clearCurrentCollection(
-    "Savings goals",
-    saveStoredData(
-      HFOS_STORAGE_KEYS
-        .savingsGoals,
-      []
-    )
-  );
-
-  clearCurrentCollection(
-    "Accounts",
-    saveStoredData(
-      HFOS_STORAGE_KEYS.accounts,
-      []
-    )
+  clearFinancialCollections(
+    errors
   );
 
   removeCurrentRecord(
+    errors,
     "Household",
     removeStoredData(
       HFOS_STORAGE_KEYS.household
@@ -141,6 +64,7 @@ export function resetApplicationData():
   );
 
   removeCurrentRecord(
+    errors,
     "Legacy household",
     removeLegacyStoredData(
       HFOS_LEGACY_STORAGE_KEYS
@@ -149,7 +73,33 @@ export function resetApplicationData():
   );
 
   clearUnknownHfosStorageKeys(
+    errors,
+    resetPreservedLocalStorageKeys
+  );
+
+  return {
+    success:
+      errors.length === 0,
+
+    errors,
+  };
+}
+
+/**
+ * Clears financial/test records while keeping the active
+ * household setup and local display preferences intact.
+ */
+export function resetHouseholdTestData():
+  ApplicationDataResetResult {
+  const errors: string[] = [];
+
+  clearFinancialCollections(
     errors
+  );
+
+  clearUnknownHfosStorageKeys(
+    errors,
+    testDataResetPreservedLocalStorageKeys
   );
 
   return {
@@ -178,13 +128,13 @@ export function reloadAfterApplicationReset():
 }
 
 function clearUnknownHfosStorageKeys(
-  errors: string[]
+  errors: string[],
+  preserveKeys: Set<string>
 ): void {
   clearStorageByPrefix({
     errors,
     label: "Additional HFOS local data",
-    preserveKeys:
-      resetPreservedLocalStorageKeys,
+    preserveKeys,
     storage:
       getStorage("localStorage"),
   });
@@ -243,6 +193,107 @@ function clearStorageByPrefix({
       `${label} could not be cleared.`
     );
   }
+}
+
+function clearFinancialCollections(
+  errors: string[]
+): void {
+  clearCurrentCollection(
+    errors,
+    "Settlement applications",
+    saveStoredData(
+      HFOS_STORAGE_KEYS
+        .settlementApplications,
+      []
+    )
+  );
+
+  clearCurrentCollection(
+    errors,
+    "Settlements",
+    saveStoredData(
+      HFOS_STORAGE_KEYS.settlements,
+      []
+    )
+  );
+
+  clearCurrentCollection(
+    errors,
+    "Expense allocations",
+    saveStoredData(
+      HFOS_STORAGE_KEYS
+        .expenseAllocations,
+      []
+    )
+  );
+
+  clearCurrentCollection(
+    errors,
+    "Transactions",
+    saveStoredData(
+      HFOS_STORAGE_KEYS.transactions,
+      []
+    )
+  );
+
+  clearCurrentCollection(
+    errors,
+    "Savings activities",
+    saveStoredData(
+      HFOS_STORAGE_KEYS
+        .savingsActivities,
+      []
+    )
+  );
+
+  clearCurrentCollection(
+    errors,
+    "Savings goals",
+    saveStoredData(
+      HFOS_STORAGE_KEYS
+        .savingsGoals,
+      []
+    )
+  );
+
+  clearCurrentCollection(
+    errors,
+    "Accounts",
+    saveStoredData(
+      HFOS_STORAGE_KEYS.accounts,
+      []
+    )
+  );
+}
+
+function clearCurrentCollection(
+  errors: string[],
+  label: string,
+  result: StorageWriteResult
+): void {
+  if (result.success) {
+    return;
+  }
+
+  errors.push(
+    result.message ??
+      `${label} could not be cleared.`
+  );
+}
+
+function removeCurrentRecord(
+  errors: string[],
+  label: string,
+  result: StorageWriteResult
+): void {
+  if (result.success) {
+    return;
+  }
+
+  errors.push(
+    result.message ??
+      `${label} could not be removed.`
+  );
 }
 
 function getStorage(

@@ -136,7 +136,8 @@ Implemented:
 * Added Australia/Melbourne as a listed time-zone option and clarified that country defaults may still need regional time-zone confirmation.
 * Preserved the no-history-recomputation rule when base currency is changed from Settings and kept historical Dashboard totals labeled with their saved reporting currency.
 * Added contextual Settings warning guidance inside the preference box when saved transactions exist, explaining that base-currency changes affect future defaults only while historical records stay locked; the warning is hidden for households with no transactions.
-* Expanded Reset All Application Data to clear leftover HFOS preview/test-data keys while preserving display-only preferences such as theme.
+* Added a household-preserving Clear Test Data action for repeated QA cleanup of accounts, transactions, settlements, savings, utility-bill records, and leftover HFOS preview keys.
+* Kept Reset All Application Data as the full delete-and-return-to-setup path while preserving display-only preferences such as theme.
 
 ---
 

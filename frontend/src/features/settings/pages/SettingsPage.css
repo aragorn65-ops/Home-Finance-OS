@@ -91,6 +91,12 @@
   padding: var(--space-4);
 }
 
+.settings-confirmation--neutral {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
 .settings-confirmation__title {
   margin: 0;
   color: var(--color-danger-text);
@@ -98,10 +104,18 @@
   font-weight: var(--font-weight-semibold);
 }
 
+.settings-confirmation__title--neutral {
+  color: var(--color-text-strong);
+}
+
 .settings-confirmation__copy {
   margin: var(--space-1) 0 0;
   color: var(--color-danger-text);
   font-size: var(--font-size-sm);
+}
+
+.settings-confirmation__copy--neutral {
+  color: var(--color-text-muted);
 }
 
 .settings-danger-button,

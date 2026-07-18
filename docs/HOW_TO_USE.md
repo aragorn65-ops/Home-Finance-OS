@@ -43,6 +43,8 @@ Tip: The base currency is the main household reporting currency. Foreign-currenc
 
 Country, base currency, and time zone can be changed later in Settings. Choosing a listed country can apply its default currency and time zone. Some countries have multiple regional time zones, so confirm the time zone after selecting a country, such as Australia/Melbourne for a Melbourne household. Use Other / manual when your country, currency, or time zone is not listed. Currency changes apply going forward and do not recompute historical records. When transactions already exist, Settings shows a warning before base-currency changes. Existing transactions keep their saved reporting currency and converted amount.
 
+For repeated QA, use Settings -> Clear Test Data to remove accounts, transactions, settlements, savings records, utility-bill records, and leftover preview keys while keeping the household setup. Use Reset All Application Data only when you want to delete the household and return to first-time setup.
+
 ---
 
 ## Monthly Workflow
@@ -204,7 +206,8 @@ Good feedback examples:
 ## Current Limitations
 
 * Browser-only localStorage persistence.
-* Reset All Application Data clears current HFOS test data and leftover HFOS preview keys from this browser, while keeping display-only preferences such as theme.
+* Clear Test Data keeps the household setup but removes financial/test records from this browser.
+* Reset All Application Data deletes the household and returns the app to first-time setup.
 * No login or authentication yet.
 * No cloud sync.
 * No backup or restore yet.

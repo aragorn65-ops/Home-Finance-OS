@@ -26,6 +26,7 @@ import {
 import {
   reloadAfterApplicationReset,
   resetApplicationData,
+  resetHouseholdTestData,
 } from "../../startup/services/applicationDataReset";
 import TransactionService from "../../transactions/services/TransactionService";
 
@@ -87,6 +88,21 @@ export default function SettingsPage() {
   const [
     resetError,
     setResetError,
+  ] = useState("");
+
+  const [
+    isConfirmingTestDataReset,
+    setIsConfirmingTestDataReset,
+  ] = useState(false);
+
+  const [
+    isClearingTestData,
+    setIsClearingTestData,
+  ] = useState(false);
+
+  const [
+    testDataResetError,
+    setTestDataResetError,
   ] = useState("");
 
   const countryOptions =
@@ -171,6 +187,36 @@ export default function SettingsPage() {
       );
 
       setIsResetting(false);
+
+      return;
+    }
+
+    reloadAfterApplicationReset();
+  };
+
+  const handleBeginTestDataReset = (): void => {
+    setTestDataResetError("");
+    setIsConfirmingTestDataReset(true);
+  };
+
+  const handleCancelTestDataReset = (): void => {
+    setTestDataResetError("");
+    setIsConfirmingTestDataReset(false);
+  };
+
+  const handleConfirmTestDataReset = (): void => {
+    setTestDataResetError("");
+    setIsClearingTestData(true);
+
+    const result =
+      resetHouseholdTestData();
+
+    if (!result.success) {
+      setTestDataResetError(
+        result.errors.join(" ")
+      );
+
+      setIsClearingTestData(false);
 
       return;
     }
@@ -568,6 +614,77 @@ export default function SettingsPage() {
                 </p>
               )}
             </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                Clear Test Data
+              </h2>
+
+              <p className="mt-2 text-sm text-muted-foreground">
+                Remove accounts, transactions, expense allocations,
+                utility-bill records, settlements, savings records,
+                and leftover HFOS preview keys while keeping this
+                household setup, preferences, and theme.
+              </p>
+            </div>
+
+            {testDataResetError && (
+              <div
+                role="alert"
+                className="settings-alert settings-alert--danger"
+              >
+                {testDataResetError}
+              </div>
+            )}
+
+            {!isConfirmingTestDataReset ? (
+              <button
+                type="button"
+                onClick={handleBeginTestDataReset}
+                disabled={!household}
+                className="settings-secondary-button"
+              >
+                Clear Test Data
+              </button>
+            ) : (
+              <div className="settings-confirmation settings-confirmation--neutral">
+                <p className="settings-confirmation__title settings-confirmation__title--neutral">
+                  Confirm test-data cleanup
+                </p>
+
+                <p className="settings-confirmation__copy settings-confirmation__copy--neutral">
+                  Test financial records will be cleared from this
+                  browser. Your household setup and preferences will
+                  remain.
+                </p>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleConfirmTestDataReset}
+                    disabled={isClearingTestData}
+                    className="settings-secondary-button"
+                  >
+                    {isClearingTestData
+                      ? "Clearing..."
+                      : "Clear Test Data"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCancelTestDataReset}
+                    disabled={isClearingTestData}
+                    className="settings-secondary-button"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 
