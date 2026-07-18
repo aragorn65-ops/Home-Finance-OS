@@ -608,23 +608,34 @@ export default function UtilitiesPage() {
           )}
         </div>
 
-        {providerBills.length > 0 && (
-          <section
-            id="bills-to-pay"
-            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <div>
-              <h2 className="font-semibold text-slate-900">
-                Bills to Pay
-              </h2>
+        <section
+          id="bills-to-pay"
+          className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <div>
+            <h2 className="font-semibold text-slate-900">
+              Bills to Pay
+            </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Entered provider bills with calculated
-                shares, waiting for an actual household
-                payment.
+            <p className="mt-1 text-sm text-slate-500">
+              Entered provider bills with calculated
+              shares, waiting for an actual household
+              payment.
+            </p>
+          </div>
+
+          {providerBills.length === 0 ? (
+            <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-sm font-medium text-emerald-900">
+                No unpaid provider bills right now.
+              </p>
+
+              <p className="mt-1 text-sm text-emerald-700">
+                New utility or internet bills saved as unpaid
+                will appear here until someone marks them paid.
               </p>
             </div>
-
+          ) : (
             <div className="mt-4 grid gap-3">
               {providerBills.map(
                 (providerBill) => (
@@ -708,8 +719,8 @@ export default function UtilitiesPage() {
                 )
               )}
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         {paidProviderBills.length > 0 && (
           <ProviderPaymentsSummary

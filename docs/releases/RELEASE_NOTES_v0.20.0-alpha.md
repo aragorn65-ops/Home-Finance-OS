@@ -31,6 +31,7 @@ The goal is to protect data when the browser or device is shared, while keeping 
 ## Planned Additions
 
 * Dashboard quick action for unpaid provider bills.
+* Empty Bills to Pay message when every provider bill has been paid.
 * Local app lock setup.
 * Unlock screen before household data is shown.
 * Privacy/session settings.

@@ -22,6 +22,7 @@ HFOS is still a local-first app, so the priority is to protect household data on
 Sprint 20 candidates include:
 
 * [x] Add a dashboard quick action for unpaid provider bills.
+* [x] Show an empty Bills to Pay state when no unpaid provider bills exist.
 * [ ] Add an optional local app lock / PIN.
 * [ ] Support manual lock from the app shell.
 * [ ] Lock the app after browser refresh or inactivity when app lock is enabled.
@@ -63,6 +64,7 @@ Manual QA should include:
 
 * Confirm Dashboard > Quick Actions includes Unpaid Bills.
 * Confirm Unpaid Bills opens Utilities at Bills to Pay.
+* Confirm Bills to Pay shows an empty state when there are no unpaid provider bills.
 * Enable app lock and set a PIN.
 * Refresh the browser and confirm the app locks.
 * Unlock with the correct PIN.
