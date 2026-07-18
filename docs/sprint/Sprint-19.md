@@ -40,6 +40,7 @@ Sprint 19 candidates include:
 * Provider name and due date are part of bill entry.
 * Bills to Pay appears in Utilities for active unpaid provider bills.
 * Bills to Pay shows the saved member-share breakdown for each unpaid provider bill.
+* Unpaid provider bill files can be added or removed when a wrong file was attached.
 * Mark Paid now captures payer, account, payment date, reference, and provider-payment receipt.
 * Mark Paid creates the utility expense transaction and settlement obligations from the saved share snapshot.
 * Backup/restore includes provider bills, while older backups without this collection still restore with an empty provider-bill list.

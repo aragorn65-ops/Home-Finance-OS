@@ -298,6 +298,68 @@ export default class UtilityProviderBillService {
       "Provider bill marked paid. HFOS created the transaction and settlement obligations."
     );
   }
+
+  static replaceBillAttachments(
+    providerBillId: string,
+    billAttachments:
+      StoredAttachment[]
+  ): OperationResult<UtilityProviderBill> {
+    const providerBill =
+      UtilityProviderBillRepository.findById(
+        providerBillId
+      );
+
+    if (!providerBill) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          providerBill:
+            "Select a valid provider bill.",
+        },
+        "Provider bill was not found."
+      );
+    }
+
+    if (providerBill.status !== "unpaid") {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          providerBill:
+            "Paid provider bills cannot be changed from Bills to Pay.",
+        },
+        "Provider bill attachment was not updated."
+      );
+    }
+
+    const updatedProviderBill:
+      UtilityProviderBill = {
+      ...providerBill,
+      billAttachments:
+        billAttachments.map(
+          (attachment) => ({
+            ...attachment,
+            createdAt:
+              new Date(
+                attachment.createdAt
+              ),
+          })
+        ),
+      updatedAt:
+        new Date(),
+    };
+
+    const savedProviderBill =
+      UtilityProviderBillRepository.update(
+        updatedProviderBill
+      );
+
+    return OperationResults.success(
+      savedProviderBill,
+      "Provider bill attachment updated."
+    );
+  }
 }
 
 function buildFormSnapshot(

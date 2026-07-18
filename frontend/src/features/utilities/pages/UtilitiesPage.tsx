@@ -328,6 +328,98 @@ export default function UtilitiesPage() {
     );
   };
 
+  const handleBillAttachmentChange = (
+    providerBill: UtilityProviderBill,
+    event:
+      ChangeEvent<HTMLInputElement>
+  ): void => {
+    const file =
+      event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    void readFileAsDataUrl(file)
+      .then((dataUrl) => {
+        const nextAttachments = [
+          ...providerBill.billAttachments,
+          {
+            id:
+              createAttachmentId(),
+            category: "bill" as const,
+            fileName:
+              file.name,
+            mimeType:
+              file.type ||
+              "application/octet-stream",
+            sizeBytes:
+              file.size,
+            dataUrl,
+            createdAt:
+              new Date(),
+          },
+        ];
+
+        updateBillAttachments(
+          providerBill.id,
+          nextAttachments
+        );
+      })
+      .catch(() => {
+        setSaveError(
+          "Provider bill file could not be attached."
+        );
+      });
+  };
+
+  const handleRemoveBillAttachment = (
+    providerBill:
+      UtilityProviderBill,
+    attachmentId: string
+  ): void => {
+    updateBillAttachments(
+      providerBill.id,
+      providerBill.billAttachments.filter(
+        (attachment) =>
+          attachment.id !==
+          attachmentId
+      )
+    );
+  };
+
+  const updateBillAttachments = (
+    providerBillId: string,
+    billAttachments:
+      StoredAttachment[]
+  ): void => {
+    const result =
+      UtilityProviderBillService.replaceBillAttachments(
+        providerBillId,
+        billAttachments
+      );
+
+    if (!result.success) {
+      setSaveError(
+        result.message ??
+          "Provider bill attachment was not updated."
+      );
+
+      return;
+    }
+
+    setProviderBills(
+      UtilityProviderBillService.getActiveProviderBills()
+    );
+    setSaveError("");
+    setSaveMessage(
+      result.message ??
+        "Provider bill attachment updated."
+    );
+  };
+
   const handleSave = (
     form: UtilityBillFormData,
     calculation: UtilityBillShareResult
@@ -546,6 +638,12 @@ export default function UtilitiesPage() {
                       onRemoveReceipt={
                         handleRemovePaymentReceipt
                       }
+                      onAttachBillFile={
+                        handleBillAttachmentChange
+                      }
+                      onRemoveBillFile={
+                        handleRemoveBillAttachment
+                      }
                     />
                   </article>
                 )
@@ -615,6 +713,14 @@ interface ProviderBillPaymentControlsProps {
     providerBillId: string,
     attachmentId: string
   ) => void;
+  onAttachBillFile: (
+    providerBill: UtilityProviderBill,
+    event: ChangeEvent<HTMLInputElement>
+  ) => void;
+  onRemoveBillFile: (
+    providerBill: UtilityProviderBill,
+    attachmentId: string
+  ) => void;
 }
 
 function ProviderBillPaymentControls({
@@ -628,6 +734,8 @@ function ProviderBillPaymentControls({
   onMarkPaid,
   onAttachReceipt,
   onRemoveReceipt,
+  onAttachBillFile,
+  onRemoveBillFile,
 }: ProviderBillPaymentControlsProps) {
   const paymentAccounts =
     accounts.filter(
@@ -641,6 +749,16 @@ function ProviderBillPaymentControls({
       <ProviderBillShareBreakdown
         providerBill={providerBill}
         memberNames={memberNames}
+      />
+
+      <ProviderBillAttachmentControls
+        providerBill={providerBill}
+        onAttachBillFile={
+          onAttachBillFile
+        }
+        onRemoveBillFile={
+          onRemoveBillFile
+        }
       />
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
@@ -885,6 +1003,86 @@ function ProviderBillShareBreakdown({
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function ProviderBillAttachmentControls({
+  providerBill,
+  onAttachBillFile,
+  onRemoveBillFile,
+}: {
+  providerBill: UtilityProviderBill;
+  onAttachBillFile: (
+    providerBill: UtilityProviderBill,
+    event: ChangeEvent<HTMLInputElement>
+  ) => void;
+  onRemoveBillFile: (
+    providerBill: UtilityProviderBill,
+    attachmentId: string
+  ) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-semibold text-slate-900">
+            Provider Bill Files
+          </h4>
+
+          <p className="mt-1 text-xs text-slate-500">
+            Replace a wrong bill file before marking this bill paid.
+          </p>
+        </div>
+
+        <label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          Add Bill File
+          <input
+            className="sr-only"
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={(event) =>
+              onAttachBillFile(
+                providerBill,
+                event
+              )
+            }
+          />
+        </label>
+      </div>
+
+      {providerBill.billAttachments.length >
+      0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {providerBill.billAttachments.map(
+            (attachment) => (
+              <span
+                key={attachment.id}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600"
+              >
+                {attachment.fileName}
+
+                <button
+                  type="button"
+                  className="font-semibold text-red-600"
+                  onClick={() =>
+                    onRemoveBillFile(
+                      providerBill,
+                      attachment.id
+                    )
+                  }
+                >
+                  Remove
+                </button>
+              </span>
+            )
+          )}
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-slate-500">
+          No bill file attached yet.
+        </p>
+      )}
     </div>
   );
 }
