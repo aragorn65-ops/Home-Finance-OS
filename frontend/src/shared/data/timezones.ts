@@ -42,6 +42,10 @@ export const timezones: SelectOption[] = [
     label: "Europe/Berlin (UTC+01:00 / +02:00)",
   },
   {
+    value: "Asia/Riyadh",
+    label: "Asia/Riyadh (UTC+03:00)",
+  },
+  {
     value: "Asia/Qatar",
     label: "Asia/Qatar (UTC+03:00)",
   },

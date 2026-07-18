@@ -34,6 +34,10 @@ export const currencies: SelectOption[] = [
     label: "Euro (€)",
   },
   {
+    value: "SAR",
+    label: "Saudi Riyal (SAR)",
+  },
+  {
     value: "QAR",
     label: "Qatari Riyal (QR)",
   },
