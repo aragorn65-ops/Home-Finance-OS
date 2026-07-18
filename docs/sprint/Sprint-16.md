@@ -54,6 +54,7 @@ Implemented:
 * Added an embedded backup summary with household name, export date, and record counts, while keeping preview derivation compatible with earlier Sprint 16 backups.
 * Added a restore confirmation before replacing current browser-local HFOS data.
 * Added restore preview metadata showing household name, export date, and record counts before confirmation.
+* Added restore rollback protection so current browser data is restored if a storage write fails mid-restore.
 * Reloaded the app after successful restore so repositories hydrate from restored storage.
 
 Deferred:
@@ -77,6 +78,7 @@ Restore should:
 * Reject malformed required collections.
 * Show a confirmation before replacing current local data.
 * Replace current browser-local HFOS records only after validation passes.
+* Roll back to the pre-restore browser data if a write fails.
 * Reload after success.
 
 Restore should not:
@@ -121,6 +123,7 @@ Manual QA should include:
 * Restore from the household setup screen before creating a new household.
 * Restore after Clear Test Data.
 * Confirm restore preview metadata matches the selected backup before restoring.
+* Confirm restore failure does not leave partial restored data.
 * Reject invalid JSON.
 * Reject a JSON file that is not an HFOS backup.
 * Confirm restored historical currency fields remain unchanged.

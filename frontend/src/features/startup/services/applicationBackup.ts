@@ -200,6 +200,17 @@ export function createApplicationBackup():
 export function restoreApplicationBackup(
   json: string
 ): ApplicationRestoreResult {
+  const storage =
+    getLocalStorage();
+
+  if (!storage) {
+    return {
+      success: false,
+      message:
+        "Browser local storage is unavailable.",
+    };
+  }
+
   const validation =
     validateApplicationBackup(
       json
@@ -212,6 +223,9 @@ export function restoreApplicationBackup(
   const backup =
     validation.backup;
 
+  const snapshot =
+    createRestoreSnapshot(storage);
+
   for (const key of backupStorageKeys) {
     const writeResult =
       saveStoredData(
@@ -220,6 +234,11 @@ export function restoreApplicationBackup(
       );
 
     if (!writeResult.success) {
+      restoreSnapshot(
+        storage,
+        snapshot
+      );
+
       return {
         success: false,
         message:
@@ -232,9 +251,22 @@ export function restoreApplicationBackup(
   if (
     backup.preferences.themePreference
   ) {
-    storeThemePreference(
-      backup.preferences.themePreference
-    );
+    try {
+      storeThemePreference(
+        backup.preferences.themePreference
+      );
+    } catch {
+      restoreSnapshot(
+        storage,
+        snapshot
+      );
+
+      return {
+        success: false,
+        message:
+          "Backup theme preference could not be restored.",
+      };
+    }
   }
 
   return {
@@ -242,6 +274,44 @@ export function restoreApplicationBackup(
     message:
       "Backup restored successfully.",
   };
+}
+
+function createRestoreSnapshot(
+  storage: Storage
+): Map<string, string | null> {
+  const snapshot =
+    new Map<string, string | null>();
+
+  backupStorageKeys.forEach((key) => {
+    snapshot.set(
+      key,
+      storage.getItem(key)
+    );
+  });
+
+  snapshot.set(
+    "hfos.themePreference",
+    storage.getItem(
+      "hfos.themePreference"
+    )
+  );
+
+  return snapshot;
+}
+
+function restoreSnapshot(
+  storage: Storage,
+  snapshot: Map<string, string | null>
+): void {
+  snapshot.forEach((value, key) => {
+    if (value === null) {
+      storage.removeItem(key);
+
+      return;
+    }
+
+    storage.setItem(key, value);
+  });
 }
 
 export function validateApplicationBackup(
