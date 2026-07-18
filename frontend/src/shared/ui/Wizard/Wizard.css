@@ -2,6 +2,8 @@
 
     width:100%;
 
+    min-width:0;
+
     max-width:720px;
 
     margin:0 auto;
@@ -41,6 +43,8 @@
 .wizard-content{
 
     display:flex;
+
+    min-width:0;
 
     flex-direction:column;
 
@@ -86,7 +90,7 @@
 
     .wizard {
 
-        padding-inline: var(--layout-page-padding-mobile);
+        max-width: 100%;
 
     }
 
@@ -98,7 +102,9 @@
 
     .wizard-header h1 {
 
-        font-size: 32px;
+        font-size: 30px;
+
+        overflow-wrap: anywhere;
 
     }
 
@@ -107,6 +113,12 @@
         margin-inline: auto;
 
         text-align: center;
+
+    }
+
+    .wizard-content > * {
+
+        min-width: 0;
 
     }
 

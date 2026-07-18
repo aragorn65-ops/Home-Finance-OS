@@ -10,10 +10,46 @@
 
     width:100%;
 
+    min-width:0;
+
 }
 
 .wizard-footer-spacer{
 
     width:120px;
+
+}
+
+@media (max-width: 30rem) {
+
+    .wizard-footer {
+
+        flex-direction: column-reverse;
+
+        align-items: stretch;
+
+        gap: var(--space-3);
+
+    }
+
+    .wizard-footer > * {
+
+        width: 100%;
+
+    }
+
+    .wizard-footer .hfos-button {
+
+        width: 100%;
+
+        white-space: normal;
+
+    }
+
+    .wizard-footer > div:empty {
+
+        display: none;
+
+    }
 
 }
