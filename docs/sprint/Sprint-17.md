@@ -53,7 +53,8 @@ Implemented:
 * Disabled Export Backup when the current browser data is not exportable.
 * Added an optional Google Drive backup action that uploads the same local backup package when `VITE_GOOGLE_CLIENT_ID` is configured.
 * Added a frontend `.env.example` documenting the Google OAuth client ID setting.
-* Updated the GitHub Pages preview workflow to pass `VITE_GOOGLE_CLIENT_ID` from repository variables into the Vite build.
+* Updated the GitHub Pages preview workflow to pass `VITE_GOOGLE_CLIENT_ID` from repository variables or Actions secrets into the Vite build.
+* Added a workflow warning when `VITE_GOOGLE_CLIENT_ID` is missing from the build.
 * Disabled the Google Drive backup action and showed a setup note when the deployed app has no Google client ID.
 
 ---

@@ -19,6 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID || secrets.VITE_GOOGLE_CLIENT_ID }}
 
     steps:
       - name: Checkout
@@ -35,11 +37,18 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Check Google Drive client configuration
+        run: |
+          if [ -n "$VITE_GOOGLE_CLIENT_ID" ]; then
+            echo "Google Drive client ID is configured for this build."
+          else
+            echo "::warning::VITE_GOOGLE_CLIENT_ID is missing; Google Drive backup will be disabled."
+          fi
+
       - name: Build preview
         working-directory: frontend
         env:
           GITHUB_PAGES: "true"
-          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build
 
       - name: Add single-page app fallback
