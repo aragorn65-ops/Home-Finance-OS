@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 
 import PageHeader from "../../../shared/ui/PageHeader";
 import Card from "../../../shared/ui/Card";
@@ -42,6 +43,9 @@ const customPreferenceValue =
   "__custom__";
 
 export default function SettingsPage() {
+  const navigate =
+    useNavigate();
+
   const household =
     loadHousehold();
 
@@ -449,6 +453,8 @@ export default function SettingsPage() {
     setPreferencesMessage(
       "Household preferences updated. Historical financial records were not changed."
     );
+
+    navigate("/app");
   };
 
   const handleCountryPreferenceChange = (
