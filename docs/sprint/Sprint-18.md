@@ -62,6 +62,7 @@ Implemented:
 * Surfaced Google Drive API rejection status and message details in Settings alerts to make OAuth and API setup failures easier to diagnose.
 * Clarified that Drive restore lists only low-permission app-visible backups; manually uploaded Drive files should be downloaded and restored with Import Backup.
 * Fixed utility bill saves after restore by giving utility-generated expense transactions the household base currency and a locked exchange rate of 1.
+* Added settlement transfer receipt attachments with upload, paste screenshot, preview, validation, persistence, backup, and restore support.
 
 ---
 
@@ -111,3 +112,4 @@ Manual QA confirmed:
 * Restoring from Drive hydrates browser-local household data in a fresh/private browser session.
 * Manually copied Drive files remain supported through Import Backup after downloading them from Drive.
 * Mobile Settings layout remains usable for the Data & Backup flow.
+* Post-restore settlement records can store transfer receipt proof files.

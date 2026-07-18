@@ -66,7 +66,7 @@ Recommended flow:
 2. Enter income and expenses in Transactions.
 3. Add utilities if needed.
 4. Review outstanding settlements.
-5. Record settlements when someone pays someone back.
+5. Record settlements when someone pays someone back. Add a transfer receipt, pasted screenshot, or PDF proof of payment when available.
 6. Check Dashboard and Analytics for the selected month.
 
 ---

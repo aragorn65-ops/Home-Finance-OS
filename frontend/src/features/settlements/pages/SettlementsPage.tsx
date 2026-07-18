@@ -137,6 +137,18 @@ function mapSettlementToForm(
     notes:
       settlement.notes ?? "",
 
+    attachments:
+      settlement.attachments.map(
+        (attachment) => ({
+          ...attachment,
+
+          createdAt:
+            new Date(
+              attachment.createdAt
+            ),
+        })
+      ),
+
     isActive:
       settlement.isActive,
   };

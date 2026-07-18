@@ -202,6 +202,11 @@ export default class SettlementService {
         form.notes.trim() ||
         undefined,
 
+      attachments:
+        this.cloneAttachments(
+          form.attachments
+        ),
+
       isActive:
         form.isActive,
 
@@ -458,6 +463,11 @@ export default class SettlementService {
         notes:
           form.notes.trim() ||
           undefined,
+
+        attachments:
+          this.cloneAttachments(
+            form.attachments
+          ),
 
         isActive:
           form.isActive,
@@ -1328,6 +1338,25 @@ export default class SettlementService {
 
     return OperationResults.success(
       true
+    );
+  }
+
+  /**
+   * Returns defensive copies of settlement transfer receipts.
+   */
+  private static cloneAttachments(
+    attachments:
+      SettlementForm["attachments"]
+  ): SettlementForm["attachments"] {
+    return attachments.map(
+      (attachment) => ({
+        ...attachment,
+
+        createdAt:
+          new Date(
+            attachment.createdAt
+          ),
+      })
     );
   }
 

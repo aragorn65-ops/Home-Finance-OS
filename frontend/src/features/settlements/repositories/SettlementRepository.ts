@@ -3,6 +3,11 @@ import type {
   SettlementApplicationMethod,
 } from "../models/Settlement";
 
+import type {
+  StoredAttachment,
+  StoredAttachmentCategory,
+} from "../../../shared/models/StoredAttachment";
+
 import {
   loadHousehold,
 } from "../../household/services/householdStorage";
@@ -17,14 +22,31 @@ interface SerializedSettlement
   extends Omit<
     Settlement,
     | "settlementDate"
+    | "attachments"
     | "createdAt"
     | "updatedAt"
   > {
   settlementDate: string;
+  attachments?: SerializedStoredAttachment[];
 
   createdAt: string;
   updatedAt: string;
 }
+
+interface SerializedStoredAttachment
+  extends Omit<
+    StoredAttachment,
+    "createdAt"
+  > {
+  createdAt: string;
+}
+
+const attachmentCategories:
+  StoredAttachmentCategory[] = [
+    "receipt",
+    "bill",
+    "other",
+  ];
 
 const applicationMethods:
   SettlementApplicationMethod[] = [
@@ -483,6 +505,17 @@ export default class SettlementRepository {
         settlement.settlementDate
           .toISOString(),
 
+      attachments:
+        settlement.attachments.map(
+          (attachment) => ({
+            ...attachment,
+
+            createdAt:
+              attachment.createdAt
+                .toISOString(),
+          })
+        ),
+
       createdAt:
         settlement.createdAt
           .toISOString(),
@@ -506,6 +539,18 @@ export default class SettlementRepository {
       settlementDate:
         new Date(
           settlement.settlementDate
+        ),
+
+      attachments:
+        (settlement.attachments ?? []).map(
+          (attachment) => ({
+            ...attachment,
+
+            createdAt:
+              new Date(
+                attachment.createdAt
+              ),
+          })
         ),
 
       createdAt:
@@ -532,6 +577,18 @@ export default class SettlementRepository {
       settlementDate:
         new Date(
           settlement.settlementDate
+        ),
+
+      attachments:
+        settlement.attachments.map(
+          (attachment) => ({
+            ...attachment,
+
+            createdAt:
+              new Date(
+                attachment.createdAt
+              ),
+          })
         ),
 
       createdAt:
@@ -605,6 +662,9 @@ export default class SettlementRepository {
       this.isOptionalString(
         value.notes
       ) &&
+      this.isOptionalAttachmentArray(
+        value.attachments
+      ) &&
       typeof value.isActive ===
         "boolean" &&
       this.isDateString(
@@ -636,6 +696,49 @@ export default class SettlementRepository {
       value === undefined ||
       typeof value ===
         "string"
+    );
+  }
+
+  private static isOptionalAttachmentArray(
+    value: unknown
+  ): value is
+    | SerializedStoredAttachment[]
+    | undefined {
+    return (
+      value === undefined ||
+      (
+        Array.isArray(value) &&
+        value.every(
+          (attachment) =>
+            this.isSerializedAttachment(
+              attachment
+            )
+        )
+      )
+    );
+  }
+
+  private static isSerializedAttachment(
+    value: unknown
+  ): value is SerializedStoredAttachment {
+    if (!this.isRecord(value)) {
+      return false;
+    }
+
+    return (
+      typeof value.id === "string" &&
+      attachmentCategories.includes(
+        value.category as StoredAttachmentCategory
+      ) &&
+      typeof value.fileName === "string" &&
+      typeof value.mimeType === "string" &&
+      this.isFiniteNumber(
+        value.sizeBytes
+      ) &&
+      typeof value.dataUrl === "string" &&
+      this.isDateString(
+        value.createdAt
+      )
     );
   }
 
