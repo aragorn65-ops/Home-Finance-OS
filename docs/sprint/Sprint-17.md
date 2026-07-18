@@ -57,6 +57,8 @@ Implemented:
 * Added a workflow warning when `VITE_GOOGLE_CLIENT_ID` is missing from the build.
 * Updated GitHub Pages deploy actions to Node 24-compatible major versions.
 * Disabled the Google Drive backup action and showed a setup note when the deployed app has no Google client ID.
+* Expanded backup summary metadata with package version, storage schema, theme preference, allocation counts, settlement application counts, and savings activity counts.
+* Showed the richer package metadata in both Settings restore preview and household-setup restore preview.
 
 ---
 
@@ -88,6 +90,7 @@ Manual QA should include:
 * Confirm Save to Google Drive is disabled and Settings explains missing configuration when `VITE_GOOGLE_CLIENT_ID` is not set.
 * Confirm Save to Google Drive uploads a backup file when a Google OAuth client ID is configured.
 * Export a backup and confirm package details match the app preview.
+* Confirm restore previews show package version, schema, theme, and all major collection counts for new backups.
 * Restore a valid backup after Clear Test Data.
 * Reject invalid JSON.
 * Reject non-HFOS JSON.

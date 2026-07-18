@@ -52,13 +52,25 @@ export interface ApplicationBackupSummary {
 
   exportedAt: string;
 
+  backupVersion?: number;
+
+  storageSchemaVersion?: number;
+
+  themePreference?: ThemePreference;
+
   accountCount: number;
 
   transactionCount: number;
 
+  expenseAllocationCount?: number;
+
   settlementCount: number;
 
+  settlementApplicationCount?: number;
+
   savingsGoalCount: number;
+
+  savingsActivityCount?: number;
 }
 
 export interface ApplicationDataHealthSummary {
@@ -671,6 +683,13 @@ function createBackupSummary(
     householdName,
     exportedAt:
       backup.exportedAt,
+    backupVersion:
+      backup.backupVersion,
+    storageSchemaVersion:
+      backup.storageSchemaVersion,
+    themePreference:
+      backup.preferences
+        .themePreference,
     accountCount:
       getCollectionCount(
         backup,
@@ -681,15 +700,33 @@ function createBackupSummary(
         backup,
         HFOS_STORAGE_KEYS.transactions
       ),
+    expenseAllocationCount:
+      getCollectionCount(
+        backup,
+        HFOS_STORAGE_KEYS
+          .expenseAllocations
+      ),
     settlementCount:
       getCollectionCount(
         backup,
         HFOS_STORAGE_KEYS.settlements
       ),
+    settlementApplicationCount:
+      getCollectionCount(
+        backup,
+        HFOS_STORAGE_KEYS
+          .settlementApplications
+      ),
     savingsGoalCount:
       getCollectionCount(
         backup,
         HFOS_STORAGE_KEYS.savingsGoals
+      ),
+    savingsActivityCount:
+      getCollectionCount(
+        backup,
+        HFOS_STORAGE_KEYS
+          .savingsActivities
       ),
   };
 }
@@ -794,6 +831,37 @@ function isBackupSummary(
     return false;
   }
 
+  const optionalNumberFields = [
+    "backupVersion",
+    "storageSchemaVersion",
+    "expenseAllocationCount",
+    "settlementApplicationCount",
+    "savingsActivityCount",
+  ];
+
+  const optionalNumbersAreValid =
+    optionalNumberFields.every(
+      (field) =>
+        value[field] ===
+          undefined ||
+        (typeof value[field] ===
+          "number" &&
+          Number.isInteger(
+            value[field]
+          ) &&
+          value[field] >= 0)
+    );
+
+  const optionalThemeIsValid =
+    value.themePreference ===
+      undefined ||
+    value.themePreference ===
+      "system" ||
+    value.themePreference ===
+      "light" ||
+    value.themePreference ===
+      "dark";
+
   return (
     typeof value.householdName ===
       "string" &&
@@ -822,7 +890,9 @@ function isBackupSummary(
     Number.isInteger(
       value.savingsGoalCount
     ) &&
-    value.savingsGoalCount >= 0
+    value.savingsGoalCount >= 0 &&
+    optionalNumbersAreValid &&
+    optionalThemeIsValid
   );
 }
 

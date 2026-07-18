@@ -1321,6 +1321,37 @@ function BackupSummaryList({
         </dd>
       </div>
 
+      {summary.storageSchemaVersion !==
+        undefined && (
+        <div>
+          <dt>Schema</dt>
+          <dd>
+            v{summary.storageSchemaVersion}
+          </dd>
+        </div>
+      )}
+
+      {summary.backupVersion !==
+        undefined && (
+        <div>
+          <dt>Backup</dt>
+          <dd>
+            v{summary.backupVersion}
+          </dd>
+        </div>
+      )}
+
+      {summary.themePreference && (
+        <div>
+          <dt>Theme</dt>
+          <dd>
+            {formatThemePreference(
+              summary.themePreference
+            )}
+          </dd>
+        </div>
+      )}
+
       <div>
         <dt>Accounts</dt>
         <dd>{summary.accountCount}</dd>
@@ -1331,15 +1362,54 @@ function BackupSummaryList({
         <dd>{summary.transactionCount}</dd>
       </div>
 
+      {summary.expenseAllocationCount !==
+        undefined && (
+        <div>
+          <dt>Allocations</dt>
+          <dd>
+            {
+              summary
+                .expenseAllocationCount
+            }
+          </dd>
+        </div>
+      )}
+
       <div>
         <dt>Settlements</dt>
         <dd>{summary.settlementCount}</dd>
       </div>
 
+      {summary.settlementApplicationCount !==
+        undefined && (
+        <div>
+          <dt>Applications</dt>
+          <dd>
+            {
+              summary
+                .settlementApplicationCount
+            }
+          </dd>
+        </div>
+      )}
+
       <div>
         <dt>Savings Goals</dt>
         <dd>{summary.savingsGoalCount}</dd>
       </div>
+
+      {summary.savingsActivityCount !==
+        undefined && (
+        <div>
+          <dt>Savings Activity</dt>
+          <dd>
+            {
+              summary
+                .savingsActivityCount
+            }
+          </dd>
+        </div>
+      )}
     </dl>
   );
 }

@@ -339,6 +339,44 @@ export default function HouseholdPage() {
                   </dd>
                 </div>
 
+                {restoreSummary.storageSchemaVersion !==
+                  undefined && (
+                  <div>
+                    <dt>Schema</dt>
+                    <dd>
+                      v{
+                        restoreSummary
+                          .storageSchemaVersion
+                      }
+                    </dd>
+                  </div>
+                )}
+
+                {restoreSummary.backupVersion !==
+                  undefined && (
+                  <div>
+                    <dt>Backup</dt>
+                    <dd>
+                      v{
+                        restoreSummary
+                          .backupVersion
+                      }
+                    </dd>
+                  </div>
+                )}
+
+                {restoreSummary.themePreference && (
+                  <div>
+                    <dt>Theme</dt>
+                    <dd>
+                      {formatThemePreference(
+                        restoreSummary
+                          .themePreference
+                      )}
+                    </dd>
+                  </div>
+                )}
+
                 <div>
                   <dt>Accounts</dt>
                   <dd>
@@ -358,6 +396,19 @@ export default function HouseholdPage() {
                   </dd>
                 </div>
 
+                {restoreSummary.expenseAllocationCount !==
+                  undefined && (
+                  <div>
+                    <dt>Allocations</dt>
+                    <dd>
+                      {
+                        restoreSummary
+                          .expenseAllocationCount
+                      }
+                    </dd>
+                  </div>
+                )}
+
                 <div>
                   <dt>Settlements</dt>
                   <dd>
@@ -368,15 +419,41 @@ export default function HouseholdPage() {
                   </dd>
                 </div>
 
+                {restoreSummary.settlementApplicationCount !==
+                  undefined && (
+                  <div>
+                    <dt>Applications</dt>
+                    <dd>
+                      {
+                        restoreSummary
+                          .settlementApplicationCount
+                      }
+                    </dd>
+                  </div>
+                )}
+
                 <div>
                   <dt>Savings Goals</dt>
                   <dd>
                     {
                       restoreSummary
-                        .savingsGoalCount
+                      .savingsGoalCount
                     }
                   </dd>
                 </div>
+
+                {restoreSummary.savingsActivityCount !==
+                  undefined && (
+                  <div>
+                    <dt>Savings Activity</dt>
+                    <dd>
+                      {
+                        restoreSummary
+                          .savingsActivityCount
+                      }
+                    </dd>
+                  </div>
+                )}
               </dl>
             )}
 
@@ -404,6 +481,15 @@ export default function HouseholdPage() {
       </section>
     </div>
   );
+}
+
+function formatThemePreference(
+  value: string
+): string {
+  return value
+    .replace(/^\w/, (letter) =>
+      letter.toUpperCase()
+    );
 }
 
 function formatBackupDate(

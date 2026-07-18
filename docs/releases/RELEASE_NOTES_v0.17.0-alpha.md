@@ -36,6 +36,7 @@ This release should keep HFOS browser-local while making exported data easier to
 * Updated the GitHub Pages preview workflow to pass `VITE_GOOGLE_CLIENT_ID` from repository variables or Actions secrets into the Vite build.
 * Added a workflow warning when `VITE_GOOGLE_CLIENT_ID` is missing from the build.
 * Disabled the Google Drive backup action and showed a setup note when the deployed app has no Google client ID.
+* Expanded backup summary metadata and restore previews with package version, storage schema, theme preference, and all major collection counts.
 
 ---
 
@@ -70,6 +71,7 @@ Before finalizing this alpha, manually verify:
 * Save to Google Drive is disabled and Settings explains missing configuration when `VITE_GOOGLE_CLIENT_ID` is not set.
 * Save to Google Drive uploads a backup file when a Google OAuth client ID is configured.
 * Exported backup details match the app preview.
+* Restore previews show package version, schema, theme, and all major collection counts for new backups.
 * Valid backup restore works after Clear Test Data.
 * Invalid JSON restore shows a clear error.
 * Non-HFOS JSON restore shows a clear error.
