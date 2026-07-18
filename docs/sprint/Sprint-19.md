@@ -5,7 +5,7 @@
 **Release:** v0.19.0-alpha
 **Date:** July 19, 2026
 **Branch:** sprint-19-provider-bills
-**Status:** Open
+**Status:** Closed
 
 ---
 
@@ -88,3 +88,9 @@ Manual QA should include:
 * Confirm paid provider bills appear in Utilities > Provider Payments.
 * Confirm payment creates the transaction and settlement obligations.
 * Confirm backup/restore preserves unpaid and paid provider bills.
+
+---
+
+## Closeout
+
+Sprint 19 is closed after manual QA confirmed provider bill entry, paid/unpaid status, provider payment summaries, local backup/restore, and Google Drive backup/restore on the deployed Sprint 19 build.
