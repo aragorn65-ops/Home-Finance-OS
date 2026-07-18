@@ -226,8 +226,8 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="grid gap-5 border-t pt-4 md:grid-cols-3">
-              <div className="grid gap-2">
+            <div className="settings-preferences-grid">
+              <div className="settings-preferences-field">
                 <label
                   htmlFor="settings-country"
                   className="text-sm font-medium text-foreground"
@@ -245,7 +245,7 @@ export default function SettingsPage() {
                     })
                   }
                   disabled={!household}
-                  className="rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  className="settings-preferences-select"
                 >
                   {countries
                     .filter(
@@ -271,43 +271,43 @@ export default function SettingsPage() {
                 </select>
               </div>
 
-              <div className="grid gap-2">
-              <label
-                htmlFor="settings-base-currency"
-                className="text-sm font-medium text-foreground"
-              >
-                Base Currency
-              </label>
+              <div className="settings-preferences-field">
+                <label
+                  htmlFor="settings-base-currency"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Base Currency
+                </label>
 
-              <select
-                id="settings-base-currency"
-                value={baseCurrency}
-                onChange={(event) =>
-                  savePreferences({
-                    currency:
-                      event.target.value,
-                  })
-                }
-                disabled={!household}
-                className="rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {currencies
-                  .filter(
-                    (currency) =>
-                      currency.value
-                  )
-                  .map((currency) => (
-                    <option
-                      key={currency.value}
-                      value={currency.value}
-                    >
-                      {currency.label}
-                    </option>
-                  ))}
-              </select>
+                <select
+                  id="settings-base-currency"
+                  value={baseCurrency}
+                  onChange={(event) =>
+                    savePreferences({
+                      currency:
+                        event.target.value,
+                    })
+                  }
+                  disabled={!household}
+                  className="settings-preferences-select"
+                >
+                  {currencies
+                    .filter(
+                      (currency) =>
+                        currency.value
+                    )
+                    .map((currency) => (
+                      <option
+                        key={currency.value}
+                        value={currency.value}
+                      >
+                        {currency.label}
+                      </option>
+                    ))}
+                </select>
               </div>
 
-              <div className="grid gap-2">
+              <div className="settings-preferences-field">
                 <label
                   htmlFor="settings-timezone"
                   className="text-sm font-medium text-foreground"
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                     })
                   }
                   disabled={!household}
-                  className="rounded-md border bg-background px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  className="settings-preferences-select"
                 >
                   {timezones
                     .filter(
