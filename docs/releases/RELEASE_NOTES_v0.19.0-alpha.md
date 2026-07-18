@@ -33,6 +33,7 @@ The goal is to calculate member shares when the bill is entered, keep provider p
 * Provider bills can now be saved from Utilities without selecting Paid By.
 * Provider bill entry now captures provider name and due date.
 * Utilities now shows a Bills to Pay section for active unpaid provider bills.
+* Bills to Pay now shows each member's saved calculated share.
 * Provider bills are included in new local and Google Drive backups.
 * Bills to Pay now supports Mark Paid with payer, optional account, payment date, reference, and payment receipt.
 

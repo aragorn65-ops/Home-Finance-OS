@@ -113,6 +113,16 @@ export default function UtilitiesPage() {
       })
     );
 
+  const memberNames =
+    Object.fromEntries(
+      memberOptions.map(
+        (member) => [
+          member.id,
+          member.name,
+        ]
+      )
+    );
+
   const accountOptions =
     activeAccounts.map(
       (account) => ({
@@ -513,9 +523,15 @@ export default function UtilitiesPage() {
                       providerBillId={
                         providerBill.id
                       }
+                      providerBill={
+                        providerBill
+                      }
                       paymentForm={getProviderPaymentForm(
                         providerBill.id
                       )}
+                      memberNames={
+                        memberNames
+                      }
                       members={memberOptions}
                       accounts={accountOptions}
                       onChange={
@@ -572,7 +588,9 @@ export default function UtilitiesPage() {
 
 interface ProviderBillPaymentControlsProps {
   providerBillId: string;
+  providerBill: UtilityProviderBill;
   paymentForm: ProviderPaymentForm;
+  memberNames: Record<string, string>;
   members: {
     id: string;
     name: string;
@@ -601,7 +619,9 @@ interface ProviderBillPaymentControlsProps {
 
 function ProviderBillPaymentControls({
   providerBillId,
+  providerBill,
   paymentForm,
+  memberNames,
   members,
   accounts,
   onChange,
@@ -617,173 +637,254 @@ function ProviderBillPaymentControls({
     );
 
   return (
-    <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-6">
-      <label className="text-sm font-medium text-slate-700">
-        Paid By
-        <select
-          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
-          value={paymentForm.paidByMemberId}
-          onChange={(event) =>
-            onChange(
-              providerBillId,
-              {
-                paidByMemberId:
-                  event.target.value,
-                sourceAccountId: "",
-              }
-            )
-          }
-        >
-          <option value="">
-            Select payer
-          </option>
+    <div className="mt-4 space-y-4">
+      <ProviderBillShareBreakdown
+        providerBill={providerBill}
+        memberNames={memberNames}
+      />
 
-          {members.map((member) => (
-            <option
-              key={member.id}
-              value={member.id}
-            >
-              {member.name}
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
+        <label className="text-sm font-medium text-slate-700">
+          Paid By
+          <select
+            className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+            value={paymentForm.paidByMemberId}
+            onChange={(event) =>
+              onChange(
+                providerBillId,
+                {
+                  paidByMemberId:
+                    event.target.value,
+                  sourceAccountId: "",
+                }
+              )
+            }
+          >
+            <option value="">
+              Select payer
             </option>
-          ))}
-        </select>
-      </label>
 
-      <label className="text-sm font-medium text-slate-700">
-        Account
-        <select
-          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
-          value={
-            paymentForm.sourceAccountId
-          }
-          disabled={
-            !paymentForm.paidByMemberId
-          }
-          onChange={(event) =>
-            onChange(
-              providerBillId,
-              {
-                sourceAccountId:
-                  event.target.value,
-              }
-            )
-          }
-        >
-          <option value="">
-            {paymentForm.paidByMemberId
-              ? "No account"
-              : "Select payer first"}
-          </option>
-
-          {paymentAccounts.map(
-            (account) => (
+            {members.map((member) => (
               <option
-                key={account.id}
-                value={account.id}
+                key={member.id}
+                value={member.id}
               >
-                {account.name}
+                {member.name}
               </option>
-            )
-          )}
-        </select>
-      </label>
+            ))}
+          </select>
+        </label>
 
-      <label className="text-sm font-medium text-slate-700">
-        Payment Date
-        <input
-          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
-          type="date"
-          value={paymentForm.paidAt}
-          onChange={(event) =>
-            onChange(
-              providerBillId,
-              {
-                paidAt:
-                  event.target.value,
-              }
-            )
-          }
-        />
-      </label>
+        <label className="text-sm font-medium text-slate-700">
+          Account
+          <select
+            className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+            value={
+              paymentForm.sourceAccountId
+            }
+            disabled={
+              !paymentForm.paidByMemberId
+            }
+            onChange={(event) =>
+              onChange(
+                providerBillId,
+                {
+                  sourceAccountId:
+                    event.target.value,
+                }
+              )
+            }
+          >
+            <option value="">
+              {paymentForm.paidByMemberId
+                ? "No account"
+                : "Select payer first"}
+            </option>
 
-      <label className="text-sm font-medium text-slate-700">
-        Reference
-        <input
-          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
-          type="text"
-          value={
-            paymentForm.referenceNumber
-          }
-          onChange={(event) =>
-            onChange(
-              providerBillId,
-              {
-                referenceNumber:
-                  event.target.value,
-              }
-            )
-          }
-          placeholder="Optional"
-        />
-      </label>
-
-      <label className="text-sm font-medium text-slate-700">
-        Receipt
-        <input
-          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-          type="file"
-          accept="image/*,application/pdf"
-          onChange={(event) =>
-            onAttachReceipt(
-              providerBillId,
-              event
-            )
-          }
-        />
-      </label>
-
-      <div className="flex items-end">
-        <button
-          type="button"
-          className="h-10 w-full rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
-          onClick={() =>
-            onMarkPaid(providerBillId)
-          }
-        >
-          Mark Paid
-        </button>
-      </div>
-
-      {paymentForm.paymentAttachments.length >
-        0 && (
-        <div className="md:col-span-2 lg:col-span-6">
-          <div className="flex flex-wrap gap-2">
-            {paymentForm.paymentAttachments.map(
-              (attachment) => (
-                <span
-                  key={attachment.id}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600"
+            {paymentAccounts.map(
+              (account) => (
+                <option
+                  key={account.id}
+                  value={account.id}
                 >
-                  {attachment.fileName}
-
-                  <button
-                    type="button"
-                    className="font-semibold text-red-600"
-                    onClick={() =>
-                      onRemoveReceipt(
-                        providerBillId,
-                        attachment.id
-                      )
-                    }
-                  >
-                    Remove
-                  </button>
-                </span>
+                  {account.name}
+                </option>
               )
             )}
-          </div>
+          </select>
+        </label>
+
+        <label className="text-sm font-medium text-slate-700">
+          Payment Date
+          <input
+            className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+            type="date"
+            value={paymentForm.paidAt}
+            onChange={(event) =>
+              onChange(
+                providerBillId,
+                {
+                  paidAt:
+                    event.target.value,
+                }
+              )
+            }
+          />
+        </label>
+
+        <label className="text-sm font-medium text-slate-700">
+          Reference
+          <input
+            className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+            type="text"
+            value={
+              paymentForm.referenceNumber
+            }
+            onChange={(event) =>
+              onChange(
+                providerBillId,
+                {
+                  referenceNumber:
+                    event.target.value,
+                }
+              )
+            }
+            placeholder="Optional"
+          />
+        </label>
+
+        <label className="text-sm font-medium text-slate-700">
+          Receipt
+          <input
+            className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={(event) =>
+              onAttachReceipt(
+                providerBillId,
+                event
+              )
+            }
+          />
+        </label>
+
+        <div className="flex items-end">
+          <button
+            type="button"
+            className="h-10 w-full rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
+            onClick={() =>
+              onMarkPaid(providerBillId)
+            }
+          >
+            Mark Paid
+          </button>
         </div>
-      )}
+
+        {paymentForm.paymentAttachments.length >
+          0 && (
+          <div className="md:col-span-2 lg:col-span-6">
+            <div className="flex flex-wrap gap-2">
+              {paymentForm.paymentAttachments.map(
+                (attachment) => (
+                  <span
+                    key={attachment.id}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600"
+                  >
+                    {attachment.fileName}
+
+                    <button
+                      type="button"
+                      className="font-semibold text-red-600"
+                      onClick={() =>
+                        onRemoveReceipt(
+                          providerBillId,
+                          attachment.id
+                        )
+                      }
+                    >
+                      Remove
+                    </button>
+                  </span>
+                )
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProviderBillShareBreakdown({
+  providerBill,
+  memberNames,
+}: {
+  providerBill: UtilityProviderBill;
+  memberNames: Record<string, string>;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold text-slate-900">
+          Calculated Shares
+        </h4>
+
+        <p className="text-sm font-semibold text-slate-900">
+          {formatCurrency(
+            providerBill.calculationSnapshot.totalMemberShares
+          )}
+        </p>
+      </div>
+
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[560px] text-left text-sm">
+          <thead className="text-xs uppercase text-slate-500">
+            <tr>
+              <th className="py-2 pr-3">
+                Member
+              </th>
+              <th className="py-2 pr-3 text-right">
+                Direct
+              </th>
+              <th className="py-2 pr-3 text-right">
+                Shared
+              </th>
+              <th className="py-2 text-right">
+                Owes
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-slate-200 text-slate-700">
+            {providerBill.memberShareSnapshot.map(
+              (share) => (
+                <tr key={share.memberId}>
+                  <td className="py-2 pr-3 font-medium text-slate-900">
+                    {memberNames[
+                      share.memberId
+                    ] ?? "Household member"}
+                  </td>
+                  <td className="py-2 pr-3 text-right">
+                    {formatCurrency(
+                      share.directUsageAmount
+                    )}
+                  </td>
+                  <td className="py-2 pr-3 text-right">
+                    {formatCurrency(
+                      share.equalSharedAmount
+                    )}
+                  </td>
+                  <td className="py-2 text-right font-semibold text-slate-900">
+                    {formatCurrency(
+                      share.finalShareAmount
+                    )}
+                  </td>
+                </tr>
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
