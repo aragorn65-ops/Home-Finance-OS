@@ -55,6 +55,7 @@ Implemented:
 * Added a frontend `.env.example` documenting the Google OAuth client ID setting.
 * Updated the GitHub Pages preview workflow to pass `VITE_GOOGLE_CLIENT_ID` from repository variables or Actions secrets into the Vite build.
 * Added a workflow warning when `VITE_GOOGLE_CLIENT_ID` is missing from the build.
+* Updated GitHub Pages deploy actions to Node 24-compatible major versions.
 * Disabled the Google Drive backup action and showed a setup note when the deployed app has no Google client ID.
 
 ---
