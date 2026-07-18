@@ -153,6 +153,11 @@ export default function SavingsGoalDetails({
   const baseCurrency =
     goal.baseCurrency || currency;
 
+  const rateSource =
+    goal.exchangeRateSource === "api"
+      ? `API rate${goal.exchangeRateProvider ? ` from ${goal.exchangeRateProvider}` : ""}`
+      : "Manual rate";
+
   const linkedAccount =
     goal.linkedAccountId
       ? accounts.find(
@@ -400,6 +405,16 @@ export default function SavingsGoalDetails({
                 goal.exchangeRate,
                 baseCurrency
               )}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-muted-foreground">
+              Rate Source
+            </p>
+
+            <p className="mt-1 font-medium text-foreground">
+              {rateSource}
             </p>
           </div>
 

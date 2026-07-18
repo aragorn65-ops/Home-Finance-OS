@@ -91,6 +91,19 @@ function mapTransactionToForm(
 
     exchangeRate:
       transaction.exchangeRate ?? 1,
+    exchangeRateEffectiveDate:
+      transaction.exchangeRateEffectiveDate
+        ? formatDateInput(
+            transaction.exchangeRateEffectiveDate
+          )
+        : formatDateInput(
+            transaction.transactionDate
+          ),
+    exchangeRateSource:
+      transaction.exchangeRateSource ??
+      "manual",
+    exchangeRateProvider:
+      transaction.exchangeRateProvider ?? "",
 
     paidByMemberId:
       transaction.paidByMemberId ??
@@ -190,6 +203,9 @@ function defaultCreateTransactionForm(
     enteredCurrency:
       currency,
     exchangeRate: 1,
+    exchangeRateEffectiveDate: "",
+    exchangeRateSource: "manual",
+    exchangeRateProvider: "",
 
     attachments: [],
 

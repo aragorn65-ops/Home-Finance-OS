@@ -87,6 +87,8 @@ function createDefaultForm(
     exchangeRate: 1,
     exchangeRateEffectiveDate:
       today,
+    exchangeRateSource: "manual",
+    exchangeRateProvider: "",
   };
 }
 
@@ -126,6 +128,11 @@ function mapAccountToForm(
       formatDateInput(
         account.exchangeRateEffectiveDate
       ),
+    exchangeRateSource:
+      account.exchangeRateSource ??
+      "manual",
+    exchangeRateProvider:
+      account.exchangeRateProvider ?? "",
 
     balance:
       account.currentBalance,

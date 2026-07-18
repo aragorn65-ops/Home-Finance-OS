@@ -308,6 +308,15 @@ export default class SavingsGoalService {
 
         exchangeRateEffectiveDate:
           now,
+        exchangeRateSource:
+          normalizedForm.exchangeRateSource,
+        exchangeRateProvider:
+          normalizedForm.exchangeRateSource ===
+          "api"
+            ? normalizedForm.exchangeRateProvider
+                .trim() ||
+              undefined
+            : undefined,
 
         targetDate:
           normalizedForm.targetDate
@@ -520,6 +529,15 @@ export default class SavingsGoalService {
 
         exchangeRateEffectiveDate:
           new Date(),
+        exchangeRateSource:
+          normalizedForm.exchangeRateSource,
+        exchangeRateProvider:
+          normalizedForm.exchangeRateSource ===
+          "api"
+            ? normalizedForm.exchangeRateProvider
+                .trim() ||
+              undefined
+            : undefined,
 
         targetDate:
           normalizedForm.targetDate

@@ -83,6 +83,8 @@ const utilityFieldLabels:
     transactionDate: "Transaction Date",
     totalBillAmount: "Total Bill Amount",
     ratePerUnit: "Rate per Unit",
+    totalConsumption:
+      "Consumption",
     memberShares:
       "Member Usage and Sharing",
     applianceUsages:
@@ -282,6 +284,14 @@ export default function UtilityBillForm({
       accounts,
       form.paidByMemberId,
     ]);
+
+  const derivedWaterRatePerUnit =
+    form.utilityType === "water" &&
+    form.totalBillAmount > 0 &&
+    form.totalConsumption > 0
+      ? form.totalBillAmount /
+        form.totalConsumption
+      : 0;
 
   const updateField = <
     Key extends keyof UtilityBillFormData,
@@ -761,8 +771,9 @@ export default function UtilityBillForm({
 
           <p className="mt-1 text-sm text-slate-500">
             Enter the total amount payable and the
-            provider rate used to calculate direct member
-            usage.
+            {form.utilityType === "water"
+              ? " provider consumption used to derive the sharing rate."
+              : " provider rate used to calculate direct member usage."}
           </p>
         </header>
 
@@ -833,30 +844,73 @@ export default function UtilityBillForm({
             />
           </Field>
 
-          <Field
-            label={`Rate per ${form.unit}`}
-            helper="The rate used to calculate each member's direct usage."
-          >
-            <input
-              className={inputClassName}
-              type="number"
-              min="0"
-              step="0.0001"
-              value={
-                form.ratePerUnit ||
-                ""
+          {form.utilityType ===
+          "water" ? (
+            <Field
+              label={
+                <>
+                  Consumption (m<sup>3</sup>)
+                </>
               }
-              onChange={(event) =>
-                updateField(
-                  "ratePerUnit",
-                  parseNumber(
-                    event.target.value
+              helper="Total water consumption from the provider bill."
+            >
+              <input
+                className={inputClassName}
+                type="number"
+                min="0"
+                step="0.001"
+                value={
+                  form.totalConsumption ||
+                  ""
+                }
+                onChange={(event) =>
+                  updateField(
+                    "totalConsumption",
+                    parseNumber(
+                      event.target.value
+                    )
                   )
-                )
-              }
-              placeholder="0.00"
-            />
-          </Field>
+                }
+                placeholder="0.000"
+              />
+
+              {derivedWaterRatePerUnit >
+                0 && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Derived rate used for sharing:{" "}
+                  {formatCurrency(
+                    derivedWaterRatePerUnit
+                  )}{" "}
+                  per m<sup>3</sup>
+                </p>
+              )}
+            </Field>
+          ) : (
+            <Field
+              label={`Rate per ${form.unit}`}
+              helper="The rate used to calculate each member's direct usage."
+            >
+              <input
+                className={inputClassName}
+                type="number"
+                min="0"
+                step="0.0001"
+                value={
+                  form.ratePerUnit ||
+                  ""
+                }
+                onChange={(event) =>
+                  updateField(
+                    "ratePerUnit",
+                    parseNumber(
+                      event.target.value
+                    )
+                  )
+                }
+                placeholder="0.00"
+              />
+            </Field>
+          )}
         </div>
       </section>
 
@@ -1760,7 +1814,7 @@ export default function UtilityBillForm({
 }
 
 interface FieldProps {
-  label: string;
+  label: ReactNode;
   helper?: string;
   children: ReactNode;
 }

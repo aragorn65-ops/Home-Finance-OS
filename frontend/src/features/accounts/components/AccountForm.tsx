@@ -5,6 +5,7 @@ import {
   Input,
   Select,
 } from "../../../shared/ui";
+import CurrencyRateLookupButton from "../../../shared/ui/CurrencyRateLookupButton";
 
 import {
   currencies,
@@ -222,6 +223,10 @@ export default function AccountForm({
           : value.exchangeRate > 0
             ? value.exchangeRate
             : 1,
+      exchangeRateSource:
+        "manual",
+      exchangeRateProvider:
+        "",
     });
   };
 
@@ -348,12 +353,42 @@ export default function AccountForm({
             onChange={(
               event: ChangeEvent<HTMLInputElement>
             ) =>
-              updateField(
-                "exchangeRate",
-                Number(
-                  event.target.value
-                )
-              )
+              onChange({
+                ...value,
+                exchangeRate:
+                  Number(
+                    event.target.value
+                  ),
+                exchangeRateSource:
+                  "manual",
+                exchangeRateProvider:
+                  "",
+              })
+            }
+          />
+
+          <CurrencyRateLookupButton
+            fromCurrency={
+              normalizedAccountCurrency
+            }
+            toCurrency={
+              normalizedBaseCurrency
+            }
+            effectiveDate={
+              value.exchangeRateEffectiveDate
+            }
+            onRateSelected={(rate) =>
+              onChange({
+                ...value,
+                exchangeRate:
+                  rate.rate,
+                exchangeRateEffectiveDate:
+                  rate.effectiveDate,
+                exchangeRateSource:
+                  rate.source,
+                exchangeRateProvider:
+                  rate.providerName ?? "",
+              })
             }
           />
 

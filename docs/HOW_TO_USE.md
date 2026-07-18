@@ -37,7 +37,7 @@ Then open the local URL shown in the terminal.
    * Base currency: the household reporting currency.
 4. Add accounts for cash, bank, wallet, or savings balances.
 
-Tip: The base currency is the main household reporting currency. Foreign-currency accounts can still be added with an exchange rate for reporting.
+Tip: The base currency is the main household reporting currency. Foreign-currency accounts can still be added with an exchange rate for reporting. When a suggested rate is available, you can apply it from the rate lookup button or keep your manual rate.
 
 ---
 
@@ -70,7 +70,31 @@ Use Transactions for:
 
 For grocery use cases with shared and personal items, split the transaction lines so common items and personal items are assigned correctly.
 
-For foreign-currency income, enter the original amount, currency, exchange rate, and effective date. The app stores both the entered amount and reporting equivalent.
+For foreign-currency income, enter the original amount, currency, exchange rate, and effective date. You can apply a suggested exchange rate when available. The app stores both the entered amount and reporting equivalent.
+
+Attachments can be added from the same receipt and bill area by choosing files, pasting from the clipboard, or dragging files into the attachment box.
+
+On mobile, after selecting a file from the phone picker, the transaction window should stay open and scroll back to the attachment area with feedback.
+
+---
+
+## Utilities
+
+Use Utilities to split electricity or water bills among active household members.
+
+For electricity:
+
+* Enter the total provider bill.
+* Enter the provider rate per kWh.
+* Add direct member usage from submeters or appliance usage.
+
+For water:
+
+* Enter the total provider bill.
+* Enter the provider consumption in m<sup>3</sup>.
+* The app derives the rate per m<sup>3</sup> internally and uses that rate for member-share calculations.
+
+Utility bills can also include bill or receipt attachments. Saved utility bills create expense transactions and settlement obligations.
 
 ---
 
@@ -98,6 +122,8 @@ Goals may use the household base currency or another currency, such as a USD tra
 
 Savings contributions can also be entered in another currency. The app keeps the entered amount and the reporting equivalent.
 
+When a savings goal or contribution uses another currency, you can apply a suggested exchange rate when available or keep a manual rate.
+
 ---
 
 ## Analytics
@@ -117,11 +143,31 @@ Use it to review:
 
 Analytics respects the selected reporting month.
 
+Top Expense Categories can be opened to review the transactions behind a selected category for the current reporting month.
+
 ---
 
 ## Attachments
 
 Transactions support receipt or bill uploads for supported image and PDF files.
+
+Supported attachment methods:
+
+* Choose a file.
+* Paste an image or supported file from the clipboard.
+* Drag and drop files into the attachment box.
+
+Supported file types:
+
+* JPEG.
+* PNG.
+* WebP.
+* PDF.
+
+Current limits:
+
+* 1 MB per file.
+* 3 attachments per transaction.
 
 Use clear, reasonably sized files. If a file fails, try a smaller image or PDF and note the file type and size for debugging.
 

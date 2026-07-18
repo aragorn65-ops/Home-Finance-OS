@@ -44,6 +44,16 @@
   padding: var(--space-3);
 }
 
+.hfos-transaction-form article,
+.hfos-transaction-details article {
+  min-width: 0;
+}
+
+.hfos-transaction-form article button,
+.hfos-transaction-details article button {
+  min-width: 0;
+}
+
 .hfos-transaction-details .text-3xl {
   font-size: var(--font-size-2xl);
 }
@@ -61,5 +71,15 @@
   .hfos-transaction-form,
   .hfos-transaction-details {
     padding: var(--space-3);
+  }
+
+  .hfos-transaction-form article .flex.gap-2,
+  .hfos-transaction-details article .flex.gap-2 {
+    flex-direction: column;
+  }
+
+  .hfos-transaction-form article button,
+  .hfos-transaction-details article button {
+    width: 100%;
   }
 }

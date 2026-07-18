@@ -1,6 +1,9 @@
 import type {
   StoredAttachment,
 } from "../../../shared/models/StoredAttachment";
+import type {
+  ExchangeRateSource,
+} from "../../../shared/services/CurrencyRateProvider";
 
 import type {
   TransactionType,
@@ -22,6 +25,9 @@ export interface TransactionForm {
   enteredCurrency?: string;
   baseAmount?: number;
   exchangeRate?: number;
+  exchangeRateEffectiveDate?: string;
+  exchangeRateSource?: ExchangeRateSource;
+  exchangeRateProvider?: string;
 
   /**
    * Member who paid or recorded the transaction.
@@ -78,6 +84,9 @@ export const defaultTransactionForm: TransactionForm = {
   enteredCurrency: "",
   baseAmount: 0,
   exchangeRate: 1,
+  exchangeRateEffectiveDate: "",
+  exchangeRateSource: "manual",
+  exchangeRateProvider: "",
 
   paidByMemberId: "",
   visibility: "household",

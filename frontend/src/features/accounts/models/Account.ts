@@ -1,4 +1,7 @@
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
+import type {
+  ExchangeRateSource,
+} from "../../../shared/services/CurrencyRateProvider";
 
 export type AccountClass =
   | "asset"
@@ -59,6 +62,8 @@ export interface Account {
    */
   exchangeRate?: number;
   exchangeRateEffectiveDate?: Date;
+  exchangeRateSource?: ExchangeRateSource;
+  exchangeRateProvider?: string;
 
   /**
    * Asset account:

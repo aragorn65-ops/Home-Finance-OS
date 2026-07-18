@@ -202,7 +202,7 @@ export default function UtilitiesPage() {
           </h2>
 
           <p className="mt-1 text-sm text-blue-800">
-            Enter the total provider bill, rate per unit,
+            Enter the total provider bill, usage basis,
             direct member usage, and fixed compensation.
             The remaining bill is divided equally among
             the selected members.

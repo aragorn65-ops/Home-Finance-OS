@@ -24,6 +24,11 @@ export default function AccountCard({
   const showBaseEquivalent =
     account.currency !== baseCurrency;
 
+  const rateSource =
+    account.exchangeRateSource === "api"
+      ? `API rate${account.exchangeRateProvider ? ` from ${account.exchangeRateProvider}` : ""}`
+      : "Manual rate";
+
   return (
     <div className="rounded-lg border p-4">
       <div className="flex items-start justify-between">
@@ -69,13 +74,19 @@ export default function AccountCard({
       </div>
 
       {showBaseEquivalent && (
-        <div className="mt-1 text-sm text-gray-500">
-          Reporting equivalent:{" "}
-          {formatCurrency(
-            baseBalance,
-            baseCurrency
-          )}
-        </div>
+        <>
+          <div className="mt-1 text-sm text-gray-500">
+            Reporting equivalent:{" "}
+            {formatCurrency(
+              baseBalance,
+              baseCurrency
+            )}
+          </div>
+
+          <div className="mt-1 text-sm text-gray-500">
+            {rateSource}
+          </div>
+        </>
       )}
 
       <div className="mt-2 text-sm text-gray-600">

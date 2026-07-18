@@ -100,6 +100,14 @@ export interface UtilityBillForm {
    */
   ratePerUnit: number;
 
+  /**
+   * Total provider-billed consumption for water bills.
+   *
+   * Water direct-usage rates are derived from the total
+   * bill amount divided by this quantity.
+   */
+  totalConsumption: number;
+
   memberShares: UtilityMemberShareForm[];
 
   applianceUsages: UtilityApplianceUsageForm[];
@@ -141,6 +149,7 @@ export const defaultUtilityBillForm:
 
     totalBillAmount: 0,
     ratePerUnit: 0,
+    totalConsumption: 0,
 
     memberShares: [],
 

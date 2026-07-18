@@ -57,6 +57,8 @@ interface NormalizedTransactionCurrency {
   baseAmount: number;
   exchangeRate: number;
   exchangeRateEffectiveDate: Date;
+  exchangeRateSource: "manual" | "api";
+  exchangeRateProvider?: string;
 }
 
 export default class TransactionService {
@@ -582,6 +584,12 @@ export default class TransactionService {
         exchangeRateEffectiveDate:
           currencyDetails
             .exchangeRateEffectiveDate,
+        exchangeRateSource:
+          currencyDetails
+            .exchangeRateSource,
+        exchangeRateProvider:
+          currencyDetails
+            .exchangeRateProvider,
 
         sourceAccountId:
           form.type ===
@@ -881,6 +889,12 @@ export default class TransactionService {
         exchangeRateEffectiveDate:
           currencyDetails
             .exchangeRateEffectiveDate,
+        exchangeRateSource:
+          currencyDetails
+            .exchangeRateSource,
+        exchangeRateProvider:
+          currencyDetails
+            .exchangeRateProvider,
 
         sourceAccountId:
           form.type ===
@@ -1298,6 +1312,13 @@ export default class TransactionService {
         `${form.transactionDate}T00:00:00`
       );
 
+    const exchangeRateEffectiveDate =
+      form.exchangeRateEffectiveDate
+        ? new Date(
+            `${form.exchangeRateEffectiveDate}T00:00:00`
+          )
+        : transactionDate;
+
     if (form.type !== "income") {
       const amount =
         roundCurrencyAmount(
@@ -1316,6 +1337,7 @@ export default class TransactionService {
         exchangeRate: 1,
         exchangeRateEffectiveDate:
           transactionDate,
+        exchangeRateSource: "manual",
       };
     }
 
@@ -1354,7 +1376,16 @@ export default class TransactionService {
         conversion.baseAmount,
       exchangeRate,
       exchangeRateEffectiveDate:
-        transactionDate,
+        exchangeRateEffectiveDate,
+      exchangeRateSource:
+        form.exchangeRateSource === "api"
+          ? "api"
+          : "manual",
+      exchangeRateProvider:
+        form.exchangeRateSource === "api"
+          ? form.exchangeRateProvider?.trim() ||
+            undefined
+          : undefined,
     };
   }
 

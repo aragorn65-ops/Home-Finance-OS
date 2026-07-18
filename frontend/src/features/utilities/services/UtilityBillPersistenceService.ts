@@ -234,6 +234,13 @@ export default class UtilityBillPersistenceService {
   ): string {
     const generatedNotes = [
       `Provider billing date: ${form.billingDate}`,
+      ...(form.utilityType === "water"
+        ? [
+            `Provider consumption: ${this.formatQuantity(
+              form.totalConsumption
+            )} ${calculation.unit}`,
+          ]
+        : []),
       `Rate per ${calculation.unit}: ${this.formatAmount(
         calculation.ratePerUnit
       )}`,

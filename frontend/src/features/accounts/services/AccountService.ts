@@ -178,6 +178,10 @@ export default class AccountService {
 
       exchangeRateEffectiveDate:
         currencyDetails.exchangeRateEffectiveDate,
+      exchangeRateSource:
+        currencyDetails.exchangeRateSource,
+      exchangeRateProvider:
+        currencyDetails.exchangeRateProvider,
 
       openingBalance: form.balance,
       currentBalance: form.balance,
@@ -295,6 +299,10 @@ export default class AccountService {
 
       exchangeRateEffectiveDate:
         currencyDetails.exchangeRateEffectiveDate,
+      exchangeRateSource:
+        currencyDetails.exchangeRateSource,
+      exchangeRateProvider:
+        currencyDetails.exchangeRateProvider,
 
       openingBalance:
         existing.openingBalance,
@@ -710,6 +718,8 @@ export default class AccountService {
     baseCurrency: string;
     exchangeRate: number;
     exchangeRateEffectiveDate?: Date;
+    exchangeRateSource: "manual" | "api";
+    exchangeRateProvider?: string;
     openingBaseBalance: number;
   } {
     const household =
@@ -748,6 +758,15 @@ export default class AccountService {
       exchangeRate,
       exchangeRateEffectiveDate:
         effectiveDate,
+      exchangeRateSource:
+        form.exchangeRateSource === "api"
+          ? "api"
+          : "manual",
+      exchangeRateProvider:
+        form.exchangeRateSource === "api"
+          ? form.exchangeRateProvider.trim() ||
+            undefined
+          : undefined,
       openingBaseBalance:
         roundCurrencyAmount(
           form.balance *

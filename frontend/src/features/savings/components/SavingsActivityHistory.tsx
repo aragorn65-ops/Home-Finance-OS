@@ -235,6 +235,13 @@ export default function SavingsActivityHistory({
                       )}{" "}
                       at rate{" "}
                       {activity.exchangeRate}
+                      {" "}
+                      (
+                      {activity.exchangeRateSource ===
+                      "api"
+                        ? `API${activity.exchangeRateProvider ? ` from ${activity.exchangeRateProvider}` : ""}`
+                        : "manual"}
+                      )
                     </p>
                   )}
 

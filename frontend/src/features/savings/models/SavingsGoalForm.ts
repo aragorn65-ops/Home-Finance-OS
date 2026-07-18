@@ -3,6 +3,9 @@ import type {
   SavingsGoalStatus,
   SavingsGoalType,
 } from "./SavingsGoal";
+import type {
+  ExchangeRateSource,
+} from "../../../shared/services/CurrencyRateProvider";
 
 export interface SavingsGoalForm {
   householdId: string;
@@ -15,6 +18,8 @@ export interface SavingsGoalForm {
   targetAmount: number;
   goalCurrency: string;
   exchangeRate: number;
+  exchangeRateSource: ExchangeRateSource;
+  exchangeRateProvider: string;
   targetDate: string;
 
   /**
@@ -42,6 +47,8 @@ export const defaultSavingsGoalForm:
     targetAmount: 0,
     goalCurrency: "",
     exchangeRate: 1,
+    exchangeRateSource: "manual",
+    exchangeRateProvider: "",
     targetDate: "",
 
     linkedAccountId: "",

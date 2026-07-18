@@ -157,7 +157,7 @@ export function convertEnteredAmount(
   };
 }
 
-function roundExchangeRate(
+export function roundExchangeRate(
   exchangeRate: number
 ): number {
   return (

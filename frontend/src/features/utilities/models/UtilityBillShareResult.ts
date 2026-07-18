@@ -85,8 +85,11 @@ export interface UtilityBillShareResult {
   totalBillAmount: number;
 
   /**
-   * Monthly utility rate entered manually from the
-   * provider bill.
+   * Effective utility rate used in share calculations.
+   *
+   * Electricity uses the manually entered provider rate.
+   * Water derives this from total bill amount divided by
+   * total provider-billed consumption.
    */
   ratePerUnit: number;
 

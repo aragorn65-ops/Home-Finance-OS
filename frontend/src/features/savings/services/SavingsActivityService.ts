@@ -292,6 +292,15 @@ export default class SavingsActivityService {
           new Date(
             `${normalizedForm.activityDate}T00:00:00`
           ),
+        exchangeRateSource:
+          normalizedForm.exchangeRateSource,
+        exchangeRateProvider:
+          normalizedForm.exchangeRateSource ===
+          "api"
+            ? normalizedForm.exchangeRateProvider
+                .trim() ||
+              undefined
+            : undefined,
 
         activityDate:
           new Date(
@@ -567,6 +576,15 @@ export default class SavingsActivityService {
           new Date(
             `${normalizedForm.activityDate}T00:00:00`
           ),
+        exchangeRateSource:
+          normalizedForm.exchangeRateSource,
+        exchangeRateProvider:
+          normalizedForm.exchangeRateSource ===
+          "api"
+            ? normalizedForm.exchangeRateProvider
+                .trim() ||
+              undefined
+            : undefined,
 
         activityDate:
           new Date(
@@ -854,6 +872,14 @@ export default class SavingsActivityService {
       enteredCurrency,
 
       exchangeRate,
+      exchangeRateSource:
+        form.exchangeRateSource === "api"
+          ? "api"
+          : "manual",
+      exchangeRateProvider:
+        form.exchangeRateSource === "api"
+          ? form.exchangeRateProvider.trim()
+          : "",
 
       baseAmount:
         convertedAmount.baseAmount,

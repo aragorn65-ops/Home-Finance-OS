@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import {
   useMemo,
+  useState,
 } from "react";
 
 import Card from "../../../shared/ui/Card";
@@ -226,6 +227,41 @@ function getUtilityTotals(
   });
 }
 
+function getMonthlyExpenseTransactions(
+  transactions: Transaction[],
+  selectedMonth: Date,
+  category?: string
+): Transaction[] {
+  return transactions
+    .filter((transaction) => {
+      if (
+        !transaction.isActive ||
+        transaction.type !== "expense" ||
+        !isSameMonth(
+          transaction.transactionDate,
+          selectedMonth
+        )
+      ) {
+        return false;
+      }
+
+      if (!category) {
+        return true;
+      }
+
+      return (
+        normalizeTransactionCategory(
+          transaction.category
+        ) === category
+      );
+    })
+    .sort(
+      (first, second) =>
+        second.transactionDate.getTime() -
+        first.transactionDate.getTime()
+    );
+}
+
 function roundCurrency(
   amount: number
 ): number {
@@ -371,6 +407,11 @@ export default function AnalyticsPage() {
     parseMonthInput(
       selectedMonthValue
     );
+
+  const [
+    selectedExpenseCategory,
+    setSelectedExpenseCategory,
+  ] = useState<string | null>(null);
 
   const {
     activeGoals,
@@ -570,6 +611,32 @@ export default function AnalyticsPage() {
       [
         transactions,
         selectedMonth,
+      ]
+    );
+
+  const activeExpenseCategory =
+    categoryTotals.some(
+      (category) =>
+        category.category ===
+        selectedExpenseCategory
+    )
+      ? selectedExpenseCategory
+      : categoryTotals[0]?.category ??
+        null;
+
+  const categoryDrilldownTransactions =
+    useMemo(
+      () =>
+        getMonthlyExpenseTransactions(
+          transactions,
+          selectedMonth,
+          activeExpenseCategory ??
+            undefined
+        ),
+      [
+        transactions,
+        selectedMonth,
+        activeExpenseCategory,
       ]
     );
 
@@ -791,9 +858,20 @@ export default function AnalyticsPage() {
               <div className="analytics-categories">
                 {categoryTotals.map(
                   (category) => (
-                    <div
+                    <button
+                      type="button"
                       key={category.category}
-                      className="analytics-category"
+                      className={`analytics-category analytics-category--button ${
+                        activeExpenseCategory ===
+                        category.category
+                          ? "analytics-category--active"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        setSelectedExpenseCategory(
+                          category.category
+                        )
+                      }
                     >
                       <div className="analytics-category__top">
                         <span>
@@ -824,9 +902,79 @@ export default function AnalyticsPage() {
                         {category.percentage}% of monthly
                         expenses
                       </p>
-                    </div>
+                    </button>
                   )
                 )}
+              </div>
+            )}
+          </Card>
+
+          <Card className="analytics-panel">
+            <div className="analytics-panel__header">
+              <div>
+                <h2>Category Drilldown</h2>
+
+                <p>
+                  {activeExpenseCategory
+                    ? `${activeExpenseCategory} expenses in ${formatMonthLabel(
+                        selectedMonth
+                      )}.`
+                    : `Expenses in ${formatMonthLabel(
+                        selectedMonth
+                      )}.`}
+                </p>
+              </div>
+
+              <ReceiptText
+                size={18}
+                aria-hidden="true"
+              />
+            </div>
+
+            {!activeExpenseCategory ? (
+              <p className="analytics-empty">
+                No expenses recorded for this month.
+              </p>
+            ) : categoryDrilldownTransactions.length ===
+              0 ? (
+              <p className="analytics-empty">
+                No transactions found for this category.
+              </p>
+            ) : (
+              <div className="analytics-drilldown">
+                {categoryDrilldownTransactions
+                  .slice(0, 8)
+                  .map((transaction) => (
+                    <article
+                      key={transaction.id}
+                      className="analytics-drilldown__item"
+                    >
+                      <div>
+                        <h3>
+                          {transaction.description ||
+                            normalizeTransactionCategory(
+                              transaction.category
+                            )}
+                        </h3>
+
+                        <p>
+                          {transaction.transactionDate
+                            .toLocaleDateString()}{" "}
+                          -{" "}
+                          {normalizeTransactionCategory(
+                            transaction.category
+                          )}
+                        </p>
+                      </div>
+
+                      <strong>
+                        {formatCurrency(
+                          transaction.amount,
+                          currency
+                        )}
+                      </strong>
+                    </article>
+                  ))}
               </div>
             )}
           </Card>

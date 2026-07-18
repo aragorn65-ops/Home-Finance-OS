@@ -7,6 +7,7 @@ import {
   Input,
   Select,
 } from "../../../shared/ui";
+import CurrencyRateLookupButton from "../../../shared/ui/CurrencyRateLookupButton";
 
 import {
   currencies,
@@ -267,10 +268,15 @@ export default function SavingsActivityForm({
             event:
               ChangeEvent<HTMLSelectElement>
           ) =>
-            updateField(
-              "enteredCurrency",
-              event.target.value
-            )
+            onChange({
+              ...value,
+              enteredCurrency:
+                event.target.value,
+              exchangeRateSource:
+                "manual",
+              exchangeRateProvider:
+                "",
+            })
           }
         />
 
@@ -286,15 +292,44 @@ export default function SavingsActivityForm({
             event:
               ChangeEvent<HTMLInputElement>
           ) =>
-            updateField(
-              "exchangeRate",
-              Number(
-                event.target.value
-              )
-            )
+            onChange({
+              ...value,
+              exchangeRate:
+                Number(
+                  event.target.value
+                ),
+              exchangeRateSource:
+                "manual",
+              exchangeRateProvider:
+                "",
+            })
           }
         />
       </div>
+
+      {value.enteredCurrency !==
+        baseCurrency && (
+        <CurrencyRateLookupButton
+          fromCurrency={
+            value.enteredCurrency
+          }
+          toCurrency={baseCurrency}
+          effectiveDate={
+            value.activityDate
+          }
+          onRateSelected={(rate) =>
+            onChange({
+              ...value,
+              exchangeRate:
+                rate.rate,
+              exchangeRateSource:
+                rate.source,
+              exchangeRateProvider:
+                rate.providerName ?? "",
+            })
+          }
+        />
+      )}
 
       <Input
         label="Activity Date"

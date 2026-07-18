@@ -137,6 +137,8 @@ function createDefaultGoalForm(
     goalCurrency:
       currency,
     exchangeRate: 1,
+    exchangeRateSource: "manual",
+    exchangeRateProvider: "",
   };
 }
 
@@ -164,6 +166,11 @@ function mapGoalToForm(
 
     exchangeRate:
       goal.exchangeRate,
+    exchangeRateSource:
+      goal.exchangeRateSource ??
+      "manual",
+    exchangeRateProvider:
+      goal.exchangeRateProvider ?? "",
 
     targetDate:
       formatDateInput(
@@ -198,6 +205,8 @@ function createDefaultActivityForm(
     memberId,
     enteredCurrency,
     exchangeRate: 1,
+    exchangeRateSource: "manual",
+    exchangeRateProvider: "",
 
     activityDate:
       formatDateInput(
@@ -238,6 +247,11 @@ function mapActivityToForm(
 
     exchangeRate:
       activity.exchangeRate,
+    exchangeRateSource:
+      activity.exchangeRateSource ??
+      "manual",
+    exchangeRateProvider:
+      activity.exchangeRateProvider ?? "",
 
     activityDate:
       formatDateInput(
@@ -1142,6 +1156,9 @@ export default function SavingsPage() {
               value={goalForm}
               accounts={
                 goalAccountOptions
+              }
+              baseCurrency={
+                currency
               }
               errors={goalErrors}
               onChange={(

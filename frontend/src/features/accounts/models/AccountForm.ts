@@ -3,6 +3,9 @@ import type {
   AccountType,
   AccountVisibility,
 } from "./Account";
+import type {
+  ExchangeRateSource,
+} from "../../../shared/services/CurrencyRateProvider";
 
 export interface AccountForm {
   ownerMemberId: string;
@@ -18,6 +21,8 @@ export interface AccountForm {
   baseCurrency: string;
   exchangeRate: number;
   exchangeRateEffectiveDate: string;
+  exchangeRateSource: ExchangeRateSource;
+  exchangeRateProvider: string;
 
   /**
    * Asset account:
@@ -55,6 +60,8 @@ export const defaultAccountForm: AccountForm = {
   baseCurrency: "PHP",
   exchangeRate: 1,
   exchangeRateEffectiveDate: "",
+  exchangeRateSource: "manual",
+  exchangeRateProvider: "",
 
   balance: 0,
 

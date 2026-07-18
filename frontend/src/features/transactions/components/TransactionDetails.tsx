@@ -61,6 +61,11 @@ export default function TransactionDetails({
         currency
       );
 
+  const rateSource =
+    transaction.exchangeRateSource === "api"
+      ? `API rate${transaction.exchangeRateProvider ? ` from ${transaction.exchangeRateProvider}` : ""}`
+      : "Manual rate";
+
   return (
     <div className="hfos-transaction-details space-y-6 rounded-lg border bg-white p-6">
       <div className="border-b pb-5">
@@ -148,6 +153,16 @@ export default function TransactionDetails({
                   transaction.baseCurrency ??
                     currency
                 )}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-sm font-medium text-muted-foreground">
+                Rate Source
+              </dt>
+
+              <dd className="mt-1 text-sm text-foreground">
+                {rateSource}
               </dd>
             </div>
           </>

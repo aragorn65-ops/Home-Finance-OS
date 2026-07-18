@@ -1,6 +1,9 @@
 import type {
   SavingsActivityType,
 } from "./SavingsActivity";
+import type {
+  ExchangeRateSource,
+} from "../../../shared/services/CurrencyRateProvider";
 
 export interface SavingsActivityForm {
   householdId: string;
@@ -28,6 +31,8 @@ export interface SavingsActivityForm {
   enteredCurrency: string;
   baseAmount: number;
   exchangeRate: number;
+  exchangeRateSource: ExchangeRateSource;
+  exchangeRateProvider: string;
 
   activityDate: string;
 
@@ -56,6 +61,8 @@ export const defaultSavingsActivityForm:
     enteredCurrency: "",
     baseAmount: 0,
     exchangeRate: 1,
+    exchangeRateSource: "manual",
+    exchangeRateProvider: "",
 
     activityDate: "",
 

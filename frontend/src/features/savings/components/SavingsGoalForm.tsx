@@ -7,10 +7,14 @@ import {
   Input,
   Select,
 } from "../../../shared/ui";
+import CurrencyRateLookupButton from "../../../shared/ui/CurrencyRateLookupButton";
 
 import {
   currencies,
 } from "../../../shared/data/currencies";
+import {
+  normalizeCurrency,
+} from "../../../shared/utils/currencyConversion";
 
 import type {
   Account,
@@ -29,6 +33,7 @@ import type {
 interface SavingsGoalFormProps {
   value: SavingsGoalFormModel;
   accounts: Account[];
+  baseCurrency: string;
   errors?: Record<string, string>;
 
   onChange: (
@@ -116,9 +121,21 @@ const statusOptions = [
 export default function SavingsGoalForm({
   value,
   accounts,
+  baseCurrency,
   errors = {},
   onChange,
 }: SavingsGoalFormProps) {
+  const normalizedGoalCurrency =
+    normalizeCurrency(
+      value.goalCurrency,
+      baseCurrency
+    );
+
+  const today =
+    new Date()
+      .toISOString()
+      .slice(0, 10);
+
   const updateField = <
     Field extends keyof SavingsGoalFormModel,
   >(
@@ -264,10 +281,15 @@ export default function SavingsGoalForm({
             event:
               ChangeEvent<HTMLSelectElement>
           ) =>
-            updateField(
-              "goalCurrency",
-              event.target.value
-            )
+            onChange({
+              ...value,
+              goalCurrency:
+                event.target.value,
+              exchangeRateSource:
+                "manual",
+              exchangeRateProvider:
+                "",
+            })
           }
         />
       </div>
@@ -285,12 +307,17 @@ export default function SavingsGoalForm({
             event:
               ChangeEvent<HTMLInputElement>
           ) =>
-            updateField(
-              "exchangeRate",
-              Number(
-                event.target.value
-              )
-            )
+            onChange({
+              ...value,
+              exchangeRate:
+                Number(
+                  event.target.value
+                ),
+              exchangeRateSource:
+                "manual",
+              exchangeRateProvider:
+                "",
+            })
           }
         />
 
@@ -311,6 +338,28 @@ export default function SavingsGoalForm({
           }
         />
       </div>
+
+      {normalizedGoalCurrency !==
+        baseCurrency && (
+        <CurrencyRateLookupButton
+          fromCurrency={
+            normalizedGoalCurrency
+          }
+          toCurrency={baseCurrency}
+          effectiveDate={today}
+          onRateSelected={(rate) =>
+            onChange({
+              ...value,
+              exchangeRate:
+                rate.rate,
+              exchangeRateSource:
+                rate.source,
+              exchangeRateProvider:
+                rate.providerName ?? "",
+            })
+          }
+        />
+      )}
 
       <Select
         label="Linked Savings Account"

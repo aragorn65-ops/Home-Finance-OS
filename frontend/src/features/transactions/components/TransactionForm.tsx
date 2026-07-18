@@ -5,6 +5,7 @@ import {
   useState,
   type ChangeEvent,
   type ClipboardEvent,
+  type DragEvent,
   type FormEvent,
 } from "react";
 
@@ -16,6 +17,7 @@ import {
   currencies,
 } from "../../../shared/data/currencies";
 import CurrencyInput from "../../../shared/ui/CurrencyInput";
+import CurrencyRateLookupButton from "../../../shared/ui/CurrencyRateLookupButton";
 import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
 import formatCurrency from "../../../shared/utils/formatCurrency";
 import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
@@ -523,6 +525,8 @@ function getDefaultFormValues(
     enteredCurrency:
       currency,
     exchangeRate: 1,
+    exchangeRateEffectiveDate:
+      today,
 
     transactionDate:
       today,
@@ -871,6 +875,14 @@ export default function TransactionForm({
     setIsPreparingAttachments,
   ] = useState(false);
 
+  const [
+    attachmentStatus,
+    setAttachmentStatus,
+  ] = useState("");
+
+  const attachmentSectionRef =
+    useRef<HTMLElement>(null);
+
   const pendingAttachmentFilesRef =
     useRef<Record<string, File>>({});
 
@@ -1157,6 +1169,19 @@ export default function TransactionForm({
         type === "income"
           ? current.exchangeRate || 1
           : 1,
+      exchangeRateEffectiveDate:
+        type === "income"
+          ? current.exchangeRateEffectiveDate ||
+            current.transactionDate
+          : current.transactionDate,
+      exchangeRateSource:
+        type === "income"
+          ? current.exchangeRateSource
+          : "manual",
+      exchangeRateProvider:
+        type === "income"
+          ? current.exchangeRateProvider
+          : "",
 
       splitMethod:
         type === "expense"
@@ -1171,6 +1196,7 @@ export default function TransactionForm({
 
     setErrors({});
     setMessage("");
+    setAttachmentStatus("");
   };
 
   const handleSourceAccountChange = (
@@ -1221,6 +1247,21 @@ export default function TransactionForm({
           selectedAccount.exchangeRate ||
           current.exchangeRate ||
           1,
+        exchangeRateEffectiveDate:
+          selectedAccount.exchangeRateEffectiveDate
+            ? selectedAccount.exchangeRateEffectiveDate
+                .toISOString()
+                .slice(0, 10)
+            : current.transactionDate,
+        exchangeRateSource:
+          selectedAccount.exchangeRateSource ??
+          "manual",
+        exchangeRateProvider:
+          selectedAccount.exchangeRateSource ===
+          "api"
+            ? selectedAccount.exchangeRateProvider ??
+              ""
+            : "",
       };
     });
 
@@ -1507,6 +1548,8 @@ export default function TransactionForm({
       "Unable to add attachment."
     );
 
+    setAttachmentStatus("");
+
     showValidationAlert(
       nextErrors,
       attachmentError
@@ -1634,6 +1677,23 @@ export default function TransactionForm({
         }));
 
         clearAttachmentError();
+        setAttachmentStatus(
+          `${attachments.length} attachment${
+            attachments.length === 1
+              ? ""
+              : "s"
+          } added.`
+        );
+
+        window.requestAnimationFrame(
+          () => {
+            attachmentSectionRef.current
+              ?.scrollIntoView({
+                block: "center",
+                behavior: "smooth",
+              });
+          }
+        );
       } catch (
         error
       ) {
@@ -1715,6 +1775,42 @@ export default function TransactionForm({
       );
     };
 
+  const handleAttachmentDragOver = (
+    event: DragEvent<HTMLDivElement>
+  ) => {
+    if (isPreparingAttachments) {
+      return;
+    }
+
+    event.preventDefault();
+  };
+
+  const handleAttachmentDrop =
+    async (
+      event: DragEvent<HTMLDivElement>
+    ) => {
+      if (isPreparingAttachments) {
+        event.preventDefault();
+
+        return;
+      }
+
+      const files =
+        Array.from(
+          event.dataTransfer.files
+        );
+
+      if (files.length === 0) {
+        return;
+      }
+
+      event.preventDefault();
+
+      await addAttachmentFiles(
+        files
+      );
+    };
+
   const updateAttachmentCategory = (
     attachmentId: string,
     category:
@@ -1737,6 +1833,9 @@ export default function TransactionForm({
     }));
 
     clearAttachmentError();
+    setAttachmentStatus(
+      "Attachment removed."
+    );
   };
 
   const removeAttachment = (
@@ -2155,10 +2254,15 @@ export default function TransactionForm({
               id="transaction-entered-currency"
               value={form.enteredCurrency}
               onChange={(event) =>
-                updateField(
-                  "enteredCurrency",
-                  event.target.value
-                )
+                setForm((current) => ({
+                  ...current,
+                  enteredCurrency:
+                    event.target.value,
+                  exchangeRateSource:
+                    "manual",
+                  exchangeRateProvider:
+                    "",
+                }))
               }
               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
             >
@@ -2199,12 +2303,19 @@ export default function TransactionForm({
               step="0.000001"
               value={form.exchangeRate}
               onChange={(event) =>
-                updateField(
-                  "exchangeRate",
-                  Number(
-                    event.target.value
-                  )
-                )
+                setForm((current) => ({
+                  ...current,
+                  exchangeRate:
+                    Number(
+                      event.target.value
+                    ),
+                  exchangeRateEffectiveDate:
+                    current.transactionDate,
+                  exchangeRateSource:
+                    "manual",
+                  exchangeRateProvider:
+                    "",
+                }))
               }
               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
             />
@@ -2220,6 +2331,39 @@ export default function TransactionForm({
               </p>
             )}
           </div>
+
+          {form.enteredCurrency !==
+            currency && (
+            <CurrencyRateLookupButton
+              fromCurrency={
+                form.enteredCurrency ??
+                currency ??
+                "PHP"
+              }
+              toCurrency={
+                currency ?? "PHP"
+              }
+              effectiveDate={
+                form.transactionDate
+              }
+              onRateSelected={(rate) =>
+                setForm(
+                  (current) => ({
+                    ...current,
+                    exchangeRate:
+                      rate.rate,
+                    exchangeRateEffectiveDate:
+                      rate.effectiveDate,
+                    exchangeRateSource:
+                      rate.source,
+                    exchangeRateProvider:
+                      rate.providerName ??
+                      "",
+                  })
+                )
+              }
+            />
+          )}
         </div>
       )}
 
@@ -2530,10 +2674,38 @@ export default function TransactionForm({
             type="date"
             value={form.transactionDate}
             onChange={(event) =>
-              updateField(
-                "transactionDate",
-                event.target.value
-              )
+              {
+                const transactionDate =
+                  event.target.value;
+
+                setForm((current) => ({
+                  ...current,
+                  transactionDate,
+                  exchangeRateEffectiveDate:
+                    current.exchangeRateSource ===
+                    "api"
+                      ? current.exchangeRateEffectiveDate
+                      : transactionDate,
+                }));
+
+                setErrors((current) => {
+                  if (
+                    !current.transactionDate
+                  ) {
+                    return current;
+                  }
+
+                  const nextErrors = {
+                    ...current,
+                  };
+
+                  delete nextErrors.transactionDate;
+
+                  return nextErrors;
+                });
+
+                setMessage("");
+              }
             }
             className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
           />
@@ -3076,76 +3248,94 @@ export default function TransactionForm({
         />
       </div>
 
-      <section className="space-y-4 rounded-lg border p-4">
+      <section
+        ref={attachmentSectionRef}
+        className="space-y-4 rounded-lg border p-4"
+      >
         <div>
           <h3 className="font-medium text-foreground">
             Receipts and Bills
           </h3>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Upload JPEG, PNG, WebP, or PDF files, or paste
-            an image from the clipboard. Maximum 3 files,
-            1 MB each.
+            Add JPEG, PNG, WebP, or PDF files. Paste
+            clipboard images, drop files here, or choose
+            files from your device.
           </p>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <label
-            className={`flex min-h-24 flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 px-4 py-5 text-center hover:bg-muted/40 ${
-              isPreparingAttachments
-                ? "cursor-wait opacity-70"
-                : "cursor-pointer"
-            }`}
-          >
-            <span className="text-sm font-medium text-foreground">
-              {isPreparingAttachments
-                ? "Preparing attachment..."
-                : "Upload receipt or bill"}
-            </span>
+        <div
+          tabIndex={0}
+          role="group"
+          aria-disabled={
+            isPreparingAttachments
+          }
+          onPaste={
+            handleAttachmentPaste
+          }
+          onDragOver={
+            handleAttachmentDragOver
+          }
+          onDrop={
+            handleAttachmentDrop
+          }
+          className={`rounded-md border border-dashed bg-muted/20 px-4 py-5 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+            isPreparingAttachments
+              ? "cursor-wait opacity-70"
+              : "cursor-default hover:bg-muted/40"
+          }`}
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {isPreparingAttachments
+                  ? "Preparing attachment..."
+                  : "Add receipts or bills"}
+              </p>
 
-            <span className="mt-1 text-xs text-muted-foreground">
-              Images are compressed on save
-            </span>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Paste an image, drop files, or select up to{" "}
+                {maximumAttachmentCount} files. Each file
+                must be 1 MB or smaller.
+              </p>
+            </div>
 
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              multiple
-              className="sr-only"
-              disabled={
-                isPreparingAttachments
-              }
-              onChange={
-                handleAttachmentInputChange
-              }
-            />
-          </label>
-
-          <div
-            tabIndex={0}
-            role="button"
-            aria-disabled={
-              isPreparingAttachments
-            }
-            onPaste={
-              handleAttachmentPaste
-            }
-            className={`flex min-h-24 flex-col items-center justify-center rounded-md border border-dashed bg-muted/20 px-4 py-5 text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 ${
-              isPreparingAttachments
-                ? "cursor-wait opacity-70"
-                : "cursor-text"
-            }`}
-          >
-            <span className="text-sm font-medium text-foreground">
-              Paste receipt image
-            </span>
-
-            <span className="mt-1 text-xs text-muted-foreground">
-              {isPreparingAttachments
-                ? "Please wait before pasting again"
-                : "Click here, then press Ctrl + V"}
-            </span>
+            <label
+              htmlFor="transaction-attachment-input"
+              className="inline-flex cursor-pointer justify-center rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              Choose Files
+            </label>
           </div>
+
+          <input
+            id="transaction-attachment-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            multiple
+            className="sr-only"
+            disabled={
+              isPreparingAttachments
+            }
+            onChange={
+              handleAttachmentInputChange
+            }
+          />
+
+          <p className="mt-3 text-xs text-muted-foreground">
+            {(form.attachments?.length ?? 0)} of{" "}
+            {maximumAttachmentCount} attachments added.
+            Images are compressed on save.
+          </p>
+
+          {attachmentStatus && (
+            <p
+              role="status"
+              className="mt-2 text-sm text-foreground"
+            >
+              {attachmentStatus}
+            </p>
+          )}
         </div>
 
         {isPreparingAttachments && (

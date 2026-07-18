@@ -89,6 +89,20 @@ export default class UtilityBillValidator {
         "Total bill amount must be greater than zero.";
     }
 
+    if (form.utilityType === "water") {
+      if (
+        !Number.isFinite(
+          form.totalConsumption
+        ) ||
+        form.totalConsumption <= 0
+      ) {
+        errors.totalConsumption =
+          "Water consumption must be greater than zero.";
+      }
+
+      return;
+    }
+
     if (
       !Number.isFinite(
         form.ratePerUnit
@@ -403,10 +417,9 @@ export default class UtilityBillValidator {
         form.totalBillAmount
       ) ||
       form.totalBillAmount <= 0 ||
-      !Number.isFinite(
-        form.ratePerUnit
-      ) ||
-      form.ratePerUnit <= 0
+      this.getEffectiveRatePerUnit(
+        form
+      ) <= 0
     ) {
       return;
     }
@@ -443,7 +456,9 @@ export default class UtilityBillValidator {
         submeterUsage +
         applianceUsage
       ) *
-        form.ratePerUnit +
+        this.getEffectiveRatePerUnit(
+          form
+        ) +
       totalFixedCompensation;
 
     if (
@@ -497,6 +512,38 @@ export default class UtilityBillValidator {
       errors.visibility =
         "Select a valid transaction visibility.";
     }
+  }
+
+  private static getEffectiveRatePerUnit(
+    form: UtilityBillForm
+  ): number {
+    if (
+      form.utilityType === "water"
+    ) {
+      if (
+        !Number.isFinite(
+          form.totalBillAmount
+        ) ||
+        form.totalBillAmount <= 0 ||
+        !Number.isFinite(
+          form.totalConsumption
+        ) ||
+        form.totalConsumption <= 0
+      ) {
+        return 0;
+      }
+
+      return (
+        form.totalBillAmount /
+        form.totalConsumption
+      );
+    }
+
+    return Number.isFinite(
+      form.ratePerUnit
+    )
+      ? form.ratePerUnit
+      : 0;
   }
 
   /**
