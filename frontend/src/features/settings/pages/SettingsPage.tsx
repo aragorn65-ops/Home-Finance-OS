@@ -40,6 +40,7 @@ import {
   type ApplicationBackupSummary,
 } from "../../startup/services/applicationBackup";
 import {
+  isGoogleDriveBackupConfigured,
   saveBackupToGoogleDrive,
 } from "../../startup/services/googleDriveBackup";
 import TransactionService from "../../transactions/services/TransactionService";
@@ -231,6 +232,9 @@ export default function SettingsPage() {
 
   const dataHealthSummary =
     getApplicationDataHealthSummary();
+
+  const isGoogleDriveConfigured =
+    isGoogleDriveBackupConfigured();
 
   const hasPreferenceChanges =
     Boolean(household) &&
@@ -968,6 +972,7 @@ export default function SettingsPage() {
                 disabled={
                   !dataHealthSummary
                     .isExportable ||
+                  !isGoogleDriveConfigured ||
                   isSavingCloudBackup
                 }
                 className="settings-secondary-button"
@@ -996,6 +1001,14 @@ export default function SettingsPage() {
                 />
               </label>
             </div>
+
+            {!isGoogleDriveConfigured && (
+              <div className="settings-cloud-note">
+                Google Drive backup needs a configured Google OAuth
+                client ID for this deployed app. Local Export Backup
+                still works.
+              </div>
+            )}
 
             <div className="settings-data-health">
               <div>

@@ -50,7 +50,7 @@ For repeated QA, use Settings -> Clear Test Data to remove accounts, transaction
 
 Use Settings -> Data & Backup -> Export Backup to download a local `.hfos-backup.json` file. Use Save to Google Drive to upload the same backup package to Google Drive when the app has a configured Google OAuth client. Use Import Backup to choose a validated HFOS backup file, confirm restore, and replace the current browser-local data. If the browser has no household yet, use Restore from Backup on the household setup screen.
 
-For Google Drive backup in a deployed preview, configure `VITE_GOOGLE_CLIENT_ID` for the frontend and add the preview origin to the Google OAuth web client. Without that client ID, the Drive button explains that Google Drive backup is not configured.
+For Google Drive backup in a deployed preview, create a Google OAuth web client, add `https://aragorn65-ops.github.io` as an authorized JavaScript origin, and set the client ID as a GitHub repository variable named `VITE_GOOGLE_CLIENT_ID`. Vite embeds that value when GitHub Pages builds the app. Without that client ID, Settings shows that Google Drive backup is not configured and local Export Backup remains available.
 
 ---
 

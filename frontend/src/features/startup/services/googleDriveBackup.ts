@@ -78,6 +78,12 @@ declare global {
   }
 }
 
+export function isGoogleDriveBackupConfigured(): boolean {
+  return Boolean(
+    googleClientId?.trim()
+  );
+}
+
 export async function saveBackupToGoogleDrive({
   filename,
   json,

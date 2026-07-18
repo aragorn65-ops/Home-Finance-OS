@@ -1,10 +1,11 @@
-name: Deploy Sprint 14 Preview
+name: Deploy Preview
 
 on:
   workflow_dispatch:
   push:
     branches:
       - sprint-14-analytics-settings
+      - sprint-17-cloud-sync-readiness
 
 permissions:
   contents: read
@@ -12,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: sprint-14-preview
+  group: hfos-preview
   cancel-in-progress: true
 
 jobs:
@@ -38,6 +39,7 @@ jobs:
         working-directory: frontend
         env:
           GITHUB_PAGES: "true"
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build
 
       - name: Add single-page app fallback
