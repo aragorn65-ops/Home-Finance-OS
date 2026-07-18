@@ -854,12 +854,12 @@ export default function SettingsPage() {
             </div>
 
             {isConfirmingRestore && (
-              <div className="settings-confirmation">
-                <p className="settings-confirmation__title">
-                  Confirm backup restore
+              <div className="settings-confirmation settings-confirmation--success">
+                <p className="settings-confirmation__title settings-confirmation__title--success">
+                  Backup ready to restore
                 </p>
 
-                <p className="settings-confirmation__copy">
+                <p className="settings-confirmation__copy settings-confirmation__copy--success">
                   Restoring {restoreFilename} will replace
                   the current HFOS data in this browser.
                 </p>

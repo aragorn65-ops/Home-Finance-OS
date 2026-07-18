@@ -64,16 +64,16 @@
 }
 
 .household-restore__confirm {
-  border: 1px solid var(--color-danger-border);
+  border: 1px solid var(--color-success-border);
   border-radius: var(--radius-lg);
-  background: var(--color-danger-background);
-  color: var(--color-danger-text);
+  background: var(--color-success-background);
+  color: var(--color-success-text);
   padding: var(--space-4);
 }
 
 .household-restore__confirm p {
   margin: 0;
-  color: var(--color-danger-text);
+  color: var(--color-success-text);
 }
 
 .household-restore__summary {
@@ -88,7 +88,7 @@
 }
 
 .household-restore__summary dt {
-  color: var(--color-danger-text);
+  color: currentColor;
   font-size: 0.6875rem;
   font-weight: var(--font-weight-semibold);
   opacity: 0.8;
@@ -96,7 +96,7 @@
 
 .household-restore__summary dd {
   margin: 0;
-  color: var(--color-danger-text);
+  color: currentColor;
   font-size: var(--font-size-sm);
   overflow-wrap: anywhere;
 }
@@ -109,8 +109,8 @@
 }
 
 .household-restore__actions button:first-child {
-  background: var(--color-danger);
-  border-color: var(--color-danger);
+  background: var(--color-success);
+  border-color: var(--color-success);
   color: var(--color-text-inverse);
 }
 

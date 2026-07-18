@@ -27,6 +27,7 @@ This release will add local backup export and restore workflows before moving to
 * Embedded the same summary metadata in exported backup files.
 * Added rollback protection for restore write failures.
 * Improved import retry behavior by clearing the selected file after failed validation.
+* Styled valid restore-ready prompts with success coloring and kept failures red.
 * Keep Clear Test Data for QA cleanup without deleting the household.
 * Keep Reset All Application Data for full delete-and-return-to-setup.
 
@@ -80,5 +81,6 @@ Before finalizing this alpha, manually verify:
 * Invalid JSON restore shows a clear error.
 * Non-HFOS JSON restore shows a clear error.
 * Re-selecting the same rejected backup file runs validation again.
+* Valid restore-ready prompts use success styling; failed restore/read/validation messages remain red.
 * Restored transaction currency/rate fields remain unchanged.
 * Settings Data & Backup controls remain usable on mobile widths.
