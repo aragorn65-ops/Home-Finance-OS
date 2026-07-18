@@ -62,6 +62,13 @@ interface UtilityBillFormProps {
   onCancel?: () => void;
 }
 
+type UtilityEntryTab =
+  | "bill"
+  | "members"
+  | "appliances"
+  | "files"
+  | "review";
+
 const acceptedAttachmentMimeTypes = [
   "image/jpeg",
   "image/png",
@@ -213,6 +220,13 @@ export default function UtilityBillForm({
   ] = useState<
     UtilityBillShareResult | undefined
   >();
+
+  const [
+    activeTab,
+    setActiveTab,
+  ] = useState<UtilityEntryTab>(
+    "bill"
+  );
 
   const [errors, setErrors] =
     useState<Record<string, string>>({});
@@ -676,6 +690,8 @@ export default function UtilityBillForm({
             "Unable to calculate the utility bill."
         );
 
+        setActiveTab("review");
+
         setPreviewResult(
           undefined
         );
@@ -696,6 +712,8 @@ export default function UtilityBillForm({
           calculation:
             "The utility calculation returned no result.",
         });
+
+        setActiveTab("review");
 
         setMessage(
           "Unable to calculate the utility bill."
@@ -720,6 +738,8 @@ export default function UtilityBillForm({
       setPreviewResult(
         calculation
       );
+
+      setActiveTab("review");
 
       return calculation;
     };
@@ -765,6 +785,56 @@ export default function UtilityBillForm({
         }
       />
 
+      <div className="sticky top-0 z-20 rounded-xl border border-slate-200 bg-white/95 p-2 shadow-sm backdrop-blur">
+        <div
+          className="flex gap-2 overflow-x-auto"
+          role="tablist"
+          aria-label="Utility bill entry sections"
+        >
+          <UtilityEntryTabButton
+            label="Bill"
+            isActive={activeTab === "bill"}
+            onClick={() => setActiveTab("bill")}
+          />
+
+          <UtilityEntryTabButton
+            label="Members"
+            isActive={
+              activeTab === "members"
+            }
+            onClick={() =>
+              setActiveTab("members")
+            }
+          />
+
+          {form.utilityType ===
+            "electricity" && (
+            <UtilityEntryTabButton
+              label="Appliances"
+              isActive={
+                activeTab === "appliances"
+              }
+              onClick={() =>
+                setActiveTab("appliances")
+              }
+            />
+          )}
+
+          <UtilityEntryTabButton
+            label="Files & Payment"
+            isActive={activeTab === "files"}
+            onClick={() => setActiveTab("files")}
+          />
+
+          <UtilityEntryTabButton
+            label="Review"
+            isActive={activeTab === "review"}
+            onClick={() => setActiveTab("review")}
+          />
+        </div>
+      </div>
+
+      {activeTab === "bill" && (
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -810,6 +880,8 @@ export default function UtilityBillForm({
                 if (
                   utilityType === "internet"
                 ) {
+                  setActiveTab("bill");
+
                   setForm(
                     (current) => ({
                       ...current,
@@ -991,7 +1063,9 @@ export default function UtilityBillForm({
           )}
         </div>
       </section>
+      )}
 
+      {activeTab === "members" && (
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -1274,8 +1348,10 @@ export default function UtilityBillForm({
           )}
         </div>
       </section>
+      )}
 
-        {form.utilityType ===
+      {activeTab === "appliances" &&
+        form.utilityType ===
         "electricity" && (
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <SectionHeader
@@ -1468,6 +1544,8 @@ export default function UtilityBillForm({
         </section>
       )}
 
+      {activeTab === "files" && (
+      <>
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -1820,8 +1898,11 @@ export default function UtilityBillForm({
           </div>
         </div>
       </section>
+      </>
+      )}
 
-      {(message ||
+      {activeTab === "review" &&
+        (message ||
         Object.keys(errors).length >
           0) && (
         <section
@@ -1862,7 +1943,7 @@ export default function UtilityBillForm({
         </section>
       )}
 
-      <div className="flex flex-wrap justify-end gap-3">
+      <div className="sticky bottom-0 z-20 flex flex-wrap justify-end gap-3 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
         {onCancel && (
           <button
             className={secondaryButtonClassName}
@@ -1894,13 +1975,42 @@ export default function UtilityBillForm({
         )}
       </div>
 
-      {previewResult && (
+      {activeTab === "review" &&
+        previewResult && (
         <UtilityBillSharePreview
           result={previewResult}
           memberNames={memberNames}
         />
       )}
     </div>
+  );
+}
+
+interface UtilityEntryTabButtonProps {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+function UtilityEntryTabButton({
+  label,
+  isActive,
+  onClick,
+}: UtilityEntryTabButtonProps) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={isActive}
+      className={`shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+        isActive
+          ? "bg-blue-600 text-white"
+          : "text-slate-600 hover:bg-slate-100"
+      }`}
+      onClick={onClick}
+    >
+      {label}
+    </button>
   );
 }
 

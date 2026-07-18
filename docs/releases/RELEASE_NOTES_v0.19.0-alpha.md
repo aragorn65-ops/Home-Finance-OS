@@ -36,6 +36,7 @@ The goal is to calculate member shares when the bill is entered, keep provider p
 * Bills to Pay now shows each member's saved calculated share.
 * Wrong provider bill files can be corrected while the bill is still unpaid.
 * Internet bills can now be entered as fixed provider bills instead of manual transactions.
+* Utility bill entry now uses logical tabs with sticky calculate/save actions.
 * Utilities now includes a Provider Payments summary for paid provider bills.
 * Provider bills are included in new local and Google Drive backups.
 * Bills to Pay now supports Mark Paid with payer, optional account, payment date, reference, and payment receipt.
