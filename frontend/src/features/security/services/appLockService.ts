@@ -254,18 +254,20 @@ function createSalt(): string {
   const browserCrypto =
     getBrowserCrypto();
 
-  if (!browserCrypto) {
-    return "";
-  }
-
   const bytes =
     new Uint8Array(16);
 
-  browserCrypto.getRandomValues(
-    bytes
-  );
+  if (browserCrypto) {
+    browserCrypto.getRandomValues(
+      bytes
+    );
 
-  return bytesToBase64(bytes);
+    return bytesToBase64(bytes);
+  }
+
+  return btoa(
+    `${Date.now()}:${Math.random()}`
+  );
 }
 
 async function hashPin(
@@ -280,7 +282,10 @@ async function hashPin(
     typeof TextEncoder ===
       "undefined"
   ) {
-    return null;
+    return createBasicPinHash(
+      pin,
+      salt
+    );
   }
 
   const encoded =
@@ -297,6 +302,29 @@ async function hashPin(
   return bytesToBase64(
     new Uint8Array(digest)
   );
+}
+
+function createBasicPinHash(
+  pin: string,
+  salt: string
+): string {
+  const value =
+    `${salt}:${pin}`;
+  let hash = 2166136261;
+
+  for (
+    let index = 0;
+    index < value.length;
+    index += 1
+  ) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(
+      hash,
+      16777619
+    );
+  }
+
+  return `basic:${hash >>> 0}`;
 }
 
 function bytesToBase64(

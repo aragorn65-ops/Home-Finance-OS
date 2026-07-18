@@ -350,6 +350,11 @@ export default function SettingsPage() {
       timezone !==
         (household?.timezone ?? ""));
 
+  const isAppLockPinReady =
+    /^\d{4,8}$/.test(appLockPin) &&
+    appLockPin ===
+      appLockPinConfirmation;
+
   useEffect(() => {
     storeThemePreference(
       themePreference
@@ -1297,13 +1302,16 @@ export default function SettingsPage() {
                     value={appLockPin}
                     onChange={(event) => {
                       setAppLockPin(
-                        event.target.value
+                        normalizePinInput(
+                          event.target.value
+                        )
                       );
                       setAppLockError("");
                       setAppLockMessage("");
                     }}
                     className="settings-preferences-input"
                     placeholder="4 to 8 digits"
+                    maxLength={8}
                   />
                 </label>
 
@@ -1322,13 +1330,16 @@ export default function SettingsPage() {
                     }
                     onChange={(event) => {
                       setAppLockPinConfirmation(
-                        event.target.value
+                        normalizePinInput(
+                          event.target.value
+                        )
                       );
                       setAppLockError("");
                       setAppLockMessage("");
                     }}
                     className="settings-preferences-input"
                     placeholder="Repeat PIN"
+                    maxLength={8}
                   />
                 </label>
 
@@ -1371,10 +1382,7 @@ export default function SettingsPage() {
                     }}
                     disabled={
                       isSavingAppLock ||
-                      appLockPin.length ===
-                        0 ||
-                      appLockPinConfirmation.length ===
-                        0
+                      !isAppLockPinReady
                     }
                     className="settings-secondary-button"
                   >
@@ -1430,13 +1438,16 @@ export default function SettingsPage() {
                     value={appLockDisablePin}
                     onChange={(event) => {
                       setAppLockDisablePin(
-                        event.target.value
+                        normalizePinInput(
+                          event.target.value
+                        )
                       );
                       setAppLockError("");
                       setAppLockMessage("");
                     }}
                     className="settings-preferences-input"
                     placeholder="Enter PIN to disable"
+                    maxLength={8}
                   />
                 </label>
 
@@ -2107,6 +2118,14 @@ function formatIdleTimeoutLabel(
   return minutes === 1
     ? "1 minute"
     : `${minutes} minutes`;
+}
+
+function normalizePinInput(
+  value: string
+): string {
+  return value
+    .replace(/\D/g, "")
+    .slice(0, 8);
 }
 
 function formatBackupDate(
