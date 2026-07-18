@@ -164,6 +164,11 @@ export default function SettingsPage() {
   ] = useState(false);
 
   const [
+    hasLoadedDriveBackups,
+    setHasLoadedDriveBackups,
+  ] = useState(false);
+
+  const [
     isDownloadingDriveBackup,
     setIsDownloadingDriveBackup,
   ] = useState(false);
@@ -418,6 +423,7 @@ export default function SettingsPage() {
       setBackupMessage("");
       setBackupError("");
       setDriveBackups([]);
+      setHasLoadedDriveBackups(false);
       setIsLoadingDriveBackups(true);
 
       try {
@@ -435,10 +441,12 @@ export default function SettingsPage() {
         setDriveBackups(
           result.files
         );
+        setHasLoadedDriveBackups(true);
         setBackupMessage(
           result.message
         );
       } catch {
+        setHasLoadedDriveBackups(false);
         setBackupError(
           "Google Drive backups could not be loaded."
         );
@@ -1181,6 +1189,25 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+
+            {isGoogleDriveConfigured &&
+              hasLoadedDriveBackups &&
+              !isLoadingDriveBackups &&
+              driveBackups.length === 0 &&
+              !backupError && (
+                <div className="settings-drive-backups settings-drive-backups--empty">
+                  <div>
+                    <h3>
+                      No Google Drive backups found
+                    </h3>
+
+                    <p>
+                      Use Save to Google Drive first, then return here
+                      to restore a backup saved by this app.
+                    </p>
+                  </div>
+                </div>
+              )}
 
             <div className="settings-data-health">
               <div>

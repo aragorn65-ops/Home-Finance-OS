@@ -265,6 +265,11 @@
   gap: var(--space-2);
 }
 
+.settings-drive-backups--empty {
+  border-style: dashed;
+  background: var(--color-background);
+}
+
 .settings-drive-backup {
   display: grid;
   width: 100%;
