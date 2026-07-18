@@ -10,6 +10,9 @@ const googleIdentityScriptUrl =
 const googleDriveUploadUrl =
   "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink";
 
+const googleDriveFilesUrl =
+  "https://www.googleapis.com/drive/v3/files";
+
 const googleDriveFileScope =
   "https://www.googleapis.com/auth/drive.file";
 
@@ -19,6 +22,20 @@ export interface GoogleDriveBackupUpload {
   json: string;
 }
 
+export interface GoogleDriveBackupFile {
+  id: string;
+
+  name: string;
+
+  createdTime?: string;
+
+  modifiedTime?: string;
+
+  size?: string;
+
+  webViewLink?: string;
+}
+
 export type GoogleDriveBackupResult =
   | {
       success: true;
@@ -26,6 +43,28 @@ export type GoogleDriveBackupResult =
       fileId: string;
       filename: string;
       webViewLink?: string;
+    }
+  | {
+      success: false;
+      message: string;
+    };
+
+export type GoogleDriveBackupListResult =
+  | {
+      success: true;
+      files: GoogleDriveBackupFile[];
+      message: string;
+    }
+  | {
+      success: false;
+      message: string;
+    };
+
+export type GoogleDriveBackupDownloadResult =
+  | {
+      success: true;
+      filename: string;
+      json: string;
     }
   | {
       success: false;
@@ -70,6 +109,10 @@ interface GoogleDriveFileResponse {
   name?: string;
 
   webViewLink?: string;
+}
+
+interface GoogleDriveFilesListResponse {
+  files?: unknown[];
 }
 
 declare global {
@@ -119,6 +162,68 @@ export async function saveBackupToGoogleDrive({
     tokenResult.accessToken,
     filename,
     json
+  );
+}
+
+export async function listGoogleDriveBackups(): Promise<GoogleDriveBackupListResult> {
+  const tokenResult =
+    await requestGoogleDriveAccess();
+
+  if (!tokenResult.success) {
+    return tokenResult;
+  }
+
+  return listBackupFilesFromDrive(
+    tokenResult.accessToken
+  );
+}
+
+export async function downloadGoogleDriveBackup(
+  file: GoogleDriveBackupFile
+): Promise<GoogleDriveBackupDownloadResult> {
+  const tokenResult =
+    await requestGoogleDriveAccess();
+
+  if (!tokenResult.success) {
+    return tokenResult;
+  }
+
+  return downloadBackupFileFromDrive(
+    tokenResult.accessToken,
+    file
+  );
+}
+
+async function requestGoogleDriveAccess(): Promise<
+  | {
+      success: true;
+      accessToken: string;
+    }
+  | {
+      success: false;
+      message: string;
+    }
+> {
+  const clientId =
+    googleClientId?.trim();
+
+  if (!clientId) {
+    return {
+      success: false,
+      message:
+        "Google Drive backup needs VITE_GOOGLE_CLIENT_ID configured for this app.",
+    };
+  }
+
+  const scriptResult =
+    await loadGoogleIdentityScript();
+
+  if (!scriptResult.success) {
+    return scriptResult;
+  }
+
+  return requestGoogleAccessToken(
+    clientId
   );
 }
 
@@ -385,4 +490,146 @@ async function uploadBackupFileToDrive(
     message:
       `Backup saved to Google Drive as ${file.name ?? filename}.`,
   };
+}
+
+async function listBackupFilesFromDrive(
+  accessToken: string
+): Promise<GoogleDriveBackupListResult> {
+  const query =
+    [
+      "trashed = false",
+      "mimeType = 'application/json'",
+      "name contains 'hfos-backup-'",
+      "name contains '.hfos-backup.json'",
+    ].join(" and ");
+
+  const params =
+    new URLSearchParams({
+      q: query,
+      spaces: "drive",
+      pageSize: "10",
+      orderBy:
+        "createdTime desc",
+      fields:
+        "files(id,name,createdTime,modifiedTime,size,webViewLink)",
+    });
+
+  let response: Response;
+
+  try {
+    response = await fetch(
+      `${googleDriveFilesUrl}?${params.toString()}`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      }
+    );
+  } catch {
+    return {
+      success: false,
+      message:
+        "Google Drive backups could not be loaded. Check your connection and try again.",
+    };
+  }
+
+  if (!response.ok) {
+    return {
+      success: false,
+      message:
+        "Google Drive rejected the backup list request.",
+    };
+  }
+
+  const result =
+    (await response.json()) as
+      GoogleDriveFilesListResponse;
+
+  const files =
+    Array.isArray(result.files)
+      ? result.files.filter(
+          isGoogleDriveBackupFile
+        )
+      : [];
+
+  return {
+    success: true,
+    files,
+    message:
+      files.length > 0
+        ? "Google Drive backups loaded."
+        : "No HFOS backups were found in Google Drive for this app.",
+  };
+}
+
+async function downloadBackupFileFromDrive(
+  accessToken: string,
+  file: GoogleDriveBackupFile
+): Promise<GoogleDriveBackupDownloadResult> {
+  let response: Response;
+
+  const params =
+    new URLSearchParams({
+      alt: "media",
+    });
+
+  try {
+    response = await fetch(
+      `${googleDriveFilesUrl}/${encodeURIComponent(file.id)}?${params.toString()}`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      }
+    );
+  } catch {
+    return {
+      success: false,
+      message:
+        "Google Drive backup could not be downloaded. Check your connection and try again.",
+    };
+  }
+
+  if (!response.ok) {
+    return {
+      success: false,
+      message:
+        "Google Drive rejected the backup download request.",
+    };
+  }
+
+  return {
+    success: true,
+    filename:
+      file.name,
+    json:
+      await response.text(),
+  };
+}
+
+function isGoogleDriveBackupFile(
+  value: unknown
+): value is GoogleDriveBackupFile {
+  if (
+    typeof value !==
+      "object" ||
+    value === null
+  ) {
+    return false;
+  }
+
+  const file =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  return (
+    typeof file.id ===
+      "string" &&
+    typeof file.name ===
+      "string"
+  );
 }

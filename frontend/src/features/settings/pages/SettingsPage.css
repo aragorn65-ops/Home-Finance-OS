@@ -235,7 +235,8 @@
   gap: var(--space-3);
 }
 
-.settings-data-health {
+.settings-data-health,
+.settings-drive-backups {
   display: grid;
   gap: var(--space-3);
   border: 1px solid var(--color-border);
@@ -244,17 +245,58 @@
   padding: var(--space-4);
 }
 
-.settings-data-health h3 {
+.settings-data-health h3,
+.settings-drive-backups h3 {
   margin: 0;
   color: var(--color-text-strong);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
 }
 
-.settings-data-health p {
+.settings-data-health p,
+.settings-drive-backups p {
   margin: var(--space-1) 0 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+}
+
+.settings-drive-backups__list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.settings-drive-backup {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-text);
+  padding: var(--space-3);
+  text-align: left;
+}
+
+.settings-drive-backup:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+}
+
+.settings-drive-backup span,
+.settings-drive-backup small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settings-drive-backup span {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.settings-drive-backup small {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
 }
 
 .settings-cloud-note {
@@ -285,7 +327,8 @@
 
 .settings-confirm-button:disabled,
 .settings-secondary-button:disabled,
-.settings-file-button:has(input:disabled) {
+.settings-file-button:has(input:disabled),
+.settings-drive-backup:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }

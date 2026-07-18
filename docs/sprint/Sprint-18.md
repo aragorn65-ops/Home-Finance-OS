@@ -50,6 +50,13 @@ Restore from Drive should not:
 * Auto-sync in the background.
 * Replace user authentication or future server-side authorization.
 
+Implemented:
+
+* Added Google Drive backup discovery for recent app-visible HFOS backup JSON files.
+* Added a Settings Restore from Google Drive action.
+* Downloaded selected Drive backups and validated them before showing restore confirmation.
+* Reused the existing rollback-protected local restore confirmation and reload flow after Drive backup selection.
+
 ---
 
 ## Deferred

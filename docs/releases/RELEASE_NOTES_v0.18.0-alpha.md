@@ -27,6 +27,15 @@ Sprint 17 added optional Drive backup upload. This release should complete the f
 
 ---
 
+## Implemented
+
+* Added Google Drive backup discovery for recent app-visible HFOS backup JSON files.
+* Added a Settings Restore from Google Drive action.
+* Downloaded selected Drive backups and validated them before showing restore confirmation.
+* Reused the existing rollback-protected local restore confirmation and reload flow after Drive backup selection.
+
+---
+
 ## Restore Rules
 
 * Drive restore should require `VITE_GOOGLE_CLIENT_ID`.

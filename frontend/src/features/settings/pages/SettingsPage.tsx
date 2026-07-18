@@ -40,8 +40,11 @@ import {
   type ApplicationBackupSummary,
 } from "../../startup/services/applicationBackup";
 import {
+  downloadGoogleDriveBackup,
   isGoogleDriveBackupConfigured,
+  listGoogleDriveBackups,
   saveBackupToGoogleDrive,
+  type GoogleDriveBackupFile,
 } from "../../startup/services/googleDriveBackup";
 import TransactionService from "../../transactions/services/TransactionService";
 
@@ -148,6 +151,21 @@ export default function SettingsPage() {
   const [
     isSavingCloudBackup,
     setIsSavingCloudBackup,
+  ] = useState(false);
+
+  const [
+    driveBackups,
+    setDriveBackups,
+  ] = useState<GoogleDriveBackupFile[]>([]);
+
+  const [
+    isLoadingDriveBackups,
+    setIsLoadingDriveBackups,
+  ] = useState(false);
+
+  const [
+    isDownloadingDriveBackup,
+    setIsDownloadingDriveBackup,
   ] = useState(false);
 
   const [
@@ -392,6 +410,98 @@ export default function SettingsPage() {
         );
       } finally {
         setIsSavingCloudBackup(false);
+      }
+    };
+
+  const handleLoadDriveBackups =
+    async (): Promise<void> => {
+      setBackupMessage("");
+      setBackupError("");
+      setDriveBackups([]);
+      setIsLoadingDriveBackups(true);
+
+      try {
+        const result =
+          await listGoogleDriveBackups();
+
+        if (!result.success) {
+          setBackupError(
+            result.message
+          );
+
+          return;
+        }
+
+        setDriveBackups(
+          result.files
+        );
+        setBackupMessage(
+          result.message
+        );
+      } catch {
+        setBackupError(
+          "Google Drive backups could not be loaded."
+        );
+      } finally {
+        setIsLoadingDriveBackups(false);
+      }
+    };
+
+  const handleSelectDriveBackup =
+    async (
+      file: GoogleDriveBackupFile
+    ): Promise<void> => {
+      setBackupMessage("");
+      setBackupError("");
+      setRestoreFilename("");
+      setRestoreJson("");
+      setRestoreSummary(undefined);
+      setIsConfirmingRestore(false);
+      setIsDownloadingDriveBackup(true);
+
+      try {
+        const download =
+          await downloadGoogleDriveBackup(
+            file
+          );
+
+        if (!download.success) {
+          setBackupError(
+            download.message
+          );
+
+          return;
+        }
+
+        const validation =
+          validateApplicationBackup(
+            download.json
+          );
+
+        if (!validation.success) {
+          setBackupError(
+            validation.message
+          );
+
+          return;
+        }
+
+        setRestoreFilename(
+          download.filename
+        );
+        setRestoreJson(
+          download.json
+        );
+        setRestoreSummary(
+          validation.summary
+        );
+        setIsConfirmingRestore(true);
+      } catch {
+        setBackupError(
+          "Google Drive backup could not be prepared for restore."
+        );
+      } finally {
+        setIsDownloadingDriveBackup(false);
       }
     };
 
@@ -982,6 +1092,23 @@ export default function SettingsPage() {
                   : "Save to Google Drive"}
               </button>
 
+              <button
+                type="button"
+                onClick={() => {
+                  void handleLoadDriveBackups();
+                }}
+                disabled={
+                  !isGoogleDriveConfigured ||
+                  isLoadingDriveBackups ||
+                  isDownloadingDriveBackup
+                }
+                className="settings-secondary-button"
+              >
+                {isLoadingDriveBackups
+                  ? "Loading Drive..."
+                  : "Restore from Google Drive"}
+              </button>
+
               <label className="settings-file-button">
                 <span>
                   Import Backup
@@ -1004,9 +1131,54 @@ export default function SettingsPage() {
 
             {!isGoogleDriveConfigured && (
               <div className="settings-cloud-note">
-                Google Drive backup needs a configured Google OAuth
-                client ID for this deployed app. Local Export Backup
-                still works.
+                Google Drive backup and restore need a configured
+                Google OAuth client ID for this deployed app. Local
+                Export Backup and Import Backup still work.
+              </div>
+            )}
+
+            {driveBackups.length > 0 && (
+              <div className="settings-drive-backups">
+                <div>
+                  <h3>
+                    Google Drive Backups
+                  </h3>
+
+                  <p>
+                    Choose a backup to download, validate, and preview
+                    before restore.
+                  </p>
+                </div>
+
+                <div className="settings-drive-backups__list">
+                  {driveBackups.map(
+                    (file) => (
+                      <button
+                        key={file.id}
+                        type="button"
+                        onClick={() => {
+                          void handleSelectDriveBackup(
+                            file
+                          );
+                        }}
+                        disabled={
+                          isDownloadingDriveBackup
+                        }
+                        className="settings-drive-backup"
+                      >
+                        <span>
+                          {file.name}
+                        </span>
+
+                        <small>
+                          {formatDriveBackupMeta(
+                            file
+                          )}
+                        </small>
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
             )}
 
@@ -1421,6 +1593,50 @@ function formatThemePreference(
     .replace(/^\w/, (letter) =>
       letter.toUpperCase()
     );
+}
+
+function formatDriveBackupMeta(
+  file: GoogleDriveBackupFile
+): string {
+  const dateValue =
+    file.createdTime ??
+    file.modifiedTime;
+
+  const parts = [
+    dateValue
+      ? formatBackupDate(
+          dateValue
+        )
+      : "Date unavailable",
+    file.size
+      ? formatFileSize(
+          Number(file.size)
+        )
+      : "Size unavailable",
+  ];
+
+  return parts.join(" | ");
+}
+
+function formatFileSize(
+  bytes: number
+): string {
+  if (
+    !Number.isFinite(bytes) ||
+    bytes < 0
+  ) {
+    return "Size unavailable";
+  }
+
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatBackupDate(
