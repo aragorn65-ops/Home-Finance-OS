@@ -23,6 +23,7 @@ This release will add local backup export and restore workflows before moving to
 * Added Import Backup with validation before restore.
 * Added Restore from Backup on the household setup screen for clean-browser recovery.
 * Added restore confirmation before replacing current local data.
+* Added restore preview metadata showing household name, export date, and record counts.
 * Keep Clear Test Data for QA cleanup without deleting the household.
 * Keep Reset All Application Data for full delete-and-return-to-setup.
 
@@ -69,6 +70,7 @@ Before finalizing this alpha, manually verify:
 * Restore works after clearing browser data.
 * Restore works from the household setup screen before creating a new household.
 * Restore works after Clear Test Data.
+* Restore preview metadata matches the selected backup before confirmation.
 * Invalid JSON restore shows a clear error.
 * Non-HFOS JSON restore shows a clear error.
 * Restored transaction currency/rate fields remain unchanged.

@@ -76,6 +76,31 @@
   color: var(--color-danger-text);
 }
 
+.household-restore__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+}
+
+.household-restore__summary div {
+  min-width: 0;
+}
+
+.household-restore__summary dt {
+  color: var(--color-danger-text);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold);
+  opacity: 0.8;
+}
+
+.household-restore__summary dd {
+  margin: 0;
+  color: var(--color-danger-text);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
 .household-restore__actions {
   display: flex;
   flex-wrap: wrap;
@@ -100,5 +125,9 @@
   .household-restore__actions,
   .household-restore__actions button {
     width: 100%;
+  }
+
+  .household-restore__summary {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

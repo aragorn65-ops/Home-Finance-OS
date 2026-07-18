@@ -124,6 +124,31 @@
   color: var(--color-text-muted);
 }
 
+.settings-backup-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+}
+
+.settings-backup-summary div {
+  min-width: 0;
+}
+
+.settings-backup-summary dt {
+  color: var(--color-danger-text);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold);
+  opacity: 0.8;
+}
+
+.settings-backup-summary dd {
+  margin: 0;
+  color: var(--color-danger-text);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
 .settings-danger-button,
 .settings-confirm-button,
 .settings-secondary-button,
@@ -209,5 +234,9 @@
   .settings-data-actions .settings-secondary-button,
   .settings-data-actions .settings-file-button {
     width: 100%;
+  }
+
+  .settings-backup-summary {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

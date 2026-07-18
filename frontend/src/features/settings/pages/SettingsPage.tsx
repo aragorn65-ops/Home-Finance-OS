@@ -33,6 +33,7 @@ import {
   createApplicationBackup,
   restoreApplicationBackup,
   validateApplicationBackup,
+  type ApplicationBackupSummary,
 } from "../../startup/services/applicationBackup";
 import TransactionService from "../../transactions/services/TransactionService";
 
@@ -135,6 +136,13 @@ export default function SettingsPage() {
     restoreJson,
     setRestoreJson,
   ] = useState("");
+
+  const [
+    restoreSummary,
+    setRestoreSummary,
+  ] = useState<
+    ApplicationBackupSummary | undefined
+  >();
 
   const [
     isConfirmingRestore,
@@ -302,6 +310,7 @@ export default function SettingsPage() {
     setBackupError("");
     setRestoreFilename("");
     setRestoreJson("");
+    setRestoreSummary(undefined);
     setIsConfirmingRestore(false);
 
     if (!file) {
@@ -338,6 +347,9 @@ export default function SettingsPage() {
       file.name
     );
     setRestoreJson(json);
+    setRestoreSummary(
+      validation.summary
+    );
     setIsConfirmingRestore(true);
   };
 
@@ -346,6 +358,7 @@ export default function SettingsPage() {
     setBackupError("");
     setRestoreFilename("");
     setRestoreJson("");
+    setRestoreSummary(undefined);
     setIsConfirmingRestore(false);
 
     if (
@@ -845,6 +858,12 @@ export default function SettingsPage() {
                   the current HFOS data in this browser.
                 </p>
 
+                {restoreSummary && (
+                  <BackupSummaryList
+                    summary={restoreSummary}
+                  />
+                )}
+
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
                     type="button"
@@ -1020,6 +1039,65 @@ export default function SettingsPage() {
       </div>
     </>
   );
+}
+
+function BackupSummaryList({
+  summary,
+}: {
+  summary: ApplicationBackupSummary;
+}) {
+  return (
+    <dl className="settings-backup-summary">
+      <div>
+        <dt>Household</dt>
+        <dd>{summary.householdName}</dd>
+      </div>
+
+      <div>
+        <dt>Exported</dt>
+        <dd>
+          {formatBackupDate(
+            summary.exportedAt
+          )}
+        </dd>
+      </div>
+
+      <div>
+        <dt>Accounts</dt>
+        <dd>{summary.accountCount}</dd>
+      </div>
+
+      <div>
+        <dt>Transactions</dt>
+        <dd>{summary.transactionCount}</dd>
+      </div>
+
+      <div>
+        <dt>Settlements</dt>
+        <dd>{summary.settlementCount}</dd>
+      </div>
+
+      <div>
+        <dt>Savings Goals</dt>
+        <dd>{summary.savingsGoalCount}</dd>
+      </div>
+    </dl>
+  );
+}
+
+function formatBackupDate(
+  value: string
+): string {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(date.getTime())
+  ) {
+    return value;
+  }
+
+  return date.toLocaleString();
 }
 
 function downloadBackupFile(

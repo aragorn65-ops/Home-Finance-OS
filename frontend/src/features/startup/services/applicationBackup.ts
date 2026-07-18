@@ -47,6 +47,20 @@ export interface ApplicationBackupResult {
   message?: string;
 }
 
+export interface ApplicationBackupSummary {
+  householdName: string;
+
+  exportedAt: string;
+
+  accountCount: number;
+
+  transactionCount: number;
+
+  settlementCount: number;
+
+  savingsGoalCount: number;
+}
+
 export type ApplicationRestoreResult =
   | {
       success: true;
@@ -74,6 +88,7 @@ type ValidatedBackupResult =
       success: true;
       message: string;
       backup: ApplicationBackupFile;
+      summary: ApplicationBackupSummary;
     }
   | ApplicationFailureResult;
 
@@ -247,6 +262,10 @@ export function validateApplicationBackup(
     ...validation,
     backup:
       parsed.backup,
+    summary:
+      createBackupSummary(
+        parsed.backup
+      ),
   };
 }
 
@@ -472,6 +491,60 @@ function createBackupFilename(
       .replace(/[:.]/g, "-");
 
   return `hfos-backup-${stamp}.hfos-backup.json`;
+}
+
+function createBackupSummary(
+  backup: ApplicationBackupFile
+): ApplicationBackupSummary {
+  const household =
+    backup.records[
+      HFOS_STORAGE_KEYS.household
+    ];
+
+  const householdName =
+    isRecord(household) &&
+    typeof household.householdName ===
+      "string"
+      ? household.householdName
+      : "Unnamed household";
+
+  return {
+    householdName,
+    exportedAt:
+      backup.exportedAt,
+    accountCount:
+      getCollectionCount(
+        backup,
+        HFOS_STORAGE_KEYS.accounts
+      ),
+    transactionCount:
+      getCollectionCount(
+        backup,
+        HFOS_STORAGE_KEYS.transactions
+      ),
+    settlementCount:
+      getCollectionCount(
+        backup,
+        HFOS_STORAGE_KEYS.settlements
+      ),
+    savingsGoalCount:
+      getCollectionCount(
+        backup,
+        HFOS_STORAGE_KEYS.savingsGoals
+      ),
+  };
+}
+
+function getCollectionCount(
+  backup: ApplicationBackupFile,
+  key: HfosStorageKey
+): number {
+  const value =
+    backup.records[key];
+
+  return Array.isArray(value)
+    ? value.length
+    : 0;
 }
 
 function getLocalStorage():

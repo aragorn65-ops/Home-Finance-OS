@@ -23,6 +23,7 @@ import { saveHousehold } from "../services/householdStorage";
 import {
   restoreApplicationBackup,
   validateApplicationBackup,
+  type ApplicationBackupSummary,
 } from "../../startup/services/applicationBackup";
 
 import {
@@ -59,6 +60,13 @@ export default function HouseholdPage() {
     restoreJson,
     setRestoreJson,
   ] = useState("");
+
+  const [
+    restoreSummary,
+    setRestoreSummary,
+  ] = useState<
+    ApplicationBackupSummary | undefined
+  >();
 
   const [
     isConfirmingRestore,
@@ -116,6 +124,7 @@ export default function HouseholdPage() {
     setRestoreError("");
     setRestoreFilename("");
     setRestoreJson("");
+    setRestoreSummary(undefined);
     setIsConfirmingRestore(false);
 
     if (!file) {
@@ -150,6 +159,9 @@ export default function HouseholdPage() {
 
     setRestoreFilename(file.name);
     setRestoreJson(json);
+    setRestoreSummary(
+      validation.summary
+    );
     setIsConfirmingRestore(true);
   }
 
@@ -157,6 +169,7 @@ export default function HouseholdPage() {
     setRestoreError("");
     setRestoreFilename("");
     setRestoreJson("");
+    setRestoreSummary(undefined);
     setIsConfirmingRestore(false);
 
     if (restoreFileInputRef.current) {
@@ -300,6 +313,67 @@ export default function HouseholdPage() {
               current HFOS data in this browser.
             </p>
 
+            {restoreSummary && (
+              <dl className="household-restore__summary">
+                <div>
+                  <dt>Household</dt>
+                  <dd>
+                    {
+                      restoreSummary.householdName
+                    }
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Exported</dt>
+                  <dd>
+                    {formatBackupDate(
+                      restoreSummary.exportedAt
+                    )}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Accounts</dt>
+                  <dd>
+                    {
+                      restoreSummary.accountCount
+                    }
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Transactions</dt>
+                  <dd>
+                    {
+                      restoreSummary
+                        .transactionCount
+                    }
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Settlements</dt>
+                  <dd>
+                    {
+                      restoreSummary
+                        .settlementCount
+                    }
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Savings Goals</dt>
+                  <dd>
+                    {
+                      restoreSummary
+                        .savingsGoalCount
+                    }
+                  </dd>
+                </div>
+              </dl>
+            )}
+
             <div className="household-restore__actions">
               <button
                 type="button"
@@ -324,4 +398,19 @@ export default function HouseholdPage() {
       </section>
     </div>
   );
+}
+
+function formatBackupDate(
+  value: string
+): string {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(date.getTime())
+  ) {
+    return value;
+  }
+
+  return date.toLocaleString();
 }

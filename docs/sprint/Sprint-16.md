@@ -52,6 +52,7 @@ Implemented:
 * Added Restore from Backup on the household setup screen so a clean browser can restore without creating a temporary household.
 * Added restore validation for JSON parsing, HFOS backup identity, backup version, storage schema version, required records, collection shape, household shape, and theme preference shape.
 * Added a restore confirmation before replacing current browser-local HFOS data.
+* Added restore preview metadata showing household name, export date, and record counts before confirmation.
 * Reloaded the app after successful restore so repositories hydrate from restored storage.
 
 Deferred:
@@ -118,6 +119,7 @@ Manual QA should include:
 * Restore into a clean browser state.
 * Restore from the household setup screen before creating a new household.
 * Restore after Clear Test Data.
+* Confirm restore preview metadata matches the selected backup before restoring.
 * Reject invalid JSON.
 * Reject a JSON file that is not an HFOS backup.
 * Confirm restored historical currency fields remain unchanged.
