@@ -5,7 +5,7 @@
 **Release:** v0.16.0-alpha
 **Date:** July 18, 2026
 **Branch:** sprint-16-data-backup-restore
-**Status:** Open
+**Status:** Closed
 
 ---
 
@@ -140,6 +140,18 @@ Manual QA should include:
 
 ---
 
+## Manual QA Result
+
+Passed on July 18, 2026:
+
+* Import during household creation.
+* Household name change in Settings.
+* Clear Test Data preserving household setup.
+* Import data from Settings.
+* Save Preferences redirect to Dashboard.
+
+---
+
 ## Sprint Result
 
-Sprint 16 is open. The first local export/import backup slice is implemented and ready for manual QA.
+Sprint 16 is closed. Local backup export/restore is implemented, household setup can restore from backup before creating a new household, Settings preferences save explicitly before redirecting to Dashboard, and QA cleanup remains separate from full reset.

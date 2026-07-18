@@ -2,8 +2,8 @@
 
 ## Data Backup and Restore
 
-**Release Date:** TBD
-**Status:** In Progress
+**Release Date:** July 18, 2026
+**Status:** Ready for alpha handoff
 **Sprint:** Sprint 16
 
 ---
@@ -12,7 +12,7 @@
 
 Home Finance OS v0.16.0-alpha focuses on private-alpha data safety.
 
-This release will add local backup export and restore workflows before moving toward Google Drive, cloud sync, or authenticated persistence.
+This release adds local backup export and restore workflows before moving toward Google Drive, cloud sync, or authenticated persistence.
 
 ---
 
@@ -88,3 +88,15 @@ Before finalizing this alpha, manually verify:
 * Successful Save Preferences redirects to Dashboard.
 * Household name changes in Settings do not alter accounts, transactions, reports, or backup restore.
 * Settings Data & Backup controls remain usable on mobile widths.
+
+---
+
+## Manual QA Result
+
+Passed on July 18, 2026:
+
+* Import during household creation.
+* Household name change in Settings.
+* Clear Test Data preserving household setup.
+* Import data from Settings.
+* Save Preferences redirect to Dashboard.

@@ -215,6 +215,6 @@ Good feedback examples:
 * Reset All Application Data deletes the household and returns the app to first-time setup.
 * No login or authentication yet.
 * No cloud sync.
-* No backup or restore yet.
+* Local backup export and restore are available, but Google Drive and cloud backup are not available yet.
 * No shared household invite flow yet.
 * Use test data only for preview testing.
