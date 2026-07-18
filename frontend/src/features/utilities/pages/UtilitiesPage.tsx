@@ -609,7 +609,10 @@ export default function UtilitiesPage() {
         </div>
 
         {providerBills.length > 0 && (
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section
+            id="bills-to-pay"
+            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+          >
             <div>
               <h2 className="font-semibold text-slate-900">
                 Bills to Pay

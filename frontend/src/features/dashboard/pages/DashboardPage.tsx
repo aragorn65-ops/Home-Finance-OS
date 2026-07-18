@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Target,
   WalletCards,
+  WalletMinimal,
 } from "lucide-react";
 import {
   Link,
@@ -53,6 +54,7 @@ import SettlementAllocationService from "../../settlements/services/SettlementAl
 import SettlementApplicationDetailsService from "../../settlements/services/SettlementApplicationDetailsService";
 import SettlementService from "../../settlements/services/SettlementService";
 import TransactionService from "../../transactions/services/TransactionService";
+import UtilityProviderBillService from "../../utilities/services/UtilityProviderBillService";
 
 import type {
   Transaction,
@@ -658,6 +660,11 @@ export default function DashboardPage() {
       )
       .slice(0, 5);
 
+  const unpaidProviderBillCount =
+    UtilityProviderBillService
+      .getActiveProviderBills()
+      .length;
+
   return (
     <div className="compact-dashboard">
       <PageHeader
@@ -994,6 +1001,22 @@ export default function DashboardPage() {
                   aria-hidden="true"
                 />
                 Record Settlement
+              </Link>
+
+              <Link to="/app/utilities#bills-to-pay">
+                <WalletMinimal
+                  size={18}
+                  aria-hidden="true"
+                />
+                <span>
+                  Unpaid Bills
+                  {unpaidProviderBillCount >
+                    0 && (
+                    <small className="quick-actions__badge">
+                      {unpaidProviderBillCount}
+                    </small>
+                  )}
+                </span>
               </Link>
 
               <button

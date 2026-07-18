@@ -489,6 +489,28 @@
   text-align: center;
 }
 
+.quick-actions a span,
+.quick-actions button span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.quick-actions__badge {
+  display: inline-flex;
+  min-width: 1.35rem;
+  min-height: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-warning-background);
+  color: var(--color-warning-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+}
+
 .quick-actions button {
   background: var(--color-surface);
   cursor: pointer;
