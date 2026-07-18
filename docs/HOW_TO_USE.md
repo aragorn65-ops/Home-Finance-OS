@@ -204,6 +204,7 @@ Good feedback examples:
 ## Current Limitations
 
 * Browser-only localStorage persistence.
+* Reset All Application Data clears current HFOS test data and leftover HFOS preview keys from this browser, while keeping display-only preferences such as theme.
 * No login or authentication yet.
 * No cloud sync.
 * No backup or restore yet.

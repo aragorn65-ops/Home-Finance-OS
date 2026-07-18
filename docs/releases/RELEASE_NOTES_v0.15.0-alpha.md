@@ -41,6 +41,7 @@ This release adds date-specific currency-rate lookup, preserves manual exchange-
 * Added Australia/Melbourne as a listed time-zone option for households in Melbourne.
 * Fixed Settings preference dropdown overflow in constrained layouts.
 * Added contextual Settings warning guidance when changing base currency after transactions exist, hidden for households with no transactions.
+* Expanded Reset All Application Data to clear leftover HFOS preview/test-data keys from the browser.
 
 ---
 
@@ -97,6 +98,7 @@ Before finalizing this alpha, manually verify:
 * Settings country changes auto-select the expected currency and time zone while still allowing manual overrides.
 * Australia households can select Australia/Melbourne when the household is in Melbourne.
 * Settings warning appears inside the preferences box when transactions exist, stays hidden when there are no transactions, and has no dropdown overlap in constrained layouts.
+* Reset All Application Data removes current records and leftover HFOS preview/test-data keys before returning to household setup.
 * Historical records keep their saved rate, effective date, and converted amounts until edited.
 * Transaction attachments work via file picker, paste, and drag/drop.
 * Attachment preview remains centered and constrained for images and PDFs.

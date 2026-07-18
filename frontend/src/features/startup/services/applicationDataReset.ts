@@ -13,6 +13,23 @@ export interface ApplicationDataResetResult {
   errors: string[];
 }
 
+const hfosStorageKeyPrefix = "hfos.";
+
+const resetPreservedLocalStorageKeys =
+  new Set<string>([
+    HFOS_STORAGE_KEYS.accounts,
+    HFOS_STORAGE_KEYS.transactions,
+    HFOS_STORAGE_KEYS
+      .expenseAllocations,
+    HFOS_STORAGE_KEYS.settlements,
+    HFOS_STORAGE_KEYS
+      .settlementApplications,
+    HFOS_STORAGE_KEYS.savingsGoals,
+    HFOS_STORAGE_KEYS
+      .savingsActivities,
+    "hfos.themePreference",
+  ]);
+
 /**
  * Removes all locally persisted HFOS application data.
  *
@@ -131,6 +148,10 @@ export function resetApplicationData():
     )
   );
 
+  clearUnknownHfosStorageKeys(
+    errors
+  );
+
   return {
     success:
       errors.length === 0,
@@ -154,4 +175,91 @@ export function reloadAfterApplicationReset():
   }
 
   window.location.reload();
+}
+
+function clearUnknownHfosStorageKeys(
+  errors: string[]
+): void {
+  clearStorageByPrefix({
+    errors,
+    label: "Additional HFOS local data",
+    preserveKeys:
+      resetPreservedLocalStorageKeys,
+    storage:
+      getStorage("localStorage"),
+  });
+
+  clearStorageByPrefix({
+    errors,
+    label: "HFOS session data",
+    preserveKeys: new Set<string>(),
+    storage:
+      getStorage("sessionStorage"),
+  });
+}
+
+function clearStorageByPrefix({
+  errors,
+  label,
+  preserveKeys,
+  storage,
+}: {
+  errors: string[];
+  label: string;
+  preserveKeys: Set<string>;
+  storage: Storage | null;
+}): void {
+  if (!storage) {
+    return;
+  }
+
+  try {
+    const keysToRemove: string[] = [];
+
+    for (
+      let index = 0;
+      index < storage.length;
+      index += 1
+    ) {
+      const key =
+        storage.key(index);
+
+      if (
+        key &&
+        key.startsWith(
+          hfosStorageKeyPrefix
+        ) &&
+        !preserveKeys.has(key)
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach((key) => {
+      storage.removeItem(key);
+    });
+  } catch {
+    errors.push(
+      `${label} could not be cleared.`
+    );
+  }
+}
+
+function getStorage(
+  storageName:
+    | "localStorage"
+    | "sessionStorage"
+): Storage | null {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return null;
+  }
+
+  try {
+    return window[storageName];
+  } catch {
+    return null;
+  }
 }

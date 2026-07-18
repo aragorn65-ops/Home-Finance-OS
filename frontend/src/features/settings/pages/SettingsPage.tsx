@@ -582,7 +582,9 @@ export default function SettingsPage() {
                 Permanently remove the household, members,
                 accounts, transactions, expense allocations,
                 utility bills, settlements, and settlement
-                applications stored in this browser.
+                applications stored in this browser. Reset also
+                clears leftover HFOS test-data keys from earlier
+                preview builds.
               </p>
 
               <p className="mt-2 text-sm font-medium text-destructive">
@@ -615,8 +617,8 @@ export default function SettingsPage() {
 
                 <p className="settings-confirmation__copy">
                   All locally stored HFOS data will be deleted
-                  and the application will return to household
-                  setup.
+                  from this browser and the application will
+                  return to household setup.
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-3">
