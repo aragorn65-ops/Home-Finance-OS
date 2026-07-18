@@ -45,10 +45,10 @@ Implemented:
 
 * Added a shared currency-rate provider abstraction backed by the Frankfurter API for date-specific exchange rates.
 * Added a reusable rate lookup control that lets users explicitly apply a suggested API rate while preserving manual entry as fallback.
-* Added suggested-rate lookup to foreign-currency accounts, foreign-income transactions, savings goals, and savings activities.
-* Stored rate source metadata on accounts, income transactions, savings goals, and savings activities.
+* Added suggested-rate lookup to foreign-currency accounts, foreign-currency income and expense transactions, savings goals, and savings activities.
+* Stored rate source metadata on accounts, income and expense transactions, savings goals, and savings activities.
 * Preserved the no-history-recomputation rule: saved records keep their stored rate, effective date, and source until edited.
-* Displayed manual versus API rate source in account cards, foreign-income details, savings goal details, and savings activity history.
+* Displayed manual versus API rate source in account cards, foreign-currency transaction details, savings goal details, and savings activity history.
 
 Deferred:
 

@@ -369,7 +369,10 @@ export default class TransactionValidator {
     form: TransactionForm,
     errors: Record<string, string>
   ): void {
-    if (form.type !== "income") {
+    if (
+      form.type !== "income" &&
+      form.type !== "expense"
+    ) {
       return;
     }
 
@@ -388,7 +391,7 @@ export default class TransactionValidator {
       )
     ) {
       errors.enteredCurrency =
-        "Select a valid income currency.";
+        "Select a valid transaction currency.";
     }
 
     if (

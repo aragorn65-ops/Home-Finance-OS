@@ -1319,7 +1319,10 @@ export default class TransactionService {
           )
         : transactionDate;
 
-    if (form.type !== "income") {
+    if (
+      form.type !== "income" &&
+      form.type !== "expense"
+    ) {
       const amount =
         roundCurrencyAmount(
           form.amount
@@ -1893,6 +1896,22 @@ export default class TransactionService {
         );
       }
 
+      const amountResult =
+        this.resolveExpenseAccountAmount(
+          transaction,
+          transaction.sourceAccountId
+        );
+
+      if (!amountResult.success) {
+        return OperationResults.failure<
+          AccountOperation[]
+        >(
+          amountResult.errors,
+          amountResult.message ??
+            "Unable to process expense."
+        );
+      }
+
       return OperationResults.success([
         {
           accountId:
@@ -1904,6 +1923,7 @@ export default class TransactionService {
               : "credit",
 
           amount:
+            amountResult.data ??
             transaction.amount,
         },
       ]);
@@ -2104,6 +2124,77 @@ export default class TransactionService {
           "Income currency does not match the destination account currency.",
       },
       "Unable to process mixed-currency income."
+    );
+  }
+
+  private static resolveExpenseAccountAmount(
+    transaction: Transaction,
+    accountId: string
+  ): OperationResult<number> {
+    const account =
+      AccountService.getAccountById(
+        accountId
+      );
+
+    if (!account) {
+      return OperationResults.failure<number>(
+        {
+          accountId: "Account not found.",
+        },
+        "Unable to process expense."
+      );
+    }
+
+    const baseCurrency =
+      normalizeCurrency(
+        transaction.baseCurrency,
+        account.baseCurrency ??
+          account.currency
+      );
+
+    const accountCurrency =
+      normalizeCurrency(
+        account.currency,
+        baseCurrency
+      );
+
+    const enteredCurrency =
+      normalizeCurrency(
+        transaction.enteredCurrency,
+        baseCurrency
+      );
+
+    if (
+      transaction.enteredAmount !==
+        undefined &&
+      accountCurrency ===
+        enteredCurrency
+    ) {
+      return OperationResults.success(
+        roundCurrencyAmount(
+          transaction.enteredAmount
+        )
+      );
+    }
+
+    if (
+      accountCurrency ===
+      baseCurrency
+    ) {
+      return OperationResults.success(
+        roundCurrencyAmount(
+          transaction.baseAmount ??
+            transaction.amount
+        )
+      );
+    }
+
+    return OperationResults.failure<number>(
+      {
+        sourceAccountId:
+          "Expense currency does not match the payment account currency.",
+      },
+      "Unable to process mixed-currency expense."
     );
   }
 

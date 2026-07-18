@@ -127,7 +127,7 @@ const transactionFieldLabels:
     type: "Transaction Type",
     amount: "Amount",
     enteredAmount: "Entered Amount",
-    enteredCurrency: "Income Currency",
+    enteredCurrency: "Transaction Currency",
     baseAmount: "Base Amount",
     exchangeRate: "Exchange Rate",
     paidByMemberId: "Member",
@@ -851,6 +851,15 @@ export default function TransactionForm({
         )
     );
 
+  const supportsCurrencyConversion =
+    form.type === "income" ||
+    form.type === "expense";
+
+  const transactionCurrencyLabel =
+    form.type === "income"
+      ? "Income Currency"
+      : "Expense Currency";
+
   const [errors, setErrors] = useState<
     Record<string, string>
   >({});
@@ -1159,27 +1168,32 @@ export default function TransactionForm({
           : current.destinationAccountId,
 
       enteredCurrency:
-        type === "income"
+        type === "income" ||
+        type === "expense"
           ? current.enteredCurrency ||
             currency ||
             "PHP"
           : currency || "PHP",
 
       exchangeRate:
-        type === "income"
+        type === "income" ||
+        type === "expense"
           ? current.exchangeRate || 1
           : 1,
       exchangeRateEffectiveDate:
-        type === "income"
+        type === "income" ||
+        type === "expense"
           ? current.exchangeRateEffectiveDate ||
             current.transactionDate
           : current.transactionDate,
       exchangeRateSource:
-        type === "income"
+        type === "income" ||
+        type === "expense"
           ? current.exchangeRateSource
           : "manual",
       exchangeRateProvider:
-        type === "income"
+        type === "income" ||
+        type === "expense"
           ? current.exchangeRateProvider
           : "",
 
@@ -1205,10 +1219,67 @@ export default function TransactionForm({
     const nextAccountId =
       event.target.value;
 
-    updateField(
-      "sourceAccountId",
-      nextAccountId
-    );
+    const selectedAccount =
+      availableAccounts.find(
+        (account) =>
+          account.id === nextAccountId
+      );
+
+    setForm((current) => {
+      if (
+        current.type !== "expense" ||
+        !selectedAccount
+      ) {
+        return {
+          ...current,
+          sourceAccountId:
+            nextAccountId,
+        };
+      }
+
+      return {
+        ...current,
+        sourceAccountId:
+          nextAccountId,
+        enteredCurrency:
+          selectedAccount.currency ||
+          currency ||
+          "PHP",
+        exchangeRate:
+          selectedAccount.exchangeRate ||
+          current.exchangeRate ||
+          1,
+        exchangeRateEffectiveDate:
+          selectedAccount.exchangeRateEffectiveDate
+            ? selectedAccount.exchangeRateEffectiveDate
+                .toISOString()
+                .slice(0, 10)
+            : current.transactionDate,
+        exchangeRateSource:
+          selectedAccount.exchangeRateSource ??
+          "manual",
+        exchangeRateProvider:
+          selectedAccount.exchangeRateSource ===
+          "api"
+            ? selectedAccount.exchangeRateProvider ??
+              ""
+            : "",
+      };
+    });
+
+    setErrors((current) => {
+      const nextErrors = {
+        ...current,
+      };
+
+      delete nextErrors.sourceAccountId;
+      delete nextErrors.enteredCurrency;
+      delete nextErrors.exchangeRate;
+
+      return nextErrors;
+    });
+
+    setMessage("");
   };
 
   const handleDestinationAccountChange = (
@@ -2222,7 +2293,7 @@ export default function TransactionForm({
           <CurrencyInput
             id="transaction-amount"
             label={
-              form.type === "income"
+              supportsCurrencyConversion
                 ? `Entered Amount (${form.enteredCurrency || currency || "PHP"})`
                 : "Amount"
             }
@@ -2240,14 +2311,14 @@ export default function TransactionForm({
         </div>
       </div>
 
-      {form.type === "income" && (
+      {supportsCurrencyConversion && (
         <div className="grid gap-5 md:grid-cols-2">
           <div className="space-y-2">
             <label
               htmlFor="transaction-entered-currency"
               className="text-sm font-medium text-foreground"
             >
-              Income Currency
+              {transactionCurrencyLabel}
             </label>
 
             <select
@@ -2322,7 +2393,7 @@ export default function TransactionForm({
 
             <p className="text-xs text-muted-foreground">
               Base currency value for 1 unit of the
-              income currency.
+              transaction currency.
             </p>
 
             {errors.exchangeRate && (

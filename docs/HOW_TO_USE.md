@@ -70,7 +70,9 @@ Use Transactions for:
 
 For grocery use cases with shared and personal items, split the transaction lines so common items and personal items are assigned correctly.
 
-For foreign-currency income, enter the original amount, currency, exchange rate, and effective date. You can apply a suggested exchange rate when available. The app stores both the entered amount and reporting equivalent.
+For foreign-currency income or expenses, enter the original amount, currency, exchange rate, and effective date. You can apply a suggested exchange rate when available. The app stores both the entered amount and reporting equivalent.
+
+For a foreign-currency expense paid from a linked account, the payment account currency should match the transaction currency. Household reporting, splits, and Analytics continue to use the converted base-currency amount.
 
 Attachments can be added from the same receipt and bill area by choosing files, pasting from the clipboard, or dragging files into the attachment box.
 
