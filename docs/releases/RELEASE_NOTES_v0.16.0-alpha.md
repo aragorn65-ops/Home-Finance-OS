@@ -26,6 +26,7 @@ This release will add local backup export and restore workflows before moving to
 * Added restore preview metadata showing household name, export date, and record counts.
 * Embedded the same summary metadata in exported backup files.
 * Added rollback protection for restore write failures.
+* Improved import retry behavior by clearing the selected file after failed validation.
 * Keep Clear Test Data for QA cleanup without deleting the household.
 * Keep Reset All Application Data for full delete-and-return-to-setup.
 
@@ -78,5 +79,6 @@ Before finalizing this alpha, manually verify:
 * Restore failure does not leave partial restored data.
 * Invalid JSON restore shows a clear error.
 * Non-HFOS JSON restore shows a clear error.
+* Re-selecting the same rejected backup file runs validation again.
 * Restored transaction currency/rate fields remain unchanged.
 * Settings Data & Backup controls remain usable on mobile widths.

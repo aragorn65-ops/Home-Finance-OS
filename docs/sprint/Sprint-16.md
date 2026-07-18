@@ -55,6 +55,8 @@ Implemented:
 * Added a restore confirmation before replacing current browser-local HFOS data.
 * Added restore preview metadata showing household name, export date, and record counts before confirmation.
 * Added restore rollback protection so current browser data is restored if a storage write fails mid-restore.
+* Cleared backup file pickers after failed validation/read attempts so testers can retry the same file immediately.
+* Showed the exported backup filename after a successful Settings export.
 * Reloaded the app after successful restore so repositories hydrate from restored storage.
 
 Deferred:
@@ -126,6 +128,7 @@ Manual QA should include:
 * Confirm restore failure does not leave partial restored data.
 * Reject invalid JSON.
 * Reject a JSON file that is not an HFOS backup.
+* Retry the same rejected backup file and confirm validation runs again.
 * Confirm restored historical currency fields remain unchanged.
 * Confirm Settings backup/restore controls fit mobile and tablet widths.
 

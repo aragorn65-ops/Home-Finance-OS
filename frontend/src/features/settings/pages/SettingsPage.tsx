@@ -299,7 +299,7 @@ export default function SettingsPage() {
     );
 
     setBackupMessage(
-      "Backup exported successfully."
+      `Backup exported: ${result.filename}`
     );
   };
 
@@ -326,6 +326,7 @@ export default function SettingsPage() {
       setBackupError(
         "Backup file could not be read."
       );
+      resetBackupFileInput();
 
       return;
     }
@@ -339,6 +340,7 @@ export default function SettingsPage() {
       setBackupError(
         validation.message
       );
+      resetBackupFileInput();
 
       return;
     }
@@ -361,13 +363,7 @@ export default function SettingsPage() {
     setRestoreSummary(undefined);
     setIsConfirmingRestore(false);
 
-    if (
-      backupFileInputRef.current
-    ) {
-      backupFileInputRef
-        .current
-        .value = "";
-    }
+    resetBackupFileInput();
   };
 
   const handleConfirmRestore = (): void => {
@@ -390,6 +386,16 @@ export default function SettingsPage() {
     }
 
     reloadAfterApplicationReset();
+  };
+
+  const resetBackupFileInput = (): void => {
+    if (
+      backupFileInputRef.current
+    ) {
+      backupFileInputRef
+        .current
+        .value = "";
+    }
   };
 
   const savePreferences = (

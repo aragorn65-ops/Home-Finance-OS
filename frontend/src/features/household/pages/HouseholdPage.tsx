@@ -140,6 +140,7 @@ export default function HouseholdPage() {
       setRestoreError(
         "Backup file could not be read."
       );
+      resetRestoreFileInput();
 
       return;
     }
@@ -153,6 +154,7 @@ export default function HouseholdPage() {
       setRestoreError(
         validation.message
       );
+      resetRestoreFileInput();
 
       return;
     }
@@ -172,11 +174,7 @@ export default function HouseholdPage() {
     setRestoreSummary(undefined);
     setIsConfirmingRestore(false);
 
-    if (restoreFileInputRef.current) {
-      restoreFileInputRef
-        .current
-        .value = "";
-    }
+    resetRestoreFileInput();
   }
 
   function confirmRestore() {
@@ -200,6 +198,14 @@ export default function HouseholdPage() {
     navigate("/app", {
       replace: true,
     });
+  }
+
+  function resetRestoreFileInput() {
+    if (restoreFileInputRef.current) {
+      restoreFileInputRef
+        .current
+        .value = "";
+    }
   }
 
   return (
