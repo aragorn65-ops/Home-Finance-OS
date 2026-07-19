@@ -1,5 +1,6 @@
 export type {
   AuthHouseholdRole,
+  AuthDiagnostics,
   AuthMigrationPreview,
   AuthMigrationPreviewStatus,
   AuthSession,
@@ -39,6 +40,7 @@ export {
 
 export {
   useAuthSession,
+  useAuthDiagnostics,
 } from "./hooks";
 
 export {
@@ -46,6 +48,7 @@ export {
   canAccessHousehold,
   canAccessTenantRecord,
   canManageMemberRole,
+  createAuthDiagnostics,
   createAuthMigrationPreview,
   DisabledAuthBackendAdapter,
   DisabledRemoteMigrationRepository,

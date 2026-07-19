@@ -69,3 +69,7 @@ export type {
 export {
   createAuthMigrationPreview,
 } from "./createAuthMigrationPreview";
+
+export {
+  createAuthDiagnostics,
+} from "./createAuthDiagnostics";

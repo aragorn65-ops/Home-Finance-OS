@@ -4,6 +4,10 @@ export type {
 } from "./AuthSession";
 
 export type {
+  AuthDiagnostics,
+} from "./AuthDiagnostics";
+
+export type {
   AuthUser,
 } from "./AuthUser";
 
