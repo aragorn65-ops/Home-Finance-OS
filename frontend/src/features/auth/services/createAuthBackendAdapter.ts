@@ -1,4 +1,5 @@
 import {
+  authFeatureConfig,
   isAuthFeatureEnabled,
 } from "../../../config/auth";
 
@@ -8,6 +9,9 @@ import type {
 import {
   DisabledAuthBackendAdapter,
 } from "./disabledAuthBackendAdapter";
+import {
+  InMemoryAuthBackendAdapter,
+} from "./inMemoryAuthBackendAdapter";
 
 let adapter:
   AuthBackendAdapter | undefined;
@@ -26,6 +30,13 @@ function createAuthBackendAdapter():
   AuthBackendAdapter {
   if (!isAuthFeatureEnabled()) {
     return new DisabledAuthBackendAdapter();
+  }
+
+  if (
+    authFeatureConfig.provider ===
+    "prototype"
+  ) {
+    return new InMemoryAuthBackendAdapter();
   }
 
   return new DisabledAuthBackendAdapter();

@@ -1,5 +1,6 @@
 export type AuthProvider =
   | "none"
+  | "prototype"
   | "supabase"
   | "firebase"
   | "custom";
@@ -40,6 +41,7 @@ function normalizeAuthProvider(
   value: string | undefined
 ): AuthProvider {
   if (
+    value === "prototype" ||
     value === "supabase" ||
     value === "firebase" ||
     value === "custom"
