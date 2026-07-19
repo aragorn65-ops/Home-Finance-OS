@@ -7,3 +7,4 @@
 * [Product Roadmap](roadmap/Product-Roadmap.md)
 * [Release Notes](releases/)
 * [Sprint Notes](sprint/)
+* [Future Auth Path](architecture/FUTURE_AUTH_PATH.md)
