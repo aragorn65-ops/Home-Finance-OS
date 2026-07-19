@@ -15,6 +15,14 @@ const backupKind =
 
 const backupVersion = 1;
 
+const protectedBackupKind =
+  "hfos-password-protected-backup";
+
+const protectedBackupVersion = 1;
+
+const protectedBackupIterations =
+  210000;
+
 const themePreferenceKey =
   "themePreference";
 
@@ -53,6 +61,10 @@ export interface ApplicationBackupResult {
   message?: string;
 }
 
+export interface ApplicationBackupOptions {
+  password?: string;
+}
+
 export interface ApplicationBackupSummary {
   householdName: string;
 
@@ -79,6 +91,8 @@ export interface ApplicationBackupSummary {
   savingsActivityCount?: number;
 
   providerBillCount?: number;
+
+  passwordProtected?: boolean;
 }
 
 export interface ApplicationDataHealthSummary {
@@ -122,12 +136,13 @@ export type ApplicationRestoreResult =
 type ApplicationFailureResult = {
   success: false;
   message: string;
+  requiresPassword?: boolean;
 };
 
 type ParsedBackupResult =
   | {
       success: true;
-      backup: ApplicationBackupFile;
+      backup: unknown;
     }
   | ApplicationFailureResult;
 
@@ -171,8 +186,31 @@ interface ApplicationBackupFile {
   };
 }
 
-export function createApplicationBackup():
-  ApplicationBackupResult {
+interface PasswordProtectedApplicationBackupFile {
+  kind: typeof protectedBackupKind;
+
+  backupVersion: number;
+
+  app: "Home Finance OS";
+
+  exportedAt: string;
+
+  summary: ApplicationBackupSummary;
+
+  encryption: {
+    algorithm: "AES-GCM";
+    kdf: "PBKDF2-SHA-256";
+    iterations: number;
+    salt: string;
+    iv: string;
+  };
+
+  payload: string;
+}
+
+export async function createApplicationBackup(
+  options: ApplicationBackupOptions = {}
+): Promise<ApplicationBackupResult> {
   const storage =
     getLocalStorage();
 
@@ -238,7 +276,7 @@ export function createApplicationBackup():
     );
 
   const validation =
-    validateApplicationBackup(
+    await validateApplicationBackup(
       json
     );
 
@@ -250,11 +288,39 @@ export function createApplicationBackup():
     };
   }
 
+  const password =
+    options.password?.trim() ?? "";
+
+  if (password) {
+    const protectedBackup =
+      await createPasswordProtectedBackup(
+        json,
+        password,
+        exportedAt
+      );
+
+    if (!protectedBackup.success) {
+      return protectedBackup;
+    }
+
+    return {
+      success: true,
+      filename:
+        createBackupFilename(
+          exportedAt,
+          true
+        ),
+      json:
+        protectedBackup.json,
+    };
+  }
+
   return {
     success: true,
     filename:
       createBackupFilename(
-        exportedAt
+        exportedAt,
+        false
       ),
     json,
   };
@@ -296,9 +362,10 @@ export function getApplicationDataHealthSummary():
   );
 }
 
-export function restoreApplicationBackup(
-  json: string
-): ApplicationRestoreResult {
+export async function restoreApplicationBackup(
+  json: string,
+  password?: string
+): Promise<ApplicationRestoreResult> {
   const storage =
     getLocalStorage();
 
@@ -311,8 +378,9 @@ export function restoreApplicationBackup(
   }
 
   const validation =
-    validateApplicationBackup(
-      json
+    await validateApplicationBackup(
+      json,
+      password
     );
 
   if (!validation.success) {
@@ -422,9 +490,10 @@ function restoreSnapshot(
   });
 }
 
-export function validateApplicationBackup(
-  json: string
-): ValidatedBackupResult {
+export async function validateApplicationBackup(
+  json: string,
+  password?: string
+): Promise<ValidatedBackupResult> {
   const parsed =
     parseBackupJson(json);
 
@@ -432,9 +501,20 @@ export function validateApplicationBackup(
     return parsed;
   }
 
+  if (
+    isPasswordProtectedApplicationBackupFile(
+      parsed.backup
+    )
+  ) {
+    return validatePasswordProtectedBackup(
+      parsed.backup,
+      password
+    );
+  }
+
   const validation =
     validateBackupFile(
-      parsed.backup
+      parsed.backup as ApplicationBackupFile
     );
 
   if (!validation.success) {
@@ -444,10 +524,10 @@ export function validateApplicationBackup(
   return {
     ...validation,
     backup:
-      parsed.backup,
+      parsed.backup as ApplicationBackupFile,
     summary:
       createBackupSummary(
-        parsed.backup
+        parsed.backup as ApplicationBackupFile
       ),
   };
 }
@@ -548,9 +628,337 @@ function parseBackupJson(
   return {
     success: true,
     backup:
-      parsed as unknown as
-        ApplicationBackupFile,
+      parsed,
   };
+}
+
+async function createPasswordProtectedBackup(
+  plainJson: string,
+  password: string,
+  exportedAt: Date
+): Promise<
+  | {
+      success: true;
+      json: string;
+    }
+  | ApplicationFailureResult
+> {
+  if (password.length < 8) {
+    return {
+      success: false,
+      message:
+        "Use a backup password with at least 8 characters.",
+    };
+  }
+
+  const crypto =
+    getBrowserCrypto();
+
+  if (
+    !crypto?.subtle ||
+    typeof TextEncoder ===
+      "undefined"
+  ) {
+    return {
+      success: false,
+      message:
+        "This browser cannot create password-protected backups.",
+    };
+  }
+
+  const salt =
+    createRandomBytes(16);
+  const iv =
+    createRandomBytes(12);
+  const key =
+    await deriveBackupKey(
+      password,
+      salt,
+      protectedBackupIterations
+    );
+
+  const encrypted =
+    await crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv:
+          toArrayBuffer(iv),
+      },
+      key,
+      toArrayBuffer(
+        new TextEncoder().encode(
+          plainJson
+        )
+      )
+    );
+
+  const protectedBackup:
+    PasswordProtectedApplicationBackupFile = {
+    kind:
+      protectedBackupKind,
+    backupVersion:
+      protectedBackupVersion,
+    app:
+      "Home Finance OS",
+    exportedAt:
+      exportedAt.toISOString(),
+    summary:
+      createUnavailableProtectedSummary(
+        exportedAt
+      ),
+    encryption: {
+      algorithm: "AES-GCM",
+      kdf: "PBKDF2-SHA-256",
+      iterations:
+        protectedBackupIterations,
+      salt:
+        bytesToBase64(salt),
+      iv:
+        bytesToBase64(iv),
+    },
+    payload:
+      bytesToBase64(
+        new Uint8Array(encrypted)
+      ),
+  };
+
+  return {
+    success: true,
+    json:
+      JSON.stringify(
+        protectedBackup,
+        null,
+        2
+      ),
+  };
+}
+
+async function validatePasswordProtectedBackup(
+  backup: PasswordProtectedApplicationBackupFile,
+  password: string | undefined
+): Promise<ValidatedBackupResult> {
+  const metadataResult =
+    validateProtectedBackupMetadata(
+      backup
+    );
+
+  if (!metadataResult.success) {
+    return metadataResult;
+  }
+
+  const normalizedPassword =
+    password?.trim() ?? "";
+
+  if (!normalizedPassword) {
+    return {
+      success: false,
+      requiresPassword: true,
+      message:
+        "This backup is password protected. Enter its backup password to continue.",
+    };
+  }
+
+  const decryptResult =
+    await decryptPasswordProtectedBackup(
+      backup,
+      normalizedPassword
+    );
+
+  if (!decryptResult.success) {
+    return decryptResult;
+  }
+
+  const parsed =
+    parseBackupJson(
+      decryptResult.json
+    );
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message:
+        "Password accepted, but the backup contents are not valid HFOS data.",
+    };
+  }
+
+  const validation =
+    validateBackupFile(
+      parsed.backup as ApplicationBackupFile
+    );
+
+  if (!validation.success) {
+    return validation;
+  }
+
+  const summary =
+    createBackupSummary(
+      parsed.backup as ApplicationBackupFile
+    );
+
+  return {
+    success: true,
+    message:
+      "Password-protected backup file is valid.",
+    backup:
+      parsed.backup as ApplicationBackupFile,
+    summary: {
+      ...summary,
+      passwordProtected: true,
+    },
+  };
+}
+
+function validateProtectedBackupMetadata(
+  backup: PasswordProtectedApplicationBackupFile
+): ApplicationRestoreResult {
+  if (
+    backup.kind !==
+      protectedBackupKind ||
+    backup.app !==
+      "Home Finance OS"
+  ) {
+    return {
+      success: false,
+      message:
+        "This file is not an HFOS backup.",
+    };
+  }
+
+  if (
+    backup.backupVersion !==
+    protectedBackupVersion
+  ) {
+    return {
+      success: false,
+      message:
+        "This protected HFOS backup version is not supported.",
+    };
+  }
+
+  if (
+    typeof backup.exportedAt !==
+      "string" ||
+    !isRecord(backup.encryption) ||
+    typeof backup.payload !==
+      "string"
+  ) {
+    return {
+      success: false,
+      message:
+        "Protected backup file is missing required HFOS metadata.",
+    };
+  }
+
+  if (
+    backup.encryption.algorithm !==
+      "AES-GCM" ||
+    backup.encryption.kdf !==
+      "PBKDF2-SHA-256" ||
+    typeof backup.encryption.iterations !==
+      "number" ||
+    backup.encryption.iterations <
+      100000 ||
+    typeof backup.encryption.salt !==
+      "string" ||
+    typeof backup.encryption.iv !==
+      "string"
+  ) {
+    return {
+      success: false,
+      message:
+        "Protected backup encryption metadata is malformed.",
+    };
+  }
+
+  if (
+    !isBackupSummary(
+      backup.summary
+    )
+  ) {
+    return {
+      success: false,
+      message:
+        "Protected backup summary is malformed.",
+    };
+  }
+
+  return {
+    success: true,
+    message:
+      "Protected backup metadata is valid.",
+  };
+}
+
+async function decryptPasswordProtectedBackup(
+  backup: PasswordProtectedApplicationBackupFile,
+  password: string
+): Promise<
+  | {
+      success: true;
+      json: string;
+    }
+  | ApplicationFailureResult
+> {
+  const crypto =
+    getBrowserCrypto();
+
+  if (
+    !crypto?.subtle ||
+    typeof TextDecoder ===
+      "undefined"
+  ) {
+    return {
+      success: false,
+      message:
+        "This browser cannot restore password-protected backups.",
+    };
+  }
+
+  try {
+    const salt =
+      base64ToBytes(
+        backup.encryption.salt
+      );
+    const iv =
+      base64ToBytes(
+        backup.encryption.iv
+      );
+    const payload =
+      base64ToBytes(
+        backup.payload
+      );
+    const key =
+      await deriveBackupKey(
+        password,
+        salt,
+        backup.encryption
+          .iterations
+      );
+    const decrypted =
+      await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv:
+            toArrayBuffer(iv),
+        },
+        key,
+        toArrayBuffer(payload)
+      );
+
+    return {
+      success: true,
+      json:
+        new TextDecoder().decode(
+          decrypted
+        ),
+    };
+  } catch {
+    return {
+      success: false,
+      message:
+        "Backup password was not correct, or the protected backup is damaged.",
+    };
+  }
 }
 
 function validateBackupFile(
@@ -689,14 +1097,17 @@ function validateBackupFile(
 }
 
 function createBackupFilename(
-  exportedAt: Date
+  exportedAt: Date,
+  isPasswordProtected: boolean
 ): string {
   const stamp =
     exportedAt
       .toISOString()
       .replace(/[:.]/g, "-");
 
-  return `hfos-backup-${stamp}.hfos-backup.json`;
+  return isPasswordProtected
+    ? `hfos-backup-protected-${stamp}.hfos-backup.json`
+    : `hfos-backup-${stamp}.hfos-backup.json`;
 }
 
 function createBackupSummary(
@@ -976,6 +1387,137 @@ function getRecordCollectionCount(
     : 0;
 }
 
+function createUnavailableProtectedSummary(
+  exportedAt: Date
+): ApplicationBackupSummary {
+  return {
+    householdName:
+      "Protected backup",
+    exportedAt:
+      exportedAt.toISOString(),
+    backupVersion,
+    storageSchemaVersion:
+      HFOS_STORAGE_SCHEMA_VERSION,
+    accountCount: 0,
+    transactionCount: 0,
+    settlementCount: 0,
+    savingsGoalCount: 0,
+    passwordProtected: true,
+  };
+}
+
+async function deriveBackupKey(
+  password: string,
+  salt: Uint8Array,
+  iterations: number
+): Promise<CryptoKey> {
+  const crypto =
+    getBrowserCrypto();
+
+  if (
+    !crypto?.subtle ||
+    typeof TextEncoder ===
+      "undefined"
+  ) {
+    throw new Error(
+      "Browser crypto is unavailable."
+    );
+  }
+
+  const baseKey =
+    await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(
+        password
+      ),
+      "PBKDF2",
+      false,
+      ["deriveKey"]
+    );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      hash: "SHA-256",
+      salt:
+        toArrayBuffer(salt),
+      iterations,
+    },
+    baseKey,
+    {
+      name: "AES-GCM",
+      length: 256,
+    },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+function createRandomBytes(
+  length: number
+): Uint8Array {
+  const crypto =
+    getBrowserCrypto();
+  const bytes =
+    new Uint8Array(length);
+
+  if (!crypto) {
+    throw new Error(
+      "Browser crypto is unavailable."
+    );
+  }
+
+  crypto.getRandomValues(bytes);
+
+  return bytes;
+}
+
+function bytesToBase64(
+  bytes: Uint8Array
+): string {
+  let binary = "";
+
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(
+      byte
+    );
+  });
+
+  return btoa(binary);
+}
+
+function base64ToBytes(
+  value: string
+): Uint8Array {
+  const binary =
+    atob(value);
+  const bytes =
+    new Uint8Array(
+      binary.length
+    );
+
+  for (
+    let index = 0;
+    index < binary.length;
+    index += 1
+  ) {
+    bytes[index] =
+      binary.charCodeAt(index);
+  }
+
+  return bytes;
+}
+
+function toArrayBuffer(
+  bytes: Uint8Array
+): ArrayBuffer {
+  return bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset +
+      bytes.byteLength
+  ) as ArrayBuffer;
+}
+
 function getLocalStorage():
   Storage | null {
   if (
@@ -990,6 +1532,34 @@ function getLocalStorage():
   } catch {
     return null;
   }
+}
+
+function getBrowserCrypto():
+  Crypto | null {
+  if (
+    typeof globalThis ===
+      "undefined" ||
+    !globalThis.crypto
+  ) {
+    return null;
+  }
+
+  return globalThis.crypto;
+}
+
+function isPasswordProtectedApplicationBackupFile(
+  value: unknown
+): value is PasswordProtectedApplicationBackupFile {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    value.kind ===
+      protectedBackupKind &&
+    value.app ===
+      "Home Finance OS"
+  );
 }
 
 function isStorageEnvelopeData(

@@ -184,6 +184,21 @@ export default function SettingsPage() {
   ] = useState("");
 
   const [
+    isBackupPasswordProtectionEnabled,
+    setIsBackupPasswordProtectionEnabled,
+  ] = useState(false);
+
+  const [
+    backupPassword,
+    setBackupPassword,
+  ] = useState("");
+
+  const [
+    backupPasswordConfirmation,
+    setBackupPasswordConfirmation,
+  ] = useState("");
+
+  const [
     isSavingCloudBackup,
     setIsSavingCloudBackup,
   ] = useState(false);
@@ -224,6 +239,16 @@ export default function SettingsPage() {
   ] = useState<
     ApplicationBackupSummary | undefined
   >();
+
+  const [
+    restorePassword,
+    setRestorePassword,
+  ] = useState("");
+
+  const [
+    restoreNeedsPassword,
+    setRestoreNeedsPassword,
+  ] = useState(false);
 
   const [
     isConfirmingRestore,
@@ -355,6 +380,12 @@ export default function SettingsPage() {
     appLockPin ===
       appLockPinConfirmation;
 
+  const isBackupPasswordReady =
+    !isBackupPasswordProtectionEnabled ||
+    (backupPassword.length >= 8 &&
+      backupPassword ===
+        backupPasswordConfirmation);
+
   useEffect(() => {
     storeThemePreference(
       themePreference
@@ -432,12 +463,26 @@ export default function SettingsPage() {
     reloadAfterApplicationReset();
   };
 
-  const handleExportBackup = (): void => {
+  const handleExportBackup =
+    async (): Promise<void> => {
     setBackupMessage("");
     setBackupError("");
 
+    const backupOptions =
+      getBackupCreationOptions();
+
+    if (!backupOptions.success) {
+      setBackupError(
+        backupOptions.message
+      );
+
+      return;
+    }
+
     const result =
-      createApplicationBackup();
+      await createApplicationBackup(
+        backupOptions.options
+      );
 
     if (
       !result.success ||
@@ -466,11 +511,25 @@ export default function SettingsPage() {
     async (): Promise<void> => {
       setBackupMessage("");
       setBackupError("");
+
+      const backupOptions =
+        getBackupCreationOptions();
+
+      if (!backupOptions.success) {
+        setBackupError(
+          backupOptions.message
+        );
+
+        return;
+      }
+
       setIsSavingCloudBackup(true);
 
       try {
         const backup =
-          createApplicationBackup();
+          await createApplicationBackup(
+            backupOptions.options
+          );
 
         if (
           !backup.success ||
@@ -559,6 +618,8 @@ export default function SettingsPage() {
       setRestoreFilename("");
       setRestoreJson("");
       setRestoreSummary(undefined);
+      setRestorePassword("");
+      setRestoreNeedsPassword(false);
       setIsConfirmingRestore(false);
       setIsDownloadingDriveBackup(true);
 
@@ -576,29 +637,10 @@ export default function SettingsPage() {
           return;
         }
 
-        const validation =
-          validateApplicationBackup(
-            download.json
-          );
-
-        if (!validation.success) {
-          setBackupError(
-            validation.message
-          );
-
-          return;
-        }
-
-        setRestoreFilename(
-          download.filename
-        );
-        setRestoreJson(
+        await prepareBackupForRestore(
+          download.filename,
           download.json
         );
-        setRestoreSummary(
-          validation.summary
-        );
-        setIsConfirmingRestore(true);
       } catch {
         setBackupError(
           "Google Drive backup could not be prepared for restore."
@@ -616,6 +658,8 @@ export default function SettingsPage() {
     setRestoreFilename("");
     setRestoreJson("");
     setRestoreSummary(undefined);
+    setRestorePassword("");
+    setRestoreNeedsPassword(false);
     setIsConfirmingRestore(false);
 
     if (!file) {
@@ -636,12 +680,38 @@ export default function SettingsPage() {
       return;
     }
 
-    const validation =
-      validateApplicationBackup(
-        json
-      );
+    await prepareBackupForRestore(
+      file.name,
+      json
+    );
+  };
+
+  const prepareBackupForRestore =
+    async (
+      filename: string,
+      json: string
+    ): Promise<void> => {
+      const validation =
+        await validateApplicationBackup(
+          json
+        );
 
     if (!validation.success) {
+      if (
+        validation.requiresPassword
+      ) {
+        setRestoreFilename(
+          filename
+        );
+        setRestoreJson(json);
+        setRestoreSummary(undefined);
+        setRestorePassword("");
+        setRestoreNeedsPassword(true);
+        setIsConfirmingRestore(true);
+
+        return;
+      }
+
       setBackupError(
         validation.message
       );
@@ -651,14 +721,44 @@ export default function SettingsPage() {
     }
 
     setRestoreFilename(
-      file.name
+      filename
     );
     setRestoreJson(json);
     setRestoreSummary(
       validation.summary
     );
+    setRestorePassword("");
+    setRestoreNeedsPassword(false);
     setIsConfirmingRestore(true);
   };
+
+  const handleUnlockRestoreBackup =
+    async (): Promise<void> => {
+      setBackupMessage("");
+      setBackupError("");
+
+      const validation =
+        await validateApplicationBackup(
+          restoreJson,
+          restorePassword
+        );
+
+      if (!validation.success) {
+        setBackupError(
+          validation.message
+        );
+
+        return;
+      }
+
+      setRestoreSummary(
+        validation.summary
+      );
+      setRestoreNeedsPassword(false);
+      setBackupMessage(
+        "Password accepted. Review the backup summary before restoring."
+      );
+    };
 
   const handleCancelRestore = (): void => {
     setBackupMessage("");
@@ -666,19 +766,23 @@ export default function SettingsPage() {
     setRestoreFilename("");
     setRestoreJson("");
     setRestoreSummary(undefined);
+    setRestorePassword("");
+    setRestoreNeedsPassword(false);
     setIsConfirmingRestore(false);
 
     resetBackupFileInput();
   };
 
-  const handleConfirmRestore = (): void => {
+  const handleConfirmRestore =
+    async (): Promise<void> => {
     setBackupMessage("");
     setBackupError("");
     setIsRestoringBackup(true);
 
     const result =
-      restoreApplicationBackup(
-        restoreJson
+      await restoreApplicationBackup(
+        restoreJson,
+        restorePassword
       );
 
     if (!result.success) {
@@ -691,6 +795,54 @@ export default function SettingsPage() {
     }
 
     reloadAfterApplicationReset();
+  };
+
+  const getBackupCreationOptions = ():
+    | {
+        success: true;
+        options: {
+          password?: string;
+        };
+      }
+    | {
+        success: false;
+        message: string;
+      } => {
+    if (
+      !isBackupPasswordProtectionEnabled
+    ) {
+      return {
+        success: true,
+        options: {},
+      };
+    }
+
+    if (backupPassword.length < 8) {
+      return {
+        success: false,
+        message:
+          "Use a backup password with at least 8 characters.",
+      };
+    }
+
+    if (
+      backupPassword !==
+      backupPasswordConfirmation
+    ) {
+      return {
+        success: false,
+        message:
+          "Backup password entries do not match.",
+      };
+    }
+
+    return {
+      success: true,
+      options: {
+        password:
+          backupPassword,
+      },
+    };
   };
 
   const resetBackupFileInput = (): void => {
@@ -1487,6 +1639,92 @@ export default function SettingsPage() {
               </p>
             </div>
 
+            <div className="settings-backup-protection">
+              <label className="settings-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={
+                    isBackupPasswordProtectionEnabled
+                  }
+                  onChange={(event) => {
+                    setIsBackupPasswordProtectionEnabled(
+                      event.target.checked
+                    );
+
+                    if (
+                      !event.target.checked
+                    ) {
+                      setBackupPassword("");
+                      setBackupPasswordConfirmation(
+                        ""
+                      );
+                    }
+                  }}
+                />
+
+                <span>
+                  Password-protect new backup exports
+                </span>
+              </label>
+
+              {isBackupPasswordProtectionEnabled && (
+                <div className="settings-backup-protection__grid">
+                  <div className="settings-preferences-field">
+                    <label
+                      htmlFor="settings-backup-password"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Backup Password
+                    </label>
+
+                    <input
+                      id="settings-backup-password"
+                      type="password"
+                      value={backupPassword}
+                      onChange={(event) =>
+                        setBackupPassword(
+                          event.target.value
+                        )
+                      }
+                      className="settings-preferences-input"
+                      autoComplete="new-password"
+                    />
+                  </div>
+
+                  <div className="settings-preferences-field">
+                    <label
+                      htmlFor="settings-backup-password-confirmation"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Confirm Password
+                    </label>
+
+                    <input
+                      id="settings-backup-password-confirmation"
+                      type="password"
+                      value={
+                        backupPasswordConfirmation
+                      }
+                      onChange={(event) =>
+                        setBackupPasswordConfirmation(
+                          event.target.value
+                        )
+                      }
+                      className="settings-preferences-input"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <p>
+                Password protection applies only to new backup
+                files. Existing HFOS backups remain restorable
+                without a password unless they were exported with
+                protection enabled.
+              </p>
+            </div>
+
             {(backupMessage || backupError) && (
               <div
                 role={
@@ -1509,10 +1747,13 @@ export default function SettingsPage() {
             <div className="settings-data-actions">
               <button
                 type="button"
-                onClick={handleExportBackup}
+                onClick={() => {
+                  void handleExportBackup();
+                }}
                 disabled={
                   !dataHealthSummary
-                    .isExportable
+                    .isExportable ||
+                  !isBackupPasswordReady
                 }
                 className="settings-secondary-button"
               >
@@ -1527,6 +1768,7 @@ export default function SettingsPage() {
                 disabled={
                   !dataHealthSummary
                     .isExportable ||
+                  !isBackupPasswordReady ||
                   !isGoogleDriveConfigured ||
                   isSavingCloudBackup
                 }
@@ -1584,10 +1826,48 @@ export default function SettingsPage() {
                 </p>
 
                 <p className="settings-confirmation__copy settings-confirmation__copy--success">
-                  Review the backup summary, then press Restore
-                  Backup to replace the current HFOS data in this
-                  browser with {restoreFilename}.
+                  {restoreNeedsPassword
+                    ? `Enter the backup password for ${restoreFilename} to preview it before restore.`
+                    : `Review the backup summary, then press Restore Backup to replace the current HFOS data in this browser with ${restoreFilename}.`}
                 </p>
+
+                {restoreNeedsPassword && (
+                  <div className="settings-restore-password">
+                    <label
+                      htmlFor="settings-restore-password"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Backup Password
+                    </label>
+
+                    <input
+                      id="settings-restore-password"
+                      type="password"
+                      value={restorePassword}
+                      onChange={(event) =>
+                        setRestorePassword(
+                          event.target.value
+                        )
+                      }
+                      className="settings-preferences-input"
+                      autoComplete="current-password"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleUnlockRestoreBackup();
+                      }}
+                      disabled={
+                        restorePassword.length ===
+                        0
+                      }
+                      className="settings-secondary-button"
+                    >
+                      Unlock Backup
+                    </button>
+                  </div>
+                )}
 
                 {restoreSummary && (
                   <BackupSummaryList
@@ -1598,8 +1878,13 @@ export default function SettingsPage() {
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
                     type="button"
-                    onClick={handleConfirmRestore}
-                    disabled={isRestoringBackup}
+                    onClick={() => {
+                      void handleConfirmRestore();
+                    }}
+                    disabled={
+                      isRestoringBackup ||
+                      restoreNeedsPassword
+                    }
                     className="settings-confirm-button"
                   >
                     {isRestoringBackup
@@ -1994,6 +2279,13 @@ function BackupSummaryList({
               summary.themePreference
             )}
           </dd>
+        </div>
+      )}
+
+      {summary.passwordProtected && (
+        <div>
+          <dt>Protection</dt>
+          <dd>Password protected</dd>
         </div>
       )}
 

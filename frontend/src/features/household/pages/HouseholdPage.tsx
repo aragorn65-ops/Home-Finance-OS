@@ -69,6 +69,16 @@ export default function HouseholdPage() {
   >();
 
   const [
+    restorePassword,
+    setRestorePassword,
+  ] = useState("");
+
+  const [
+    restoreNeedsPassword,
+    setRestoreNeedsPassword,
+  ] = useState(false);
+
+  const [
     isConfirmingRestore,
     setIsConfirmingRestore,
   ] = useState(false);
@@ -125,6 +135,8 @@ export default function HouseholdPage() {
     setRestoreFilename("");
     setRestoreJson("");
     setRestoreSummary(undefined);
+    setRestorePassword("");
+    setRestoreNeedsPassword(false);
     setIsConfirmingRestore(false);
 
     if (!file) {
@@ -146,11 +158,24 @@ export default function HouseholdPage() {
     }
 
     const validation =
-      validateApplicationBackup(
+      await validateApplicationBackup(
         json
       );
 
     if (!validation.success) {
+      if (
+        validation.requiresPassword
+      ) {
+        setRestoreFilename(file.name);
+        setRestoreJson(json);
+        setRestoreSummary(undefined);
+        setRestorePassword("");
+        setRestoreNeedsPassword(true);
+        setIsConfirmingRestore(true);
+
+        return;
+      }
+
       setRestoreError(
         validation.message
       );
@@ -164,7 +189,32 @@ export default function HouseholdPage() {
     setRestoreSummary(
       validation.summary
     );
+    setRestorePassword("");
+    setRestoreNeedsPassword(false);
     setIsConfirmingRestore(true);
+  }
+
+  async function unlockRestoreBackup() {
+    setRestoreError("");
+
+    const validation =
+      await validateApplicationBackup(
+        restoreJson,
+        restorePassword
+      );
+
+    if (!validation.success) {
+      setRestoreError(
+        validation.message
+      );
+
+      return;
+    }
+
+    setRestoreSummary(
+      validation.summary
+    );
+    setRestoreNeedsPassword(false);
   }
 
   function cancelRestore() {
@@ -172,18 +222,21 @@ export default function HouseholdPage() {
     setRestoreFilename("");
     setRestoreJson("");
     setRestoreSummary(undefined);
+    setRestorePassword("");
+    setRestoreNeedsPassword(false);
     setIsConfirmingRestore(false);
 
     resetRestoreFileInput();
   }
 
-  function confirmRestore() {
+  async function confirmRestore() {
     setRestoreError("");
     setIsRestoring(true);
 
     const result =
-      restoreApplicationBackup(
-        restoreJson
+      await restoreApplicationBackup(
+        restoreJson,
+        restorePassword
       );
 
     if (!result.success) {
@@ -315,9 +368,43 @@ export default function HouseholdPage() {
         ) : (
           <div className="household-restore__confirm">
             <p>
-              Restoring {restoreFilename} will replace
-              current HFOS data in this browser.
+              {restoreNeedsPassword
+                ? `Enter the backup password for ${restoreFilename} before restoring.`
+                : `Restoring ${restoreFilename} will replace current HFOS data in this browser.`}
             </p>
+
+            {restoreNeedsPassword && (
+              <div className="household-restore__password">
+                <label htmlFor="household-restore-password">
+                  Backup Password
+                </label>
+
+                <input
+                  id="household-restore-password"
+                  type="password"
+                  value={restorePassword}
+                  onChange={(event) =>
+                    setRestorePassword(
+                      event.target.value
+                    )
+                  }
+                  autoComplete="current-password"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void unlockRestoreBackup();
+                  }}
+                  disabled={
+                    restorePassword.length ===
+                    0
+                  }
+                >
+                  Unlock Backup
+                </button>
+              </div>
+            )}
 
             {restoreSummary && (
               <dl className="household-restore__summary">
@@ -374,6 +461,13 @@ export default function HouseholdPage() {
                           .themePreference
                       )}
                     </dd>
+                  </div>
+                )}
+
+                {restoreSummary.passwordProtected && (
+                  <div>
+                    <dt>Protection</dt>
+                    <dd>Password protected</dd>
                   </div>
                 )}
 
@@ -460,8 +554,13 @@ export default function HouseholdPage() {
             <div className="household-restore__actions">
               <button
                 type="button"
-                onClick={confirmRestore}
-                disabled={isRestoring}
+                onClick={() => {
+                  void confirmRestore();
+                }}
+                disabled={
+                  isRestoring ||
+                  restoreNeedsPassword
+                }
               >
                 {isRestoring
                   ? "Restoring..."

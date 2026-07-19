@@ -4,7 +4,7 @@
 
 This guide is a short starting point for testing Home Finance OS.
 
-Use sample or test data only. The current alpha stores data in your browser and does not yet include login, cloud sync, backup, or account sharing.
+Use sample or test data only. The current alpha stores data in your browser and does not yet include full login, cloud sync, or account sharing. Local and Google Drive backup tools are available, and backups can optionally be password protected.
 
 ---
 
@@ -48,7 +48,9 @@ Household name, country, base currency, and time zone can be changed later in Se
 
 For repeated QA, use Settings -> Clear Test Data to remove accounts, transactions, settlements, savings records, utility-bill records, and leftover preview keys while keeping the household setup. Use Reset All Application Data only when you want to delete the household and return to first-time setup.
 
-Use Settings -> Data & Backup -> Export Backup to download a local `.hfos-backup.json` file. Use Save to Google Drive to upload the same backup package to Google Drive when the app has a configured Google OAuth client. Use Restore from Google Drive to list recent app-visible HFOS backups, select one, validate it, and preview it before restore. The Drive restore list uses low-permission app-created file access, so manually uploaded or copied Drive files may not appear there. For those files, download the backup from Drive and use Import Backup. Use Import Backup to choose a validated HFOS backup file from the device, confirm restore, and replace the current browser-local data. If the browser has no household yet, use Restore from Backup on the household setup screen.
+Use Settings -> Data & Backup -> Export Backup to download a local `.hfos-backup.json` file. Enable password protection before exporting when the backup file should be encrypted; protected backups require the same backup password before they can be previewed or restored. HFOS cannot recover forgotten backup passwords. Use Save to Google Drive to upload the same backup package to Google Drive when the app has a configured Google OAuth client. Use Restore from Google Drive to list recent app-visible HFOS backups, select one, validate it, and preview it before restore. The Drive restore list uses low-permission app-created file access, so manually uploaded or copied Drive files may not appear there. For those files, download the backup from Drive and use Import Backup. Use Import Backup to choose a validated HFOS backup file from the device, confirm restore, and replace the current browser-local data. If the browser has no household yet, use Restore from Backup on the household setup screen.
+
+Use Settings -> App Lock to enable a local PIN lock for this browser. App lock can lock HFOS after refresh, manual lock, or optional inactivity timeout. This is local browser privacy, not cloud login or household account authorization.
 
 For Google Drive backup in a deployed preview, enable the Google Drive API for the Google Cloud project, create a Google OAuth web client, add `https://aragorn65-ops.github.io` as an authorized JavaScript origin, and set the client ID as a GitHub repository variable or Actions secret named `VITE_GOOGLE_CLIENT_ID`. If the OAuth app is in Testing, add the Google account used for QA as a test user. Vite embeds the client ID when GitHub Pages builds the app, so redeploy after changing the GitHub variable. Without that client ID, Settings shows that Google Drive backup is not configured and local Export Backup remains available.
 
@@ -217,6 +219,8 @@ Good feedback examples:
 * Reset All Application Data deletes the household and returns the app to first-time setup.
 * No login or authentication yet.
 * No cloud sync.
-* Local backup export and restore are available. Google Drive backup is available only when a Google OAuth client ID is configured.
+* Local backup export and restore are available, including optional password-protected backup files.
+* Google Drive backup is available only when a Google OAuth client ID is configured.
+* Local app lock is browser privacy only; it is not account authentication.
 * No shared household invite flow yet.
 * Use test data only for preview testing.

@@ -5,7 +5,7 @@
 **Release:** v0.20.0-alpha
 **Date:** July 19, 2026
 **Branch:** sprint-20-security-access-readiness
-**Status:** Open
+**Status:** QA complete
 
 ---
 
@@ -14,6 +14,24 @@
 Sprint 20 adds practical privacy controls for HFOS before moving toward full login/auth.
 
 HFOS is still a local-first app, so the priority is to protect household data on the current device and make backup files safer. Full account login, backend identity, and multi-device household sharing remain future architecture work.
+
+---
+
+## Where We Are Now
+
+As of July 19, 2026, Sprint 20 implementation is complete on `sprint-20-security-access-readiness`.
+
+HFOS now has local app lock, manual lock, refresh lock, inactivity lock, Settings privacy controls, normal backup export/import, optional password-protected backup export/import, and Google Drive backup/restore compatibility for both normal and protected HFOS backup files.
+
+Manual QA has passed for app-lock timing, protected backup restore, and Google Drive restore visibility.
+
+Verified locally:
+
+```text
+npm.cmd run build
+npm.cmd run lint
+git diff --check
+```
 
 ---
 
@@ -28,9 +46,9 @@ Sprint 20 candidates include:
 * [x] Lock the app after browser refresh when app lock is enabled.
 * [x] Add clear privacy/session controls in Settings.
 * [x] Lock the app after inactivity when app lock is enabled.
-* [ ] Explore password-protected backup export/import.
-* [ ] Keep Google Drive backup/restore compatible with current backups.
-* [ ] Document the future full-auth path separately from local app lock.
+* [x] Explore password-protected backup export/import.
+* [x] Keep Google Drive backup/restore compatible with current backups.
+* [x] Document the future full-auth path separately from local app lock.
 
 ---
 
@@ -43,6 +61,7 @@ Sprint 20 should:
 * Keep existing backups restorable unless password protection is explicitly enabled.
 * Keep Google Drive access optional.
 * Clearly explain what is protected locally and what is not.
+* Treat backup password protection as file encryption only, not account recovery or cloud identity.
 
 Sprint 20 should not:
 
@@ -61,6 +80,36 @@ npm.cmd run lint
 git diff --check
 ```
 
+## QA Pass - July 19, 2026
+
+Automated and local smoke QA completed:
+
+* [x] `npm.cmd run build`
+* [x] `npm.cmd run lint`
+* [x] `git diff --check`
+* [x] Local Vite server returned HTTP 200 at `http://127.0.0.1:5173/`.
+* [x] Dashboard quick action links Unpaid Bills to `/app/utilities#bills-to-pay`.
+* [x] Bills to Pay renders a clear empty state when there are no unpaid provider bills.
+* [x] App shell initializes locked after refresh when app lock is enabled.
+* [x] Header shows Lock HFOS only when app lock is enabled.
+* [x] Inactivity timer listens for normal activity events and locks after the configured timeout.
+* [x] Clear Test Data preserves the app lock storage key.
+* [x] Normal backups keep the existing `.hfos-backup.json` format.
+* [x] Password-protected backups use an explicit protected envelope and require a password before preview or restore.
+* [x] Google Drive backup listing still matches normal and protected HFOS backup filenames.
+
+Manual browser QA completed:
+
+* [x] Click Dashboard > Quick Actions > Unpaid Bills and confirm the Utilities page scrolls to Bills to Pay.
+* [x] Enable app lock and set a PIN through Settings.
+* [x] Confirm manual Lock HFOS opens the unlock screen.
+* [x] Confirm refresh lock opens the unlock screen.
+* [x] Confirm incorrect PIN is rejected and correct PIN unlocks.
+* [x] Confirm 1-minute inactivity lock fires and normal activity resets the timer.
+* [x] Export, import, preview, and restore a normal backup through the UI.
+* [x] Export, import, unlock, preview, and restore a password-protected backup through the UI.
+* [x] Save normal and password-protected backups to Google Drive, then confirm both appear in Restore from Google Drive.
+
 Manual QA should include:
 
 * Confirm Dashboard > Quick Actions includes Unpaid Bills.
@@ -76,3 +125,7 @@ Manual QA should include:
 * Disable app lock from Settings.
 * Confirm Clear Test Data keeps app lock enabled.
 * Confirm backup/restore still works with app lock settings present.
+* Export a normal backup and confirm it previews/restores without a password.
+* Export a password-protected backup and confirm it requires the backup password before preview/restore.
+* Save a normal backup to Google Drive and confirm it remains visible in the Drive restore list.
+* Save a password-protected backup to Google Drive and confirm it remains visible in the Drive restore list.

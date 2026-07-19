@@ -108,6 +108,21 @@
   align-items: end;
 }
 
+.settings-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-strong);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.settings-checkbox-row input {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
 @media (max-width: 58rem) {
   .settings-preferences-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -116,7 +131,8 @@
 
 @media (max-width: 40rem) {
   .settings-preferences-grid,
-  .settings-app-lock-grid {
+  .settings-app-lock-grid,
+  .settings-backup-protection__grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -268,6 +284,38 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+}
+
+.settings-backup-protection,
+.settings-restore-password {
+  display: grid;
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  padding: var(--space-4);
+}
+
+.settings-backup-protection p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.settings-backup-protection__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.settings-restore-password {
+  margin-top: var(--space-4);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.settings-restore-password .settings-secondary-button {
+  width: fit-content;
 }
 
 .settings-data-health,
