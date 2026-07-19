@@ -22,3 +22,20 @@ export type {
   HouseholdMembership,
   HouseholdMembershipStatus,
 } from "./HouseholdMembership";
+
+export type {
+  RemoteHousehold,
+  RemoteHouseholdStatus,
+} from "./RemoteHousehold";
+
+export type {
+  RemoteMigrationCommitResult,
+  RemoteMigrationDraft,
+  RemoteMigrationStatus,
+  RemoteMigrationValidation,
+} from "./RemoteMigration";
+
+export type {
+  RemoteRecordVisibility,
+  RemoteTenantRecord,
+} from "./RemoteRecord";

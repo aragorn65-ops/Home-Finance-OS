@@ -9,15 +9,28 @@ export type {
   HouseholdInvitationStatus,
   HouseholdMembership,
   HouseholdMembershipStatus,
+  RemoteHousehold,
+  RemoteHouseholdStatus,
+  RemoteMigrationCommitResult,
+  RemoteMigrationDraft,
+  RemoteMigrationStatus,
+  RemoteMigrationValidation,
+  RemoteRecordVisibility,
+  RemoteTenantRecord,
 } from "./models";
 
 export type {
   AuthBackendAdapter,
   AuthorizationContext,
+  CreateRemoteHouseholdInput,
   FinancialRecordAction,
   HouseholdAction,
   HouseholdClaimDraft,
   HouseholdClaimResult,
+  InviteHouseholdMemberInput,
+  RemoteMigrationRepository,
+  RemoteTenantRepository,
+  UpdateMembershipRoleInput,
 } from "./services";
 
 export {
@@ -31,7 +44,10 @@ export {
 export {
   canAccessAccount,
   canAccessHousehold,
+  canAccessTenantRecord,
   canManageMemberRole,
   createAuthMigrationPreview,
   DisabledAuthBackendAdapter,
+  DisabledRemoteMigrationRepository,
+  DisabledRemoteTenantRepository,
 } from "./services";
