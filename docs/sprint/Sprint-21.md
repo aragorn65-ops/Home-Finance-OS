@@ -37,16 +37,16 @@ HFOS remains local-first. App lock protects casual access in the current browser
 
 Sprint 21 candidates include:
 
-* [ ] Choose the target auth model for future HFOS accounts.
-* [ ] Define household ownership, invitations, membership, and removal rules.
-* [ ] Define roles and permissions for owner, partner/member, viewer, and future limited roles.
-* [ ] Document tenant boundaries for household records.
-* [ ] Define the migration path from local browser storage to authenticated storage.
-* [ ] Define how local app lock coexists with account login.
-* [ ] Define backup import ownership checks for a future backend.
-* [ ] Define cloud sync conflict rules at a product and data-model level.
-* [ ] Identify the minimum backend/API surface required before implementation.
-* [ ] Split implementation candidates into Sprint 22+ milestones.
+* [x] Choose the target auth model for future HFOS accounts.
+* [x] Define household ownership, invitations, membership, and removal rules.
+* [x] Define roles and permissions for owner, admin, member, and future viewer roles.
+* [x] Document tenant boundaries for household records.
+* [x] Define the migration path from local browser storage to authenticated storage.
+* [x] Define how local app lock coexists with account login.
+* [x] Define backup import ownership checks for a future backend.
+* [x] Define cloud sync conflict rules at a product and data-model level.
+* [x] Identify the minimum backend/API surface required before implementation.
+* [x] Split implementation candidates into Sprint 22+ milestones.
 
 ---
 
@@ -73,12 +73,24 @@ Sprint 21 should not:
 
 ## Planning Deliverables
 
-* Auth architecture decision record.
-* Household membership and role matrix.
-* Local-to-authenticated data migration plan.
-* Backup ownership and restore policy.
-* Cloud sync conflict policy.
-* Sprint 22 implementation candidate list.
+* [x] Auth architecture decision record.
+* [x] Household membership and role matrix.
+* [x] Local-to-authenticated data migration plan.
+* [x] Backup ownership and restore policy.
+* [x] Cloud sync conflict policy.
+* [x] Sprint 22 implementation candidate list.
+
+---
+
+## Planning Artifacts
+
+* `docs/decisions/ADR-006-authentication-architecture.md`
+* `docs/architecture/HOUSEHOLD_ROLES_AND_PERMISSIONS.md`
+* `docs/architecture/AUTH_MIGRATION_PLAN.md`
+* `docs/architecture/BACKUP_OWNERSHIP_POLICY.md`
+* `docs/architecture/CLOUD_SYNC_CONFLICT_POLICY.md`
+* `docs/architecture/AUTH_BACKEND_API_SURFACE.md`
+* `docs/architecture/SPRINT_22_AUTH_IMPLEMENTATION_CANDIDATES.md`
 
 ---
 
