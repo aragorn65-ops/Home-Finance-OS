@@ -1,0 +1,97 @@
+.auth-diagnostics {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.auth-diagnostics__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.auth-diagnostics__header h2 {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.auth-diagnostics__header p {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.auth-diagnostics__refresh {
+  display: inline-flex;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.auth-diagnostics__refresh:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-strong);
+}
+
+.auth-diagnostics__refresh:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.auth-diagnostics__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.auth-diagnostics__grid div {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  padding: var(--space-3);
+}
+
+.auth-diagnostics__grid dt {
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.auth-diagnostics__grid dd {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-strong);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.auth-diagnostics__error {
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-background);
+  color: var(--color-danger-text);
+  font-size: var(--font-size-sm);
+  padding: var(--space-3);
+}
+
+@media (max-width: 48rem) {
+  .auth-diagnostics__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 32rem) {
+  .auth-diagnostics__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
