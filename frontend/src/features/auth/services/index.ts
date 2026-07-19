@@ -28,6 +28,28 @@ export {
 } from "./disabledRemoteTenantRepository";
 
 export {
+  InMemoryAuthBackendAdapter,
+} from "./inMemoryAuthBackendAdapter";
+
+export {
+  InMemoryAuthStore,
+  createId,
+  createMembership,
+} from "./inMemoryAuthStore";
+
+export type {
+  InMemoryAuthSeed,
+} from "./inMemoryAuthStore";
+
+export {
+  InMemoryRemoteMigrationRepository,
+} from "./inMemoryRemoteMigrationRepository";
+
+export {
+  InMemoryRemoteTenantRepository,
+} from "./inMemoryRemoteTenantRepository";
+
+export {
   getAuthBackendAdapter,
 } from "./createAuthBackendAdapter";
 

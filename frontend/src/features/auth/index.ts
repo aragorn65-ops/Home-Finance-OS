@@ -50,4 +50,17 @@ export {
   DisabledAuthBackendAdapter,
   DisabledRemoteMigrationRepository,
   DisabledRemoteTenantRepository,
+  InMemoryAuthBackendAdapter,
+  InMemoryAuthStore,
+  InMemoryRemoteMigrationRepository,
+  InMemoryRemoteTenantRepository,
+} from "./services";
+
+export {
+  createId,
+  createMembership,
+} from "./services";
+
+export type {
+  InMemoryAuthSeed,
 } from "./services";
