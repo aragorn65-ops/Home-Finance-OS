@@ -35,6 +35,7 @@ export type {
 } from "./services";
 
 export {
+  AuthDiagnosticsPanel,
   AuthSessionButton,
 } from "./components";
 

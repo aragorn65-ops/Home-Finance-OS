@@ -22,9 +22,15 @@ import {
   type ThemePreference,
 } from "../../../shared/theme/themePreference";
 import {
+  isAuthFeatureEnabled,
+} from "../../../config/auth";
+import {
   loadHousehold,
   saveHouseholdPreferences,
 } from "../../household/services/householdStorage";
+import {
+  AuthDiagnosticsPanel,
+} from "../../auth";
 
 import {
   reloadAfterApplicationReset,
@@ -362,6 +368,9 @@ export default function SettingsPage() {
 
   const isGoogleDriveConfigured =
     isGoogleDriveBackupConfigured();
+
+  const showAuthDiagnostics =
+    isAuthFeatureEnabled();
 
   const hasPreferenceChanges =
     Boolean(household) &&
@@ -1625,6 +1634,12 @@ export default function SettingsPage() {
             )}
           </div>
         </Card>
+
+        {showAuthDiagnostics && (
+          <Card>
+            <AuthDiagnosticsPanel />
+          </Card>
+        )}
 
         <Card>
           <div className="space-y-5">
