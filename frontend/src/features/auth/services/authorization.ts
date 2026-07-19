@@ -7,6 +7,7 @@ import type {
 import type {
   AuthHouseholdRole,
   HouseholdMembership,
+  RemoteTenantRecord,
 } from "../models";
 
 export interface AuthorizationContext {
@@ -93,6 +94,30 @@ export function canAccessAccount(
   account: Account,
   action: FinancialRecordAction
 ): boolean {
+  return canAccessTenantRecord(
+    context,
+    {
+      id: account.id,
+      householdId:
+        account.householdId,
+      visibility:
+        account.visibility,
+      ownerMemberId:
+        account.ownerMemberId,
+      createdAt:
+        account.createdAt,
+      updatedAt:
+        account.updatedAt,
+    },
+    action
+  );
+}
+
+export function canAccessTenantRecord(
+  context: AuthorizationContext,
+  record: RemoteTenantRecord,
+  action: FinancialRecordAction
+): boolean {
   const membership =
     context.membership;
 
@@ -100,7 +125,7 @@ export function canAccessAccount(
     !membership ||
     membership.status !== "active" ||
     membership.householdId !==
-      account.householdId
+      record.householdId
   ) {
     return false;
   }
@@ -112,13 +137,13 @@ export function canAccessAccount(
   }
 
   if (
-    account.visibility === "household"
+    record.visibility !== "private"
   ) {
     return true;
   }
 
   return (
-    account.ownerMemberId ===
+    record.ownerMemberId ===
     context.memberId
   );
 }
