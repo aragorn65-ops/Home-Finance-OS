@@ -19,6 +19,12 @@ export class DisabledAuthBackendAdapter
     };
   }
 
+  async signIn(): Promise<AuthSession> {
+    return {
+      status: "disabled",
+    };
+  }
+
   async signOut(): Promise<void> {
     return Promise.resolve();
   }

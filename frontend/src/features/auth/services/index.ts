@@ -9,6 +9,10 @@ export {
 } from "./disabledAuthBackendAdapter";
 
 export {
+  getAuthBackendAdapter,
+} from "./createAuthBackendAdapter";
+
+export {
   canAccessAccount,
   canAccessHousehold,
   canManageMemberRole,

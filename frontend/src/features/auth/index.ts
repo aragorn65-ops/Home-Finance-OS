@@ -21,6 +21,14 @@ export type {
 } from "./services";
 
 export {
+  AuthSessionButton,
+} from "./components";
+
+export {
+  useAuthSession,
+} from "./hooks";
+
+export {
   canAccessAccount,
   canAccessHousehold,
   canManageMemberRole,

@@ -2,11 +2,18 @@ import "./Header.css";
 
 import {
   Bell,
-  CircleUserRound,
   LockKeyhole,
   Menu,
   Search,
 } from "lucide-react";
+
+import {
+  AuthSessionButton,
+  useAuthSession,
+} from "../../features/auth";
+import {
+  isAuthFeatureEnabled,
+} from "../../config/auth";
 
 interface HeaderProps {
   isMenuOpen?: boolean;
@@ -19,6 +26,11 @@ export default function Header({
   onMenuToggle,
   onLock,
 }: HeaderProps) {
+  const authSession =
+    useAuthSession();
+  const showAuthSession =
+    isAuthFeatureEnabled();
+
   return (
     <header className="app-header">
       <div className="app-header__leading">
@@ -84,17 +96,20 @@ export default function Header({
           </button>
         )}
 
-        <button
-          type="button"
-          className="app-header__action-button"
-          aria-label="User profile"
-          title="User profiles are not available yet"
-        >
-          <CircleUserRound
-            size={24}
-            aria-hidden="true"
+        {showAuthSession && (
+          <AuthSessionButton
+            session={
+              authSession.session
+            }
+            error={authSession.error}
+            onSignIn={
+              authSession.signIn
+            }
+            onSignOut={
+              authSession.signOut
+            }
           />
-        </button>
+        )}
       </div>
     </header>
   );

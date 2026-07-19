@@ -78,6 +78,48 @@
   box-shadow: var(--focus-ring);
 }
 
+.app-header__auth-button {
+  display: inline-flex;
+  max-width: 12rem;
+  height: var(--control-height-sm);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-brand-600);
+  border-radius: var(--radius-button);
+  background: var(--color-surface);
+  color: var(--color-brand-600);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-normal) var(--ease-standard),
+    border-color var(--duration-normal) var(--ease-standard),
+    color var(--duration-normal) var(--ease-standard);
+}
+
+.app-header__auth-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-header__auth-button:hover:not(:disabled) {
+  background: var(--color-brand-50);
+  border-color: var(--color-brand-700);
+  color: var(--color-brand-700);
+}
+
+.app-header__auth-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.app-header__auth-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 @media (max-width: 64rem) {
   .app-header__menu-button {
     display: inline-flex;

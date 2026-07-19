@@ -22,6 +22,8 @@ export interface HouseholdClaimResult {
 export interface AuthBackendAdapter {
   getSession(): Promise<AuthSession>;
 
+  signIn(): Promise<AuthSession>;
+
   signOut(): Promise<void>;
 
   getCurrentUser():
