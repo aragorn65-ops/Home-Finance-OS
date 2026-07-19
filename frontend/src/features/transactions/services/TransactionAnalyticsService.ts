@@ -1,3 +1,5 @@
+import TransactionRepository from "../repositories/TransactionRepository";
+
 export interface MonthlyCashFlowSummary {
   month: string;
   income: number;
@@ -6,17 +8,106 @@ export interface MonthlyCashFlowSummary {
 
 export default class TransactionAnalyticsService {
   /**
-   * Demo monthly cash flow.
-   * TODO: Generate from transactions.
+   * Returns actual income and expense totals for the
+   * six-month window ending at the reference month.
    */
-  static getMonthlyCashFlow(): MonthlyCashFlowSummary[] {
-    return [
-      { month: "Jan", income: 8200, expenses: 6400 },
-      { month: "Feb", income: 7900, expenses: 5900 },
-      { month: "Mar", income: 8500, expenses: 6100 },
-      { month: "Apr", income: 9100, expenses: 6700 },
-      { month: "May", income: 8700, expenses: 6400 },
-      { month: "Jun", income: 8500, expenses: 6125 },
-    ];
+  static getMonthlyCashFlow(
+    referenceDate: Date = new Date()
+  ): MonthlyCashFlowSummary[] {
+    const months =
+      Array.from(
+        {
+          length: 6,
+        },
+        (
+          _,
+          index
+        ) =>
+          new Date(
+            referenceDate.getFullYear(),
+            referenceDate.getMonth() -
+              (5 - index),
+            1
+          )
+      );
+
+    const summaries =
+      months.map(
+        (monthDate) => ({
+          month:
+            new Intl.DateTimeFormat(
+              undefined,
+              {
+                month: "short",
+              }
+            ).format(monthDate),
+          income: 0,
+          expenses: 0,
+        })
+      );
+
+    const monthKeys =
+      months.map(
+        (monthDate) =>
+          this.getMonthKey(
+            monthDate
+          )
+      );
+
+    const summaryByMonth =
+      new Map(
+        monthKeys.map(
+          (key, index) => [
+            key,
+            summaries[index],
+          ]
+        )
+      );
+
+    TransactionRepository
+      .findAll()
+      .filter(
+        (transaction) =>
+          transaction.isActive
+      )
+      .forEach(
+        (transaction) => {
+          const summary =
+            summaryByMonth.get(
+              this.getMonthKey(
+                transaction
+                  .transactionDate
+              )
+            );
+
+          if (!summary) {
+            return;
+          }
+
+          if (
+            transaction.type ===
+            "income"
+          ) {
+            summary.income +=
+              transaction.amount;
+          }
+
+          if (
+            transaction.type ===
+            "expense"
+          ) {
+            summary.expenses +=
+              transaction.amount;
+          }
+        }
+      );
+
+    return summaries;
+  }
+
+  private static getMonthKey(
+    date: Date
+  ): string {
+    return `${date.getFullYear()}-${date.getMonth()}`;
   }
 }

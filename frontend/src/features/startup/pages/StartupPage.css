@@ -2,6 +2,10 @@
 
     min-height: 100vh;
 
+    min-height: 100dvh;
+
+    width: 100%;
+
     display: flex;
 
     justify-content: center;
@@ -10,11 +14,19 @@
 
     background: #F8FAFC;
 
+    overflow-x: hidden;
+
+    padding: var(--layout-page-padding-mobile);
+
 }
 
 .startup-content {
 
     display: flex;
+
+    width: 100%;
+
+    max-width: 720px;
 
     flex-direction: column;
 
@@ -23,6 +35,18 @@
     gap: 24px;
 
     animation: fadeIn .35s ease;
+
+}
+
+@media (max-width: 48rem) {
+
+    .startup-page {
+
+        align-items: flex-start;
+
+        padding-block: var(--space-5);
+
+    }
 
 }
 

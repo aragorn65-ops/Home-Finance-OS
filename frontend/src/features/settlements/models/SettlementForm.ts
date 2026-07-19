@@ -6,6 +6,10 @@ import type {
   SettlementApplicationForm,
 } from "./SettlementApplicationForm";
 
+import type {
+  StoredAttachment,
+} from "../../../shared/models/StoredAttachment";
+
 export interface SettlementForm {
   householdId: string;
 
@@ -42,6 +46,11 @@ export interface SettlementForm {
   referenceNumber: string;
   notes: string;
 
+  /**
+   * Locally stored transfer receipts or proof of payment.
+   */
+  attachments: StoredAttachment[];
+
   isActive: boolean;
 }
 
@@ -62,6 +71,7 @@ export const defaultSettlementForm: SettlementForm = {
 
   referenceNumber: "",
   notes: "",
+  attachments: [],
 
   isActive: true,
 };

@@ -3,6 +3,7 @@ import type { Account } from "../../accounts/models/Account";
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
 import type { Settlement } from "../models/Settlement";
+import SettlementApplicationDetailsService from "../services/SettlementApplicationDetailsService";
 
 import SettlementListItem from "./SettlementListItem";
 
@@ -11,6 +12,7 @@ type SettlementListProps = {
 
   members: HouseholdMember[];
   accounts: Account[];
+  currency?: string;
 
   onView?: (
     settlement: Settlement
@@ -30,6 +32,7 @@ export default function SettlementList({
 
   members,
   accounts,
+  currency,
 
   onView,
   onEdit,
@@ -82,6 +85,12 @@ export default function SettlementList({
           <SettlementListItem
             key={settlement.id}
             settlement={settlement}
+            applicationDetails={
+              SettlementApplicationDetailsService
+                .getBySettlementId(
+                  settlement.id
+                )
+            }
             fromMemberName={getMemberName(
               settlement.fromMemberId
             )}
@@ -94,6 +103,7 @@ export default function SettlementList({
             destinationAccountName={getAccountName(
               settlement.destinationAccountId
             )}
+            currency={currency}
             onView={onView}
             onEdit={onEdit}
             onDelete={onDelete}

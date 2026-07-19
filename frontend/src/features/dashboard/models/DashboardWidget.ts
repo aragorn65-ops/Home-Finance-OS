@@ -5,10 +5,16 @@ export type DashboardWidgetSize =
   | "medium"
   | "large";
 
+export interface DashboardWidgetProps {
+  selectedMonth: Date;
+}
+
 export interface DashboardWidget {
   id: string;
   title: string;
-  component: ComponentType;
+  component: ComponentType<
+    DashboardWidgetProps
+  >;
   order: number;
   size: DashboardWidgetSize;
   enabled: boolean;

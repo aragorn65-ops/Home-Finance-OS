@@ -8,6 +8,12 @@ import {
   saveStoredData,
 } from "../../../shared/storage/localStorageStore";
 
+import {
+  normalizeCurrency,
+  normalizeExchangeRate,
+  roundCurrencyAmount,
+} from "../../../shared/utils/currencyConversion";
+
 import type {
   SavingsGoal,
   SavingsGoalPriority,
@@ -19,10 +25,20 @@ interface SerializedSavingsGoal
   extends Omit<
     SavingsGoal,
     | "targetDate"
+    | "goalCurrency"
+    | "baseCurrency"
+    | "targetBaseAmount"
+    | "exchangeRate"
+    | "exchangeRateEffectiveDate"
     | "createdAt"
     | "updatedAt"
   > {
   targetDate?: string;
+  goalCurrency?: string;
+  baseCurrency?: string;
+  targetBaseAmount?: number;
+  exchangeRate?: number;
+  exchangeRateEffectiveDate?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -415,6 +431,10 @@ export default class SavingsGoalRepository {
               .toISOString()
           : undefined,
 
+      exchangeRateEffectiveDate:
+        savingsGoal.exchangeRateEffectiveDate
+          .toISOString(),
+
       createdAt:
         savingsGoal.createdAt
           .toISOString(),
@@ -431,8 +451,58 @@ export default class SavingsGoalRepository {
   private static deserializeSavingsGoal(
     savingsGoal: SerializedSavingsGoal
   ): SavingsGoal {
+    const household =
+      loadHousehold();
+
+    const baseCurrency =
+      normalizeCurrency(
+        savingsGoal.baseCurrency,
+        household?.currency ?? "PHP"
+      );
+
+    const goalCurrency =
+      normalizeCurrency(
+        savingsGoal.goalCurrency,
+        baseCurrency
+      );
+
+    const exchangeRate =
+      normalizeExchangeRate(
+        savingsGoal.exchangeRate,
+        goalCurrency,
+        baseCurrency
+      ) || 1;
+
     return {
       ...savingsGoal,
+
+      goalCurrency,
+      baseCurrency,
+
+      targetBaseAmount:
+        savingsGoal.targetBaseAmount ??
+        (
+          goalCurrency ===
+          baseCurrency
+            ? roundCurrencyAmount(
+                savingsGoal.targetAmount
+              )
+            : roundCurrencyAmount(
+                savingsGoal.targetAmount *
+                  exchangeRate
+              )
+        ),
+
+      exchangeRate,
+
+      exchangeRateEffectiveDate:
+        savingsGoal.exchangeRateEffectiveDate
+          ? new Date(
+              savingsGoal.exchangeRateEffectiveDate
+            )
+          : new Date(
+              savingsGoal.createdAt
+            ),
 
       targetDate:
         savingsGoal.targetDate
@@ -524,6 +594,29 @@ export default class SavingsGoalRepository {
       ) &&
       this.isFiniteNumber(
         value.targetAmount
+      ) &&
+      this.isOptionalString(
+        value.goalCurrency
+      ) &&
+      this.isOptionalString(
+        value.baseCurrency
+      ) &&
+      (
+        value.targetBaseAmount ===
+          undefined ||
+        this.isFiniteNumber(
+          value.targetBaseAmount
+        )
+      ) &&
+      (
+        value.exchangeRate ===
+          undefined ||
+        this.isFiniteNumber(
+          value.exchangeRate
+        )
+      ) &&
+      this.isOptionalDateString(
+        value.exchangeRateEffectiveDate
       ) &&
       this.isOptionalDateString(
         value.targetDate

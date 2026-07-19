@@ -17,8 +17,6 @@ export default function Brand({
   white = false,
   symbolOnly = false,
 }: BrandProps) {
-  const logo = white ? HFOSLogoWhite : HFOSLogo;
-
   if (symbolOnly) {
     return (
       <img
@@ -29,15 +27,35 @@ export default function Brand({
     );
   }
 
+  const logoClassName =
+    compact
+      ? "brand-logo compact"
+      : "brand-logo";
+
+  if (white) {
+    return (
+      <img
+        src={HFOSLogoWhite}
+        alt="HFOS"
+        className={logoClassName}
+      />
+    );
+  }
+
   return (
-    <img
-      src={logo}
-      alt="HFOS"
-      className={
-        compact
-          ? "brand-logo compact"
-          : "brand-logo"
-      }
-    />
+    <span className="brand-logo-set">
+      <img
+        src={HFOSLogo}
+        alt="HFOS"
+        className={`${logoClassName} brand-logo--light`}
+      />
+
+      <img
+        src={HFOSLogoWhite}
+        alt=""
+        aria-hidden="true"
+        className={`${logoClassName} brand-logo--dark`}
+      />
+    </span>
   );
 }

@@ -102,6 +102,45 @@ export default class AccountValidator {
       errors.currency = "Currency is required.";
     }
 
+    if (!form.baseCurrency.trim()) {
+      errors.baseCurrency =
+        "Base currency is required.";
+    }
+
+    const isForeignCurrencyAccount =
+      form.currency.trim().toUpperCase() !==
+      form.baseCurrency.trim().toUpperCase();
+
+    if (
+      isForeignCurrencyAccount &&
+      (!Number.isFinite(
+        form.exchangeRate
+      ) ||
+        form.exchangeRate <= 0)
+    ) {
+      errors.exchangeRate =
+        "Enter the exchange rate used for household reporting.";
+    }
+
+    if (
+      isForeignCurrencyAccount &&
+      form.exchangeRateEffectiveDate
+    ) {
+      const exchangeRateEffectiveDate =
+        new Date(
+          `${form.exchangeRateEffectiveDate}T00:00:00`
+        );
+
+      if (
+        Number.isNaN(
+          exchangeRateEffectiveDate.getTime()
+        )
+      ) {
+        errors.exchangeRateEffectiveDate =
+          "Enter a valid exchange-rate date.";
+      }
+    }
+
     if (
       !Number.isFinite(form.balance) ||
       form.balance < 0

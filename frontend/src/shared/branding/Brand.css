@@ -1,25 +1,41 @@
-.brand-logo{
-
-    width:220px;
-
-    height:auto;
-
-    display:block;
-
+.brand-logo-set {
+  display: block;
 }
 
-.brand-logo.compact{
-
-    width:170px;
-
+.brand-logo {
+  width: 220px;
+  height: auto;
+  display: block;
 }
 
-.brand-symbol{
+.brand-logo.compact {
+  width: 180px;
+}
 
-    width:42px;
+.brand-logo--dark {
+  display: none;
+}
 
-    height:42px;
+:root[data-theme="dark"] .brand-logo--light {
+  display: none;
+}
 
-    display:block;
+:root[data-theme="dark"] .brand-logo--dark {
+  display: block;
+}
 
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .brand-logo--light {
+    display: none;
+  }
+
+  :root[data-theme="system"] .brand-logo--dark {
+    display: block;
+  }
+}
+
+.brand-symbol {
+  width: 42px;
+  height: 42px;
+  display: block;
 }

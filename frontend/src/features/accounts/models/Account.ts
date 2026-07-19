@@ -1,4 +1,7 @@
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
+import type {
+  ExchangeRateSource,
+} from "../../../shared/services/CurrencyRateProvider";
 
 export type AccountClass =
   | "asset"
@@ -47,6 +50,22 @@ export interface Account {
   currency: string;
 
   /**
+   * Household reporting currency used when this account
+   * balance was recorded. Historical balances are not
+   * recomputed when the household base currency changes.
+   */
+  baseCurrency?: string;
+
+  /**
+   * Manual rate from the account currency into the
+   * household base currency.
+   */
+  exchangeRate?: number;
+  exchangeRateEffectiveDate?: Date;
+  exchangeRateSource?: ExchangeRateSource;
+  exchangeRateProvider?: string;
+
+  /**
    * Asset account:
    * Balance represents available funds.
    *
@@ -55,6 +74,9 @@ export interface Account {
    */
   openingBalance: number;
   currentBalance: number;
+
+  openingBaseBalance?: number;
+  currentBaseBalance?: number;
 
   accountNumber?: string;
 

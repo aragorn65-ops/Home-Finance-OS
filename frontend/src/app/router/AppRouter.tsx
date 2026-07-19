@@ -1,4 +1,9 @@
 import {
+  Suspense,
+  lazy,
+} from "react";
+
+import {
   BrowserRouter,
   Route,
   Routes,
@@ -14,20 +19,104 @@ import {
   HouseholdPage,
 } from "../../features/household";
 
-import AccountsPage from "../../features/accounts/pages/AccountsPage";
-import DashboardPage from "../../features/dashboard/pages/DashboardPage";
-import GovernancePage from "../../features/governance/pages/GovernancePage";
-import HouseholdMembersPage from "../../features/household/pages/HouseholdMembersPage";
-import ReportsPage from "../../features/reports/pages/ReportsPage";
-import SavingsPage from "../../features/savings/pages/SavingsPage";
-import SettingsPage from "../../features/settings/pages/SettingsPage";
-import SettlementsPage from "../../features/settlements/pages/SettlementsPage";
-import TransactionsPage from "../../features/transactions/pages/TransactionsPage";
-import UtilitiesPage from "../../features/utilities/pages/UtilitiesPage";
+const AccountHolderPage = lazy(
+  () =>
+    import(
+      "../../features/account-holder/pages/AccountHolderPage"
+    )
+);
+
+const AccountsPage = lazy(
+  () =>
+    import(
+      "../../features/accounts/pages/AccountsPage"
+    )
+);
+
+const AnalyticsPage = lazy(
+  () =>
+    import(
+      "../../features/analytics/pages/AnalyticsPage"
+    )
+);
+
+const DashboardPage = lazy(
+  () =>
+    import(
+      "../../features/dashboard/pages/DashboardPage"
+    )
+);
+
+const GovernancePage = lazy(
+  () =>
+    import(
+      "../../features/governance/pages/GovernancePage"
+    )
+);
+
+const HouseholdMembersPage = lazy(
+  () =>
+    import(
+      "../../features/household/pages/HouseholdMembersPage"
+    )
+);
+
+const ReportsPage = lazy(
+  () =>
+    import(
+      "../../features/reports/pages/ReportsPage"
+    )
+);
+
+const SavingsPage = lazy(
+  () =>
+    import(
+      "../../features/savings/pages/SavingsPage"
+    )
+);
+
+const SettingsPage = lazy(
+  () =>
+    import(
+      "../../features/settings/pages/SettingsPage"
+    )
+);
+
+const SettlementsPage = lazy(
+  () =>
+    import(
+      "../../features/settlements/pages/SettlementsPage"
+    )
+);
+
+const TransactionsPage = lazy(
+  () =>
+    import(
+      "../../features/transactions/pages/TransactionsPage"
+    )
+);
+
+const UtilitiesPage = lazy(
+  () =>
+    import(
+      "../../features/utilities/pages/UtilitiesPage"
+    )
+);
+
+function RouteFallback() {
+  return (
+    <div
+      role="status"
+      className="px-6 py-8 text-sm text-muted-foreground"
+    >
+      Loading...
+    </div>
+  );
+}
 
 export default function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         {/* Startup */}
         <Route
@@ -48,54 +137,110 @@ export default function AppRouter() {
         >
           <Route
             index
-            element={<DashboardPage />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <DashboardPage />
+              </Suspense>
+            }
           />
 
           <Route
             path="accounts"
-            element={<AccountsPage />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <AccountsPage />
+              </Suspense>
+            }
           />
 
           <Route
             path="transactions"
-            element={<TransactionsPage />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <TransactionsPage />
+              </Suspense>
+            }
           />
 
           <Route
             path="utilities"
-            element={<UtilitiesPage />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <UtilitiesPage />
+              </Suspense>
+            }
           />
 
           <Route
             path="settlements"
-            element={<SettlementsPage />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <SettlementsPage />
+              </Suspense>
+            }
           />
 
           <Route
             path="savings"
-            element={<SavingsPage />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <SavingsPage />
+              </Suspense>
+            }
+          />
+
+          <Route
+            path="analytics"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <AnalyticsPage />
+              </Suspense>
+            }
+          />
+
+          <Route
+            path="account-holder"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <AccountHolderPage />
+              </Suspense>
+            }
           />
 
           <Route
             path="reports"
-            element={<ReportsPage />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <ReportsPage />
+              </Suspense>
+            }
           />
 
           <Route
             path="household-members"
             element={
-              <HouseholdMembersPage />
+              <Suspense fallback={<RouteFallback />}>
+                <HouseholdMembersPage />
+              </Suspense>
             }
           />
 
           <Route
             path="help-center"
-            element={<GovernancePage />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <GovernancePage />
+              </Suspense>
+            }
           />
 
           <Route
             path="settings"
-            element={<SettingsPage />}
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <SettingsPage />
+              </Suspense>
+            }
           />
         </Route>
       </Routes>

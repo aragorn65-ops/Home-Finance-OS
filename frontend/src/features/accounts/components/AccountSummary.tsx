@@ -1,11 +1,15 @@
+import formatCurrency from "../../../shared/utils/formatCurrency";
+
 interface AccountSummaryProps {
   totalBalance: number;
   totalAccounts: number;
+  currency?: string;
 }
 
 export default function AccountSummary({
   totalBalance,
   totalAccounts,
+  currency = "PHP",
 }: AccountSummaryProps) {
   return (
     <div className="rounded-lg border p-4">
@@ -26,7 +30,10 @@ export default function AccountSummary({
           </div>
 
           <div className="text-2xl font-bold">
-            ₱{totalBalance.toLocaleString()}
+            {formatCurrency(
+              totalBalance,
+              currency
+            )}
           </div>
         </div>
       </div>

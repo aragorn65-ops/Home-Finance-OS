@@ -1,17 +1,17 @@
 import type { Transaction } from "../models/Transaction";
+import formatCurrency from "../../../shared/utils/formatCurrency";
+import {
+  normalizeTransactionCategory,
+} from "../models/TransactionCategory";
 
 type TransactionDeleteConfirmationProps = {
   transaction: Transaction;
   isDeleting?: boolean;
   errorMessage?: string;
+  currency?: string;
   onConfirm: (transaction: Transaction) => void;
   onCancel: () => void;
 };
-
-const amountFormatter = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
 
 function getTransactionTypeLabel(
   type: Transaction["type"]
@@ -35,6 +35,7 @@ export default function TransactionDeleteConfirmation({
   transaction,
   isDeleting = false,
   errorMessage,
+  currency,
   onConfirm,
   onCancel,
 }: TransactionDeleteConfirmationProps) {
@@ -42,8 +43,9 @@ export default function TransactionDeleteConfirmation({
     transaction.type
   );
 
-  const formattedAmount = amountFormatter.format(
-    transaction.amount
+  const formattedAmount = formatCurrency(
+    transaction.amount,
+    currency
   );
 
   return (
@@ -77,7 +79,9 @@ export default function TransactionDeleteConfirmation({
         </p>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          {transaction.category} · {transactionType}
+          {normalizeTransactionCategory(
+            transaction.category
+          )} · {transactionType}
         </p>
 
         <p className="mt-3 text-lg font-semibold text-foreground">

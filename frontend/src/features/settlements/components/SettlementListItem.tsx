@@ -1,13 +1,19 @@
+import "./SettlementListItem.css";
+
 import type { Settlement } from "../models/Settlement";
+import type { SettlementApplicationDetails } from "../models/SettlementApplicationDetails";
+import formatCurrency from "../../../shared/utils/formatCurrency";
 
 type SettlementListItemProps = {
   settlement: Settlement;
+  applicationDetails: SettlementApplicationDetails[];
 
   fromMemberName: string;
   toMemberName: string;
 
   sourceAccountName?: string;
   destinationAccountName?: string;
+  currency?: string;
 
   onView?: (
     settlement: Settlement
@@ -21,12 +27,6 @@ type SettlementListItemProps = {
     settlement: Settlement
   ) => void;
 };
-
-const amountFormatter =
-  new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
 function getApplicationMethodLabel(
   method:
@@ -47,10 +47,7 @@ function getAccountSummary(
     sourceAccountName &&
     destinationAccountName
   ) {
-    return (
-      `${sourceAccountName} → ` +
-      destinationAccountName
-    );
+    return `${sourceAccountName} -> ${destinationAccountName}`;
   }
 
   if (sourceAccountName) {
@@ -64,14 +61,26 @@ function getAccountSummary(
   return "No linked accounts";
 }
 
+function getApplicationSettlementLabel(
+  application: SettlementApplicationDetails
+): string {
+  return Math.round(
+    application.outstandingAmount * 100
+  ) <= 0
+    ? "Full"
+    : "Partial";
+}
+
 export default function SettlementListItem({
   settlement,
+  applicationDetails,
 
   fromMemberName,
   toMemberName,
 
   sourceAccountName,
   destinationAccountName,
+  currency,
 
   onView,
   onEdit,
@@ -82,8 +91,9 @@ export default function SettlementListItem({
       .toLocaleDateString();
 
   const formattedAmount =
-    amountFormatter.format(
-      settlement.amount
+    formatCurrency(
+      settlement.amount,
+      currency
     );
 
   const applicationMethodLabel =
@@ -98,38 +108,98 @@ export default function SettlementListItem({
     );
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border bg-white p-4 md:flex-row md:items-center md:justify-between">
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+    <div className="settlement-history-card grid gap-3 rounded-lg border px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+      <div className="min-w-0 md:pr-6">
+        <div className="mb-1 flex flex-wrap items-center gap-3 text-sm">
+          <span className="settlement-history-card__meta font-medium">
             {applicationMethodLabel}
           </span>
 
-          <span className="text-sm text-muted-foreground">
+          <span className="settlement-history-card__meta">
             {formattedDate}
           </span>
         </div>
 
-        <h3 className="truncate font-semibold text-foreground">
+        <h3 className="settlement-history-card__title truncate text-base font-semibold">
           {fromMemberName}
-          {" → "}
+          {" -> "}
           {toMemberName}
         </h3>
 
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="settlement-history-card__text text-sm">
           {accountSummary}
         </p>
 
         {settlement.referenceNumber && (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="settlement-history-card__text text-xs">
             Reference:{" "}
             {settlement.referenceNumber}
           </p>
         )}
+
+        {settlement.attachments.length >
+          0 && (
+          <p className="settlement-history-card__text text-xs">
+            Transfer receipts:{" "}
+            {settlement.attachments.length}
+          </p>
+        )}
+
+        <p className="settlement-history-card__label mb-1 mt-2 text-xs font-semibold uppercase leading-tight">
+          SETTLED ITEMS
+        </p>
+
+        {applicationDetails.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No linked items
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {applicationDetails
+              .slice(0, 3)
+              .map((application) => (
+                <div
+                  key={
+                    application
+                      .settlementApplicationId
+                  }
+                  className="grid max-w-sm gap-0.5 text-sm leading-tight"
+                >
+                  <span className="settlement-history-card__text min-w-0 truncate">
+                    {application.description ||
+                      application.category}
+                  </span>
+
+                  <span className="settlement-history-card__text flex items-center gap-2 whitespace-nowrap pl-0.5">
+                    <span className="settlement-history-card__badge rounded-full border px-2 py-0.5 text-xs font-medium leading-none">
+                      {getApplicationSettlementLabel(
+                        application
+                      )}
+                    </span>
+
+                    {formatCurrency(
+                      application.appliedAmount,
+                      currency
+                    )}
+                  </span>
+                </div>
+              ))}
+
+            {applicationDetails.length > 3 && (
+              <p className="text-xs text-muted-foreground">
+                +{applicationDetails.length - 3} more
+                settled item
+                {applicationDetails.length - 3 === 1
+                  ? ""
+                  : "s"}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 md:justify-end">
-        <span className="min-w-28 text-right text-lg font-semibold text-foreground">
+      <div className="flex flex-wrap items-center justify-start gap-3 md:justify-end">
+        <span className="settlement-history-card__amount min-w-24 text-left text-lg font-semibold leading-tight md:text-right">
           {formattedAmount}
         </span>
 
@@ -140,7 +210,7 @@ export default function SettlementListItem({
               onClick={() =>
                 onView(settlement)
               }
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+              className="rounded-md px-3 py-1.5 text-sm font-medium"
             >
               View
             </button>
@@ -152,7 +222,7 @@ export default function SettlementListItem({
               onClick={() =>
                 onEdit(settlement)
               }
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+              className="rounded-md px-3 py-1.5 text-sm font-medium"
             >
               Edit
             </button>
@@ -164,7 +234,7 @@ export default function SettlementListItem({
               onClick={() =>
                 onDelete(settlement)
               }
-              className="rounded-md border px-3 py-1.5 text-sm text-destructive hover:bg-muted"
+              className="rounded-md px-3 py-1.5 text-sm font-medium"
             >
               Delete
             </button>

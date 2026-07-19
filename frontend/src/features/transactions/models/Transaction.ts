@@ -1,6 +1,9 @@
 import type {
   StoredAttachment,
 } from "../../../shared/models/StoredAttachment";
+import type {
+  ExchangeRateSource,
+} from "../../../shared/services/CurrencyRateProvider";
 
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
@@ -48,6 +51,14 @@ export interface Transaction {
 
   type: TransactionType;
   amount: number;
+  enteredAmount?: number;
+  enteredCurrency?: string;
+  baseCurrency?: string;
+  baseAmount?: number;
+  exchangeRate?: number;
+  exchangeRateEffectiveDate?: Date;
+  exchangeRateSource?: ExchangeRateSource;
+  exchangeRateProvider?: string;
 
   sourceAccountId: string | null;
   destinationAccountId: string | null;

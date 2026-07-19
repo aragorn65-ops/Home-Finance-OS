@@ -69,6 +69,9 @@ export function saveHousehold(
   const existing =
     loadHousehold();
 
+  const isNewHousehold =
+    !existing;
+
   const now =
     new Date();
 
@@ -114,6 +117,10 @@ export function saveHousehold(
   persistHousehold(
     storedHousehold
   );
+
+  if (isNewHousehold) {
+    initializeEmptyFinancialCollections();
+  }
 
   return cloneHousehold(
     storedHousehold
@@ -189,6 +196,121 @@ export function saveHouseholdMembers(
           (member) =>
             cloneMember(member)
         ),
+
+      updatedAt:
+        new Date(),
+    };
+
+  const saved =
+    persistHousehold(
+      updatedHousehold
+    );
+
+  if (!saved) {
+    return null;
+  }
+
+  return cloneHousehold(
+    updatedHousehold
+  );
+}
+
+/**
+ * Updates the household base currency without changing
+ * historical record amounts.
+ */
+export function saveHouseholdCurrency(
+  currency: string
+): StoredHousehold | null {
+  const household =
+    loadHousehold();
+
+  const normalizedCurrency =
+    currency.trim().toUpperCase();
+
+  if (
+    !household ||
+    !normalizedCurrency
+  ) {
+    return null;
+  }
+
+  const updatedHousehold:
+    StoredHousehold = {
+      ...household,
+
+      currency:
+        normalizedCurrency,
+
+      updatedAt:
+        new Date(),
+    };
+
+  const saved =
+    persistHousehold(
+      updatedHousehold
+    );
+
+  if (!saved) {
+    return null;
+  }
+
+  return cloneHousehold(
+    updatedHousehold
+  );
+}
+
+/**
+ * Updates setup preferences after household creation.
+ *
+ * Changing the base currency only affects future display
+ * defaults. Existing financial records keep their stored
+ * amounts and exchange-rate metadata.
+ */
+export function saveHouseholdPreferences(
+  preferences: Pick<
+    HouseholdSetupState,
+    | "householdName"
+    | "country"
+    | "currency"
+    | "timezone"
+  >
+): StoredHousehold | null {
+  const household =
+    loadHousehold();
+
+  const householdName =
+    preferences.householdName.trim();
+
+  const country =
+    preferences.country.trim();
+
+  const currency =
+    preferences.currency
+      .trim()
+      .toUpperCase();
+
+  const timezone =
+    preferences.timezone.trim();
+
+  if (
+    !household ||
+    !householdName ||
+    !country ||
+    !currency ||
+    !timezone
+  ) {
+    return null;
+  }
+
+  const updatedHousehold:
+    StoredHousehold = {
+      ...household,
+
+      householdName,
+      country,
+      currency,
+      timezone,
 
       updatedAt:
         new Date(),
@@ -638,5 +760,51 @@ function isRecord(
     typeof value ===
       "object" &&
     value !== null
+  );
+}
+
+function initializeEmptyFinancialCollections():
+  void {
+  saveStoredData(
+    HFOS_STORAGE_KEYS.accounts,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.transactions,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS
+      .expenseAllocations,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.settlements,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS
+      .settlementApplications,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.providerBills,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.savingsGoals,
+    []
+  );
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS
+      .savingsActivities,
+    []
   );
 }

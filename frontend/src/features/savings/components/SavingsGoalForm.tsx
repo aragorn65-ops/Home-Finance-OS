@@ -3,9 +3,18 @@ import type {
 } from "react";
 
 import {
+  CurrencyInput,
   Input,
   Select,
 } from "../../../shared/ui";
+import CurrencyRateLookupButton from "../../../shared/ui/CurrencyRateLookupButton";
+
+import {
+  currencies,
+} from "../../../shared/data/currencies";
+import {
+  normalizeCurrency,
+} from "../../../shared/utils/currencyConversion";
 
 import type {
   Account,
@@ -24,6 +33,7 @@ import type {
 interface SavingsGoalFormProps {
   value: SavingsGoalFormModel;
   accounts: Account[];
+  baseCurrency: string;
   errors?: Record<string, string>;
 
   onChange: (
@@ -111,9 +121,21 @@ const statusOptions = [
 export default function SavingsGoalForm({
   value,
   accounts,
+  baseCurrency,
   errors = {},
   onChange,
 }: SavingsGoalFormProps) {
+  const normalizedGoalCurrency =
+    normalizeCurrency(
+      value.goalCurrency,
+      baseCurrency
+    );
+
+  const today =
+    new Date()
+      .toISOString()
+      .slice(0, 10);
+
   const updateField = <
     Field extends keyof SavingsGoalFormModel,
   >(
@@ -232,23 +254,70 @@ export default function SavingsGoalForm({
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input
+        <CurrencyInput
           label="Target Amount"
-          type="number"
           min="0.01"
-          step="0.01"
           value={value.targetAmount}
           error={errors.targetAmount}
+          onValueChange={(nextValue) =>
+            updateField(
+              "targetAmount",
+              nextValue
+            )
+          }
+        />
+
+        <Select
+          label="Goal Currency"
+          value={value.goalCurrency}
+          options={
+            currencies.filter(
+              (currency) =>
+                currency.value
+            )
+          }
+          error={errors.goalCurrency}
+          onChange={(
+            event:
+              ChangeEvent<HTMLSelectElement>
+          ) =>
+            onChange({
+              ...value,
+              goalCurrency:
+                event.target.value,
+              exchangeRateSource:
+                "manual",
+              exchangeRateProvider:
+                "",
+            })
+          }
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input
+          label="Exchange Rate"
+          type="number"
+          step="0.000001"
+          min="0.000001"
+          value={value.exchangeRate}
+          error={errors.exchangeRate}
+          helperText="Base currency value for 1 unit of the goal currency."
           onChange={(
             event:
               ChangeEvent<HTMLInputElement>
           ) =>
-            updateField(
-              "targetAmount",
-              Number(
-                event.target.value
-              )
-            )
+            onChange({
+              ...value,
+              exchangeRate:
+                Number(
+                  event.target.value
+                ),
+              exchangeRateSource:
+                "manual",
+              exchangeRateProvider:
+                "",
+            })
           }
         />
 
@@ -269,6 +338,28 @@ export default function SavingsGoalForm({
           }
         />
       </div>
+
+      {normalizedGoalCurrency !==
+        baseCurrency && (
+        <CurrencyRateLookupButton
+          fromCurrency={
+            normalizedGoalCurrency
+          }
+          toCurrency={baseCurrency}
+          effectiveDate={today}
+          onRateSelected={(rate) =>
+            onChange({
+              ...value,
+              exchangeRate:
+                rate.rate,
+              exchangeRateSource:
+                rate.source,
+              exchangeRateProvider:
+                rate.providerName ?? "",
+            })
+          }
+        />
+      )}
 
       <Select
         label="Linked Savings Account"

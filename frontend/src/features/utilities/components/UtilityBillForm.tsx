@@ -10,6 +10,9 @@ import type {
   StoredAttachment,
   StoredAttachmentCategory,
 } from "../../../shared/models/StoredAttachment";
+import CurrencyInput from "../../../shared/ui/CurrencyInput";
+import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
+import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
 
 import type {
   UtilityApplianceUsageForm,
@@ -47,6 +50,8 @@ interface UtilityBillFormProps {
 
   initialValue?: UtilityBillFormData;
 
+  defaultDate?: string;
+
   submitLabel?: string;
 
   onSubmit?: (
@@ -56,6 +61,13 @@ interface UtilityBillFormProps {
 
   onCancel?: () => void;
 }
+
+type UtilityEntryTab =
+  | "bill"
+  | "members"
+  | "appliances"
+  | "files"
+  | "review";
 
 const acceptedAttachmentMimeTypes = [
   "image/jpeg",
@@ -67,7 +79,36 @@ const acceptedAttachmentMimeTypes = [
 const maximumAttachmentCount = 3;
 
 const maximumAttachmentSizeBytes =
-  750 * 1024;
+  1024 * 1024;
+
+const utilityFieldLabels:
+  Record<string, string> = {
+    calculation: "Calculation",
+    utilityType: "Utility Type",
+    unit: "Unit",
+    providerName: "Provider Name",
+    billingDate: "Billing Date",
+    dueDate: "Due Date",
+    transactionDate: "Transaction Date",
+    totalBillAmount: "Total Bill Amount",
+    ratePerUnit: "Rate per Unit",
+    totalConsumption:
+      "Consumption",
+    memberShares:
+      "Member Usage and Sharing",
+    applianceUsages:
+      "Appliance Usage",
+    directUsageAmount:
+      "Direct Usage Amount",
+    shares: "Member Shares",
+    paidByMemberId: "Paid By",
+    sourceAccountId: "Payment Account",
+    visibility: "Visibility",
+    description: "Description",
+    notes: "Notes",
+    attachments:
+      "Provider Bill or Receipt",
+  };
 
 function isAcceptedAttachmentMimeType(
   mimeType: string
@@ -158,6 +199,7 @@ export default function UtilityBillForm({
   members,
   accounts = [],
   initialValue,
+  defaultDate,
   submitLabel = "Save Utility Bill",
   onSubmit,
   onCancel,
@@ -167,7 +209,8 @@ export default function UtilityBillForm({
       () =>
         createInitialForm(
           members,
-          initialValue
+          initialValue,
+          defaultDate
         )
     );
 
@@ -178,11 +221,55 @@ export default function UtilityBillForm({
     UtilityBillShareResult | undefined
   >();
 
+  const [
+    activeTab,
+    setActiveTab,
+  ] = useState<UtilityEntryTab>(
+    "bill"
+  );
+
   const [errors, setErrors] =
     useState<Record<string, string>>({});
 
   const [message, setMessage] =
     useState("");
+
+  const [
+    validationAlertErrors,
+    setValidationAlertErrors,
+  ] = useState<Record<string, string>>(
+    {}
+  );
+
+  const [
+    isValidationAlertOpen,
+    setIsValidationAlertOpen,
+  ] = useState(false);
+
+  const showValidationAlert = (
+    nextErrors:
+      Record<string, string> | undefined,
+    fallbackMessage =
+      "Please correct the highlighted fields."
+  ): void => {
+    const visibleErrors =
+      nextErrors &&
+      Object.keys(nextErrors).length >
+        0
+        ? nextErrors
+        : {
+            calculation:
+              fallbackMessage,
+          };
+
+    setValidationAlertErrors(
+      visibleErrors
+    );
+
+    setIsValidationAlertOpen(
+      true
+    );
+  };
 
   const memberNames =
     useMemo(
@@ -213,6 +300,14 @@ export default function UtilityBillForm({
       accounts,
       form.paidByMemberId,
     ]);
+
+  const derivedWaterRatePerUnit =
+    form.utilityType === "water" &&
+    form.totalBillAmount > 0 &&
+    form.totalConsumption > 0
+      ? form.totalBillAmount /
+        form.totalConsumption
+      : 0;
 
   const updateField = <
     Key extends keyof UtilityBillFormData,
@@ -311,15 +406,23 @@ export default function UtilityBillForm({
   const setAttachmentError = (
     attachmentError: string
   ): void => {
-    setErrors((current) => ({
-      ...current,
-
+    const nextErrors = {
       attachments:
         attachmentError,
+    };
+
+    setErrors((current) => ({
+      ...current,
+      ...nextErrors,
     }));
 
     setMessage(
       "Unable to add attachment."
+    );
+
+    showValidationAlert(
+      nextErrors,
+      attachmentError
     );
 
     setPreviewResult(
@@ -330,9 +433,9 @@ export default function UtilityBillForm({
   const clearAttachmentError =
     (): void => {
       setErrors((current) => {
-        if (!current.attachments) {
-          return current;
-        }
+      if (!current.attachments) {
+        return current;
+      }
 
         const nextErrors = {
           ...current,
@@ -340,10 +443,11 @@ export default function UtilityBillForm({
 
         delete nextErrors.attachments;
 
-        return nextErrors;
-      });
+      return nextErrors;
+    });
 
-      setMessage("");
+    setIsValidationAlertOpen(false);
+    setMessage("");
   };
 
   const addAttachmentFiles =
@@ -386,7 +490,7 @@ export default function UtilityBillForm({
           maximumAttachmentSizeBytes
         ) {
           setAttachmentError(
-            `${file.name} exceeds the 750 KB attachment limit.`
+            `${file.name} exceeds the 1 MB attachment limit.`
           );
 
           return;
@@ -568,14 +672,25 @@ export default function UtilityBillForm({
         );
 
       if (!result.success) {
+        const nextErrors =
+          result.errors ?? {};
+
         setErrors(
-          result.errors ?? {}
+          nextErrors
         );
 
         setMessage(
           result.message ??
             "Unable to calculate the utility bill."
         );
+
+        showValidationAlert(
+          nextErrors,
+          result.message ??
+            "Unable to calculate the utility bill."
+        );
+
+        setActiveTab("review");
 
         setPreviewResult(
           undefined
@@ -593,6 +708,13 @@ export default function UtilityBillForm({
             "The utility calculation returned no result.",
         });
 
+        showValidationAlert({
+          calculation:
+            "The utility calculation returned no result.",
+        });
+
+        setActiveTab("review");
+
         setMessage(
           "Unable to calculate the utility bill."
         );
@@ -605,6 +727,8 @@ export default function UtilityBillForm({
       }
 
       setErrors({});
+      setValidationAlertErrors({});
+      setIsValidationAlertOpen(false);
 
       setMessage(
         result.message ??
@@ -614,6 +738,8 @@ export default function UtilityBillForm({
       setPreviewResult(
         calculation
       );
+
+      setActiveTab("review");
 
       return calculation;
     };
@@ -639,11 +765,76 @@ export default function UtilityBillForm({
     );
 
     setErrors({});
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
     setMessage("");
   }
 
   return (
     <div className="space-y-6">
+      <FormValidationAlert
+        open={isValidationAlertOpen}
+        errors={validationAlertErrors}
+        fieldLabels={
+          utilityFieldLabels
+        }
+        onClose={() =>
+          setIsValidationAlertOpen(
+            false
+          )
+        }
+      />
+
+      <div className="sticky top-0 z-20 rounded-xl border bg-card/95 p-2 shadow-sm backdrop-blur">
+        <div
+          className="flex gap-2 overflow-x-auto"
+          role="tablist"
+          aria-label="Utility bill entry sections"
+        >
+          <UtilityEntryTabButton
+            label="Bill"
+            isActive={activeTab === "bill"}
+            onClick={() => setActiveTab("bill")}
+          />
+
+          <UtilityEntryTabButton
+            label="Members"
+            isActive={
+              activeTab === "members"
+            }
+            onClick={() =>
+              setActiveTab("members")
+            }
+          />
+
+          {form.utilityType ===
+            "electricity" && (
+            <UtilityEntryTabButton
+              label="Appliances"
+              isActive={
+                activeTab === "appliances"
+              }
+              onClick={() =>
+                setActiveTab("appliances")
+              }
+            />
+          )}
+
+          <UtilityEntryTabButton
+            label="Files & Payment"
+            isActive={activeTab === "files"}
+            onClick={() => setActiveTab("files")}
+          />
+
+          <UtilityEntryTabButton
+            label="Review"
+            isActive={activeTab === "review"}
+            onClick={() => setActiveTab("review")}
+          />
+        </div>
+      </div>
+
+      {activeTab === "bill" && (
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -652,8 +843,11 @@ export default function UtilityBillForm({
 
           <p className="mt-1 text-sm text-slate-500">
             Enter the total amount payable and the
-            provider rate used to calculate direct member
-            usage.
+            {form.utilityType === "water"
+              ? " provider consumption used to derive the sharing rate."
+              : form.utilityType === "internet"
+                ? " fixed amount to divide among household members."
+                : " provider rate used to calculate direct member usage."}
           </p>
         </header>
 
@@ -677,8 +871,39 @@ export default function UtilityBillForm({
                   utilityType ===
                     "electricity"
                     ? "kWh"
-                    : "m3"
+                    : utilityType ===
+                      "water"
+                      ? "m3"
+                      : "fixed"
                 );
+
+                if (
+                  utilityType === "internet"
+                ) {
+                  setActiveTab("bill");
+
+                  setForm(
+                    (current) => ({
+                      ...current,
+                      utilityType,
+                      unit: "fixed",
+                      ratePerUnit: 0,
+                      totalConsumption: 0,
+                      applianceUsages: [],
+                      memberShares:
+                        current.memberShares.map(
+                          (memberShare) => ({
+                            ...memberShare,
+                            previousReading: 0,
+                            currentReading: 0,
+                            isMeterReset: false,
+                            meterResetReason: "",
+                            resetUsageQuantity: 0,
+                          })
+                        ),
+                    })
+                  );
+                }
               }}
             >
               <option value="electricity">
@@ -688,7 +913,26 @@ export default function UtilityBillForm({
               <option value="water">
                 Water
               </option>
+
+              <option value="internet">
+                Internet
+              </option>
             </select>
+          </Field>
+
+          <Field label="Provider Name">
+            <input
+              className={inputClassName}
+              type="text"
+              value={form.providerName}
+              onChange={(event) =>
+                updateField(
+                  "providerName",
+                  event.target.value
+                )
+              }
+              placeholder="Meralco, Maynilad, provider"
+            />
           </Field>
 
           <Field label="Billing Date">
@@ -705,58 +949,123 @@ export default function UtilityBillForm({
             />
           </Field>
 
+          <Field label="Due Date">
+            <input
+              className={inputClassName}
+              type="date"
+              value={form.dueDate}
+              onChange={(event) =>
+                updateField(
+                  "dueDate",
+                  event.target.value
+                )
+              }
+            />
+          </Field>
+
           <Field
             label="Total Bill Amount"
             helper="The complete amount payable to the utility provider."
           >
-            <input
+            <CurrencyInput
               className={inputClassName}
-              type="number"
               min="0"
-              step="0.01"
               value={
-                form.totalBillAmount ||
-                ""
+                form.totalBillAmount
               }
-              onChange={(event) =>
+              onValueChange={(nextValue) =>
                 updateField(
                   "totalBillAmount",
-                  parseNumber(
-                    event.target.value
-                  )
+                  nextValue
                 )
               }
-              placeholder="0.00"
             />
           </Field>
 
-          <Field
-            label={`Rate per ${form.unit}`}
-            helper="The rate used to calculate each member's direct usage."
-          >
-            <input
-              className={inputClassName}
-              type="number"
-              min="0"
-              step="0.0001"
-              value={
-                form.ratePerUnit ||
-                ""
+          {form.utilityType ===
+          "internet" ? (
+            <Field
+              label="Sharing Basis"
+              helper="Internet bills are fixed provider bills. Use member sharing below to divide the amount."
+            >
+              <input
+                className={`${inputClassName} bg-slate-50 text-slate-500`}
+                value="Fixed amount"
+                readOnly
+              />
+            </Field>
+          ) : form.utilityType ===
+          "water" ? (
+            <Field
+              label={
+                <>
+                  Consumption (m<sup>3</sup>)
+                </>
               }
-              onChange={(event) =>
-                updateField(
-                  "ratePerUnit",
-                  parseNumber(
-                    event.target.value
+              helper="Total water consumption from the provider bill."
+            >
+              <input
+                className={inputClassName}
+                type="number"
+                min="0"
+                step="0.001"
+                value={
+                  form.totalConsumption ||
+                  ""
+                }
+                onChange={(event) =>
+                  updateField(
+                    "totalConsumption",
+                    parseNumber(
+                      event.target.value
+                    )
                   )
-                )
-              }
-              placeholder="0.00"
-            />
-          </Field>
+                }
+                placeholder="0.000"
+              />
+
+              {derivedWaterRatePerUnit >
+                0 && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Derived rate used for sharing:{" "}
+                  {formatCurrency(
+                    derivedWaterRatePerUnit
+                  )}{" "}
+                  per m<sup>3</sup>
+                </p>
+              )}
+            </Field>
+          ) : (
+            <Field
+              label={`Rate per ${form.unit}`}
+              helper="The rate used to calculate each member's direct usage."
+            >
+              <input
+                className={inputClassName}
+                type="number"
+                min="0"
+                step="0.0001"
+                value={
+                  form.ratePerUnit ||
+                  ""
+                }
+                onChange={(event) =>
+                  updateField(
+                    "ratePerUnit",
+                    parseNumber(
+                      event.target.value
+                    )
+                  )
+                }
+                placeholder="0.00"
+              />
+            </Field>
+          )}
         </div>
       </section>
+      )}
 
+      {activeTab === "members" && (
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -790,8 +1099,10 @@ export default function UtilityBillForm({
                     </h3>
 
                     <p className="mt-1 text-xs text-slate-500">
-                      Leave meter readings at zero when
-                      this member has no submeter.
+                      {form.utilityType ===
+                      "internet"
+                        ? "Use sharing or fixed compensation for this fixed provider bill."
+                        : "Leave meter readings at zero when this member has no submeter."}
                     </p>
                   </div>
 
@@ -807,95 +1118,92 @@ export default function UtilityBillForm({
                 </div>
 
                 <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-                  <Field label="Saved Submeter">
-                    <input
-                      className={inputClassName}
-                      type="text"
-                      value={
-                        memberShare.utilityMeterId
-                      }
-                      onChange={(event) =>
-                        updateMemberShare(
-                          memberIndex,
-                          {
-                            utilityMeterId:
-                              event.target.value,
+                  {form.utilityType !==
+                    "internet" && (
+                    <>
+                      <Field label="Saved Submeter">
+                        <input
+                          className={inputClassName}
+                          type="text"
+                          value={
+                            memberShare.utilityMeterId
                           }
-                        )
-                      }
-                      placeholder="Optional meter ID"
-                    />
-                  </Field>
+                          onChange={(event) =>
+                            updateMemberShare(
+                              memberIndex,
+                              {
+                                utilityMeterId:
+                                  event.target.value,
+                              }
+                            )
+                          }
+                          placeholder="Optional meter ID"
+                        />
+                      </Field>
 
-                  <Field label="Previous Reading">
-                    <input
-                      className={inputClassName}
-                      type="number"
-                      min="0"
-                      step="0.001"
-                      value={
-                        memberShare.previousReading ||
-                        ""
-                      }
-                      onChange={(event) =>
-                        updateMemberShare(
-                          memberIndex,
-                          {
-                            previousReading:
-                              parseNumber(
-                                event.target.value
-                              ),
+                      <Field label="Previous Reading">
+                        <input
+                          className={inputClassName}
+                          type="number"
+                          min="0"
+                          step="0.001"
+                          value={
+                            memberShare.previousReading ||
+                            ""
                           }
-                        )
-                      }
-                      placeholder="0"
-                    />
-                  </Field>
+                          onChange={(event) =>
+                            updateMemberShare(
+                              memberIndex,
+                              {
+                                previousReading:
+                                  parseNumber(
+                                    event.target.value
+                                  ),
+                              }
+                            )
+                          }
+                          placeholder="0"
+                        />
+                      </Field>
 
-                  <Field label="Current Reading">
-                    <input
-                      className={inputClassName}
-                      type="number"
-                      min="0"
-                      step="0.001"
-                      value={
-                        memberShare.currentReading ||
-                        ""
-                      }
-                      onChange={(event) =>
-                        updateMemberShare(
-                          memberIndex,
-                          {
-                            currentReading:
-                              parseNumber(
-                                event.target.value
-                              ),
+                      <Field label="Current Reading">
+                        <input
+                          className={inputClassName}
+                          type="number"
+                          min="0"
+                          step="0.001"
+                          value={
+                            memberShare.currentReading ||
+                            ""
                           }
-                        )
-                      }
-                      placeholder="0"
-                    />
-                  </Field>
+                          onChange={(event) =>
+                            updateMemberShare(
+                              memberIndex,
+                              {
+                                currentReading:
+                                  parseNumber(
+                                    event.target.value
+                                  ),
+                              }
+                            )
+                          }
+                          placeholder="0"
+                        />
+                      </Field>
+                    </>
+                  )}
 
                   <Field
                     label="Fixed Compensation"
                     helper="A member with fixed compensation is excluded from the equal share of the remaining bill."
                   >
-                    <input
+                    <CurrencyInput
                       className={inputClassName}
-                      type="number"
                       min="0"
-                      step="0.01"
                       value={
-                        memberShare.fixedCompensationAmount ||
-                        ""
+                        memberShare.fixedCompensationAmount
                       }
-                      onChange={(event) => {
-                        const fixedCompensationAmount =
-                          parseNumber(
-                            event.target.value
-                          );
-
+                      onValueChange={(fixedCompensationAmount) => {
                         updateMemberShare(
                           memberIndex,
                           {
@@ -941,42 +1249,47 @@ export default function UtilityBillForm({
                     </label>
                   </div>
 
-                  <div className="flex items-end">
-                    <label className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={
-                          memberShare.isMeterReset
-                        }
-                        onChange={(event) =>
-                          updateMemberShare(
-                            memberIndex,
-                            {
-                              isMeterReset:
-                                event.target
-                                  .checked,
+                  {form.utilityType !==
+                    "internet" && (
+                    <div className="flex items-end">
+                      <label className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={
+                            memberShare.isMeterReset
+                          }
+                          onChange={(event) =>
+                            updateMemberShare(
+                              memberIndex,
+                              {
+                                isMeterReset:
+                                  event.target
+                                    .checked,
 
-                              meterResetReason:
-                                event.target
-                                  .checked
-                                  ? memberShare.meterResetReason
-                                  : "",
+                                meterResetReason:
+                                  event.target
+                                    .checked
+                                    ? memberShare.meterResetReason
+                                    : "",
 
-                              resetUsageQuantity:
-                                event.target
-                                  .checked
-                                  ? memberShare.resetUsageQuantity
-                                  : 0,
-                            }
-                          )
-                        }
-                      />
+                                resetUsageQuantity:
+                                  event.target
+                                    .checked
+                                    ? memberShare.resetUsageQuantity
+                                    : 0,
+                              }
+                            )
+                          }
+                        />
 
-                      Meter reset or replaced
-                    </label>
-                  </div>
+                        Meter reset or replaced
+                      </label>
+                    </div>
+                  )}
 
-                  {memberShare.isMeterReset && (
+                  {form.utilityType !==
+                    "internet" &&
+                    memberShare.isMeterReset && (
                     <>
                       <Field label="Reset Reason">
                         <input
@@ -1035,8 +1348,10 @@ export default function UtilityBillForm({
           )}
         </div>
       </section>
+      )}
 
-      {form.utilityType ===
+      {activeTab === "appliances" &&
+        form.utilityType ===
         "electricity" && (
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <SectionHeader
@@ -1229,6 +1544,8 @@ export default function UtilityBillForm({
         </section>
       )}
 
+      {activeTab === "files" && (
+      <>
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -1248,7 +1565,7 @@ export default function UtilityBillForm({
             </span>
 
             <span className="mt-1 text-xs text-slate-500">
-              JPEG, PNG, WebP, or PDF — up to 750 KB
+              JPEG, PNG, WebP, or PDF - up to 1 MB
             </span>
 
             <input
@@ -1360,16 +1677,17 @@ export default function UtilityBillForm({
                   </div>
 
                   <div className="flex gap-2 md:flex-col">
-                    <a
-                      href={
-                        attachment.dataUrl
-                      }
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
                       className={secondaryButtonClassName}
+                      type="button"
+                      onClick={() =>
+                        openAttachmentPreview(
+                          attachment
+                        )
+                      }
                     >
                       Open
-                    </a>
+                    </button>
 
                     <button
                       className={dangerButtonClassName}
@@ -1399,12 +1717,13 @@ export default function UtilityBillForm({
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
-            Payment and Transaction Details
+            Payment Details
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Select who paid the provider and optionally
-            link the payment account.
+            Leave these blank while the bill is unpaid.
+            Add the payer, account, and receipt after a
+            member pays the provider.
           </p>
         </header>
 
@@ -1579,8 +1898,11 @@ export default function UtilityBillForm({
           </div>
         </div>
       </section>
+      </>
+      )}
 
-      {(message ||
+      {activeTab === "review" &&
+        (message ||
         Object.keys(errors).length >
           0) && (
         <section
@@ -1621,7 +1943,7 @@ export default function UtilityBillForm({
         </section>
       )}
 
-      <div className="flex flex-wrap justify-end gap-3">
+      <div className="sticky bottom-0 z-20 flex flex-wrap justify-end gap-3 rounded-xl border bg-card/95 p-3 shadow-lg backdrop-blur">
         {onCancel && (
           <button
             className={secondaryButtonClassName}
@@ -1653,7 +1975,8 @@ export default function UtilityBillForm({
         )}
       </div>
 
-      {previewResult && (
+      {activeTab === "review" &&
+        previewResult && (
         <UtilityBillSharePreview
           result={previewResult}
           memberNames={memberNames}
@@ -1663,8 +1986,36 @@ export default function UtilityBillForm({
   );
 }
 
-interface FieldProps {
+interface UtilityEntryTabButtonProps {
   label: string;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+function UtilityEntryTabButton({
+  label,
+  isActive,
+  onClick,
+}: UtilityEntryTabButtonProps) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={isActive}
+      className={`shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+        isActive
+          ? "bg-blue-600 text-white"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      }`}
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  );
+}
+
+interface FieldProps {
+  label: ReactNode;
   helper?: string;
   children: ReactNode;
 }
@@ -1774,6 +2125,9 @@ function createInitialForm(
   members: UtilityMemberOption[],
   initialValue:
     | UtilityBillFormData
+    | undefined,
+  defaultDate:
+    | string
     | undefined
 ): UtilityBillFormData {
   if (initialValue) {
@@ -1783,6 +2137,7 @@ function createInitialForm(
   }
 
   const today =
+    defaultDate ??
     formatDateInput(
       new Date()
     );
@@ -1791,6 +2146,7 @@ function createInitialForm(
     ...defaultUtilityBillForm,
 
     billingDate: today,
+    dueDate: today,
     transactionDate: today,
 
     memberShares:
@@ -1912,10 +2268,10 @@ const inputClassName =
   "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
 
 const primaryButtonClassName =
-  "min-h-11 rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-700";
+  "min-h-11 min-w-48 rounded-lg bg-[#dbeafe] px-6 py-2 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-[#9fbce2] focus:outline-none focus:ring-2 focus:ring-blue-500/30";
 
 const secondaryButtonClassName =
-  "min-h-11 rounded-lg border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50";
+  "min-h-11 min-w-48 rounded-lg border bg-background px-6 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500/20";
 
 const dangerButtonClassName =
   "min-h-11 w-full rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50";

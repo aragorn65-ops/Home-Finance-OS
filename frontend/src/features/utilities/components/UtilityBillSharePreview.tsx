@@ -1,4 +1,8 @@
 import type {
+  ReactNode,
+} from "react";
+
+import type {
   UtilityBillShareResult,
 } from "../models/UtilityBillShareResult";
 
@@ -65,10 +69,37 @@ export default function UtilityBillSharePreview({
         />
 
         <SummaryCard
-          label={`Rate per ${result.unit}`}
+          label={
+            result.utilityType === "internet"
+              ? "Sharing Basis"
+              : result.utilityType === "water"
+              ? (
+                  <>
+                    Derived rate per{" "}
+                    <UnitLabel unit={result.unit} />
+                  </>
+                )
+              : (
+                  <>
+                    Rate per{" "}
+                    <UnitLabel unit={result.unit} />
+                  </>
+                )
+          }
           value={formatCurrency(
-            result.ratePerUnit
+            result.utilityType ===
+              "internet"
+              ? result.totalBillAmount
+              : result.ratePerUnit
           )}
+          helper={
+            result.utilityType ===
+            "internet"
+              ? "Fixed provider bill shared by selected members."
+              : result.utilityType === "water"
+              ? "Calculated from total bill amount divided by consumption."
+              : undefined
+          }
         />
 
         <SummaryCard
@@ -92,9 +123,14 @@ export default function UtilityBillSharePreview({
           value={formatCurrency(
             result.totalSubmeterChargeAmount
           )}
-          helper={`${formatQuantity(
-            result.totalSubmeterConsumption
-          )} ${result.unit}`}
+          helper={
+            <>
+              {formatQuantity(
+                result.totalSubmeterConsumption
+              )}{" "}
+              <UnitLabel unit={result.unit} />
+            </>
+          }
         />
 
         <SummaryCard
@@ -102,9 +138,14 @@ export default function UtilityBillSharePreview({
           value={formatCurrency(
             result.totalApplianceChargeAmount
           )}
-          helper={`${formatQuantity(
-            result.totalApplianceConsumption
-          )} ${result.unit}`}
+          helper={
+            <>
+              {formatQuantity(
+                result.totalApplianceConsumption
+              )}{" "}
+              <UnitLabel unit={result.unit} />
+            </>
+          }
         />
 
         <SummaryCard
@@ -334,9 +375,9 @@ export default function UtilityBillSharePreview({
 }
 
 interface SummaryCardProps {
-  label: string;
+  label: ReactNode;
   value: string;
-  helper?: string;
+  helper?: ReactNode;
 }
 
 function SummaryCard({
@@ -404,10 +445,28 @@ function AmountWithQuantity({
 
       <div className="text-xs text-slate-500">
         {formatQuantity(quantity)}{" "}
-        {unit}
+        <UnitLabel unit={unit} />
       </div>
     </div>
   );
+}
+
+interface UnitLabelProps {
+  unit: string;
+}
+
+function UnitLabel({
+  unit,
+}: UnitLabelProps) {
+  if (unit === "m3") {
+    return (
+      <>
+        m<sup>3</sup>
+      </>
+    );
+  }
+
+  return <>{unit}</>;
 }
 
 function formatCurrency(

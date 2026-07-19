@@ -1,0 +1,157 @@
+# Home Finance OS Sprint 16
+
+## Data Backup and Restore
+
+**Release:** v0.16.0-alpha
+**Date:** July 18, 2026
+**Branch:** sprint-16-data-backup-restore
+**Status:** Closed
+
+---
+
+## Sprint Objective
+
+Sprint 16 should make private-alpha data safer before cloud sync or authentication work begins.
+
+The main goal is to let a user export the browser-local HFOS data into a portable backup file and restore from a validated backup file later. This should protect test households during QA and create the foundation for future Google Drive or cloud backup integrations.
+
+---
+
+## Planned Scope
+
+Sprint 16 candidates include:
+
+* Add a Settings Data & Backup section.
+* Add Export Backup for current browser-local HFOS data.
+* Add Import / Restore Backup from a local `.hfos-backup.json` file.
+* Validate backup schema, app name, backup version, and required data collections before restore.
+* Warn clearly before restore replaces current browser data.
+* Reload after successful restore so repository state hydrates from restored storage.
+* Keep Clear Test Data and Reset All Application Data distinct from backup/restore.
+* Update HOW_TO_USE and release notes with backup/restore guidance.
+
+---
+
+## Backup File Scope
+
+Recommended first slice:
+
+* Store a versioned backup envelope.
+* Include created/exported timestamp.
+* Include HFOS storage schema version.
+* Include the active household record.
+* Include accounts, transactions, expense allocations, settlements, settlement applications, savings goals, and savings activities.
+* Include display preferences only when they are useful and non-sensitive, such as theme preference.
+* Do not include browser-only temporary session state such as the selected reporting month.
+
+Implemented:
+
+* Added a local backup service that exports a versioned HFOS `.hfos-backup.json` file.
+* Included household, accounts, transactions, expense allocations, settlements, settlement applications, savings goals, savings activities, and theme preference in the backup file.
+* Added Settings Data & Backup controls for Export Backup and Import Backup.
+* Added Restore from Backup on the household setup screen so a clean browser can restore without creating a temporary household.
+* Added restore validation for JSON parsing, HFOS backup identity, backup version, storage schema version, required records, collection shape, household shape, and theme preference shape.
+* Added an embedded backup summary with household name, export date, and record counts, while keeping preview derivation compatible with earlier Sprint 16 backups.
+* Added a restore confirmation before replacing current browser-local HFOS data.
+* Added restore preview metadata showing household name, export date, and record counts before confirmation.
+* Added restore rollback protection so current browser data is restored if a storage write fails mid-restore.
+* Cleared backup file pickers after failed validation/read attempts so testers can retry the same file immediately.
+* Showed the exported backup filename after a successful Settings export.
+* Styled validated restore-ready confirmations with success coloring while keeping failed restore/read/validation messages red.
+* Added non-destructive household preference editing in Settings with an explicit Save Preferences confirmation and Dashboard redirect; financial history is preserved.
+* Reloaded the app after successful restore so repositories hydrate from restored storage.
+
+Deferred:
+
+* Google Drive backup.
+* Auto-backup scheduling.
+* Conflict resolution between multiple devices.
+* Authenticated cloud storage.
+* Encrypted backup files.
+
+---
+
+## Restore Rules
+
+Restore should:
+
+* Require an explicit file selection.
+* Reject invalid JSON.
+* Reject files that are not HFOS backup files.
+* Reject unsupported backup versions.
+* Reject malformed required collections.
+* Show a confirmation before replacing current local data.
+* Replace current browser-local HFOS records only after validation passes.
+* Roll back to the pre-restore browser data if a write fails.
+* Reload after success.
+
+Restore should not:
+
+* Merge partially with current data in the first slice.
+* Silently overwrite current data.
+* Recompute historical currency conversions.
+* Seed demo data after restore.
+
+---
+
+## Settings UX
+
+Settings should separate data actions by intent:
+
+* Data & Backup
+  * Export Backup
+  * Import Backup
+* QA Cleanup
+  * Clear Test Data
+* Full Reset
+  * Reset All Application Data
+
+Backup and restore should feel practical and calm, not like a dashboard prompt. Future Google Drive backup can live in the same Data & Backup section after local backup/restore is stable.
+
+---
+
+## Verification Targets
+
+Sprint 16 should verify:
+
+```text
+npm.cmd run build
+npm.cmd run lint
+git diff --check
+```
+
+Manual QA should include:
+
+* Export from a household with accounts and transactions.
+* Restore into a clean browser state.
+* Restore from the household setup screen before creating a new household.
+* Restore after Clear Test Data.
+* Confirm restore preview metadata matches the selected backup before restoring.
+* Confirm restore failure does not leave partial restored data.
+* Reject invalid JSON.
+* Reject a JSON file that is not an HFOS backup.
+* Retry the same rejected backup file and confirm validation runs again.
+* Confirm valid backup restore prompts use success styling and restore failures remain red.
+* Confirm restored historical currency fields remain unchanged.
+* Confirm household preference changes in Settings are not stored until Save Preferences is pressed.
+* Confirm successful Save Preferences redirects to Dashboard.
+* Confirm household name changes in Settings do not affect accounts, transactions, reports, or backup restore.
+* Confirm Settings backup/restore controls fit mobile and tablet widths.
+
+---
+
+## Manual QA Result
+
+Passed on July 18, 2026:
+
+* Import during household creation.
+* Household name change in Settings.
+* Clear Test Data preserving household setup.
+* Import data from Settings.
+* Save Preferences redirect to Dashboard.
+
+---
+
+## Sprint Result
+
+Sprint 16 is closed. Local backup export/restore is implemented, household setup can restore from backup before creating a new household, Settings preferences save explicitly before redirecting to Dashboard, and QA cleanup remains separate from full reset.

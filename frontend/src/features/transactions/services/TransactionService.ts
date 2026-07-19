@@ -4,6 +4,10 @@ import type {
 } from "../models/Transaction";
 
 import type { TransactionForm } from "../models/TransactionForm";
+import {
+  isCanonicalTransactionCategory,
+  normalizeTransactionCategory,
+} from "../models/TransactionCategory";
 
 import type {
   AllocationPaymentStatus,
@@ -15,6 +19,9 @@ import TransactionValidator from "../validators/TransactionValidator";
 
 import AccountService from "../../accounts/services/AccountService";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+import {
+  loadHousehold,
+} from "../../household/services/householdStorage";
 
 import AllocationPaymentService from "../../settlements/services/AllocationPaymentService";
 
@@ -24,6 +31,13 @@ import {
   OperationResults,
   type OperationResult,
 } from "../../../shared/types";
+
+import {
+  convertEnteredAmount,
+  normalizeCurrency,
+  normalizeExchangeRate,
+  roundCurrencyAmount,
+} from "../../../shared/utils/currencyConversion";
 
 type AccountOperationType =
   | "debit"
@@ -35,7 +49,42 @@ interface AccountOperation {
   amount: number;
 }
 
+interface NormalizedTransactionCurrency {
+  amount: number;
+  enteredAmount: number;
+  enteredCurrency: string;
+  baseCurrency: string;
+  baseAmount: number;
+  exchangeRate: number;
+  exchangeRateEffectiveDate: Date;
+  exchangeRateSource: "manual" | "api";
+  exchangeRateProvider?: string;
+}
+
 export default class TransactionService {
+  private static normalizeCategoryForStorage(
+    category: string
+  ): string {
+    const trimmedCategory =
+      category.trim();
+
+    const normalizedCategory =
+      normalizeTransactionCategory(
+        trimmedCategory
+      );
+
+    if (
+      normalizedCategory === "Other" &&
+      !isCanonicalTransactionCategory(
+        trimmedCategory
+      )
+    ) {
+      return trimmedCategory;
+    }
+
+    return normalizedCategory;
+  }
+
   /**
    * Returns all transactions ordered by transaction date,
    * newest first.
@@ -469,6 +518,12 @@ export default class TransactionService {
     const now =
       new Date();
 
+    const currencyDetails =
+      this.normalizeCurrencyDetails(
+        form,
+        householdId
+      );
+
     const recordedByMemberId =
       form.paidByMemberId
         .trim() ||
@@ -505,7 +560,36 @@ export default class TransactionService {
           form.type,
 
         amount:
-          form.amount,
+          currencyDetails.amount,
+
+        enteredAmount:
+          currencyDetails
+            .enteredAmount,
+
+        enteredCurrency:
+          currencyDetails
+            .enteredCurrency,
+
+        baseCurrency:
+          currencyDetails
+            .baseCurrency,
+
+        baseAmount:
+          currencyDetails.baseAmount,
+
+        exchangeRate:
+          currencyDetails
+            .exchangeRate,
+
+        exchangeRateEffectiveDate:
+          currencyDetails
+            .exchangeRateEffectiveDate,
+        exchangeRateSource:
+          currencyDetails
+            .exchangeRateSource,
+        exchangeRateProvider:
+          currencyDetails
+            .exchangeRateProvider,
 
         sourceAccountId:
           form.type ===
@@ -522,7 +606,9 @@ export default class TransactionService {
                 .trim(),
 
         category:
-          form.category.trim(),
+          this.normalizeCategoryForStorage(
+            form.category
+          ),
 
         description:
           form.description.trim(),
@@ -744,6 +830,12 @@ export default class TransactionService {
         .trim() ||
       undefined;
 
+    const currencyDetails =
+      this.normalizeCurrencyDetails(
+        form,
+        existing.householdId
+      );
+
     const updatedTransaction:
       Transaction = {
         ...existing,
@@ -773,7 +865,36 @@ export default class TransactionService {
           form.type,
 
         amount:
-          form.amount,
+          currencyDetails.amount,
+
+        enteredAmount:
+          currencyDetails
+            .enteredAmount,
+
+        enteredCurrency:
+          currencyDetails
+            .enteredCurrency,
+
+        baseCurrency:
+          currencyDetails
+            .baseCurrency,
+
+        baseAmount:
+          currencyDetails.baseAmount,
+
+        exchangeRate:
+          currencyDetails
+            .exchangeRate,
+
+        exchangeRateEffectiveDate:
+          currencyDetails
+            .exchangeRateEffectiveDate,
+        exchangeRateSource:
+          currencyDetails
+            .exchangeRateSource,
+        exchangeRateProvider:
+          currencyDetails
+            .exchangeRateProvider,
 
         sourceAccountId:
           form.type ===
@@ -790,7 +911,9 @@ export default class TransactionService {
                 .trim(),
 
         category:
-          form.category.trim(),
+          this.normalizeCategoryForStorage(
+            form.category
+          ),
 
         description:
           form.description.trim(),
@@ -1168,6 +1291,105 @@ export default class TransactionService {
         transaction.amount,
         form.allocations
       );
+  }
+
+  private static normalizeCurrencyDetails(
+    form: TransactionForm,
+    householdId: string
+  ): NormalizedTransactionCurrency {
+    const household =
+      loadHousehold();
+
+    const baseCurrency =
+      normalizeCurrency(
+        household?.id === householdId
+          ? household.currency
+          : undefined
+      );
+
+    const transactionDate =
+      new Date(
+        `${form.transactionDate}T00:00:00`
+      );
+
+    const exchangeRateEffectiveDate =
+      form.exchangeRateEffectiveDate
+        ? new Date(
+            `${form.exchangeRateEffectiveDate}T00:00:00`
+          )
+        : transactionDate;
+
+    if (
+      form.type !== "income" &&
+      form.type !== "expense"
+    ) {
+      const amount =
+        roundCurrencyAmount(
+          form.amount
+        );
+
+      return {
+        amount,
+        enteredAmount:
+          amount,
+        enteredCurrency:
+          baseCurrency,
+        baseCurrency,
+        baseAmount:
+          amount,
+        exchangeRate: 1,
+        exchangeRateEffectiveDate:
+          transactionDate,
+        exchangeRateSource: "manual",
+      };
+    }
+
+    const enteredCurrency =
+      normalizeCurrency(
+        form.enteredCurrency,
+        baseCurrency
+      );
+
+    const exchangeRate =
+      normalizeExchangeRate(
+        form.exchangeRate,
+        enteredCurrency,
+        baseCurrency
+      ) || 1;
+
+    const conversion =
+      convertEnteredAmount(
+        form.amount,
+        enteredCurrency,
+        baseCurrency,
+        baseCurrency,
+        exchangeRate
+      );
+
+    return {
+      amount:
+        conversion.baseAmount,
+      enteredAmount:
+        roundCurrencyAmount(
+          form.amount
+        ),
+      enteredCurrency,
+      baseCurrency,
+      baseAmount:
+        conversion.baseAmount,
+      exchangeRate,
+      exchangeRateEffectiveDate:
+        exchangeRateEffectiveDate,
+      exchangeRateSource:
+        form.exchangeRateSource === "api"
+          ? "api"
+          : "manual",
+      exchangeRateProvider:
+        form.exchangeRateSource === "api"
+          ? form.exchangeRateProvider?.trim() ||
+            undefined
+          : undefined,
+    };
   }
 
   /**
@@ -1629,6 +1851,22 @@ export default class TransactionService {
         );
       }
 
+      const amountResult =
+        this.resolveIncomeAccountAmount(
+          transaction,
+          transaction.destinationAccountId
+        );
+
+      if (!amountResult.success) {
+        return OperationResults.failure<
+          AccountOperation[]
+        >(
+          amountResult.errors,
+          amountResult.message ??
+            "Unable to process income."
+        );
+      }
+
       return OperationResults.success([
         {
           accountId:
@@ -1640,6 +1878,7 @@ export default class TransactionService {
               : "debit",
 
           amount:
+            amountResult.data ??
             transaction.amount,
         },
       ]);
@@ -1657,6 +1896,22 @@ export default class TransactionService {
         );
       }
 
+      const amountResult =
+        this.resolveExpenseAccountAmount(
+          transaction,
+          transaction.sourceAccountId
+        );
+
+      if (!amountResult.success) {
+        return OperationResults.failure<
+          AccountOperation[]
+        >(
+          amountResult.errors,
+          amountResult.message ??
+            "Unable to process expense."
+        );
+      }
+
       return OperationResults.success([
         {
           accountId:
@@ -1668,6 +1923,7 @@ export default class TransactionService {
               : "credit",
 
           amount:
+            amountResult.data ??
             transaction.amount,
         },
       ]);
@@ -1797,6 +2053,148 @@ export default class TransactionService {
 
     return OperationResults.success(
       true
+    );
+  }
+
+  private static resolveIncomeAccountAmount(
+    transaction: Transaction,
+    accountId: string
+  ): OperationResult<number> {
+    const account =
+      AccountService.getAccountById(
+        accountId
+      );
+
+    if (!account) {
+      return OperationResults.failure<number>(
+        {
+          accountId: "Account not found.",
+        },
+        "Unable to process income."
+      );
+    }
+
+    const baseCurrency =
+      normalizeCurrency(
+        transaction.baseCurrency,
+        account.baseCurrency ??
+          account.currency
+      );
+
+    const accountCurrency =
+      normalizeCurrency(
+        account.currency,
+        baseCurrency
+      );
+
+    const enteredCurrency =
+      normalizeCurrency(
+        transaction.enteredCurrency,
+        baseCurrency
+      );
+
+    if (
+      transaction.enteredAmount !==
+        undefined &&
+      accountCurrency ===
+        enteredCurrency
+    ) {
+      return OperationResults.success(
+        roundCurrencyAmount(
+          transaction.enteredAmount
+        )
+      );
+    }
+
+    if (
+      accountCurrency ===
+      baseCurrency
+    ) {
+      return OperationResults.success(
+        roundCurrencyAmount(
+          transaction.baseAmount ??
+            transaction.amount
+        )
+      );
+    }
+
+    return OperationResults.failure<number>(
+      {
+        destinationAccountId:
+          "Income currency does not match the destination account currency.",
+      },
+      "Unable to process mixed-currency income."
+    );
+  }
+
+  private static resolveExpenseAccountAmount(
+    transaction: Transaction,
+    accountId: string
+  ): OperationResult<number> {
+    const account =
+      AccountService.getAccountById(
+        accountId
+      );
+
+    if (!account) {
+      return OperationResults.failure<number>(
+        {
+          accountId: "Account not found.",
+        },
+        "Unable to process expense."
+      );
+    }
+
+    const baseCurrency =
+      normalizeCurrency(
+        transaction.baseCurrency,
+        account.baseCurrency ??
+          account.currency
+      );
+
+    const accountCurrency =
+      normalizeCurrency(
+        account.currency,
+        baseCurrency
+      );
+
+    const enteredCurrency =
+      normalizeCurrency(
+        transaction.enteredCurrency,
+        baseCurrency
+      );
+
+    if (
+      transaction.enteredAmount !==
+        undefined &&
+      accountCurrency ===
+        enteredCurrency
+    ) {
+      return OperationResults.success(
+        roundCurrencyAmount(
+          transaction.enteredAmount
+        )
+      );
+    }
+
+    if (
+      accountCurrency ===
+      baseCurrency
+    ) {
+      return OperationResults.success(
+        roundCurrencyAmount(
+          transaction.baseAmount ??
+            transaction.amount
+        )
+      );
+    }
+
+    return OperationResults.failure<number>(
+      {
+        sourceAccountId:
+          "Expense currency does not match the payment account currency.",
+      },
+      "Unable to process mixed-currency expense."
     );
   }
 

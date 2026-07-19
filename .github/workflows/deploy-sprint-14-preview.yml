@@ -1,0 +1,75 @@
+name: Deploy Preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - sprint-14-analytics-settings
+      - sprint-17-cloud-sync-readiness
+      - sprint-18-google-drive-restore
+      - sprint-19-provider-bills
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: hfos-preview
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID || secrets.VITE_GOOGLE_CLIENT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Check Google Drive client configuration
+        run: |
+          if [ -n "$VITE_GOOGLE_CLIENT_ID" ]; then
+            echo "Google Drive client ID is configured for this build."
+          else
+            echo "::warning::VITE_GOOGLE_CLIENT_ID is missing; Google Drive backup will be disabled."
+          fi
+
+      - name: Build preview
+        working-directory: frontend
+        env:
+          GITHUB_PAGES: "true"
+        run: npm run build
+
+      - name: Add single-page app fallback
+        working-directory: frontend
+        run: cp dist/index.html dist/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: frontend/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

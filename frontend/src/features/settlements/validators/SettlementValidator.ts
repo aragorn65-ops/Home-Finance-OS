@@ -1,6 +1,9 @@
 import type { SettlementForm } from "../models/SettlementForm";
 import type { SettlementApplicationForm } from "../models/SettlementApplicationForm";
 import type { SettlementApplicationMethod } from "../models/Settlement";
+import type {
+  StoredAttachmentCategory,
+} from "../../../shared/models/StoredAttachment";
 
 export interface SettlementValidationResult {
   isValid: boolean;
@@ -12,6 +15,31 @@ const applicationMethods:
     "oldest-first",
     "manual",
   ];
+
+const allowedAttachmentMimeTypes = [
+  "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+] as const;
+
+const allowedAttachmentCategories:
+  StoredAttachmentCategory[] = [
+    "receipt",
+    "bill",
+    "other",
+  ];
+
+const maximumAttachmentCount = 3;
+
+const maximumAttachmentSizeBytes =
+  1024 * 1024;
+
+const maximumTotalAttachmentSizeBytes =
+  maximumAttachmentCount *
+  maximumAttachmentSizeBytes;
 
 export default class SettlementValidator {
   /**
@@ -47,6 +75,11 @@ export default class SettlementValidator {
     );
 
     this.validateAccounts(
+      form,
+      errors
+    );
+
+    this.validateAttachments(
       form,
       errors
     );
@@ -171,6 +204,149 @@ export default class SettlementValidator {
     ) {
       errors.destinationAccountId =
         "Source and destination accounts must be different.";
+    }
+  }
+
+  /**
+   * Validates locally stored transfer receipts.
+   */
+  private static validateAttachments(
+    form: SettlementForm,
+    errors: Record<string, string>
+  ): void {
+    if (
+      form.attachments.length >
+      maximumAttachmentCount
+    ) {
+      errors.attachments =
+        `Add no more than ${maximumAttachmentCount} transfer receipts.`;
+
+      return;
+    }
+
+    const attachmentIds =
+      new Set<string>();
+
+    let totalSizeBytes = 0;
+
+    for (
+      const attachment of
+      form.attachments
+    ) {
+      if (!attachment.id.trim()) {
+        errors.attachments =
+          "Every transfer receipt must include an ID.";
+
+        return;
+      }
+
+      if (
+        attachmentIds.has(
+          attachment.id
+        )
+      ) {
+        errors.attachments =
+          "The same transfer receipt cannot be added more than once.";
+
+        return;
+      }
+
+      attachmentIds.add(
+        attachment.id
+      );
+
+      if (
+        !allowedAttachmentCategories.includes(
+          attachment.category
+        )
+      ) {
+        errors.attachments =
+          "Select a valid receipt category.";
+
+        return;
+      }
+
+      if (!attachment.fileName.trim()) {
+        errors.attachments =
+          "Every transfer receipt must include a filename.";
+
+        return;
+      }
+
+      if (
+        !allowedAttachmentMimeTypes.includes(
+          attachment.mimeType as
+            typeof allowedAttachmentMimeTypes[number]
+        )
+      ) {
+        errors.attachments =
+          "Transfer receipts must be JPEG, PNG, WebP, or PDF files.";
+
+        return;
+      }
+
+      if (
+        !Number.isFinite(
+          attachment.sizeBytes
+        ) ||
+        attachment.sizeBytes <= 0
+      ) {
+        errors.attachments =
+          "Every transfer receipt must have a valid file size.";
+
+        return;
+      }
+
+      if (
+        attachment.sizeBytes >
+        maximumAttachmentSizeBytes
+      ) {
+        errors.attachments =
+          "Each transfer receipt must be 1 MB or smaller.";
+
+        return;
+      }
+
+      totalSizeBytes +=
+        attachment.sizeBytes;
+
+      const expectedPrefix =
+        `data:${attachment.mimeType};base64,`;
+
+      if (
+        !attachment.dataUrl.startsWith(
+          expectedPrefix
+        )
+      ) {
+        errors.attachments =
+          "A transfer receipt contains invalid file data.";
+
+        return;
+      }
+
+      const createdAt =
+        new Date(
+          attachment.createdAt
+        );
+
+      if (
+        Number.isNaN(
+          createdAt.getTime()
+        )
+      ) {
+        errors.attachments =
+          "A transfer receipt contains an invalid creation date.";
+
+        return;
+      }
+    }
+
+    if (
+      totalSizeBytes >
+      maximumTotalAttachmentSizeBytes
+    ) {
+      errors.attachments =
+        "Combined transfer receipt size must be 3 MB or smaller.";
     }
   }
 

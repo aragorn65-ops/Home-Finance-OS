@@ -29,7 +29,7 @@ export default function SidebarItem({
       onClick={onNavigate}
     >
       <Icon
-        size={20}
+        size={17}
         aria-hidden="true"
       />
 

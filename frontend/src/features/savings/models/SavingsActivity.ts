@@ -1,6 +1,9 @@
 import type {
   Account,
 } from "../../accounts/models/Account";
+import type {
+  ExchangeRateSource,
+} from "../../../shared/services/CurrencyRateProvider";
 
 import type {
   HouseholdMember,
@@ -40,6 +43,16 @@ export interface SavingsActivity {
    * - Negative adjustment decreases saved funds.
    */
   amount: number;
+  enteredAmount: number;
+  enteredCurrency: string;
+  goalCurrencyAmount: number;
+  goalCurrency: string;
+  baseCurrency: string;
+  baseAmount: number;
+  exchangeRate: number;
+  exchangeRateEffectiveDate: Date;
+  exchangeRateSource?: ExchangeRateSource;
+  exchangeRateProvider?: string;
 
   activityDate: Date;
 

@@ -147,6 +147,17 @@ export default function SavingsGoalDetails({
   onEditActivity,
   onDeleteActivity,
 }: SavingsGoalDetailsProps) {
+  const goalCurrency =
+    goal.goalCurrency || currency;
+
+  const baseCurrency =
+    goal.baseCurrency || currency;
+
+  const rateSource =
+    goal.exchangeRateSource === "api"
+      ? `API rate${goal.exchangeRateProvider ? ` from ${goal.exchangeRateProvider}` : ""}`
+      : "Manual rate";
+
   const linkedAccount =
     goal.linkedAccountId
       ? accounts.find(
@@ -255,7 +266,7 @@ export default function SavingsGoalDetails({
             <p className="mt-1 text-xl font-semibold text-foreground">
               {formatCurrency(
                 progress.savedAmount,
-                currency
+                goalCurrency
               )}
             </p>
           </div>
@@ -268,7 +279,7 @@ export default function SavingsGoalDetails({
             <p className="mt-1 text-xl font-semibold text-foreground">
               {formatCurrency(
                 progress.targetAmount,
-                currency
+                goalCurrency
               )}
             </p>
           </div>
@@ -281,7 +292,7 @@ export default function SavingsGoalDetails({
             <p className="mt-1 text-xl font-semibold text-foreground">
               {formatCurrency(
                 progress.remainingAmount,
-                currency
+                goalCurrency
               )}
             </p>
           </div>
@@ -350,9 +361,9 @@ export default function SavingsGoalDetails({
                 .requiredMonthlyContribution !==
               undefined
                 ? formatCurrency(
-                    progress
-                      .requiredMonthlyContribution,
-                    currency
+                  progress
+                    .requiredMonthlyContribution,
+                    goalCurrency
                   )
                 : "Not applicable"}
             </p>
@@ -367,6 +378,43 @@ export default function SavingsGoalDetails({
               {linkedAccount
                 ? linkedAccount.name
                 : "No linked account"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-muted-foreground">
+              Base Equivalent Saved
+            </p>
+
+            <p className="mt-1 font-medium text-foreground">
+              {formatCurrency(
+                progress.savedBaseAmount,
+                baseCurrency
+              )}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-muted-foreground">
+              Exchange Rate
+            </p>
+
+            <p className="mt-1 font-medium text-foreground">
+              1 {goalCurrency} ={" "}
+              {formatCurrency(
+                goal.exchangeRate,
+                baseCurrency
+              )}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-muted-foreground">
+              Rate Source
+            </p>
+
+            <p className="mt-1 font-medium text-foreground">
+              {rateSource}
             </p>
           </div>
 
@@ -413,6 +461,9 @@ export default function SavingsGoalDetails({
           members={members}
           accounts={accounts}
           currency={currency}
+          goalCurrency={
+            goalCurrency
+          }
           onEdit={onEditActivity}
           onDelete={onDeleteActivity}
         />

@@ -1,0 +1,42 @@
+.settlement-history-card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.settlement-history-card__title,
+.settlement-history-card__amount,
+.settlement-history-card__label {
+  color: var(--color-text-strong);
+}
+
+.settlement-history-card__text,
+.settlement-history-card__meta {
+  color: var(--color-text);
+}
+
+.settlement-history-card__badge {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-strong);
+}
+
+:root[data-theme="dark"] .settlement-history-card {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .settlement-history-card__badge {
+  background: var(--color-surface);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .settlement-history-card {
+    background: var(--color-surface-subtle);
+    border-color: var(--color-border);
+  }
+
+  :root[data-theme="system"] .settlement-history-card__badge {
+    background: var(--color-surface);
+  }
+}

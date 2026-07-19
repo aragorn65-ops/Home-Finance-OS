@@ -1,5 +1,6 @@
 import type { Account } from "../../accounts/models/Account";
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
+import type { StoredAttachment } from "../../../shared/models/StoredAttachment";
 
 export type SettlementApplicationMethod =
   | "oldest-first"
@@ -37,6 +38,11 @@ export interface Settlement {
 
   referenceNumber?: string;
   notes?: string;
+
+  /**
+   * Locally stored transfer receipts or proof of payment.
+   */
+  attachments: StoredAttachment[];
 
   isActive: boolean;
 

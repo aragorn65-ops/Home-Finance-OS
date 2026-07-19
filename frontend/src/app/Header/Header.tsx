@@ -3,20 +3,21 @@ import "./Header.css";
 import {
   Bell,
   CircleUserRound,
+  LockKeyhole,
   Menu,
   Search,
 } from "lucide-react";
 
-import TimeContext from "../../shared/ui/TimeContext";
-
 interface HeaderProps {
   isMenuOpen?: boolean;
   onMenuToggle?: () => void;
+  onLock?: () => void;
 }
 
 export default function Header({
   isMenuOpen = false,
   onMenuToggle,
+  onLock,
 }: HeaderProps) {
   return (
     <header className="app-header">
@@ -38,8 +39,6 @@ export default function Header({
             aria-hidden="true"
           />
         </button>
-
-        <TimeContext />
       </div>
 
       <div
@@ -69,6 +68,21 @@ export default function Header({
             aria-hidden="true"
           />
         </button>
+
+        {onLock && (
+          <button
+            type="button"
+            className="app-header__action-button"
+            aria-label="Lock HFOS"
+            title="Lock HFOS"
+            onClick={onLock}
+          >
+            <LockKeyhole
+              size={19}
+              aria-hidden="true"
+            />
+          </button>
+        )}
 
         <button
           type="button"

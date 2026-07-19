@@ -2,6 +2,8 @@
 
     width:100%;
 
+    min-width:0;
+
     max-width:720px;
 
     margin:0 auto;
@@ -32,7 +34,7 @@
 
     max-width:560px;
 
-    color:var(--text-secondary)
+    color:var(--text-secondary);
 
     line-height:1.7;
 
@@ -41,6 +43,8 @@
 .wizard-content{
 
     display:flex;
+
+    min-width:0;
 
     flex-direction:column;
 
@@ -79,5 +83,49 @@
     width:28px;
 
     background:var(--primary);
+
+}
+
+@media (max-width: 48rem) {
+
+    .wizard {
+
+        max-width: 100%;
+
+    }
+
+    .wizard-header {
+
+        text-align: center;
+
+    }
+
+    .wizard-header h1 {
+
+        font-size: 30px;
+
+        overflow-wrap: anywhere;
+
+    }
+
+    .wizard-header p {
+
+        margin-inline: auto;
+
+        text-align: center;
+
+    }
+
+    .wizard-content > * {
+
+        min-width: 0;
+
+    }
+
+    .wizard-dots {
+
+        justify-content: center;
+
+    }
 
 }

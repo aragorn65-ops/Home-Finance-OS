@@ -1,6 +1,9 @@
 import type {
   Account,
 } from "../../accounts/models/Account";
+import type {
+  ExchangeRateSource,
+} from "../../../shared/services/CurrencyRateProvider";
 
 export type SavingsGoalType =
   | "emergency-fund"
@@ -42,6 +45,13 @@ export interface SavingsGoal {
    * It is derived from active savings activities.
    */
   targetAmount: number;
+  goalCurrency: string;
+  baseCurrency: string;
+  targetBaseAmount: number;
+  exchangeRate: number;
+  exchangeRateEffectiveDate: Date;
+  exchangeRateSource?: ExchangeRateSource;
+  exchangeRateProvider?: string;
 
   targetDate?: Date;
 

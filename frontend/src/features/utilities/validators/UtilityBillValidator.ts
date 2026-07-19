@@ -80,6 +80,19 @@ export default class UtilityBillValidator {
     }
 
     if (
+      form.utilityType === "internet" &&
+      form.unit !== "fixed"
+    ) {
+      errors.unit =
+        "Internet bills must use fixed amount sharing.";
+    }
+
+    if (!form.providerName.trim()) {
+      errors.providerName =
+        "Enter the utility provider name.";
+    }
+
+    if (
       !Number.isFinite(
         form.totalBillAmount
       ) ||
@@ -87,6 +100,26 @@ export default class UtilityBillValidator {
     ) {
       errors.totalBillAmount =
         "Total bill amount must be greater than zero.";
+    }
+
+    if (form.utilityType === "water") {
+      if (
+        !Number.isFinite(
+          form.totalConsumption
+        ) ||
+        form.totalConsumption <= 0
+      ) {
+        errors.totalConsumption =
+          "Water consumption must be greater than zero.";
+      }
+
+      return;
+    }
+
+    if (
+      form.utilityType === "internet"
+    ) {
+      return;
     }
 
     if (
@@ -115,6 +148,16 @@ export default class UtilityBillValidator {
     ) {
       errors.billingDate =
         "Enter a valid billing date.";
+    }
+
+    if (
+      !form.dueDate ||
+      !this.isValidDate(
+        form.dueDate
+      )
+    ) {
+      errors.dueDate =
+        "Enter a valid due date.";
     }
 
     if (
@@ -309,11 +352,11 @@ export default class UtilityBillValidator {
     errors: Record<string, string>
   ): void {
     if (
-      form.utilityType === "water" &&
+      form.utilityType !== "electricity" &&
       form.applianceUsages.length > 0
     ) {
       errors.applianceUsages =
-        "Appliance usage is supported only for electricity.";
+        "Appliance usage is supported only for electricity bills.";
 
       return;
     }
@@ -399,14 +442,14 @@ export default class UtilityBillValidator {
     errors: Record<string, string>
   ): void {
     if (
+      form.utilityType === "internet" ||
       !Number.isFinite(
         form.totalBillAmount
       ) ||
       form.totalBillAmount <= 0 ||
-      !Number.isFinite(
-        form.ratePerUnit
-      ) ||
-      form.ratePerUnit <= 0
+      this.getEffectiveRatePerUnit(
+        form
+      ) <= 0
     ) {
       return;
     }
@@ -443,7 +486,9 @@ export default class UtilityBillValidator {
         submeterUsage +
         applianceUsage
       ) *
-        form.ratePerUnit +
+        this.getEffectiveRatePerUnit(
+          form
+        ) +
       totalFixedCompensation;
 
     if (
@@ -462,11 +507,6 @@ export default class UtilityBillValidator {
     form: UtilityBillForm,
     errors: Record<string, string>
   ): void {
-    if (!form.paidByMemberId.trim()) {
-      errors.paidByMemberId =
-        "Select the household member who paid the utility bill.";
-    }
-
     const memberIds =
       new Set(
         form.memberShares.map(
@@ -497,6 +537,44 @@ export default class UtilityBillValidator {
       errors.visibility =
         "Select a valid transaction visibility.";
     }
+  }
+
+  private static getEffectiveRatePerUnit(
+    form: UtilityBillForm
+  ): number {
+    if (
+      form.utilityType === "internet"
+    ) {
+      return 0;
+    }
+
+    if (
+      form.utilityType === "water"
+    ) {
+      if (
+        !Number.isFinite(
+          form.totalBillAmount
+        ) ||
+        form.totalBillAmount <= 0 ||
+        !Number.isFinite(
+          form.totalConsumption
+        ) ||
+        form.totalConsumption <= 0
+      ) {
+        return 0;
+      }
+
+      return (
+        form.totalBillAmount /
+        form.totalConsumption
+      );
+    }
+
+    return Number.isFinite(
+      form.ratePerUnit
+    )
+      ? form.ratePerUnit
+      : 0;
   }
 
   /**

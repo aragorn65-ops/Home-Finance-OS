@@ -7,22 +7,36 @@ import DashboardService from "../../services/DashboardService";
 import TransactionAnalyticsService from "../../../transactions/services/TransactionAnalyticsService";
 import TransactionService from "../../../transactions/services/TransactionService";
 
-export default function CashFlowWidget() {
+import type {
+  DashboardWidgetProps,
+} from "../../models/DashboardWidget";
+
+export default function CashFlowWidget({
+  selectedMonth,
+}: DashboardWidgetProps) {
   const household =
     DashboardService.getHouseholdSummary();
 
   const totalIncome =
-    TransactionService.getTotalIncome();
+    TransactionService.getTotalIncome(
+      selectedMonth
+    );
 
   const totalExpenses =
-    TransactionService.getTotalExpenses();
+    TransactionService.getTotalExpenses(
+      selectedMonth
+    );
 
   const netCashFlow =
-    TransactionService.getNetCashFlow();
+    TransactionService.getNetCashFlow(
+      selectedMonth
+    );
 
   const monthlyData =
     TransactionAnalyticsService
-      .getMonthlyCashFlow();
+      .getMonthlyCashFlow(
+        selectedMonth
+      );
 
   const maximumNetMagnitude =
     Math.max(

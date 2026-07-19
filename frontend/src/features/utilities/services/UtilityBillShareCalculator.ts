@@ -76,11 +76,16 @@ export default class UtilityBillShareCalculator {
         0
       );
 
+    const effectiveRatePerUnit =
+      this.getEffectiveRatePerUnit(
+        form
+      );
+
     const directChargeComponents =
       this.buildDirectChargeComponents(
         submeterConsumption,
         applianceConsumption,
-        form.ratePerUnit
+        effectiveRatePerUnit
       );
 
     const totalUsageChargeCents =
@@ -349,7 +354,7 @@ export default class UtilityBillShareCalculator {
           ),
 
         ratePerUnit:
-          form.ratePerUnit,
+          effectiveRatePerUnit,
 
         totalSubmeterConsumption,
 
@@ -470,6 +475,25 @@ export default class UtilityBillShareCalculator {
     );
 
     return components;
+  }
+
+  private static getEffectiveRatePerUnit(
+    form: UtilityBillForm
+  ): number {
+    if (
+      form.utilityType === "internet"
+    ) {
+      return 0;
+    }
+
+    if (
+      form.utilityType === "water"
+    ) {
+      return form.totalBillAmount /
+        form.totalConsumption;
+    }
+
+    return form.ratePerUnit;
   }
 
   /**

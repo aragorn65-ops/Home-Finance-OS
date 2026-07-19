@@ -21,6 +21,7 @@ interface SavingsActivityHistoryProps {
   accounts: Account[];
 
   currency?: string;
+  goalCurrency?: string;
 
   onEdit?: (
     activity: SavingsActivity
@@ -96,6 +97,7 @@ export default function SavingsActivityHistory({
   members,
   accounts,
   currency = "PHP",
+  goalCurrency = currency,
   onEdit,
   onDelete,
 }: SavingsActivityHistoryProps) {
@@ -218,9 +220,30 @@ export default function SavingsActivityHistory({
                       Math.abs(
                         activityEffect
                       ),
-                      currency
+                      goalCurrency
                     )}
                   </p>
+
+                  {activity.enteredCurrency !==
+                    goalCurrency && (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Entered as{" "}
+                      {formatCurrency(
+                        activity.enteredAmount,
+                        activity
+                          .enteredCurrency
+                      )}{" "}
+                      at rate{" "}
+                      {activity.exchangeRate}
+                      {" "}
+                      (
+                      {activity.exchangeRateSource ===
+                      "api"
+                        ? `API${activity.exchangeRateProvider ? ` from ${activity.exchangeRateProvider}` : ""}`
+                        : "manual"}
+                      )
+                    </p>
+                  )}
 
                   <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                     <p>
@@ -252,6 +275,18 @@ export default function SavingsActivityHistory({
                       <span className="font-medium text-foreground">
                         {getAccountName(
                           activity.accountId
+                        )}
+                      </span>
+                    </p>
+
+                    <p>
+                      <span className="text-muted-foreground">
+                        Base amount:
+                      </span>{" "}
+                      <span className="font-medium text-foreground">
+                        {formatCurrency(
+                          activity.baseAmount,
+                          currency
                         )}
                       </span>
                     </p>

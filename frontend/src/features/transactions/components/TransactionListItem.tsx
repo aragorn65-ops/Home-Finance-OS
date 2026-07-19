@@ -1,4 +1,8 @@
 import type { Transaction } from "../models/Transaction";
+import formatCurrency from "../../../shared/utils/formatCurrency";
+import {
+  normalizeTransactionCategory,
+} from "../models/TransactionCategory";
 
 import type { AllocationPaymentStatus } from "../models/ExpenseAllocation";
 
@@ -7,15 +11,11 @@ type TransactionListItemProps = {
   paymentStatus?: AllocationPaymentStatus;
   sourceAccountName?: string;
   destinationAccountName?: string;
+  currency?: string;
   onView?: (transaction: Transaction) => void;
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (transaction: Transaction) => void;
 };
-
-const amountFormatter = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
 
 function getTypeLabel(
   type: Transaction["type"]
@@ -59,7 +59,7 @@ function getPaymentStatusClasses(
       return "bg-green-50 text-green-700";
 
     case "partially-paid":
-      return "bg-amber-50 text-amber-700";
+      return "bg-[#d2c02a] text-amber-700";
 
     case "unpaid":
     default:
@@ -96,6 +96,7 @@ export default function TransactionListItem({
   paymentStatus,
   sourceAccountName,
   destinationAccountName,
+  currency,
   onView,
   onEdit,
   onDelete,
@@ -103,9 +104,19 @@ export default function TransactionListItem({
   const formattedDate =
     transaction.transactionDate.toLocaleDateString();
 
-  const formattedAmount = amountFormatter.format(
-    transaction.amount
+  const formattedAmount = formatCurrency(
+    transaction.amount,
+    currency
   );
+
+  const showEnteredIncome =
+    transaction.type === "income" &&
+    transaction.enteredCurrency &&
+    transaction.enteredCurrency !==
+      (
+        transaction.baseCurrency ??
+        currency
+      );
 
   const accountSummary = getAccountSummary(
     transaction,
@@ -143,7 +154,9 @@ export default function TransactionListItem({
         </h3>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          {transaction.category} · {accountSummary}
+          {normalizeTransactionCategory(
+            transaction.category
+          )} · {accountSummary}
         </p>
       </div>
 
@@ -151,6 +164,17 @@ export default function TransactionListItem({
         <span className="min-w-28 text-right text-lg font-semibold text-foreground">
           {formattedAmount}
         </span>
+
+        {showEnteredIncome && (
+          <span className="text-right text-xs text-muted-foreground">
+            {formatCurrency(
+              transaction.enteredAmount ??
+                transaction.amount,
+              transaction.enteredCurrency
+            )}{" "}
+            entered
+          </span>
+        )}
 
         <div className="flex items-center gap-2">
           {onView && (

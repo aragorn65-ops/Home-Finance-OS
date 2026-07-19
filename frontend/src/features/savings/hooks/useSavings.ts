@@ -329,7 +329,7 @@ export default function useSavings() {
               (
                 progressByGoalId[
                   goal.id
-                ]?.savedAmount ??
+                ]?.savedBaseAmount ??
                 0
               ),
             0
@@ -344,7 +344,13 @@ export default function useSavings() {
               goal
             ) =>
               total +
-              goal.targetAmount,
+              (
+                progressByGoalId[
+                  goal.id
+                ]?.targetBaseAmount ??
+                goal.targetBaseAmount ??
+                goal.targetAmount
+              ),
             0
           )
         );

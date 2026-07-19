@@ -3,6 +3,7 @@ import {
   BarChart3,
   CircleHelp,
   Gauge,
+  HandCoins,
   LayoutDashboard,
   PiggyBank,
   Settings,
@@ -78,7 +79,7 @@ export const navigationSections: NavigationSection[] = [
       {
         label: "Settlements",
         path: "/app/settlements",
-        icon: ArrowLeftRight,
+        icon: HandCoins,
       },
       {
         label: "Savings",
@@ -86,8 +87,8 @@ export const navigationSections: NavigationSection[] = [
         icon: PiggyBank,
       },
       {
-        label: "Reports",
-        path: "/app/reports",
+        label: "Analytics",
+        path: "/app/analytics",
         icon: BarChart3,
       },
     ],

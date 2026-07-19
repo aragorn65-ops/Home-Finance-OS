@@ -1,4 +1,13 @@
-import type { ReactNode } from "react";
+import {
+  useLayoutEffect,
+  type ReactNode,
+} from "react";
+
+import {
+  useDialogContext,
+} from "./DialogContext";
+
+import DialogTitle from "./DialogTitle";
 
 export interface DialogHeaderProps {
   title: string;
@@ -9,11 +18,18 @@ export default function DialogHeader({
   title,
   actions,
 }: DialogHeaderProps) {
+  const dialogContext =
+    useDialogContext();
+
+  useLayoutEffect(() => {
+    return dialogContext?.registerTitle();
+  }, [dialogContext]);
+
   return (
     <header className="hfos-dialog__header">
-      <h2 className="hfos-dialog__title">
+      <DialogTitle>
         {title}
-      </h2>
+      </DialogTitle>
 
       {actions && (
         <div className="hfos-dialog__actions">

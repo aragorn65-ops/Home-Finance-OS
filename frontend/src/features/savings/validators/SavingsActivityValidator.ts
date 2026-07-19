@@ -2,6 +2,10 @@ import AccountService from "../../accounts/services/AccountService";
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
+import {
+  currencies,
+} from "../../../shared/data/currencies";
+
 import type {
   SavingsActivityType,
 } from "../models/SavingsActivity";
@@ -84,6 +88,11 @@ export default class SavingsActivityValidator {
     );
 
     this.validateAmount(
+      form,
+      errors
+    );
+
+    this.validateCurrency(
       form,
       errors
     );
@@ -533,9 +542,49 @@ export default class SavingsActivityValidator {
       return null;
     }
 
-    return goalBalanceEffect > 0
-      ? goalBalanceEffect
+    const baseBalanceEffect =
+      goalBalanceEffect > 0
+        ? Math.abs(
+            form.baseAmount
+          )
+        : 0;
+
+    return baseBalanceEffect > 0
+      ? baseBalanceEffect
       : 0;
+  }
+
+  private static validateCurrency(
+    form: SavingsActivityForm,
+    errors: Record<string, string>
+  ): void {
+    const validCurrencies =
+      currencies
+        .map(
+          (currency) =>
+            currency.value
+        )
+        .filter(Boolean);
+
+    if (
+      !form.enteredCurrency ||
+      !validCurrencies.includes(
+        form.enteredCurrency
+      )
+    ) {
+      errors.enteredCurrency =
+        "Select a valid entered currency.";
+    }
+
+    if (
+      !Number.isFinite(
+        form.exchangeRate
+      ) ||
+      form.exchangeRate <= 0
+    ) {
+      errors.exchangeRate =
+        "Enter a valid exchange rate.";
+    }
   }
 
   /**

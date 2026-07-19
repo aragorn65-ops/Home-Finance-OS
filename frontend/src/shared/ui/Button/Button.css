@@ -46,43 +46,48 @@
 }
 
 .hfos-button--primary:hover:not(:disabled) {
-  background: var(--color-brand-700);
+  background: var(--color-button-hover);
+  border-color: var(--color-button-hover);
 }
 
 /* ---------- Secondary ---------- */
 
 .hfos-button--secondary {
-  background: var(--color-surface);
-  border-color: var(--color-border);
-  color: var(--color-text);
+  background: var(--color-brand-600);
+  border-color: var(--color-brand-600);
+  color: var(--color-text-inverse);
 }
 
 .hfos-button--secondary:hover:not(:disabled) {
-  background: var(--color-surface-hover);
-  border-color: var(--color-border-strong);
+  background: var(--color-button-hover);
+  border-color: var(--color-button-hover);
 }
 
 /* ---------- Danger ---------- */
 
 .hfos-button--danger {
-  background: var(--color-danger);
+  background: var(--color-brand-600);
+  border-color: var(--color-brand-600);
   color: var(--color-text-inverse);
 }
 
 .hfos-button--danger:hover:not(:disabled) {
-  background: var(--color-danger-hover);
+  background: var(--color-button-hover);
+  border-color: var(--color-button-hover);
 }
 
 /* ---------- Ghost ---------- */
 
 .hfos-button--ghost {
-  background: transparent;
-  color: var(--color-text-muted);
+  background: var(--color-brand-600);
+  border-color: var(--color-brand-600);
+  color: var(--color-text-inverse);
 }
 
 .hfos-button--ghost:hover:not(:disabled) {
-  background: var(--color-surface-hover);
-  color: var(--color-text-strong);
+  background: var(--color-button-hover);
+  border-color: var(--color-button-hover);
+  color: var(--color-text-inverse);
 }
 
 /* ---------- Width ---------- */

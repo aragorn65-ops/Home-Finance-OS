@@ -21,7 +21,23 @@ export const currencies: SelectOption[] = [
     value: "AUD",
     label: "Australian Dollar (A$)",
   },
-   {
+  {
+    value: "JPY",
+    label: "Japanese Yen (¥)",
+  },
+  {
+    value: "GBP",
+    label: "British Pound (£)",
+  },
+  {
+    value: "EUR",
+    label: "Euro (€)",
+  },
+  {
+    value: "SAR",
+    label: "Saudi Riyal (SAR)",
+  },
+  {
     value: "QAR",
     label: "Qatari Riyal (QR)",
   },

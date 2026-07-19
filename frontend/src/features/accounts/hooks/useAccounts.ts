@@ -108,7 +108,9 @@ export default function useAccounts() {
         .reduce(
           (total, account) =>
             total +
-            account.currentBalance,
+            AccountService.getReportingBalance(
+              account
+            ),
           0
         );
     }, [accounts]);

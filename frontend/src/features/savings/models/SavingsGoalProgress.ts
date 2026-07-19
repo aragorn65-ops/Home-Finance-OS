@@ -15,6 +15,9 @@ export interface SavingsGoalProgress {
   targetAmount: number;
   savedAmount: number;
   remainingAmount: number;
+  targetBaseAmount: number;
+  savedBaseAmount: number;
+  remainingBaseAmount: number;
 
   /**
    * Percentage of the target currently funded.

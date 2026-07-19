@@ -38,7 +38,7 @@ export default function TimezoneStep({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         options={timezones}
-        helperText="Choose the primary time zone for your household."
+        helperText="Choose the primary time zone for your household. Some countries have multiple regional time zones."
       />
 
       <WizardFooter

@@ -1,4 +1,7 @@
-import { useState } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
 
 import {
   Dialog,
@@ -9,6 +12,13 @@ import {
 import {
   OperationResults,
 } from "../../../shared/types";
+import formatCurrency from "../../../shared/utils/formatCurrency";
+import useReportingMonth from "../../../shared/hooks/useReportingMonth";
+import {
+  formatMonthLabel,
+  isSameMonth,
+  parseMonthInput,
+} from "../../../shared/utils/monthSelection";
 
 import AccountService from "../../accounts/services/AccountService";
 
@@ -35,6 +45,9 @@ import SettlementAllocationService from "../services/SettlementAllocationService
 import SettlementApplicationDetailsService from "../services/SettlementApplicationDetailsService";
 
 import type { Settlement } from "../models/Settlement";
+import type { SettlementAllocationOption } from "../models/SettlementAllocationOption";
+import type { MemberSettlementBalance } from "../models/MemberSettlementBalance";
+import type { MemberSettlementObligation } from "../models/MemberSettlementObligation";
 
 import type {
   SettlementForm as SettlementFormData,
@@ -124,9 +137,226 @@ function mapSettlementToForm(
     notes:
       settlement.notes ?? "",
 
+    attachments:
+      settlement.attachments.map(
+        (attachment) => ({
+          ...attachment,
+
+          createdAt:
+            new Date(
+              attachment.createdAt
+            ),
+        })
+      ),
+
     isActive:
       settlement.isActive,
   };
+}
+
+function roundCurrency(
+  amount: number
+): number {
+  return (
+    Math.round(amount * 100) /
+    100
+  );
+}
+
+function createObligationKey(
+  fromMemberId: string,
+  toMemberId: string
+): string {
+  return `${fromMemberId}::${toMemberId}`;
+}
+
+function deriveObligations(
+  allocations: SettlementAllocationOption[]
+): MemberSettlementObligation[] {
+  const obligations = new Map<
+    string,
+    MemberSettlementObligation
+  >();
+
+  for (const allocation of allocations) {
+    if (
+      allocation.outstandingAmount <= 0
+    ) {
+      continue;
+    }
+
+    const obligationKey =
+      createObligationKey(
+        allocation.fromMemberId,
+        allocation.toMemberId
+      );
+
+    const existing =
+      obligations.get(
+        obligationKey
+      );
+
+    if (existing) {
+      obligations.set(
+        obligationKey,
+        {
+          ...existing,
+
+          amount:
+            roundCurrency(
+              existing.amount +
+                allocation.outstandingAmount
+            ),
+
+          allocationCount:
+            existing.allocationCount + 1,
+        }
+      );
+
+      continue;
+    }
+
+    obligations.set(
+      obligationKey,
+      {
+        fromMemberId:
+          allocation.fromMemberId,
+
+        toMemberId:
+          allocation.toMemberId,
+
+        amount:
+          allocation.outstandingAmount,
+
+        allocationCount: 1,
+      }
+    );
+  }
+
+  return Array.from(
+    obligations.values()
+  ).sort((first, second) => {
+    if (
+      first.fromMemberId !==
+      second.fromMemberId
+    ) {
+      return first.fromMemberId.localeCompare(
+        second.fromMemberId
+      );
+    }
+
+    return first.toMemberId.localeCompare(
+      second.toMemberId
+    );
+  });
+}
+
+function deriveMemberBalances(
+  members: ReturnType<
+    typeof HouseholdMemberService.getActiveMembers
+  >,
+  obligations: MemberSettlementObligation[]
+): MemberSettlementBalance[] {
+  return members.map((member) => {
+    const amountToReceive =
+      obligations
+        .filter(
+          (obligation) =>
+            obligation.toMemberId ===
+            member.id
+        )
+        .reduce(
+          (total, obligation) =>
+            total + obligation.amount,
+          0
+        );
+
+    const amountToPay =
+      obligations
+        .filter(
+          (obligation) =>
+            obligation.fromMemberId ===
+            member.id
+        )
+        .reduce(
+          (total, obligation) =>
+            total + obligation.amount,
+          0
+        );
+
+    const roundedAmountToReceive =
+      roundCurrency(
+        amountToReceive
+      );
+
+    const roundedAmountToPay =
+      roundCurrency(
+        amountToPay
+      );
+
+    const netPosition =
+      roundCurrency(
+        roundedAmountToReceive -
+          roundedAmountToPay
+      );
+
+    return {
+      memberId: member.id,
+
+      amountToReceive:
+        roundedAmountToReceive,
+
+      amountToPay:
+        roundedAmountToPay,
+
+      netPosition,
+
+      position:
+        netPosition > 0
+          ? "creditor"
+          : netPosition < 0
+            ? "debtor"
+            : "settled",
+    };
+  });
+}
+
+function totalObligations(
+  obligations: MemberSettlementObligation[]
+): number {
+  return roundCurrency(
+    obligations.reduce(
+      (total, obligation) =>
+        total + obligation.amount,
+      0
+    )
+  );
+}
+
+function settlementBelongsToMonth(
+  settlement: Settlement,
+  selectedMonth: Date
+): boolean {
+  const applicationDetails =
+    SettlementApplicationDetailsService
+      .getBySettlementId(
+        settlement.id
+      );
+
+  if (applicationDetails.length === 0) {
+    return isSameMonth(
+      settlement.settlementDate,
+      selectedMonth
+    );
+  }
+
+  return applicationDetails.some(
+    (details) =>
+      isSameMonth(
+        details.transactionDate,
+        selectedMonth
+      )
+  );
 }
 
 export default function SettlementsPage() {
@@ -136,11 +366,11 @@ export default function SettlementsPage() {
   const householdId =
     household?.id ?? "";
 
+  const currency =
+    household?.currency ?? "PHP";
+
   const {
     settlements,
-    memberBalances,
-    obligations,
-    totalOutstanding,
 
     create,
     update,
@@ -148,6 +378,30 @@ export default function SettlementsPage() {
   } = useSettlements(
     householdId
   );
+
+  const {
+    selectedMonthValue,
+    setSelectedMonthValue,
+  } = useReportingMonth();
+
+  const selectedMonth =
+    parseMonthInput(
+      selectedMonthValue
+    );
+
+  const selectedMonthLabel =
+    formatMonthLabel(
+      selectedMonth
+    );
+
+  const previousMonthLabel =
+    formatMonthLabel(
+      new Date(
+        selectedMonth.getFullYear(),
+        selectedMonth.getMonth() - 1,
+        1
+      )
+    );
 
   const accounts =
     AccountService
@@ -159,15 +413,19 @@ export default function SettlementsPage() {
       );
 
   const members =
-    household
-      ? HouseholdMemberService
-          .getActiveMembers()
-          .filter(
-            (member) =>
-              member.householdId ===
-              household.id
-          )
-      : [];
+    useMemo(
+      () =>
+        household
+          ? HouseholdMemberService
+              .getActiveMembers()
+              .filter(
+                (member) =>
+                  member.householdId ===
+                  household.id
+              )
+          : [],
+      [household]
+    );
 
   const [
     dialogMode,
@@ -329,12 +587,111 @@ export default function SettlementsPage() {
   };
 
   const outstandingAllocations =
-    household
-      ? SettlementAllocationService
-          .getOutstandingAllocations(
-            household.id
-          )
-      : [];
+    useMemo(
+      () =>
+        household
+          ? SettlementAllocationService
+              .getOutstandingAllocations(
+                household.id
+              )
+          : [],
+      [household]
+    );
+
+  const currentMonthOutstandingAllocations =
+    useMemo(
+      () =>
+        outstandingAllocations.filter(
+          (allocation) =>
+            isSameMonth(
+              allocation.transactionDate,
+              selectedMonth
+            )
+        ),
+      [
+        outstandingAllocations,
+        selectedMonth,
+      ]
+    );
+
+  const previousOutstandingAllocations =
+    useMemo(
+      () =>
+        outstandingAllocations.filter(
+          (allocation) =>
+            allocation.transactionDate <
+            selectedMonth
+        ),
+      [
+        outstandingAllocations,
+        selectedMonth,
+      ]
+    );
+
+  const currentMonthObligations =
+    useMemo(
+      () =>
+        deriveObligations(
+          currentMonthOutstandingAllocations
+        ),
+      [currentMonthOutstandingAllocations]
+    );
+
+  const previousObligations =
+    useMemo(
+      () =>
+        deriveObligations(
+          previousOutstandingAllocations
+        ),
+      [previousOutstandingAllocations]
+    );
+
+  const currentMonthMemberBalances =
+    useMemo(
+      () =>
+        deriveMemberBalances(
+          members,
+          currentMonthObligations
+        ),
+      [
+        members,
+        currentMonthObligations,
+      ]
+    );
+
+  const totalOutstanding =
+    useMemo(
+      () =>
+        totalObligations(
+          currentMonthObligations
+        ),
+      [currentMonthObligations]
+    );
+
+  const previousOutstandingTotal =
+    useMemo(
+      () =>
+        totalObligations(
+          previousObligations
+        ),
+      [previousObligations]
+    );
+
+  const monthlySettlements =
+    useMemo(
+      () =>
+        settlements.filter(
+          (settlement) =>
+            settlementBelongsToMonth(
+              settlement,
+              selectedMonth
+            )
+        ),
+      [
+        settlements,
+        selectedMonth,
+      ]
+    );
 
   const formAllocationOptions =
     household
@@ -363,6 +720,12 @@ export default function SettlementsPage() {
   return (
     <>
       <SettlementToolbar
+        selectedMonth={
+          selectedMonthValue
+        }
+        onSelectedMonthChange={
+          setSelectedMonthValue
+        }
         onAddSettlement={
           handleAddSettlement
         }
@@ -371,43 +734,77 @@ export default function SettlementsPage() {
       <div className="space-y-6">
         <section className="rounded-lg border bg-white p-5">
           <p className="text-sm font-medium text-muted-foreground">
-            Total Outstanding
+            Total Outstanding for {selectedMonthLabel}
           </p>
 
           <p className="mt-2 text-3xl font-semibold text-foreground">
-            {new Intl.NumberFormat(
-              undefined,
-              {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }
-            ).format(
-              totalOutstanding
+            {formatCurrency(
+              totalOutstanding,
+              currency
             )}
           </p>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Combined unpaid reimbursements across all
-            household members.
+            Unpaid reimbursements from transactions dated
+            in {selectedMonthLabel} only.
           </p>
         </section>
 
+        {previousOutstandingTotal > 0 && (
+          <section className="rounded-lg border bg-white p-5">
+            <p className="text-sm font-medium text-muted-foreground">
+              Unsettled Amount From Previous Month (
+              {previousMonthLabel})
+            </p>
+
+            <p className="mt-2 text-2xl font-semibold text-foreground">
+              {formatCurrency(
+                previousOutstandingTotal,
+                currency
+              )}
+            </p>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Carryover from older transaction months.
+              Kept separate so {selectedMonthLabel} totals
+              stay month-specific.
+            </p>
+          </section>
+        )}
+
         <MemberBalanceSummary
           balances={
-            memberBalances
+            currentMonthMemberBalances
           }
           members={members}
           allocations={
-            outstandingAllocations
+            currentMonthOutstandingAllocations
           }
+          currency={currency}
         />
 
         <WhoOwesWhomSummary
           obligations={
-            obligations
+            currentMonthObligations
           }
           members={members}
+          currency={currency}
+          title={`Who Owes Whom - ${selectedMonthLabel}`}
+          description={`Outstanding reimbursements from ${selectedMonthLabel} transactions only.`}
         />
+
+        {previousObligations.length > 0 && (
+          <WhoOwesWhomSummary
+            obligations={
+              previousObligations
+            }
+            members={members}
+            currency={currency}
+            title={`Unsettled Amount From Previous Month (${previousMonthLabel})`}
+            description={`Carryover from transaction months before ${selectedMonthLabel}. These amounts are not mixed into the ${selectedMonthLabel} summary.`}
+            amountLabel="Carryover"
+          />
+        )}
 
         <section className="space-y-4">
           <div>
@@ -423,10 +820,11 @@ export default function SettlementsPage() {
 
           <SettlementList
             settlements={
-              settlements
+              monthlySettlements
             }
             members={members}
             accounts={accounts}
+            currency={currency}
             onView={
               handleViewSettlement
             }
@@ -463,6 +861,7 @@ export default function SettlementsPage() {
               allocationOptions={
                 formAllocationOptions
               }
+              currency={currency}
               initialValues={
                 dialogMode === "edit" &&
                 selectedSettlement
@@ -542,6 +941,7 @@ export default function SettlementsPage() {
               applicationDetails={
                 selectedApplicationDetails
               }
+              currency={currency}
               onClose={
                 closeDialog
               }
@@ -581,6 +981,7 @@ export default function SettlementsPage() {
               errorMessage={
                 deleteError
               }
+              currency={currency}
               onConfirm={
                 handleDeleteConfirm
               }

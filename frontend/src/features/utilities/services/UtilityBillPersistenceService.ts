@@ -16,6 +16,8 @@ import {
   loadHousehold,
 } from "../../household/services/householdStorage";
 
+import { currencies } from "../../../shared/data/currencies";
+
 import {
   OperationResults,
   type OperationResult,
@@ -91,10 +93,16 @@ export default class UtilityBillPersistenceService {
       );
     }
 
+    const householdCurrency =
+      this.resolveHouseholdCurrency(
+        household.currency
+      );
+
     const transactionForm =
       this.buildTransactionForm(
         form,
-        calculation
+        calculation,
+        householdCurrency
       );
 
     const result =
@@ -125,19 +133,42 @@ export default class UtilityBillPersistenceService {
    */
   private static buildTransactionForm(
     form: UtilityBillForm,
-    calculation: UtilityBillShareResult
+    calculation: UtilityBillShareResult,
+    householdCurrency: string
   ): TransactionForm {
     const utilityLabel =
       form.utilityType ===
       "electricity"
         ? "Electricity"
-        : "Water";
+        : form.utilityType ===
+          "water"
+          ? "Water"
+          : "Internet";
 
     return {
       type: "expense",
 
       amount:
         calculation.totalBillAmount,
+
+      enteredAmount:
+        calculation.totalBillAmount,
+
+      enteredCurrency:
+        householdCurrency,
+
+      baseAmount:
+        calculation.totalBillAmount,
+
+      exchangeRate: 1,
+
+      exchangeRateEffectiveDate:
+        form.transactionDate,
+
+      exchangeRateSource:
+        "manual",
+
+      exchangeRateProvider: "",
 
       paidByMemberId:
         form.paidByMemberId.trim(),
@@ -234,9 +265,23 @@ export default class UtilityBillPersistenceService {
   ): string {
     const generatedNotes = [
       `Provider billing date: ${form.billingDate}`,
-      `Rate per ${calculation.unit}: ${this.formatAmount(
-        calculation.ratePerUnit
-      )}`,
+      ...(form.utilityType === "water"
+        ? [
+            `Provider consumption: ${this.formatQuantity(
+              form.totalConsumption
+            )} ${calculation.unit}`,
+          ]
+        : []),
+      ...(form.utilityType !==
+      "internet"
+        ? [
+            `Rate per ${calculation.unit}: ${this.formatAmount(
+              calculation.ratePerUnit
+            )}`,
+          ]
+        : [
+            "Fixed provider bill: shared without meter readings.",
+          ]),
       `Total direct usage: ${this.formatAmount(
         calculation.totalDirectUsageAmount
       )}`,
@@ -307,6 +352,27 @@ export default class UtilityBillPersistenceService {
     return Math.round(
       amount * 100
     );
+  }
+
+  private static resolveHouseholdCurrency(
+    currency: string
+  ): string {
+    const normalizedCurrency =
+      currency.trim().toUpperCase();
+
+    const validCurrencies =
+      currencies
+        .map(
+          (option) =>
+            option.value
+        )
+        .filter(Boolean);
+
+    return validCurrencies.includes(
+      normalizedCurrency
+    )
+      ? normalizedCurrency
+      : "PHP";
   }
 
   private static formatAmount(

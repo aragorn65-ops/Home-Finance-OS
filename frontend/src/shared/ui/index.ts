@@ -7,6 +7,11 @@ export type { CardProps } from "./Card";
 export { default as Input } from "./Input";
 export type { InputProps } from "./Input";
 
+export { default as CurrencyInput } from "./CurrencyInput";
+export type { CurrencyInputProps } from "./CurrencyInput";
+
+export { default as FormValidationAlert } from "./FormValidationAlert";
+
 export { default as Select } from "./Select";
 export type { SelectOption, SelectProps } from "./Select";
 

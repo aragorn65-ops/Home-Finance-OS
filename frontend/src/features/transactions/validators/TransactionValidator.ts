@@ -4,6 +4,12 @@ import type {
 } from "../models/ExpenseAllocation";
 import type { TransactionForm } from "../models/TransactionForm";
 import type { TransactionVisibility } from "../models/Transaction";
+import {
+  normalizeTransactionCategory,
+} from "../models/TransactionCategory";
+import {
+  currencies,
+} from "../../../shared/data/currencies";
 
 export interface TransactionValidationResult {
   isValid: boolean;
@@ -28,6 +34,8 @@ const allowedSplitMethods:
 
 const allowedAttachmentMimeTypes = [
   "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
   "image/png",
   "image/webp",
   "application/pdf",
@@ -42,10 +50,11 @@ const allowedAttachmentCategories = [
 const maximumAttachmentCount = 3;
 
 const maximumAttachmentSizeBytes =
-  750 * 1024;
+  1024 * 1024;
 
 const maximumTotalAttachmentSizeBytes =
-  1536 * 1024;
+  maximumAttachmentCount *
+  maximumAttachmentSizeBytes;
 
 export default class TransactionValidator {
   /**
@@ -82,9 +91,22 @@ export default class TransactionValidator {
         "Select a valid transaction visibility.";
     }
 
+    const normalizedCategory =
+      normalizeTransactionCategory(
+        form.category
+      );
+
     if (!form.category.trim()) {
       errors.category =
         "Category is required.";
+    }
+    else if (
+      normalizedCategory === "Other" &&
+      form.category.trim().toLowerCase() ===
+        "other"
+    ) {
+      errors.category =
+        "Enter the other category name.";
     }
 
     if (
@@ -96,6 +118,11 @@ export default class TransactionValidator {
     }
 
     this.validateTransactionDate(
+      form,
+      errors
+    );
+
+    this.validateCurrency(
       form,
       errors
     );
@@ -245,7 +272,7 @@ export default class TransactionValidator {
         maximumAttachmentSizeBytes
       ) {
         errors.attachments =
-          "Each attachment must be 750 KB or smaller.";
+          "Each attachment must be 1 MB or smaller.";
 
         return;
       }
@@ -289,7 +316,7 @@ export default class TransactionValidator {
       maximumTotalAttachmentSizeBytes
     ) {
       errors.attachments =
-        "Combined attachment size must be 1.5 MB or smaller.";
+        "Combined attachment size must be 3 MB or smaller.";
     }
   }
 
@@ -335,6 +362,46 @@ export default class TransactionValidator {
     ) {
       errors.destinationAccountId =
         "Source and destination accounts must be different.";
+    }
+  }
+
+  private static validateCurrency(
+    form: TransactionForm,
+    errors: Record<string, string>
+  ): void {
+    if (
+      form.type !== "income" &&
+      form.type !== "expense"
+    ) {
+      return;
+    }
+
+    const validCurrencies =
+      currencies
+        .map(
+          (currency) =>
+            currency.value
+        )
+        .filter(Boolean);
+
+    if (
+      !form.enteredCurrency ||
+      !validCurrencies.includes(
+        form.enteredCurrency
+      )
+    ) {
+      errors.enteredCurrency =
+        "Select a valid transaction currency.";
+    }
+
+    if (
+      !Number.isFinite(
+        form.exchangeRate
+      ) ||
+      (form.exchangeRate ?? 0) <= 0
+    ) {
+      errors.exchangeRate =
+        "Enter a valid exchange rate.";
     }
   }
 
@@ -615,17 +682,14 @@ export default class TransactionValidator {
     errors: Record<string, string>
   ): void {
     const normalizedCategory =
-      form.category
-        .trim()
-        .toLowerCase();
+      normalizeTransactionCategory(
+        form.category
+      );
 
     const isSupportedUtility =
-      normalizedCategory.includes(
-        "electricity"
-      ) ||
-      normalizedCategory.includes(
-        "water"
-      );
+      normalizedCategory ===
+        "Electricity" ||
+      normalizedCategory === "Water";
 
     if (!isSupportedUtility) {
       errors.splitMethod =

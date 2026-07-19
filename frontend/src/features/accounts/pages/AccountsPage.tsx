@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import {
   ConfirmDialog,
+  FormValidationAlert,
 } from "../../../shared/ui";
 
 import AccountToolbar from "../components/AccountToolbar";
@@ -25,6 +26,29 @@ import {
   type AccountForm as AccountFormModel,
 } from "../models/AccountForm";
 
+const accountFieldLabels:
+  Record<string, string> = {
+    general: "General",
+    ownerMemberId: "Account Owner",
+    visibility: "Visibility",
+    name: "Account Name",
+    institution: "Institution",
+    accountClass: "Account Class",
+    type: "Account Type",
+    currency: "Currency",
+    baseCurrency: "Base Currency",
+    exchangeRate: "Exchange Rate",
+    exchangeRateEffectiveDate:
+      "Rate Effective Date",
+    balance: "Current Balance",
+    creditLimit: "Credit Limit",
+    statementBalance:
+      "Current Statement Balance",
+    minimumPayment: "Minimum Payment",
+    paymentDueDate: "Payment Due Date",
+    isActive: "Active account",
+  };
+
 function formatDateInput(
   date?: Date
 ): string {
@@ -46,11 +70,25 @@ function formatDateInput(
 }
 
 function createDefaultForm(
-  ownerMemberId: string
+  ownerMemberId: string,
+  baseCurrency = "PHP"
 ): AccountFormModel {
+  const today =
+    new Date()
+      .toISOString()
+      .slice(0, 10);
+
   return {
     ...defaultAccountForm,
     ownerMemberId,
+    currency:
+      baseCurrency,
+    baseCurrency,
+    exchangeRate: 1,
+    exchangeRateEffectiveDate:
+      today,
+    exchangeRateSource: "manual",
+    exchangeRateProvider: "",
   };
 }
 
@@ -79,8 +117,25 @@ function mapAccountToForm(
     currency:
       account.currency,
 
+    baseCurrency:
+      account.baseCurrency ??
+      account.currency,
+
+    exchangeRate:
+      account.exchangeRate ?? 1,
+
+    exchangeRateEffectiveDate:
+      formatDateInput(
+        account.exchangeRateEffectiveDate
+      ),
+    exchangeRateSource:
+      account.exchangeRateSource ??
+      "manual",
+    exchangeRateProvider:
+      account.exchangeRateProvider ?? "",
+
     balance:
-      account.openingBalance,
+      account.currentBalance,
 
     creditLimit:
       account.creditLimit ?? 0,
@@ -133,6 +188,9 @@ export default function AccountsPage() {
     members[0]?.id ??
     "";
 
+  const baseCurrency =
+    household?.currency ?? "PHP";
+
   const [isDialogOpen, setIsDialogOpen] =
     useState(false);
 
@@ -149,26 +207,67 @@ export default function AccountsPage() {
   const [form, setForm] =
     useState<AccountFormModel>(
       createDefaultForm(
-        defaultOwnerMemberId
+        defaultOwnerMemberId,
+        baseCurrency
       )
     );
 
   const [saveError, setSaveError] =
     useState("");
 
+  const [
+    validationAlertErrors,
+    setValidationAlertErrors,
+  ] = useState<Record<string, string>>(
+    {}
+  );
+
+  const [
+    isValidationAlertOpen,
+    setIsValidationAlertOpen,
+  ] = useState(false);
+
   const [deleteError, setDeleteError] =
     useState("");
+
+  const showValidationAlert = (
+    nextErrors:
+      Record<string, string> | undefined,
+    fallbackMessage =
+      "Please correct the highlighted fields."
+  ) => {
+    const visibleErrors =
+      nextErrors &&
+      Object.keys(nextErrors).length >
+        0
+        ? nextErrors
+        : {
+            general:
+              fallbackMessage,
+          };
+
+    setValidationAlertErrors(
+      visibleErrors
+    );
+
+    setIsValidationAlertOpen(
+      true
+    );
+  };
 
   const resetDialog = () => {
     setEditingAccount(null);
 
     setForm(
       createDefaultForm(
-        defaultOwnerMemberId
+        defaultOwnerMemberId,
+        baseCurrency
       )
     );
 
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
     setIsDialogOpen(false);
   };
 
@@ -177,11 +276,14 @@ export default function AccountsPage() {
 
     setForm(
       createDefaultForm(
-        defaultOwnerMemberId
+        defaultOwnerMemberId,
+        baseCurrency
       )
     );
 
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
     setIsDialogOpen(true);
   };
 
@@ -195,6 +297,8 @@ export default function AccountsPage() {
     );
 
     setSaveError("");
+    setValidationAlertErrors({});
+    setIsValidationAlertOpen(false);
     setIsDialogOpen(true);
   };
 
@@ -239,16 +343,30 @@ export default function AccountsPage() {
     setSaveError("");
 
     if (!household) {
-      setSaveError(
-        "Complete household setup before creating an account."
+      const nextErrors = {
+        general:
+          "Complete household setup before creating an account.",
+      };
+
+      setSaveError(nextErrors.general);
+      showValidationAlert(
+        nextErrors
       );
 
       return;
     }
 
     if (!form.ownerMemberId) {
+      const nextErrors = {
+        ownerMemberId:
+          "Select the member who owns this account.",
+      };
+
       setSaveError(
-        "Select the member who owns this account."
+        nextErrors.ownerMemberId
+      );
+      showValidationAlert(
+        nextErrors
       );
 
       return;
@@ -265,12 +383,17 @@ export default function AccountsPage() {
         );
 
     if (!result.success) {
-      setSaveError(
+      const nextSaveError =
         result.message ??
           getFirstError(
             result.errors
           ) ??
-          "Unable to save the account."
+          "Unable to save the account.";
+
+      setSaveError(nextSaveError);
+      showValidationAlert(
+        result.errors,
+        nextSaveError
       );
 
       return;
@@ -295,6 +418,7 @@ export default function AccountsPage() {
           totalBalance={
             totalBalance
           }
+          currency={baseCurrency}
         />
 
         <AccountList
@@ -324,6 +448,21 @@ export default function AccountsPage() {
         onSave={handleSaveAccount}
       >
         <div className="space-y-4">
+          <FormValidationAlert
+            open={isValidationAlertOpen}
+            errors={
+              validationAlertErrors
+            }
+            fieldLabels={
+              accountFieldLabels
+            }
+            onClose={() =>
+              setIsValidationAlertOpen(
+                false
+              )
+            }
+          />
+
           {saveError && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {saveError}
@@ -341,9 +480,18 @@ export default function AccountsPage() {
           <AccountForm
             value={form}
             members={members}
+            baseCurrency={
+              baseCurrency
+            }
+            isEditing={
+              editingAccount !== null
+            }
             onChange={(nextForm) => {
               setForm(nextForm);
               setSaveError("");
+              setIsValidationAlertOpen(
+                false
+              );
             }}
           />
         </div>

@@ -43,4 +43,8 @@
   .app-content {
     padding: var(--layout-page-padding-mobile);
   }
+
+  .page-container {
+    margin-inline: auto;
+  }
 }

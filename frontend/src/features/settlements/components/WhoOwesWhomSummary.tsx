@@ -1,21 +1,25 @@
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
 import type { MemberSettlementObligation } from "../models/MemberSettlementObligation";
+import formatCurrency from "../../../shared/utils/formatCurrency";
 
 type WhoOwesWhomSummaryProps = {
   obligations: MemberSettlementObligation[];
   members: HouseholdMember[];
+  currency?: string;
+  title?: string;
+  description?: string;
+  amountLabel?: string;
 };
-
-const amountFormatter =
-  new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
 export default function WhoOwesWhomSummary({
   obligations,
   members,
+  currency,
+  title = "Who Owes Whom",
+  description =
+    "Current outstanding reimbursements between household members.",
+  amountLabel = "Outstanding",
 }: WhoOwesWhomSummaryProps) {
   const getMemberName = (
     memberId: string
@@ -33,12 +37,11 @@ export default function WhoOwesWhomSummary({
     <section className="rounded-lg border bg-white p-5">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-foreground">
-          Who Owes Whom
+          {title}
         </h2>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          Current outstanding reimbursements between
-          household members.
+          {description}
         </p>
       </div>
 
@@ -68,8 +71,9 @@ export default function WhoOwesWhomSummary({
                 );
 
               const formattedAmount =
-                amountFormatter.format(
-                  obligation.amount
+                formatCurrency(
+                  obligation.amount,
+                  currency
                 );
 
               const allocationLabel =
@@ -102,7 +106,7 @@ export default function WhoOwesWhomSummary({
 
                   <div className="text-left sm:text-right">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Outstanding
+                      {amountLabel}
                     </p>
 
                     <p className="text-lg font-semibold text-foreground">

@@ -21,10 +21,12 @@ interface SerializedAccount
   extends Omit<
     Account,
     | "paymentDueDate"
+    | "exchangeRateEffectiveDate"
     | "createdAt"
     | "updatedAt"
   > {
   paymentDueDate?: string;
+  exchangeRateEffectiveDate?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -418,9 +420,13 @@ export default class AccountRepository {
         type: "savings",
 
         currency: "PHP",
+        baseCurrency: "PHP",
+        exchangeRate: 1,
 
         openingBalance: 50000,
         currentBalance: 125000,
+        openingBaseBalance: 50000,
+        currentBaseBalance: 125000,
 
         accountNumber:
           "****1234",
@@ -447,9 +453,13 @@ export default class AccountRepository {
         type: "e-wallet",
 
         currency: "PHP",
+        baseCurrency: "PHP",
+        exchangeRate: 1,
 
         openingBalance: 5000,
         currentBalance: 12750,
+        openingBaseBalance: 5000,
+        currentBaseBalance: 12750,
 
         accountNumber:
           undefined,
@@ -478,9 +488,13 @@ export default class AccountRepository {
         type: "cash",
 
         currency: "PHP",
+        baseCurrency: "PHP",
+        exchangeRate: 1,
 
         openingBalance: 3000,
         currentBalance: 3000,
+        openingBaseBalance: 3000,
+        currentBaseBalance: 3000,
 
         accountNumber:
           undefined,
@@ -510,6 +524,11 @@ export default class AccountRepository {
           ? account.paymentDueDate.toISOString()
           : undefined,
 
+      exchangeRateEffectiveDate:
+        account.exchangeRateEffectiveDate
+          ? account.exchangeRateEffectiveDate.toISOString()
+          : undefined,
+
       createdAt:
         account.createdAt.toISOString(),
 
@@ -524,13 +543,42 @@ export default class AccountRepository {
   private static deserializeAccount(
     account: SerializedAccount
   ): Account {
+    const currency =
+      account.currency || "PHP";
+
+    const baseCurrency =
+      account.baseCurrency ??
+      currency;
+
+    const exchangeRate =
+      account.exchangeRate ?? 1;
+
     return {
       ...account,
+
+      currency,
+      baseCurrency,
+      exchangeRate,
+      openingBaseBalance:
+        account.openingBaseBalance ??
+        account.openingBalance *
+          exchangeRate,
+      currentBaseBalance:
+        account.currentBaseBalance ??
+        account.currentBalance *
+          exchangeRate,
 
       paymentDueDate:
         account.paymentDueDate
           ? new Date(
               account.paymentDueDate
+            )
+          : undefined,
+
+      exchangeRateEffectiveDate:
+        account.exchangeRateEffectiveDate
+          ? new Date(
+              account.exchangeRateEffectiveDate
             )
           : undefined,
 
@@ -559,6 +607,13 @@ export default class AccountRepository {
         account.paymentDueDate
           ? new Date(
               account.paymentDueDate
+            )
+          : undefined,
+
+      exchangeRateEffectiveDate:
+        account.exchangeRateEffectiveDate
+          ? new Date(
+              account.exchangeRateEffectiveDate
             )
           : undefined,
 
@@ -625,11 +680,26 @@ export default class AccountRepository {
       ) &&
       typeof value.currency ===
         "string" &&
+      this.isOptionalString(
+        value.baseCurrency
+      ) &&
+      this.isOptionalFiniteNumber(
+        value.exchangeRate
+      ) &&
+      this.isOptionalDateString(
+        value.exchangeRateEffectiveDate
+      ) &&
       this.isFiniteNumber(
         value.openingBalance
       ) &&
       this.isFiniteNumber(
         value.currentBalance
+      ) &&
+      this.isOptionalFiniteNumber(
+        value.openingBaseBalance
+      ) &&
+      this.isOptionalFiniteNumber(
+        value.currentBaseBalance
       ) &&
       this.isOptionalString(
         value.accountNumber

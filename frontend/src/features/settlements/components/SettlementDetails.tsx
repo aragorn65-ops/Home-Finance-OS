@@ -1,4 +1,6 @@
 import type { Settlement } from "../models/Settlement";
+import formatCurrency from "../../../shared/utils/formatCurrency";
+import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
 
 import type { SettlementApplicationDetails } from "../models/SettlementApplicationDetails";
 
@@ -10,6 +12,7 @@ type SettlementDetailsProps = {
 
   sourceAccountName?: string;
   destinationAccountName?: string;
+  currency?: string;
 
   applicationDetails:
     SettlementApplicationDetails[];
@@ -21,17 +24,13 @@ type SettlementDetailsProps = {
   ) => void;
 };
 
-const amountFormatter =
-  new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
 function formatAmount(
-  amount: number
+  amount: number,
+  currency?: string
 ): string {
-  return amountFormatter.format(
-    amount
+  return formatCurrency(
+    amount,
+    currency
   );
 }
 
@@ -74,7 +73,7 @@ function getPaymentStatusClasses(
       return "bg-red-50 text-red-700";
 
     case "partially-paid":
-      return "bg-amber-50 text-amber-700";
+      return "bg-[#d2c02a] text-amber-700";
 
     case "paid":
       return "bg-green-50 text-green-700";
@@ -92,6 +91,7 @@ export default function SettlementDetails({
 
   sourceAccountName,
   destinationAccountName,
+  currency,
 
   applicationDetails,
 
@@ -100,7 +100,8 @@ export default function SettlementDetails({
 }: SettlementDetailsProps) {
   const formattedAmount =
     formatAmount(
-      settlement.amount
+      settlement.amount,
+      currency
     );
 
   const formattedSettlementDate =
@@ -299,7 +300,8 @@ export default function SettlementDetails({
 
             <p className="font-semibold text-foreground">
               {formatAmount(
-                appliedTotal
+                appliedTotal,
+                currency
               )}
             </p>
           </div>
@@ -370,7 +372,8 @@ export default function SettlementDetails({
 
                         <p className="text-lg font-semibold text-foreground">
                           {formatAmount(
-                            application.appliedAmount
+                            application.appliedAmount,
+                            currency
                           )}
                         </p>
                       </div>
@@ -384,7 +387,8 @@ export default function SettlementDetails({
 
                         <dd className="mt-1 font-medium text-foreground">
                           {formatAmount(
-                            application.allocatedAmount
+                            application.allocatedAmount,
+                            currency
                           )}
                         </dd>
                       </div>
@@ -396,7 +400,8 @@ export default function SettlementDetails({
 
                         <dd className="mt-1 font-medium text-foreground">
                           {formatAmount(
-                            application.paidAmount
+                            application.paidAmount,
+                            currency
                           )}
                         </dd>
                       </div>
@@ -408,7 +413,8 @@ export default function SettlementDetails({
 
                         <dd className="mt-1 font-medium text-foreground">
                           {formatAmount(
-                            application.outstandingAmount
+                            application.outstandingAmount,
+                            currency
                           )}
                         </dd>
                       </div>
@@ -416,6 +422,58 @@ export default function SettlementDetails({
                   </article>
                 );
               }
+            )}
+          </div>
+        )}
+      </section>
+
+      <section className="border-t pt-5">
+        <h3 className="text-sm font-medium text-muted-foreground">
+          Transfer Receipts
+        </h3>
+
+        {settlement.attachments.length === 0 ? (
+          <p className="mt-2 text-sm text-foreground">
+            No transfer receipt attached.
+          </p>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {settlement.attachments.map(
+              (attachment) => (
+                <div
+                  key={attachment.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {attachment.fileName}
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {attachment.category}
+                      {" | "}
+                      {new Intl.NumberFormat(
+                        "en-US"
+                      ).format(
+                        attachment.sizeBytes
+                      )}{" "}
+                      bytes
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openAttachmentPreview(
+                        attachment
+                      )
+                    }
+                    className="rounded-md border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+                  >
+                    View
+                  </button>
+                </div>
+              )
             )}
           </div>
         )}

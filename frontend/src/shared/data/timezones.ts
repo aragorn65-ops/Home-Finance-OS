@@ -14,6 +14,10 @@ export const timezones: SelectOption[] = [
     label: "America/New_York (UTC-05:00 / -04:00)",
   },
   {
+    value: "America/Toronto",
+    label: "America/Toronto (UTC-05:00 / -04:00)",
+  },
+  {
     value: "America/Chicago",
     label: "America/Chicago (UTC-06:00 / -05:00)",
   },
@@ -28,6 +32,26 @@ export const timezones: SelectOption[] = [
   {
     value: "Australia/Sydney",
     label: "Australia/Sydney (UTC+10:00 / +11:00)",
+  },
+  {
+    value: "Australia/Melbourne",
+    label: "Australia/Melbourne (UTC+10:00 / +11:00)",
+  },
+  {
+    value: "Asia/Tokyo",
+    label: "Asia/Tokyo (UTC+09:00)",
+  },
+  {
+    value: "Europe/London",
+    label: "Europe/London (UTC+00:00 / +01:00)",
+  },
+  {
+    value: "Europe/Berlin",
+    label: "Europe/Berlin (UTC+01:00 / +02:00)",
+  },
+  {
+    value: "Asia/Riyadh",
+    label: "Asia/Riyadh (UTC+03:00)",
   },
   {
     value: "Asia/Qatar",
