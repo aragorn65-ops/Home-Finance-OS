@@ -5,3 +5,7 @@ export {
 export {
   default as AuthDiagnosticsPanel,
 } from "./AuthDiagnosticsPanel";
+
+export {
+  default as HouseholdClaimPanel,
+} from "./HouseholdClaimPanel";
