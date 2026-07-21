@@ -25,6 +25,8 @@ updated project status, and clear scope boundaries.
 * Added a GitHub beta feedback issue template.
 * Updated the README to reflect the current guided private beta candidate state.
 * Added Sprint 37 tracking notes and release notes.
+* Improved manual settlement Apply Full behavior so a zero settlement amount is
+  filled from the selected allocation's outstanding amount.
 
 ---
 
@@ -43,3 +45,12 @@ diagnostics as prototype surfaces.
 * Production cloud sync.
 * Shared household invites and collaboration.
 * New finance modules.
+
+---
+
+## Closure Validation
+
+* Manual settlement Apply Full behavior passed.
+* Private beta runbook functional path passed.
+* `npm.cmd test` passed.
+* `npm.cmd run build` passed.

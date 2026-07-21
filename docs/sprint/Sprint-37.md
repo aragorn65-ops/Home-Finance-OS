@@ -27,6 +27,8 @@ scope for the local-first beta candidate.
 * [x] Updated the README status from early architecture framing to the current
       guided private beta candidate state.
 * [x] Added release notes for the private beta test pack.
+* [x] Confirmed manual settlement Apply Full behavior during private beta
+      closure.
 * [x] Kept production auth, cloud sync, and new finance modules out of scope.
 
 ---
@@ -48,4 +50,16 @@ npm.cmd run lint
 npm.cmd test
 npm.cmd run build
 git diff --check
+```
+
+## Closure Notes
+
+Sprint 37 is closed after the private beta runbook functional pass, manual
+settlement Apply Full verification, and clean automated validation.
+
+Final closure validation:
+
+```text
+npm.cmd test
+npm.cmd run build
 ```

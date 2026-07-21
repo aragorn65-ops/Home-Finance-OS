@@ -20,9 +20,13 @@ This project follows a sprint-based development process.
 
 * Updated the README to reflect the guided private local-first beta candidate state.
 * Updated the roadmap with the Sprint 37 private beta test pack.
+* Updated manual settlement Apply Full behavior to populate a zero settlement
+  amount from the selected allocation's outstanding amount.
 
 ### Verified
 
+* Verified manual settlement Apply Full behavior during beta closure.
+* Verified the private beta runbook functional path.
 * Verified `npm.cmd run lint` completes with zero errors.
 * Verified `npm.cmd test` completes with seven passing tests.
 * Verified `npm.cmd run build` completes with zero errors.
