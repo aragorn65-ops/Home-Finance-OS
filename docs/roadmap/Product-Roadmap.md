@@ -5,8 +5,9 @@
 HFOS has moved from feature expansion into beta hardening.
 
 Sprints 33-36 focused on reliability, test coverage, data safety, and UX polish
-before a private local-first beta decision. Sprint 37 prepares the guided tester
-process around that decision.
+before a private local-first beta decision. Sprint 37 prepared the guided tester
+process around that decision. Sprint 38 moves the beta candidate toward a
+repeatable Cloudflare Pages deployment.
 
 ---
 
@@ -20,6 +21,7 @@ process around that decision.
 | v0.35.0-alpha | UX polish pass |
 | v0.36.0-alpha | Beta readiness review |
 | v0.37.0-alpha | Private beta test pack |
+| v0.38.0-alpha | Cloudflare Pages beta deployment |
 
 ---
 
@@ -29,8 +31,8 @@ The near-term beta target is a private local-first beta.
 
 Production cloud sync, multi-device shared households, and production auth provider integration remain post-hardening decisions unless they become necessary for beta safety.
 
-The current gate is guided private beta with sample or low-risk data, local
-backup expectations, and structured issue intake.
+The current gate is a deployed Cloudflare Pages beta smoke check using sample or
+low-risk data, local backup expectations, and structured issue intake.
 
 ---
 

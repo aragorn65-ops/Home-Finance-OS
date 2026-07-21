@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.38.0-alpha] - 2026-07-21
+
+### Added
+
+* Added Cloudflare Pages deployment documentation.
+* Added a Cloudflare Pages SPA fallback for client-side routes.
+* Added Sprint 38 notes and release notes for the Cloudflare Pages beta
+  deployment track.
+
+### Changed
+
+* Updated the roadmap to include the Cloudflare Pages beta deployment gate.
+
+### Verified
+
+* Pending deployed Cloudflare Pages smoke check.
+
+---
+
 ## [0.37.0-alpha] - 2026-07-21
 
 ### Added
