@@ -8,6 +8,27 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.32.0-alpha] - 2026-07-21
+
+### Added
+
+* Added local authenticated household link metadata after migration commit.
+* Added auth diagnostics visibility for local link state and remote household id.
+* Added household storage support for linking the local owner member to the authenticated user.
+
+### Changed
+
+* Updated migration commit to persist local link state after prototype remote persistence succeeds.
+* Updated claim prompt visibility so linked households are not prompted for repeat claims.
+
+### Verified
+
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `npm.cmd run lint` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+
+---
+
 ## [0.31.0-alpha] - 2026-07-21
 
 ### Added
