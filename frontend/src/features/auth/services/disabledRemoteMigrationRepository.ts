@@ -13,6 +13,11 @@ import type {
 export class DisabledRemoteMigrationRepository
   implements RemoteMigrationRepository
 {
+  async listDrafts():
+    Promise<RemoteMigrationDraft[]> {
+    return [];
+  }
+
   async createDraft(
     draft: HouseholdClaimDraft
   ): Promise<RemoteMigrationDraft> {

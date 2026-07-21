@@ -8,6 +8,9 @@ import type {
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteMigrationCommitResult,
+  RemoteMigrationDraft,
+  RemoteMigrationValidation,
 } from "../models";
 
 export class DisabledAuthBackendAdapter
@@ -50,5 +53,37 @@ export class DisabledAuthBackendAdapter
     throw new Error(
       `Authenticated household migration is disabled for ${draft.householdName}.`
     );
+  }
+
+  async listMigrationDrafts():
+    Promise<RemoteMigrationDraft[]> {
+    return [];
+  }
+
+  async validateMigrationDraft(
+    draftId: string
+  ): Promise<RemoteMigrationValidation> {
+    return {
+      draftId,
+      isValid: false,
+      recordCountsMatch: false,
+      warnings: [],
+      blockers: [
+        "Remote migration is disabled.",
+      ],
+    };
+  }
+
+  async commitMigrationDraft(
+    draftId: string
+  ): Promise<RemoteMigrationCommitResult> {
+    throw new Error(
+      `Remote migration commit is disabled for ${draftId}.`
+    );
+  }
+
+  async abortMigrationDraft():
+    Promise<void> {
+    return Promise.resolve();
   }
 }

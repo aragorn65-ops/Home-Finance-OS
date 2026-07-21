@@ -1,0 +1,182 @@
+.migration-checkpoint-panel {
+  display: grid;
+  gap: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: var(--space-4);
+}
+
+.migration-checkpoint-panel__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.migration-checkpoint-panel__header h2,
+.migration-checkpoint-panel__item h3 {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-weight: var(--font-weight-semibold);
+}
+
+.migration-checkpoint-panel__header h2 {
+  font-size: var(--font-size-lg);
+}
+
+.migration-checkpoint-panel__header p,
+.migration-checkpoint-panel__item p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.migration-checkpoint-panel__header svg {
+  color: var(--color-info);
+  flex: 0 0 auto;
+}
+
+.migration-checkpoint-panel__error,
+.migration-checkpoint-panel__message {
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  padding: var(--space-3);
+}
+
+.migration-checkpoint-panel__error {
+  border: 1px solid var(--color-danger-border);
+  background: var(--color-danger-background);
+  color: var(--color-danger-text);
+}
+
+.migration-checkpoint-panel__message {
+  border: 1px solid var(--color-success-border);
+  background: var(--color-success-background);
+  color: var(--color-success-text);
+}
+
+.migration-checkpoint-panel__list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.migration-checkpoint-panel__item {
+  display: grid;
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  padding: var(--space-3);
+}
+
+.migration-checkpoint-panel__item-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.migration-checkpoint-panel__item h3 {
+  font-size: var(--font-size-base);
+}
+
+.migration-checkpoint-panel__status {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-1) var(--space-2);
+  text-transform: capitalize;
+}
+
+.migration-checkpoint-panel__status[data-status="validated"] {
+  border-color: var(--color-info-border);
+  background: var(--color-info-background);
+  color: var(--color-info-text);
+}
+
+.migration-checkpoint-panel__status[data-status="committed"] {
+  border-color: var(--color-success-border);
+  background: var(--color-success-background);
+  color: var(--color-success-text);
+}
+
+.migration-checkpoint-panel__status[data-status="aborted"] {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-background);
+  color: var(--color-danger-text);
+}
+
+.migration-checkpoint-panel__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.migration-checkpoint-panel__meta div {
+  min-width: 0;
+}
+
+.migration-checkpoint-panel__meta dt {
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.migration-checkpoint-panel__meta dd {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  overflow-wrap: anywhere;
+}
+
+.migration-checkpoint-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.migration-checkpoint-panel__actions button {
+  display: inline-flex;
+  min-height: var(--control-height-sm);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  padding: 0 var(--space-3);
+}
+
+.migration-checkpoint-panel__actions button:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-hover);
+}
+
+.migration-checkpoint-panel__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.migration-checkpoint-panel__actions button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 32rem) {
+  .migration-checkpoint-panel__item-header,
+  .migration-checkpoint-panel__meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .migration-checkpoint-panel__item-header {
+    display: grid;
+  }
+}

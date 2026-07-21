@@ -15,6 +15,7 @@ import {
   getApplicationDataHealthSummary,
 } from "../../startup/services/applicationBackup";
 import HouseholdClaimPanel from "./HouseholdClaimPanel";
+import MigrationCheckpointPanel from "./MigrationCheckpointPanel";
 
 export default function AuthDiagnosticsPanel() {
   const {
@@ -150,6 +151,23 @@ export default function AuthDiagnosticsPanel() {
                 }
               </dd>
             </div>
+
+            <div>
+              <dt>Migrations</dt>
+              <dd>
+                {
+                  diagnostics.migrationDraftCount
+                }
+              </dd>
+            </div>
+
+            <div>
+              <dt>Latest migration</dt>
+              <dd>
+                {diagnostics.latestMigrationStatus ??
+                  "none"}
+              </dd>
+            </div>
           </dl>
 
           {diagnostics.isPrototypeAdapter && (
@@ -186,7 +204,9 @@ export default function AuthDiagnosticsPanel() {
 
       {session.status === "signed-in" &&
         household &&
-        healthSummary && (
+        healthSummary &&
+        (diagnostics?.membershipCount ??
+          0) === 0 && (
           <HouseholdClaimPanel
             household={household}
             backupSummary={{
@@ -228,6 +248,18 @@ export default function AuthDiagnosticsPanel() {
             }}
           />
         )}
+
+      {session.status === "signed-in" && (
+        <MigrationCheckpointPanel
+          refreshToken={
+            diagnostics?.migrationDraftCount ??
+            0
+          }
+          onStatusChange={() => {
+            void refreshDiagnostics();
+          }}
+        />
+      )}
     </div>
   );
 }

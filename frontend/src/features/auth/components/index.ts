@@ -9,3 +9,7 @@ export {
 export {
   default as HouseholdClaimPanel,
 } from "./HouseholdClaimPanel";
+
+export {
+  default as MigrationCheckpointPanel,
+} from "./MigrationCheckpointPanel";

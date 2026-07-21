@@ -161,6 +161,13 @@ export class InMemoryAuthStore {
     ];
   }
 
+  listMigrations():
+    RemoteMigrationDraft[] {
+    return [
+      ...this.state.migrations,
+    ];
+  }
+
   saveInvitation(
     invitation: HouseholdInvitation
   ): HouseholdInvitation {
