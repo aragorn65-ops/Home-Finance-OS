@@ -8,6 +8,28 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.33.0-alpha] - 2026-07-21
+
+### Added
+
+* Added linked versus local-only status to backup and current browser data summaries.
+* Added remote household id visibility to backup summaries when a household is linked.
+* Added backup validation for authenticated-link metadata.
+
+### Changed
+
+* Updated Settings restore previews to show authenticated link status before restore.
+* Clarified Clear Test Data copy to state authenticated link state is preserved.
+* Clarified Reset Application Data copy to state authenticated link state is removed.
+
+### Verified
+
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `npm.cmd run lint` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+
+---
+
 ## [0.32.0-alpha] - 2026-07-21
 
 ### Added

@@ -3,9 +3,9 @@
 ## Data Safety Hardening
 
 **Release:** v0.33.0-alpha
-**Date:** TBD
+**Date:** July 21, 2026
 **Branch:** sprint-33-data-safety-hardening
-**Status:** Planned
+**Status:** Complete
 
 ---
 
@@ -19,12 +19,22 @@ The sprint focuses on backup, restore, reset, clear-test-data, migration checkpo
 
 ## Planned Scope
 
-* [ ] Review backup export summaries for linked and unlinked households.
-* [ ] Confirm authenticated-link metadata is included in local backups.
-* [ ] Confirm restore preserves linked household metadata when present.
-* [ ] Confirm reset and clear-test-data behavior is explicit about what is kept or removed.
-* [ ] Add user-facing copy where local-only, claimed, and linked states may be ambiguous.
-* [ ] Document manual QA for backup, restore, reset, and migration-link flows.
+* [x] Review backup export summaries for linked and unlinked households.
+* [x] Confirm authenticated-link metadata is included in local backups.
+* [x] Confirm restore previews show linked household metadata when present.
+* [x] Confirm reset and clear-test-data behavior is explicit about what is kept or removed.
+* [x] Add user-facing copy where local-only, claimed, and linked states may be ambiguous.
+* [x] Document manual QA targets for backup, restore, reset, and migration-link flows.
+
+---
+
+## Implementation Summary
+
+* Added authenticated link status and optional remote household id to backup and data-health summaries.
+* Added restore-preview validation for malformed authenticated-link metadata.
+* Added linked/local-only status to backup restore previews and current browser data summaries.
+* Clarified Clear Test Data copy so linked households understand authenticated link state is preserved.
+* Clarified Reset Application Data copy so linked households understand authenticated link state is removed.
 
 ---
 
@@ -44,3 +54,5 @@ npm.cmd run build
 npm.cmd run lint
 git diff --check
 ```
+
+All verification targets pass.
