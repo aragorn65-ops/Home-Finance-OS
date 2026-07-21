@@ -790,15 +790,37 @@ export default function SettlementForm({
     option:
       SettlementAllocationOption
   ) => {
-    updateApplication(
-      option.expenseAllocationId,
-      {
-        isSelected: true,
+    setForm((current) => ({
+      ...current,
 
-        appliedAmount:
-          option.outstandingAmount,
-      }
-    );
+      amount:
+        current.amount === 0
+          ? option.outstandingAmount
+          : current.amount,
+
+      applications:
+        createApplicationForms(
+          eligibleAllocationOptions,
+          current.applications
+        ).map((application) =>
+          application.expenseAllocationId ===
+          option.expenseAllocationId
+            ? {
+                ...application,
+
+                isSelected: true,
+
+                appliedAmount:
+                  option.outstandingAmount,
+              }
+            : application
+        ),
+    }));
+
+    clearErrors([
+      "applications",
+      "amount",
+    ]);
   };
 
   const addAttachments = async (
