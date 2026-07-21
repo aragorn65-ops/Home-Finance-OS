@@ -2030,7 +2030,8 @@ export default function SettingsPage() {
                 Remove accounts, transactions, expense allocations,
                 utility-bill records, settlements, savings records,
                 and leftover HFOS preview keys while keeping this
-                household setup, preferences, and theme.
+                household setup, authenticated link state,
+                preferences, and theme.
               </p>
             </div>
 
@@ -2060,8 +2061,8 @@ export default function SettingsPage() {
 
                 <p className="settings-confirmation__copy settings-confirmation__copy--neutral">
                   Test financial records will be cleared from this
-                  browser. Your household setup and preferences will
-                  remain.
+                  browser. Your household setup, authenticated link
+                  state, and preferences will remain.
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -2102,8 +2103,8 @@ export default function SettingsPage() {
                 accounts, transactions, expense allocations,
                 utility bills, settlements, and settlement
                 applications stored in this browser. Reset also
-                clears leftover HFOS test-data keys from earlier
-                preview builds.
+                clears authenticated link state and leftover HFOS
+                test-data keys from earlier preview builds.
               </p>
 
               <p className="mt-2 text-sm font-medium text-destructive">
@@ -2136,8 +2137,9 @@ export default function SettingsPage() {
 
                 <p className="settings-confirmation__copy">
                   All locally stored HFOS data will be deleted
-                  from this browser and the application will
-                  return to household setup.
+                  from this browser, including any authenticated
+                  household link, and the application will return
+                  to household setup.
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -2188,6 +2190,22 @@ function DataHealthSummaryList({
           v{summary.storageSchemaVersion}
         </dd>
       </div>
+
+      <div>
+        <dt>Link</dt>
+        <dd>
+          {formatAuthenticatedLinkStatus(
+            summary.authenticatedLinkStatus
+          )}
+        </dd>
+      </div>
+
+      {summary.remoteHouseholdId && (
+        <div>
+          <dt>Remote Household</dt>
+          <dd>{summary.remoteHouseholdId}</dd>
+        </div>
+      )}
 
       <div>
         <dt>Theme</dt>
@@ -2273,6 +2291,24 @@ function BackupSummaryList({
           <dd>
             v{summary.storageSchemaVersion}
           </dd>
+        </div>
+      )}
+
+      {summary.authenticatedLinkStatus && (
+        <div>
+          <dt>Link</dt>
+          <dd>
+            {formatAuthenticatedLinkStatus(
+              summary.authenticatedLinkStatus
+            )}
+          </dd>
+        </div>
+      )}
+
+      {summary.remoteHouseholdId && (
+        <div>
+          <dt>Remote Household</dt>
+          <dd>{summary.remoteHouseholdId}</dd>
         </div>
       )}
 
@@ -2373,6 +2409,14 @@ function formatThemePreference(
     .replace(/^\w/, (letter) =>
       letter.toUpperCase()
     );
+}
+
+function formatAuthenticatedLinkStatus(
+  value: "linked" | "unlinked"
+): string {
+  return value === "linked"
+    ? "Linked"
+    : "Local only";
 }
 
 function formatDriveBackupMeta(

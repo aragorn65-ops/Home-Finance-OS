@@ -37,6 +37,8 @@ export default function AuthDiagnosticsPanel() {
     household
       ? getApplicationDataHealthSummary()
       : null;
+  const authenticatedLink =
+    household?.authenticatedLink;
 
   const handleSignIn =
     async (): Promise<void> => {
@@ -168,6 +170,24 @@ export default function AuthDiagnosticsPanel() {
                   "none"}
               </dd>
             </div>
+
+            <div>
+              <dt>Local link</dt>
+              <dd>
+                {authenticatedLink
+                  ? "linked"
+                  : "unlinked"}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Remote household</dt>
+              <dd>
+                {authenticatedLink
+                  ?.remoteHouseholdId ??
+                  "none"}
+              </dd>
+            </div>
           </dl>
 
           {diagnostics.isPrototypeAdapter && (
@@ -205,6 +225,7 @@ export default function AuthDiagnosticsPanel() {
       {session.status === "signed-in" &&
         household &&
         healthSummary &&
+        !authenticatedLink &&
         (diagnostics?.membershipCount ??
           0) === 0 && (
           <HouseholdClaimPanel

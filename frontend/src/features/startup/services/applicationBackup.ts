@@ -68,6 +68,12 @@ export interface ApplicationBackupOptions {
 export interface ApplicationBackupSummary {
   householdName: string;
 
+  authenticatedLinkStatus?:
+    | "linked"
+    | "unlinked";
+
+  remoteHouseholdId?: string;
+
   exportedAt: string;
 
   backupVersion?: number;
@@ -97,6 +103,12 @@ export interface ApplicationBackupSummary {
 
 export interface ApplicationDataHealthSummary {
   householdName: string;
+
+  authenticatedLinkStatus:
+    | "linked"
+    | "unlinked";
+
+  remoteHouseholdId?: string;
 
   storageSchemaVersion: number;
 
@@ -1025,17 +1037,20 @@ function validateBackupFile(
     }
   }
 
+  const householdRecord =
+    backup.records[
+      HFOS_STORAGE_KEYS.household
+    ];
+
   if (
-    !isRecord(
-      backup.records[
-        HFOS_STORAGE_KEYS.household
-      ]
+    !isBackupHouseholdRecord(
+      householdRecord
     )
   ) {
     return {
       success: false,
       message:
-        "Backup household record is malformed.",
+        "Backup household record is malformed or has invalid authenticated-link metadata.",
     };
   }
 
@@ -1133,9 +1148,14 @@ function createBackupSummary(
       "string"
       ? household.householdName
       : "Unnamed household";
+  const authenticatedLink =
+    getAuthenticatedLinkSummary(
+      household
+    );
 
   return {
     householdName,
+    ...authenticatedLink,
     exportedAt:
       backup.exportedAt,
     backupVersion:
@@ -1208,9 +1228,19 @@ function createDataHealthSummary(
 
   const hasHousehold =
     isRecord(household);
+  const authenticatedLink =
+    getAuthenticatedLinkSummary(
+      household
+    );
 
   return {
     householdName,
+    authenticatedLinkStatus:
+      authenticatedLink
+        .authenticatedLinkStatus,
+    remoteHouseholdId:
+      authenticatedLink
+        .remoteHouseholdId,
     storageSchemaVersion:
       HFOS_STORAGE_SCHEMA_VERSION,
     themePreference:
@@ -1273,6 +1303,8 @@ function createUnavailableDataHealthSummary(
   return {
     householdName:
       "Unavailable",
+    authenticatedLinkStatus:
+      "unlinked",
     storageSchemaVersion:
       HFOS_STORAGE_SCHEMA_VERSION,
     themePreference:
@@ -1328,6 +1360,18 @@ function isBackupSummary(
       "light" ||
     value.themePreference ===
       "dark";
+  const optionalLinkStatusIsValid =
+    value.authenticatedLinkStatus ===
+      undefined ||
+    value.authenticatedLinkStatus ===
+      "linked" ||
+    value.authenticatedLinkStatus ===
+      "unlinked";
+  const optionalRemoteHouseholdIdIsValid =
+    value.remoteHouseholdId ===
+      undefined ||
+    typeof value.remoteHouseholdId ===
+      "string";
 
   return (
     typeof value.householdName ===
@@ -1359,8 +1403,87 @@ function isBackupSummary(
     ) &&
     value.savingsGoalCount >= 0 &&
     optionalNumbersAreValid &&
-    optionalThemeIsValid
+    optionalThemeIsValid &&
+    optionalLinkStatusIsValid &&
+    optionalRemoteHouseholdIdIsValid
   );
+}
+
+function isBackupHouseholdRecord(
+  value: unknown
+): boolean {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.householdName ===
+      "string" &&
+    isBackupAuthenticatedLink(
+      value.authenticatedLink
+    )
+  );
+}
+
+function isBackupAuthenticatedLink(
+  value: unknown
+): boolean {
+  if (value === undefined) {
+    return true;
+  }
+
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.remoteHouseholdId ===
+      "string" &&
+    typeof value.migrationId ===
+      "string" &&
+    typeof value.ownerMemberId ===
+      "string" &&
+    typeof value.linkedByUserId ===
+      "string" &&
+    typeof value.linkedAt ===
+      "string" &&
+    !Number.isNaN(
+      new Date(
+        value.linkedAt
+      ).getTime()
+    )
+  );
+}
+
+function getAuthenticatedLinkSummary(
+  household: unknown
+): Pick<
+  ApplicationDataHealthSummary,
+  | "authenticatedLinkStatus"
+  | "remoteHouseholdId"
+> {
+  if (
+    !isRecord(household) ||
+    !isRecord(
+      household.authenticatedLink
+    ) ||
+    typeof household.authenticatedLink
+      .remoteHouseholdId !==
+      "string"
+  ) {
+    return {
+      authenticatedLinkStatus:
+        "unlinked",
+    };
+  }
+
+  return {
+    authenticatedLinkStatus:
+      "linked",
+    remoteHouseholdId:
+      household.authenticatedLink
+        .remoteHouseholdId,
+  };
 }
 
 function getCollectionCount(

@@ -11,6 +11,14 @@ import {
   saveStoredData,
 } from "../../../shared/storage/localStorageStore";
 
+export interface AuthenticatedHouseholdLink {
+  remoteHouseholdId: string;
+  migrationId: string;
+  ownerMemberId: string;
+  linkedByUserId: string;
+  linkedAt: string;
+}
+
 export interface StoredHousehold {
   id: string;
 
@@ -18,6 +26,8 @@ export interface StoredHousehold {
   country: string;
   currency: string;
   timezone: string;
+
+  authenticatedLink?: AuthenticatedHouseholdLink;
 
   members: HouseholdMember[];
 
@@ -92,6 +102,9 @@ export function saveHousehold(
 
       timezone:
         household.timezone.trim(),
+
+      authenticatedLink:
+        existing?.authenticatedLink,
 
       members:
         members?.map(
@@ -330,6 +343,85 @@ export function saveHouseholdPreferences(
   );
 }
 
+export interface LinkHouseholdToAuthenticatedTenantInput {
+  remoteHouseholdId: string;
+  migrationId: string;
+  ownerMemberId: string;
+  linkedByUserId: string;
+  linkedAt?: Date;
+}
+
+export function linkHouseholdToAuthenticatedTenant(
+  input: LinkHouseholdToAuthenticatedTenantInput
+): StoredHousehold | null {
+  const household =
+    loadHousehold();
+
+  if (!household) {
+    return null;
+  }
+
+  const ownerMember =
+    household.members.find(
+      (member) =>
+        member.id ===
+        input.ownerMemberId
+    );
+
+  if (!ownerMember) {
+    return null;
+  }
+
+  const now =
+    new Date();
+  const linkedAt =
+    input.linkedAt ?? now;
+
+  const updatedHousehold:
+    StoredHousehold = {
+    ...household,
+    authenticatedLink: {
+      remoteHouseholdId:
+        input.remoteHouseholdId,
+      migrationId:
+        input.migrationId,
+      ownerMemberId:
+        input.ownerMemberId,
+      linkedByUserId:
+        input.linkedByUserId,
+      linkedAt:
+        linkedAt.toISOString(),
+    },
+    members:
+      household.members.map(
+        (member) =>
+          member.id ===
+          input.ownerMemberId
+            ? {
+                ...member,
+                userId:
+                  input.linkedByUserId,
+                updatedAt: now,
+              }
+            : member
+      ),
+    updatedAt: now,
+  };
+
+  const saved =
+    persistHousehold(
+      updatedHousehold
+    );
+
+  if (!saved) {
+    return null;
+  }
+
+  return cloneHousehold(
+    updatedHousehold
+  );
+}
+
 /**
  * Removes the current and legacy household records.
  *
@@ -477,6 +569,9 @@ function serializeHousehold(
     timezone:
       household.timezone,
 
+    authenticatedLink:
+      household.authenticatedLink,
+
     members:
       household.members.map(
         (member) => ({
@@ -524,6 +619,9 @@ function deserializeHousehold(
 
     timezone:
       household.timezone,
+
+    authenticatedLink:
+      household.authenticatedLink,
 
     members:
       household.members.map(
@@ -663,6 +761,9 @@ function isSerializedStoredHousehold(
       "string" &&
     typeof value.timezone ===
       "string" &&
+    isAuthenticatedHouseholdLink(
+      value.authenticatedLink
+    ) &&
     Array.isArray(
       value.members
     ) &&
@@ -678,6 +779,32 @@ function isSerializedStoredHousehold(
     isDateString(
       value.updatedAt
     )
+  );
+}
+
+function isAuthenticatedHouseholdLink(
+  value: unknown
+): value is
+  | AuthenticatedHouseholdLink
+  | undefined {
+  if (value === undefined) {
+    return true;
+  }
+
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.remoteHouseholdId ===
+      "string" &&
+    typeof value.migrationId ===
+      "string" &&
+    typeof value.ownerMemberId ===
+      "string" &&
+    typeof value.linkedByUserId ===
+      "string" &&
+    isDateString(value.linkedAt)
   );
 }
 

@@ -1,24 +1,43 @@
-v0.6.0-alpha
-Accounts MVP
+# Home Finance OS Product Roadmap
 
-↓
+## Current Direction
 
-v0.7.0-beta
-Transactions
+HFOS has moved from feature expansion into beta hardening.
 
-↓
+Sprints 33-36 focused on reliability, test coverage, data safety, and UX polish
+before a private local-first beta decision. Sprint 37 prepares the guided tester
+process around that decision.
 
-v0.8.0-beta
-Budgets
-Categories
+---
 
-↓
+## Near-Term Track
 
-v0.9.0-beta
-Assets
-Liabilities
+| Release | Focus |
+| --- | --- |
+| v0.32.0-alpha | Local auth link state |
+| v0.33.0-alpha | Data safety hardening |
+| v0.34.0-alpha | Storage and auth tests |
+| v0.35.0-alpha | UX polish pass |
+| v0.36.0-alpha | Beta readiness review |
+| v0.37.0-alpha | Private beta test pack |
 
-↓
+---
 
-v1.0.0
-Production Release
+## Beta Target
+
+The near-term beta target is a private local-first beta.
+
+Production cloud sync, multi-device shared households, and production auth provider integration remain post-hardening decisions unless they become necessary for beta safety.
+
+The current gate is guided private beta with sample or low-risk data, local
+backup expectations, and structured issue intake.
+
+---
+
+## Later Candidates
+
+* Production auth provider selection.
+* Remote storage adapter implementation.
+* Multi-device sync and conflict handling.
+* Additional finance modules after beta stabilization.
+* Public beta or production release planning.

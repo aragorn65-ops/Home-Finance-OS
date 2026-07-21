@@ -1,5 +1,7 @@
 import "./SavingsGoalList.css";
 
+import { EmptyState } from "../../../shared/ui";
+
 import type {
   SavingsGoal,
 } from "../models/SavingsGoal";
@@ -59,15 +61,10 @@ export default function SavingsGoalList({
 }: SavingsGoalListProps) {
   if (goals.length === 0) {
     return (
-      <div className="hfos-savings-goal-list__empty">
-        <h3 className="hfos-savings-goal-list__empty-title">
-          {emptyTitle}
-        </h3>
-
-        <p className="hfos-savings-goal-list__empty-message">
-          {emptyMessage}
-        </p>
-      </div>
+      <EmptyState
+        title={emptyTitle}
+        message={emptyMessage}
+      />
     );
   }
 

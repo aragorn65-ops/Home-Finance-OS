@@ -5,6 +5,7 @@
 * [How To Use](HOW_TO_USE.md)
 * [Product Vision](product/PRODUCT_VISION.md)
 * [Product Roadmap](roadmap/Product-Roadmap.md)
+* [Beta Hardening Plan](roadmap/Beta-Hardening-Plan.md)
 * [Release Notes](releases/)
 * [Sprint Notes](sprint/)
 * [Future Auth Path](architecture/FUTURE_AUTH_PATH.md)

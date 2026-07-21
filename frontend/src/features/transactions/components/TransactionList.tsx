@@ -1,3 +1,5 @@
+import { EmptyState } from "../../../shared/ui";
+
 import type { Account } from "../../accounts/models/Account";
 
 import type { AllocationPaymentStatus } from "../models/ExpenseAllocation";
@@ -59,16 +61,10 @@ export default function TransactionList({
 
   if (transactions.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed bg-white p-8 text-center">
-        <h3 className="font-semibold text-foreground">
-          No transactions yet
-        </h3>
-
-        <p className="mt-2 text-sm text-muted-foreground">
-          Add your first income, expense, or transfer
-          transaction.
-        </p>
-      </div>
+      <EmptyState
+        title="No transactions yet"
+        message="Add income, expenses, or transfers to begin building the household ledger."
+      />
     );
   }
 

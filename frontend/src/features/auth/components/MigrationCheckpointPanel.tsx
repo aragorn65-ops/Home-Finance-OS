@@ -16,6 +16,9 @@ import type {
   RemoteMigrationDraft,
 } from "../models";
 import {
+  linkHouseholdToAuthenticatedTenant,
+} from "../../household/services/householdStorage";
+import {
   getAuthBackendAdapter,
 } from "../services/createAuthBackendAdapter";
 
@@ -111,10 +114,39 @@ export default function MigrationCheckpointPanel({
           }
 
           if (action === "commit") {
-            await adapter
+            const draft =
+              drafts.find(
+                (candidate) =>
+                  candidate.id ===
+                  draftId
+              );
+            const commitResult =
+              await adapter
               .commitMigrationDraft(
                 draftId
               );
+
+            if (draft) {
+              const linkedHousehold =
+                linkHouseholdToAuthenticatedTenant({
+                  remoteHouseholdId:
+                    commitResult.householdId,
+                  migrationId:
+                    commitResult.migrationId,
+                  ownerMemberId:
+                    draft.ownerMemberId,
+                  linkedByUserId:
+                    draft.requestedByUserId,
+                  linkedAt:
+                    commitResult.committedAt,
+                });
+
+              if (!linkedHousehold) {
+                throw new Error(
+                  "Remote persistence committed, but local link state could not be saved."
+                );
+              }
+            }
 
             setMessage(
               "Remote persistence committed."
@@ -146,6 +178,7 @@ export default function MigrationCheckpointPanel({
         }
       },
       [
+        drafts,
         loadDrafts,
         onStatusChange,
       ]

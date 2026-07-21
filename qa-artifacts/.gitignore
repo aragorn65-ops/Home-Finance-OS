@@ -1,0 +1,12 @@
+# Track QA evidence, not browser runtime state.
+*
+!*/
+!.gitignore
+!*.md
+!*.png
+!*.log
+
+chrome-*/
+chrome-*
+**/chrome-*/
+**/chrome-*
