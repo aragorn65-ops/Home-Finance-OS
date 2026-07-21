@@ -11,13 +11,18 @@ export type RemoteMigrationStatus =
 
 export interface RemoteMigrationDraft {
   id: string;
+  householdId: string;
   householdName: string;
   ownerMemberId: string;
   requestedByUserId: string;
   backupSummary: ApplicationBackupSummary;
+  remoteRecordCount: number;
   status: RemoteMigrationStatus;
   createdAt: Date;
   updatedAt: Date;
+  validatedAt?: Date;
+  committedAt?: Date;
+  abortedAt?: Date;
 }
 
 export interface RemoteMigrationValidation {

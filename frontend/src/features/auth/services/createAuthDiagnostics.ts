@@ -22,6 +22,10 @@ export async function createAuthDiagnostics():
     await adapter.listMemberships();
   const invitations =
     await adapter.listInvitations();
+  const migrationDrafts =
+    await adapter.listMigrationDrafts();
+  const latestMigration =
+    migrationDrafts.at(-1);
 
   return {
     enabled:
@@ -37,5 +41,9 @@ export async function createAuthDiagnostics():
       memberships.length,
     invitationCount:
       invitations.length,
+    migrationDraftCount:
+      migrationDrafts.length,
+    latestMigrationStatus:
+      latestMigration?.status,
   };
 }

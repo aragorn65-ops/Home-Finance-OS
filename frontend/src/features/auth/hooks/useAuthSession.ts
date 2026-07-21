@@ -11,6 +11,9 @@ import {
   getAuthBackendAdapter,
 } from "../services/createAuthBackendAdapter";
 
+const authSessionChangedEvent =
+  "hfos-auth-session-changed";
+
 const initialSession:
   AuthSession = {
   status: "loading",
@@ -62,6 +65,11 @@ export function useAuthSession() {
             .signIn();
 
         setSession(nextSession);
+        window.dispatchEvent(
+          new Event(
+            authSessionChangedEvent
+          )
+        );
       } catch {
         setSession({
           status: "signed-out",
@@ -85,11 +93,35 @@ export function useAuthSession() {
         );
       } finally {
         await refreshSession();
+        window.dispatchEvent(
+          new Event(
+            authSessionChangedEvent
+          )
+        );
       }
     }, [refreshSession]);
 
   useEffect(() => {
     void refreshSession();
+  }, [refreshSession]);
+
+  useEffect(() => {
+    const handleAuthSessionChanged =
+      () => {
+        void refreshSession();
+      };
+
+    window.addEventListener(
+      authSessionChangedEvent,
+      handleAuthSessionChanged
+    );
+
+    return () => {
+      window.removeEventListener(
+        authSessionChangedEvent,
+        handleAuthSessionChanged
+      );
+    };
   }, [refreshSession]);
 
   return {

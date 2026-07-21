@@ -8,6 +8,9 @@ import type {
 } from "./AuthBackendAdapter";
 
 export interface RemoteMigrationRepository {
+  listDrafts():
+    Promise<RemoteMigrationDraft[]>;
+
   createDraft(
     draft: HouseholdClaimDraft
   ): Promise<RemoteMigrationDraft>;

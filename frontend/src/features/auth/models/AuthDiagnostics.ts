@@ -12,4 +12,6 @@ export interface AuthDiagnostics {
   isPrototypeAdapter: boolean;
   membershipCount: number;
   invitationCount: number;
+  migrationDraftCount: number;
+  latestMigrationStatus?: string;
 }

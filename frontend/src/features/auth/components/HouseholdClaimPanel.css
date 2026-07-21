@@ -1,0 +1,165 @@
+.household-claim-panel {
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background-color: #f9fafb;
+  margin-bottom: 1rem;
+}
+
+.household-claim-panel__header {
+  margin-bottom: 1rem;
+}
+
+.household-claim-panel__header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: #111827;
+}
+
+.household-claim-panel__header p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.household-claim-panel__error {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.household-claim-panel__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 0.375rem;
+}
+
+.household-claim-panel__summary-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.household-claim-panel__summary-item dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.household-claim-panel__summary-item dd {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0;
+}
+
+.household-claim-panel__action {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.household-claim-panel__action:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.household-claim-panel__action:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.household-claim-panel__confirmation {
+  padding: 1rem;
+  background-color: white;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+}
+
+.household-claim-panel__confirmation p {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: #1f2937;
+}
+
+.household-claim-panel__confirmation ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.household-claim-panel__confirmation li {
+  padding: 0.375rem 0 0.375rem 1.5rem;
+  position: relative;
+}
+
+.household-claim-panel__confirmation li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: bold;
+}
+
+.household-claim-panel__confirmation-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.household-claim-panel__confirmation-actions button {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.household-claim-panel__confirmation-actions button:first-child {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+.household-claim-panel__confirmation-actions button:first-child:hover:not(:disabled) {
+  background-color: #d1d5db;
+}
+
+.household-claim-panel__confirm-button {
+  background-color: #10b981;
+  color: white;
+}
+
+.household-claim-panel__confirm-button:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.household-claim-panel__confirmation-actions button:disabled {
+  background-color: #9ca3af;
+  color: #6b7280;
+  cursor: not-allowed;
+}

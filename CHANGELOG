@@ -8,6 +8,30 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.31.0-alpha] - 2026-07-21
+
+### Added
+
+* Added prototype migration checkpoint listing, validation, commit, and abort flows.
+* Added migration checkpoint lifecycle status to auth diagnostics.
+* Added a signed-in migration checkpoint panel for claimed households.
+
+### Changed
+
+* Updated household claim results to retain the created migration draft.
+* Updated prototype migration commit behavior to preserve the claimed remote household id.
+* Updated auth session hooks so header and diagnostics session state stay visually synchronized.
+* Hid the claim panel after a signed-in user has claimed the household.
+
+### Verified
+
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `npm.cmd run lint` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+* Completed desktop and mobile visual QA for the Sprint 31 migration checkpoint flow.
+
+---
+
 # v0.2.0 — Application Shell Complete
 
 **Status**

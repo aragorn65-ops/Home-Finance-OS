@@ -19,6 +19,9 @@ import type {
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteMigrationCommitResult,
+  RemoteMigrationDraft,
+  RemoteMigrationValidation,
 } from "../models";
 
 export class InMemoryAuthBackendAdapter
@@ -116,13 +119,46 @@ export class InMemoryAuthBackendAdapter
         })
       );
 
-    await this.migrationRepository
-      .createDraft(draft);
+    const migrationDraft =
+      await this.migrationRepository
+        .createDraft({
+          ...draft,
+          claimedHouseholdId:
+            household.id,
+        });
 
     return {
       householdId:
         household.id,
       membership,
+      migrationDraft,
     };
+  }
+
+  async listMigrationDrafts():
+    Promise<RemoteMigrationDraft[]> {
+    return this.migrationRepository
+      .listDrafts();
+  }
+
+  async validateMigrationDraft(
+    draftId: string
+  ): Promise<RemoteMigrationValidation> {
+    return this.migrationRepository
+      .validateDraft(draftId);
+  }
+
+  async commitMigrationDraft(
+    draftId: string
+  ): Promise<RemoteMigrationCommitResult> {
+    return this.migrationRepository
+      .commitDraft(draftId);
+  }
+
+  async abortMigrationDraft(
+    draftId: string
+  ): Promise<void> {
+    return this.migrationRepository
+      .abortDraft(draftId);
   }
 }

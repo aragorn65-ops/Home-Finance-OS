@@ -26,6 +26,11 @@ export class InMemoryRemoteMigrationRepository
     this.store = store;
   }
 
+  async listDrafts():
+    Promise<RemoteMigrationDraft[]> {
+    return this.store.listMigrations();
+  }
+
   async createDraft(
     draft: HouseholdClaimDraft
   ): Promise<RemoteMigrationDraft> {
@@ -43,6 +48,9 @@ export class InMemoryRemoteMigrationRepository
     return this.store.saveMigration({
       id:
         createId("migration"),
+      householdId:
+        draft.claimedHouseholdId ??
+        createId("household"),
       householdName:
         draft.householdName,
       ownerMemberId:
@@ -51,7 +59,11 @@ export class InMemoryRemoteMigrationRepository
         user.id,
       backupSummary:
         draft.backupSummary,
-      status: "draft",
+      remoteRecordCount:
+        countRemoteMigrationRecords(
+          draft.backupSummary
+        ),
+      status: "uploaded",
       createdAt: now,
       updatedAt: now,
     });
@@ -77,10 +89,14 @@ export class InMemoryRemoteMigrationRepository
       };
     }
 
-    this.store.updateMigrationStatus(
-      draftId,
-      "validated"
-    );
+    this.store.saveMigration({
+      ...draft,
+      status: "validated",
+      validatedAt:
+        new Date(),
+      updatedAt:
+        new Date(),
+    });
 
     return {
       draftId,
@@ -95,9 +111,8 @@ export class InMemoryRemoteMigrationRepository
     draftId: string
   ): Promise<RemoteMigrationCommitResult> {
     const draft =
-      this.store.updateMigrationStatus(
-        draftId,
-        "committed"
+      this.store.getMigration(
+        draftId
       );
 
     if (!draft) {
@@ -106,22 +121,77 @@ export class InMemoryRemoteMigrationRepository
       );
     }
 
+    if (
+      draft.status !== "validated" &&
+      draft.status !== "committed"
+    ) {
+      throw new Error(
+        "Validate the migration draft before committing it."
+      );
+    }
+
+    const committedAt =
+      new Date();
+
+    this.store.saveMigration({
+      ...draft,
+      status: "committed",
+      committedAt,
+      updatedAt:
+        committedAt,
+    });
+
     return {
       householdId:
-        createId("household"),
+        draft.householdId,
       migrationId:
         draft.id,
       committedAt:
-        new Date(),
+        committedAt,
     };
   }
 
   async abortDraft(
     draftId: string
   ): Promise<void> {
-    this.store.updateMigrationStatus(
-      draftId,
-      "aborted"
-    );
+    const draft =
+      this.store.getMigration(
+        draftId
+      );
+
+    if (!draft) {
+      return;
+    }
+
+    const abortedAt =
+      new Date();
+
+    this.store.saveMigration({
+      ...draft,
+      status: "aborted",
+      abortedAt,
+      updatedAt:
+        abortedAt,
+    });
   }
+}
+
+function countRemoteMigrationRecords(
+  summary: HouseholdClaimDraft["backupSummary"]
+): number {
+  const counts: number[] = [
+    summary.accountCount ?? 0,
+    summary.transactionCount ?? 0,
+    summary.expenseAllocationCount ?? 0,
+    summary.settlementCount ?? 0,
+    summary.settlementApplicationCount ?? 0,
+    summary.savingsGoalCount ?? 0,
+    summary.savingsActivityCount ?? 0,
+    summary.providerBillCount ?? 0,
+  ];
+
+  return counts.reduce(
+    (total, count) => total + count,
+    1
+  );
 }
