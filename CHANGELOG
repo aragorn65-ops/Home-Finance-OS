@@ -8,6 +8,28 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.36.0-alpha] - 2026-07-21
+
+### Added
+
+* Added a private beta readiness checklist.
+* Added release notes for the Sprint 36 beta readiness review.
+* Added reset behavior tests for Clear Test Data and Reset All Application Data.
+
+### Changed
+
+* Updated the tester guide from private alpha framing to guided private local-first beta framing.
+* Documented beta tester data-safety expectations, auth prototype limitations, and known beta constraints.
+
+### Verified
+
+* Verified `npm.cmd run lint` completes with zero errors.
+* Verified `npm.cmd test` completes with seven passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+
+---
+
 ## [0.35.0-alpha] - 2026-07-21
 
 ### Added
