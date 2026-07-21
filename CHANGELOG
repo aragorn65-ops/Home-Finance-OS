@@ -8,6 +8,29 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.34.0-alpha] - 2026-07-21
+
+### Added
+
+* Added `npm.cmd test` using Node's built-in test runner.
+* Added TypeScript service tests for linked household storage.
+* Added tests for backup linked-state summaries and malformed authenticated-link validation.
+* Added tests for prototype migration claim, validation, and commit behavior.
+
+### Changed
+
+* Added a lightweight test resolver hook for Vite-style TypeScript imports.
+* Added in-memory browser storage helpers for localStorage-backed service tests.
+
+### Verified
+
+* Verified `npm.cmd test` completes with five passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `npm.cmd run lint` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+
+---
+
 ## [0.33.0-alpha] - 2026-07-21
 
 ### Added
