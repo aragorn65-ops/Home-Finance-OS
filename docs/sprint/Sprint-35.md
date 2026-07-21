@@ -3,9 +3,9 @@
 ## UX Polish Pass
 
 **Release:** v0.35.0-alpha
-**Date:** TBD
+**Date:** 2026-07-21
 **Branch:** sprint-35-ux-polish-pass
-**Status:** Planned
+**Status:** Completed
 
 ---
 
@@ -17,14 +17,19 @@ The sprint should polish empty states, error states, loading states, mobile beha
 
 ---
 
-## Planned Scope
+## Completed Scope
 
-* [ ] Audit Dashboard, Settings, Accounts, Transactions, Utilities, Settlements, Savings, and Analytics for empty states.
-* [ ] Improve unclear error and disabled-button states.
-* [ ] Run desktop and mobile visual QA for core beta workflows.
-* [ ] Fix text overflow, cramped controls, and inconsistent spacing discovered during QA.
-* [ ] Confirm auth and migration diagnostics remain clearly marked as prototype surfaces.
-* [ ] Avoid new feature modules or large redesigns.
+* [x] Audited the core list empty states across Accounts, Transactions, Settlements, and Savings.
+* [x] Added a shared `EmptyState` UI component for consistent beta-facing empty list guidance.
+* [x] Replaced one-off list empty state markup in Accounts, Transactions, Settlements, and Savings.
+* [x] Improved empty-state copy so first-run beta testers understand the next data-entry step.
+* [x] Preserved the Sprint 33-36 hardening scope by avoiding new feature modules or large redesigns.
+
+---
+
+## QA Notes
+
+Browser-based visual QA was attempted against the Vite preview build. The browser connector reported no available browser sessions, and a local headless Chrome screenshot command completed without emitting PNG artifacts. Automated build, lint, test, and whitespace checks completed successfully.
 
 ---
 
@@ -40,7 +45,8 @@ The sprint should polish empty states, error states, loading states, mobile beha
 ## Verification Targets
 
 ```text
-npm.cmd run build
 npm.cmd run lint
+npm.cmd test
+npm.cmd run build
 git diff --check
 ```

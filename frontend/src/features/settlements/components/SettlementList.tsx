@@ -1,3 +1,5 @@
+import { EmptyState } from "../../../shared/ui";
+
 import type { Account } from "../../accounts/models/Account";
 
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
@@ -65,16 +67,10 @@ export default function SettlementList({
 
   if (settlements.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed bg-white p-8 text-center">
-        <h3 className="font-semibold text-foreground">
-          No settlements yet
-        </h3>
-
-        <p className="mt-2 text-sm text-muted-foreground">
-          Record a reimbursement when one household
-          member pays another member.
-        </p>
-      </div>
+      <EmptyState
+        title="No settlements yet"
+        message="Record reimbursements here after one household member pays another member."
+      />
     );
   }
 

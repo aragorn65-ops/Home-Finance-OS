@@ -8,6 +8,27 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.35.0-alpha] - 2026-07-21
+
+### Added
+
+* Added a shared `EmptyState` UI component for restrained, reusable empty list guidance.
+
+### Changed
+
+* Updated Accounts, Transactions, Settlements, and Savings empty states to use the shared component.
+* Clarified first-run empty-state copy for beta testers setting up household data.
+
+### Verified
+
+* Verified `npm.cmd run lint` completes with zero errors.
+* Verified `npm.cmd test` completes with five passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+* Attempted browser-based visual QA; no browser session was available in the connector, and local headless Chrome did not emit screenshots.
+
+---
+
 ## [0.34.0-alpha] - 2026-07-21
 
 ### Added

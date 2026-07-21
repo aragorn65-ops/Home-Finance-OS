@@ -1,3 +1,5 @@
+import { EmptyState } from "../../../shared/ui";
+
 import type { Account } from "../models/Account";
 import AccountCard from "./AccountCard";
 
@@ -13,7 +15,12 @@ export default function AccountList({
   onDelete,
 }: AccountListProps) {
   if (accounts.length === 0) {
-    return <p>No accounts found.</p>;
+    return (
+      <EmptyState
+        title="No accounts yet"
+        message="Add the household accounts that receive income, pay expenses, or hold savings balances."
+      />
+    );
   }
 
   return (
