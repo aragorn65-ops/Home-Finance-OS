@@ -8,6 +8,7 @@ on:
       - sprint-17-cloud-sync-readiness
       - sprint-18-google-drive-restore
       - sprint-19-provider-bills
+      - sprint-37-private-beta-test-pack
 
 permissions:
   contents: read
