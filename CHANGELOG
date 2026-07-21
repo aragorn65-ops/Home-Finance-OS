@@ -8,6 +8,28 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.37.0-alpha] - 2026-07-21
+
+### Added
+
+* Added a private beta test runbook.
+* Added a GitHub beta feedback issue template.
+* Added Sprint 37 notes and release notes for the private beta test pack.
+
+### Changed
+
+* Updated the README to reflect the guided private local-first beta candidate state.
+* Updated the roadmap with the Sprint 37 private beta test pack.
+
+### Verified
+
+* Verified `npm.cmd run lint` completes with zero errors.
+* Verified `npm.cmd test` completes with seven passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+
+---
+
 ## [0.36.0-alpha] - 2026-07-21
 
 ### Added
