@@ -5,7 +5,7 @@
 **Release:** v0.39.0-alpha
 **Date:** 2026-07-22
 **Branch:** sprint-39-post-deploy-beta-hardening
-**Status:** In progress
+**Status:** Completed
 
 ---
 
@@ -59,7 +59,8 @@ git diff --check
 Backup import and restore passed on the deployed site. Dashboard,
 Transactions, Settlements, and Analytics loaded successfully after restore.
 
-No Settings backup/restore copy changes were needed during this pass.
+Added a Settings backup safety note reminding testers that HFOS cannot recover
+browser-local household data without a backup file.
 
 ---
 
