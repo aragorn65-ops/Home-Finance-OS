@@ -931,6 +931,123 @@ test(
 );
 
 test(
+  "Supabase auth adapter commits migration draft through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                draft_id:
+                  "migration-1",
+                household_id:
+                  "household-1",
+                status:
+                  "committed",
+                committed_at:
+                  "2026-07-22T06:00:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    const result =
+      await adapter.commitMigrationDraft(
+        "migration-1"
+      );
+
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "commit_migration_draft",
+          parameters: {
+            target_draft_id:
+              "migration-1",
+          },
+        },
+      ]
+    );
+    assert.deepEqual(
+      result,
+      {
+        householdId:
+          "household-1",
+        migrationId:
+          "migration-1",
+        committedAt:
+          new Date(
+            "2026-07-22T06:00:00Z"
+          ),
+      }
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter reports migration commit failures",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc() {
+            return {
+              data: null,
+              error: {
+                message:
+                  "Validate the migration draft before committing it.",
+              },
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.commitMigrationDraft(
+          "migration-1"
+        ),
+      /Supabase migration commit failed: Validate the migration draft before committing it\./
+    );
+  }
+);
+
+test(
   "Supabase auth adapter subscribes to auth callback changes",
   async () => {
     const {

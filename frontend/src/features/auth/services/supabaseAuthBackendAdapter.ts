@@ -47,6 +47,7 @@ interface SupabaseAuthClient {
     | SupabaseHouseholdClaimRpcResult
     | SupabaseMigrationValidationRpcResult
     | SupabaseMigrationAbortRpcResult
+    | SupabaseMigrationCommitRpcResult
   >;
 }
 
@@ -191,6 +192,16 @@ interface SupabaseMigrationAbortRpcResult {
     | null;
 }
 
+interface SupabaseMigrationCommitRpcResult {
+  data:
+    | SupabaseMigrationCommitRpcRow
+    | SupabaseMigrationCommitRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseSession {
   expires_at?: number;
   user: SupabaseUser;
@@ -293,6 +304,13 @@ interface SupabaseMigrationAbortRpcRow {
   draft_id: string;
   status: string;
   aborted_at?: string | null;
+}
+
+interface SupabaseMigrationCommitRpcRow {
+  draft_id: string;
+  household_id: string;
+  status: string;
+  committed_at?: string | null;
 }
 
 export interface SupabaseHouseholdDiagnostic {
@@ -943,11 +961,54 @@ export class SupabaseAuthBackendAdapter
   async commitMigrationDraft(
     draftId: string
   ): Promise<RemoteMigrationCommitResult> {
-    throw new Error(
-      this.createUnavailableMessage(
-        `migration commit for ${draftId}`
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `migration commit for ${draftId}`
+        )
+      );
+    }
+
+    const commitResult =
+      await (
+      await this.getClient()
       )
-    );
+        .rpc(
+          "commit_migration_draft",
+          {
+            target_draft_id:
+              draftId,
+          }
+        ) as SupabaseMigrationCommitRpcResult;
+
+    if (commitResult.error) {
+      throw new Error(
+        `Supabase migration commit failed: ${commitResult.error.message}`
+      );
+    }
+
+    const row =
+      Array.isArray(commitResult.data)
+        ? commitResult.data[0]
+        : commitResult.data;
+
+    if (!row) {
+      throw new Error(
+        "Supabase migration commit returned no result."
+      );
+    }
+
+    return {
+      householdId:
+        row.household_id,
+      migrationId:
+        row.draft_id,
+      committedAt:
+        mapSupabaseDate(
+          row.committed_at ??
+            undefined
+        ),
+    };
   }
 
   async abortMigrationDraft(
