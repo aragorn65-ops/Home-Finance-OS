@@ -850,10 +850,9 @@ export class SupabaseAuthBackendAdapter
     draftId: string
   ): Promise<RemoteMigrationValidation> {
     if (!this.isConfigured()) {
-      return createBlockedMigrationValidation(
-        draftId,
+      throw new Error(
         this.createUnavailableMessage(
-          "migration validation"
+          `migration validation for ${draftId}`
         )
       );
     }

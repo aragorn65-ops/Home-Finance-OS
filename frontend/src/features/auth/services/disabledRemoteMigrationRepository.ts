@@ -29,15 +29,9 @@ export class DisabledRemoteMigrationRepository
   async validateDraft(
     draftId: string
   ): Promise<RemoteMigrationValidation> {
-    return {
-      draftId,
-      isValid: false,
-      recordCountsMatch: false,
-      warnings: [],
-      blockers: [
-        "Remote migration is disabled.",
-      ],
-    };
+    throw new Error(
+      `Remote migration validation is disabled for ${draftId}.`
+    );
   }
 
   async commitDraft(
