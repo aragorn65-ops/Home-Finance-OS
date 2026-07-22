@@ -37,6 +37,22 @@ interface SupabaseAuthClient {
       };
     };
   };
+  from(
+    tableName: string
+  ): SupabaseQueryBuilder;
+}
+
+interface SupabaseQueryBuilder {
+  select(
+    columns: string
+  ): SupabaseFilterBuilder;
+}
+
+interface SupabaseFilterBuilder {
+  eq(
+    column: string,
+    value: string
+  ): Promise<SupabaseMembershipRowsResult>;
 }
 
 type SupabaseAuthChangeCallback = (
@@ -74,6 +90,15 @@ interface SupabaseErrorResult {
     | null;
 }
 
+interface SupabaseMembershipRowsResult {
+  data:
+    | SupabaseMembershipRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseSession {
   expires_at?: number;
   user: SupabaseUser;
@@ -102,6 +127,21 @@ interface SupabasePasswordlessCredentials {
     emailRedirectTo?: string;
     shouldCreateUser?: boolean;
   };
+}
+
+interface SupabaseMembershipRow {
+  id: string;
+  household_id: string;
+  user_id: string;
+  member_id: string;
+  role: string;
+  status: string;
+  invited_by_user_id?: string | null;
+  invited_at?: string | null;
+  accepted_at?: string | null;
+  removed_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface SupabaseAuthBackendAdapterConfig {
@@ -256,7 +296,57 @@ export class SupabaseAuthBackendAdapter
 
   async listMemberships():
     Promise<HouseholdMembership[]> {
-    return [];
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      return [];
+    }
+
+    const {
+      data,
+      error,
+    } = await (
+      await this.getClient()
+    )
+      .from(
+        "household_memberships"
+      )
+      .select(
+        [
+          "id",
+          "household_id",
+          "user_id",
+          "member_id",
+          "role",
+          "status",
+          "invited_by_user_id",
+          "invited_at",
+          "accepted_at",
+          "removed_at",
+          "created_at",
+          "updated_at",
+        ].join(",")
+      )
+      .eq(
+        "user_id",
+        user.id
+      );
+
+    if (error) {
+      throw new Error(
+        `Supabase membership lookup failed: ${error.message}`
+      );
+    }
+
+    return (data ?? [])
+      .map(mapSupabaseMembership)
+      .filter(
+        (
+          membership
+        ): membership is HouseholdMembership =>
+          Boolean(membership)
+      );
   }
 
   async listInvitations():
@@ -400,7 +490,7 @@ export class SupabaseAuthBackendAdapter
       createClient(
         this.config.projectUrl,
         this.config.anonKey
-      ) as SupabaseAuthClient;
+      ) as unknown as SupabaseAuthClient;
 
     return this.config.client;
   }
@@ -455,6 +545,103 @@ function mapSupabaseDate(
   return value
     ? new Date(value)
     : new Date(0);
+}
+
+function mapSupabaseMembership(
+  row: SupabaseMembershipRow
+): HouseholdMembership | undefined {
+  const role =
+    normalizeMembershipRole(
+      row.role
+    );
+  const status =
+    normalizeMembershipStatus(
+      row.status
+    );
+
+  if (!role || !status) {
+    return undefined;
+  }
+
+  return {
+    id:
+      row.id,
+    householdId:
+      row.household_id,
+    userId:
+      row.user_id,
+    memberId:
+      row.member_id,
+    role,
+    status,
+    invitedByUserId:
+      row.invited_by_user_id ??
+      undefined,
+    invitedAt:
+      mapOptionalSupabaseDate(
+        row.invited_at
+      ),
+    acceptedAt:
+      mapOptionalSupabaseDate(
+        row.accepted_at
+      ),
+    removedAt:
+      mapOptionalSupabaseDate(
+        row.removed_at
+      ),
+    createdAt:
+      mapSupabaseDate(
+        row.created_at ??
+          undefined
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        row.updated_at ??
+          row.created_at ??
+          undefined
+      ),
+  };
+}
+
+function normalizeMembershipRole(
+  value: string
+): HouseholdMembership["role"] | undefined {
+  if (
+    value === "owner" ||
+    value === "admin" ||
+    value === "member" ||
+    value === "viewer"
+  ) {
+    return value;
+  }
+
+  return undefined;
+}
+
+function normalizeMembershipStatus(
+  value: string
+): HouseholdMembership["status"] | undefined {
+  if (
+    value === "active" ||
+    value === "invited" ||
+    value === "declined" ||
+    value === "removed"
+  ) {
+    return value;
+  }
+
+  return undefined;
+}
+
+function mapOptionalSupabaseDate(
+  value:
+    | string
+    | null
+    | undefined
+): Date | undefined {
+  return value
+    ? new Date(value)
+    : undefined;
 }
 
 function createSupabaseAdapterConfig():

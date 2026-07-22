@@ -8,6 +8,24 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.45.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 45 notes and release notes for Supabase membership read
+  testing.
+* Added Supabase `household_memberships` lookup scoped to the current user.
+* Added Supabase-to-HFOS membership row mapping.
+* Added fail-closed handling for unknown membership roles or statuses.
+* Added tests for query shape, user filtering, row mapping, and invalid-row
+  filtering.
+
+### Verified
+
+* Pending Sprint 45 validation.
+
+---
+
 ## [0.44.0-alpha] - 2026-07-22
 
 ### Added
