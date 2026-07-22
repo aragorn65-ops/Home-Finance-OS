@@ -5,7 +5,7 @@
 **Release:** v0.46.0-alpha
 **Date:** 2026-07-22
 **Branch:** sprint-46-supabase-membership-diagnostics
-**Status:** In progress
+**Status:** Complete
 
 ---
 
@@ -47,3 +47,13 @@ git diff --check
 npm.cmd test
 npm.cmd run build
 ```
+
+---
+
+## Verification Results
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twelve passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Confirmed membership diagnostics remain read-only and limited to household
+  id, member id, role, and status.
