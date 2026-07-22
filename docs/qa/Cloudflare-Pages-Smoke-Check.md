@@ -65,6 +65,11 @@ Google Drive backup is optional and configuration-dependent. If
 `VITE_GOOGLE_CLIENT_ID` is not configured for the Cloudflare Pages build,
 Settings will keep Save to Google Drive and Restore from Google Drive disabled.
 
+When `VITE_GOOGLE_CLIENT_ID` is configured, confirm the Google OAuth client
+allows `https://home-finance-os.pages.dev`, redeploy Cloudflare Pages, then
+verify Save to Google Drive and Restore from Google Drive are enabled in
+Settings.
+
 For the deployed local-first beta, local Export Backup and Import Backup remain
 the required smoke-check path.
 

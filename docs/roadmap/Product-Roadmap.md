@@ -91,6 +91,8 @@ Sprint 80 pins the frontend Node runtime expectation for repeatable Cloudflare
 Pages builds.
 Sprint 81 expands Cloudflare Pages route smoke checks across every first-class
 sidebar route.
+Sprint 82 clarifies Cloudflare Pages Google Drive backup configuration and
+OAuth origin setup.
 
 ---
 
@@ -148,6 +150,7 @@ sidebar route.
 | v0.79.0-alpha | Unlinked backup summary guard coverage |
 | v0.80.0-alpha | Cloudflare Pages Node runtime pin |
 | v0.81.0-alpha | Cloudflare route smoke checklist |
+| v0.82.0-alpha | Cloudflare Google Drive backup config |
 
 ---
 
@@ -186,6 +189,8 @@ Sprint 80 keeps Cloudflare Pages builds aligned with the frontend Node engine
 requirement.
 Sprint 81 makes deployed route refresh validation explicit for every
 first-class app route.
+Sprint 82 makes deployed Google Drive backup enablement explicit through
+Cloudflare Pages environment variables and OAuth origin configuration.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior
