@@ -46,6 +46,7 @@ interface SupabaseAuthClient {
   ): Promise<
     | SupabaseHouseholdClaimRpcResult
     | SupabaseMigrationValidationRpcResult
+    | SupabaseMigrationAbortRpcResult
   >;
 }
 
@@ -180,6 +181,16 @@ interface SupabaseMigrationValidationRpcResult {
     | null;
 }
 
+interface SupabaseMigrationAbortRpcResult {
+  data:
+    | SupabaseMigrationAbortRpcRow
+    | SupabaseMigrationAbortRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseSession {
   expires_at?: number;
   user: SupabaseUser;
@@ -276,6 +287,12 @@ interface SupabaseMigrationValidationRpcRow {
   draft_id: string;
   status: string;
   validated_at?: string | null;
+}
+
+interface SupabaseMigrationAbortRpcRow {
+  draft_id: string;
+  status: string;
+  aborted_at?: string | null;
 }
 
 export interface SupabaseHouseholdDiagnostic {
@@ -933,9 +950,31 @@ export class SupabaseAuthBackendAdapter
     );
   }
 
-  async abortMigrationDraft():
+  async abortMigrationDraft(
+    draftId: string
+  ):
     Promise<void> {
-    return Promise.resolve();
+    if (!this.isConfigured()) {
+      return Promise.resolve();
+    }
+
+    const abortResult =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "abort_migration_draft",
+          {
+            target_draft_id:
+              draftId,
+          }
+        ) as SupabaseMigrationAbortRpcResult;
+
+    if (abortResult.error) {
+      throw new Error(
+        `Supabase migration abort failed: ${abortResult.error.message}`
+      );
+    }
   }
 
   subscribeToSessionChanges(

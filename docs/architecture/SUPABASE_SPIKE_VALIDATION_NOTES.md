@@ -12,8 +12,9 @@ environment while validating the spike.
 
 1. Create a new Supabase project for Sprint 41 validation only.
 2. Run `docs/architecture/supabase-spike-schema.sql` in the Supabase SQL editor.
-   Re-run it after Sprint 54 so the disposable project has the
-   `claim_household_from_backup` and `validate_migration_draft_metadata` RPCs.
+   Re-run it after Sprint 55 so the disposable project has the
+   `claim_household_from_backup`, `validate_migration_draft_metadata`, and
+   `abort_migration_draft` RPCs.
 3. Enable an auth method that is acceptable for the spike, such as email magic
    link.
 4. Copy only the disposable project URL and anon key into local Vite env values:

@@ -394,6 +394,62 @@ from public;
 grant execute on function public.validate_migration_draft_metadata(uuid)
 to authenticated;
 
+create or replace function public.abort_migration_draft(
+  target_draft_id uuid
+)
+returns table (
+  draft_id uuid,
+  status text,
+  aborted_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  abort_timestamp timestamptz := now();
+  selected_draft public.migration_drafts%rowtype;
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before aborting a migration draft.';
+  end if;
+
+  select *
+  into selected_draft
+  from public.migration_drafts
+  where id = target_draft_id
+    and owner_user_id = current_user_id
+  for update;
+
+  if selected_draft.id is null then
+    raise exception 'Migration draft was not found for the current user.';
+  end if;
+
+  if selected_draft.status = 'committed' then
+    raise exception 'Committed migration drafts cannot be aborted.';
+  end if;
+
+  update public.migration_drafts
+  set
+    status = 'aborted',
+    updated_at = abort_timestamp
+  where id = selected_draft.id;
+
+  return query
+  select
+    selected_draft.id,
+    'aborted'::text,
+    abort_timestamp;
+end;
+$$;
+
+revoke all on function public.abort_migration_draft(uuid)
+from public;
+
+grant execute on function public.abort_migration_draft(uuid)
+to authenticated;
+
 -- Spike insert/update paths should be tested through RPC functions rather than
 -- broad client-side table policies. That keeps migration draft creation and
 -- commit/abort behavior explicit.

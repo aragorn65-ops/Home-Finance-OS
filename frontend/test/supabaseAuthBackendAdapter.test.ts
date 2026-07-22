@@ -830,6 +830,107 @@ test(
 );
 
 test(
+  "Supabase auth adapter aborts migration draft through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                draft_id:
+                  "migration-1",
+                status:
+                  "aborted",
+                aborted_at:
+                  "2026-07-22T05:00:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    await adapter.abortMigrationDraft(
+      "migration-1"
+    );
+
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "abort_migration_draft",
+          parameters: {
+            target_draft_id:
+              "migration-1",
+          },
+        },
+      ]
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter reports migration abort failures",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc() {
+            return {
+              data: null,
+              error: {
+                message:
+                  "Committed migration drafts cannot be aborted.",
+              },
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.abortMigrationDraft(
+          "migration-1"
+        ),
+      /Supabase migration abort failed: Committed migration drafts cannot be aborted\./
+    );
+  }
+);
+
+test(
   "Supabase auth adapter subscribes to auth callback changes",
   async () => {
     const {

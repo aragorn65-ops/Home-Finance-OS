@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.55.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 55 notes and release notes for the Supabase abort RPC.
+* Added `abort_migration_draft` to the disposable Supabase spike schema.
+* Wired `SupabaseAuthBackendAdapter.abortMigrationDraft` through the RPC.
+* Added tests for successful abort payloads and Supabase rejection handling.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twenty-two passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified abort uses the explicit Supabase RPC.
+* Verified Supabase abort rejections are surfaced clearly.
+
+---
+
 ## [0.54.0-alpha] - 2026-07-22
 
 ### Added
