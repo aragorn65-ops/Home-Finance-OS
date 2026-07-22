@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.65.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 65 notes and release notes for migration commit result link
+  guards.
+* Added a post-commit consistency check between the remote commit result and
+  the local checkpoint.
+* Added tests for matching and mismatched remote commit link results.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with thirty-eight passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified mismatched remote commit results do not save local household links.
+
+---
+
 ## [0.64.0-alpha] - 2026-07-22
 
 ### Added

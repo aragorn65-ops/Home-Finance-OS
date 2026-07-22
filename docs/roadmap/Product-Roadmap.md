@@ -57,6 +57,8 @@ Sprint 63 adds a local checkpoint precondition so remote commit cannot skip the
 local household link when diagnostics state is stale.
 Sprint 64 tightens that precondition by requiring validated local checkpoint
 state and local link metadata before remote commit.
+Sprint 65 verifies the remote commit result still matches the local checkpoint
+before saving the local household link.
 
 ---
 
@@ -97,6 +99,7 @@ state and local link metadata before remote commit.
 | v0.62.0-alpha | Supabase RPC result guards |
 | v0.63.0-alpha | Migration commit local-link guard |
 | v0.64.0-alpha | Migration commit preconditions |
+| v0.65.0-alpha | Migration commit result link guard |
 
 ---
 
@@ -160,6 +163,9 @@ and production migration disabled.
 Sprint 64 keeps commit blocked until local preconditions pass and still leaves
 production credentials, full record import, sync, local data deletion, and
 production migration disabled.
+Sprint 65 keeps local link persistence guarded by matching commit results and
+still leaves production credentials, full record import, sync, local data
+deletion, and production migration disabled.
 
 The Sprint 40 decision criteria are tracked in:
 

@@ -1,4 +1,5 @@
 import type {
+  RemoteMigrationCommitResult,
   RemoteMigrationDraft,
 } from "../models";
 
@@ -34,4 +35,18 @@ export function requireMigrationCommitDraft(
   }
 
   return draft;
+}
+
+export function assertMigrationCommitResultMatchesDraft(
+  draft: RemoteMigrationDraft,
+  result: RemoteMigrationCommitResult
+): void {
+  if (
+    result.migrationId !== draft.id ||
+    result.householdId !== draft.householdId
+  ) {
+    throw new Error(
+      "Remote persistence committed, but the returned household link does not match the local checkpoint."
+    );
+  }
 }
