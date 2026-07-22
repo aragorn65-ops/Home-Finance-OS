@@ -60,7 +60,7 @@ Auth and migration diagnostics are prototype beta-hardening surfaces. They can
 help verify claimed, linked, and migration-checkpoint states, but they are not a
 production account system or production sync layer.
 
-For Google Drive backup in a deployed preview, enable the Google Drive API for the Google Cloud project, create a Google OAuth web client, add `https://aragorn65-ops.github.io` as an authorized JavaScript origin, and set the client ID as a GitHub repository variable or Actions secret named `VITE_GOOGLE_CLIENT_ID`. If the OAuth app is in Testing, add the Google account used for QA as a test user. Vite embeds the client ID when GitHub Pages builds the app, so redeploy after changing the GitHub variable. Without that client ID, Settings shows that Google Drive backup is not configured and local Export Backup remains available.
+For Google Drive backup in a deployed Cloudflare Pages preview, enable the Google Drive API for the Google Cloud project, create a Google OAuth web client, add `https://home-finance-os.pages.dev` as an authorized JavaScript origin, and set the client ID as a Cloudflare Pages environment variable named `VITE_GOOGLE_CLIENT_ID`. If the OAuth app is in Testing, add the Google account used for QA as a test user. Vite embeds the client ID when Cloudflare Pages builds the app, so redeploy after changing the Cloudflare variable. Without that client ID, Settings shows that Google Drive backup is not configured and local Export Backup remains available.
 
 ---
 

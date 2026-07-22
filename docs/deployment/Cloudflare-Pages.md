@@ -22,6 +22,7 @@ Build command: npm run build
 Build output directory: dist
 Production branch: main
 Environment variable: NODE_VERSION=22.13.0
+Optional environment variable: VITE_GOOGLE_CLIENT_ID=<Google OAuth client id>
 ```
 
 The frontend dependency tree expects Node 22.13.0 or newer for the Vite and
@@ -33,6 +34,17 @@ preset as `None` and enter the build command, output directory, and root
 directory manually.
 
 Preview deployments should remain enabled for pull request branches.
+
+Google Drive backup stays disabled unless `VITE_GOOGLE_CLIENT_ID` is configured
+for the Cloudflare Pages build. The matching Google OAuth web client must allow
+the deployed origin, currently:
+
+```text
+https://home-finance-os.pages.dev
+```
+
+After adding or changing `VITE_GOOGLE_CLIENT_ID`, redeploy the Pages project so
+Vite embeds the new client id.
 
 During beta validation, the production branch may temporarily be set to the
 active deployment branch before the branch is merged to `main`. For Sprint 38,

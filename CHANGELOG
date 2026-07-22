@@ -8,6 +8,26 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.82.0-alpha] - 2026-07-23
+
+### Added
+
+* Added Sprint 82 notes and release notes for Cloudflare Google Drive backup
+  configuration guidance.
+* Updated the beta guide and `.env.example` to reference Cloudflare Pages
+  environment variables instead of GitHub Pages variables.
+* Documented the Cloudflare Pages Google OAuth origin and redeploy requirement.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with sixty-one passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified Google Drive backup enablement docs point to
+  `VITE_GOOGLE_CLIENT_ID` in Cloudflare Pages.
+
+---
+
 ## [0.81.0-alpha] - 2026-07-22
 
 ### Added
