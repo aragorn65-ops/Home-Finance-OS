@@ -21,7 +21,10 @@ This project follows a sprint-based development process.
 
 ### Verified
 
-* Pending Sprint 47 validation.
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with thirteen passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified household diagnostics remain read-only and diagnostics-only.
 
 ---
 

@@ -5,7 +5,7 @@
 **Release:** v0.47.0-alpha
 **Date:** 2026-07-22
 **Branch:** sprint-47-supabase-household-diagnostics
-**Status:** In progress
+**Status:** Complete
 
 ---
 
@@ -48,3 +48,14 @@ git diff --check
 npm.cmd test
 npm.cmd run build
 ```
+
+---
+
+## Verification Results
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with thirteen passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified household diagnostics dedupe requested ids and filter to active
+  household rows.
+* Confirmed household diagnostics remain read-only.
