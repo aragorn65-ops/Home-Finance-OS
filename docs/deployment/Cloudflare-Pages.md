@@ -76,6 +76,10 @@ npm.cmd run build
 
 After a Cloudflare Pages deployment, verify:
 
+* `/`, `/app`, `/app/household-members`, `/app/accounts`, `/app/transactions`,
+  `/app/utilities`, `/app/settlements`, `/app/savings`, `/app/analytics`,
+  `/app/help-center`, and `/app/settings` open and refresh without a
+  Cloudflare 404.
 * First-time household setup opens.
 * Household members can be added.
 * Accounts can be added.
