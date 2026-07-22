@@ -41,6 +41,8 @@ without deleting local browser data.
 Sprint 56 adds a commit RPC that marks owned validated drafts as committed and
 returns local-link metadata without importing records, syncing, or deleting
 local browser data.
+Sprint 57 makes validation, commit, and abort timestamps durable on disposable
+Supabase migration drafts and maps them back into diagnostics after refresh.
 
 ---
 
@@ -73,6 +75,7 @@ local browser data.
 | v0.54.0-alpha | Supabase validation RPC |
 | v0.55.0-alpha | Supabase abort RPC |
 | v0.56.0-alpha | Supabase commit RPC |
+| v0.57.0-alpha | Supabase migration lifecycle timestamps |
 
 ---
 
@@ -113,6 +116,9 @@ Sprint 55 keeps abort behind one explicit RPC and still leaves commit, sync,
 local data deletion, and production migration disabled.
 Sprint 56 keeps commit behind one explicit RPC and still leaves full record
 import, sync, local data deletion, and production migration disabled.
+Sprint 57 keeps lifecycle timestamp persistence metadata-only and still leaves
+full record import, sync, local data deletion, and production migration
+disabled.
 
 The Sprint 40 decision criteria are tracked in:
 

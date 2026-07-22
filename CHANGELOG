@@ -8,6 +8,26 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.57.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 57 notes and release notes for Supabase migration lifecycle
+  timestamps.
+* Added durable `validated_at`, `committed_at`, and `aborted_at` columns to the
+  disposable Supabase migration draft schema.
+* Updated validation, commit, and abort RPCs to persist lifecycle timestamps.
+* Mapped lifecycle timestamps into Supabase migration draft diagnostics.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twenty-four passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified migration draft diagnostics preserve lifecycle timestamps.
+
+---
+
 ## [0.56.0-alpha] - 2026-07-22
 
 ### Added

@@ -83,9 +83,21 @@ create table if not exists public.migration_drafts (
   backup_summary jsonb not null,
   status text not null default 'uploaded',
   validation_summary jsonb,
+  validated_at timestamptz,
+  committed_at timestamptz,
+  aborted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.migration_drafts
+add column if not exists validated_at timestamptz;
+
+alter table public.migration_drafts
+add column if not exists committed_at timestamptz;
+
+alter table public.migration_drafts
+add column if not exists aborted_at timestamptz;
 
 alter table public.households enable row level security;
 alter table public.household_members enable row level security;
@@ -377,6 +389,7 @@ begin
       'validatedAt',
       validation_timestamp
     ),
+    validated_at = validation_timestamp,
     updated_at = validation_timestamp
   where id = selected_draft.id;
 
@@ -433,6 +446,7 @@ begin
   update public.migration_drafts
   set
     status = 'aborted',
+    aborted_at = abort_timestamp,
     updated_at = abort_timestamp
   where id = selected_draft.id;
 
@@ -494,6 +508,7 @@ begin
   update public.migration_drafts
   set
     status = 'committed',
+    committed_at = commit_timestamp,
     updated_at = commit_timestamp
   where id = selected_draft.id;
 

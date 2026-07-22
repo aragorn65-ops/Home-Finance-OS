@@ -277,6 +277,9 @@ interface SupabaseMigrationDraftRow {
   owner_member_id: string;
   household_name: string;
   status: string;
+  validated_at?: string | null;
+  committed_at?: string | null;
+  aborted_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -811,6 +814,9 @@ export class SupabaseAuthBackendAdapter
             "owner_member_id",
             "household_name",
             "status",
+            "validated_at",
+            "committed_at",
+            "aborted_at",
             "created_at",
             "updated_at",
           ].join(",")
@@ -875,6 +881,9 @@ export class SupabaseAuthBackendAdapter
             "owner_member_id",
             "household_name",
             "status",
+            "validated_at",
+            "committed_at",
+            "aborted_at",
             "created_at",
             "updated_at",
           ].join(",")
@@ -1312,6 +1321,18 @@ function mapSupabaseMigrationDraft(
         row.updated_at ??
           row.created_at ??
           undefined
+      ),
+    validatedAt:
+      mapOptionalSupabaseDate(
+        row.validated_at
+      ),
+    committedAt:
+      mapOptionalSupabaseDate(
+        row.committed_at
+      ),
+    abortedAt:
+      mapOptionalSupabaseDate(
+        row.aborted_at
       ),
   };
 }
