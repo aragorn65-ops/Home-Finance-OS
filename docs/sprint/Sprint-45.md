@@ -5,7 +5,7 @@
 **Release:** v0.45.0-alpha
 **Date:** 2026-07-22
 **Branch:** sprint-45-supabase-membership-read
-**Status:** In progress
+**Status:** Complete
 
 ---
 
@@ -46,3 +46,13 @@ git diff --check
 npm.cmd test
 npm.cmd run build
 ```
+
+---
+
+## Verification Results
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twelve passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified Supabase membership reads remain scoped to the current user id.
+* Confirmed Supabase membership writes remain out of scope.

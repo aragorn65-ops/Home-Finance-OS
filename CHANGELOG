@@ -22,7 +22,10 @@ This project follows a sprint-based development process.
 
 ### Verified
 
-* Pending Sprint 45 validation.
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twelve passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified Supabase membership reads remain diagnostics-safe and read-only.
 
 ---
 
