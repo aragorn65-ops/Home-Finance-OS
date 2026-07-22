@@ -10,6 +10,9 @@
     "test": "node --experimental-strip-types --import ./test/register-ts-loader.mjs --test ./test/*.test.ts",
     "preview": "vite preview"
   },
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
     "@tailwindcss/vite": "^4.3.2",
