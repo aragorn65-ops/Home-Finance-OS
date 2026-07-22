@@ -3,7 +3,7 @@
 ## Supabase Magic Link Spike
 
 **Release Date:** July 22, 2026
-**Status:** In progress
+**Status:** Complete
 **Sprint:** Sprint 43
 
 ---
@@ -33,3 +33,12 @@ request path while keeping production auth and remote migration disabled.
 * Household claims against Supabase.
 * Remote CRUD and sync.
 * Real household migration.
+
+---
+
+## Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with ten passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Confirmed Supabase remains behind explicit spike environment configuration.

@@ -5,7 +5,7 @@
 **Release:** v0.43.0-alpha
 **Date:** 2026-07-22
 **Branch:** sprint-43-supabase-magic-link-spike
-**Status:** In progress
+**Status:** Complete
 
 ---
 
@@ -47,3 +47,13 @@ git diff --check
 npm.cmd test
 npm.cmd run build
 ```
+
+---
+
+## Verification Results
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with ten passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the Supabase client remains lazy-loaded in a separate build chunk.
+* Confirmed Supabase magic-link requests use `shouldCreateUser: false`.
