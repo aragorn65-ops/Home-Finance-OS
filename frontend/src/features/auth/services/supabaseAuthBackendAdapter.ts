@@ -776,6 +776,12 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
+    if (row.user_id !== user.id) {
+      throw new Error(
+        "Supabase household claim returned an invalid user."
+      );
+    }
+
     const membership =
       mapSupabaseClaimMembership(row);
 

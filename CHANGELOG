@@ -8,6 +8,23 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.71.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 71 notes and release notes for household claim result guards.
+* Added a Supabase household claim result ownership check.
+* Added tests proving household claim rejects RPC results for another user.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with forty-seven passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified mismatched household claim user results fail closed.
+
+---
+
 ## [0.70.0-alpha] - 2026-07-22
 
 ### Added
