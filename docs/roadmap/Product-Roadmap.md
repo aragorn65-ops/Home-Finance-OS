@@ -75,6 +75,8 @@ Sprint 72 verifies household claim migration draft payloads before creating
 local migration checkpoint state from RPC results.
 Sprint 73 verifies household claim membership identifiers before creating local
 auth membership state from RPC results.
+Sprint 74 verifies the migration checkpoint owner exists locally before remote
+commit can run and before local link persistence is attempted.
 
 ---
 
@@ -124,6 +126,7 @@ auth membership state from RPC results.
 | v0.71.0-alpha | Household claim result guard |
 | v0.72.0-alpha | Household claim migration result guard |
 | v0.73.0-alpha | Household claim membership result guard |
+| v0.74.0-alpha | Migration commit local owner guard |
 
 ---
 
@@ -146,6 +149,8 @@ Sprint 72 rejects malformed household claim migration draft results before they
 become local checkpoint state.
 Sprint 73 rejects malformed household claim membership results before they
 become local auth state.
+Sprint 74 stops remote commit when the checkpoint owner member cannot be found
+in local household state.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior

@@ -37,6 +37,21 @@ export function requireMigrationCommitDraft(
   return draft;
 }
 
+export function requireMigrationCommitLocalOwner(
+  draft: RemoteMigrationDraft,
+  localMemberIds: string[]
+): void {
+  if (
+    !localMemberIds.includes(
+      draft.ownerMemberId
+    )
+  ) {
+    throw new Error(
+      "Migration checkpoint owner member is not available locally. Refresh diagnostics before committing."
+    );
+  }
+}
+
 export function assertMigrationCommitResultMatchesDraft(
   draft: RemoteMigrationDraft,
   result: RemoteMigrationCommitResult
