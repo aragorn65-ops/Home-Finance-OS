@@ -91,6 +91,31 @@ function createSignedInClient(
   });
 }
 
+function createBackupSummary() {
+  return {
+    householdName:
+      "Casa Test",
+    exportedAt:
+      "2026-07-22T01:00:00Z",
+    accountCount:
+      2,
+    transactionCount:
+      3,
+    expenseAllocationCount:
+      4,
+    settlementCount:
+      1,
+    settlementApplicationCount:
+      1,
+    savingsGoalCount:
+      1,
+    savingsActivityCount:
+      2,
+    providerBillCount:
+      1,
+  };
+}
+
 test(
   "Supabase auth adapter stays disabled without spike credentials",
   async () => {
@@ -426,7 +451,7 @@ test(
 );
 
 test(
-  "Supabase auth adapter creates a household claim through RPC",
+  "Supabase auth adapter requires sign-in before household claim RPC",
   async () => {
     const {
       SupabaseAuthBackendAdapter,
@@ -443,6 +468,61 @@ test(
           "anon-key",
         client: {
           ...createSignedOutClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: null,
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.createHouseholdClaimDraft({
+          householdName:
+            "Casa Test",
+          ownerMemberId:
+            "local-owner",
+          backupSummary:
+            createBackupSummary(),
+        }),
+      /Sign in before claiming a household\./
+    );
+
+    assert.deepEqual(
+      rpcCalls,
+      []
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter creates a household claim through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
           async rpc(
             functionName: string,
             parameters: Record<string, unknown>
@@ -481,28 +561,8 @@ test(
         },
       });
 
-    const backupSummary = {
-      householdName:
-        "Casa Test",
-      exportedAt:
-        "2026-07-22T01:00:00Z",
-      accountCount:
-        2,
-      transactionCount:
-        3,
-      expenseAllocationCount:
-        4,
-      settlementCount:
-        1,
-      settlementApplicationCount:
-        1,
-      savingsGoalCount:
-        1,
-      savingsActivityCount:
-        2,
-      providerBillCount:
-        1,
-    };
+    const backupSummary =
+      createBackupSummary();
 
     const claim =
       await adapter
