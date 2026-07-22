@@ -3,7 +3,7 @@
 ## Supabase Client Wiring Readiness
 
 **Release Date:** July 22, 2026
-**Status:** In progress
+**Status:** Complete
 **Sprint:** Sprint 42
 
 ---
@@ -34,3 +34,13 @@ disposable-project runtime testing while keeping the deployed beta local-first.
 * Production cloud sync.
 * Real household data migration.
 * Supabase as the default provider.
+
+---
+
+## Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with nine passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Confirmed Supabase remains disabled unless explicit spike environment
+  variables are configured.

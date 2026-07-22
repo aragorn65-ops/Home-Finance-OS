@@ -5,7 +5,7 @@
 **Release:** v0.42.0-alpha
 **Date:** 2026-07-22
 **Branch:** sprint-42-supabase-client-wiring
-**Status:** In progress
+**Status:** Complete
 
 ---
 
@@ -49,3 +49,14 @@ git diff --check
 npm.cmd test
 npm.cmd run build
 ```
+
+---
+
+## Verification Results
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with nine passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the Supabase client is lazy-loaded into a separate build chunk.
+* Confirmed household migration writes remain blocked for the Supabase provider
+  during disposable-project readiness.
