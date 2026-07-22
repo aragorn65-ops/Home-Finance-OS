@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.79.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 79 notes and release notes for unlinked backup summary remote-id
+  coverage.
+* Added tests proving ordinary and password-protected unlinked backup summaries
+  reject remote household ids.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with sixty-one passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified unlinked backup summaries with remote household ids are rejected
+  before restore.
+
+---
+
 ## [0.78.0-alpha] - 2026-07-22
 
 ### Added

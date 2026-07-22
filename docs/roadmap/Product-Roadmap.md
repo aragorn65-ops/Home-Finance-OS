@@ -85,6 +85,8 @@ Sprint 77 rejects backup authenticated-link metadata with blank identifiers
 before restore.
 Sprint 78 rejects contradictory linked backup summary metadata before preview
 or restore continues.
+Sprint 79 adds focused coverage for unlinked backup summaries that incorrectly
+carry remote household ids.
 
 ---
 
@@ -139,6 +141,7 @@ or restore continues.
 | v0.76.0-alpha | Authenticated link storage conflict guard |
 | v0.77.0-alpha | Backup authenticated link field guard |
 | v0.78.0-alpha | Backup summary link-status guard |
+| v0.79.0-alpha | Unlinked backup summary guard coverage |
 
 ---
 
@@ -171,6 +174,8 @@ Sprint 77 prevents backups with blank authenticated-link identifiers from
 restoring into local household state.
 Sprint 78 prevents linked backup summaries with blank remote household ids from
 passing ordinary or password-protected backup validation.
+Sprint 79 proves unlinked ordinary and password-protected backup summaries
+cannot carry remote household ids through validation.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior
