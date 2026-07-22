@@ -1485,7 +1485,14 @@ function mapSupabaseClaimMembership(
       row.membership_status
     );
 
-  if (!role || !status) {
+  if (
+    !row.household_id ||
+    !row.membership_id ||
+    !row.user_id ||
+    !row.member_id ||
+    !role ||
+    !status
+  ) {
     return undefined;
   }
 
