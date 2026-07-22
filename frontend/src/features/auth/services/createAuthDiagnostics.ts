@@ -9,6 +9,9 @@ import {
   InMemoryAuthBackendAdapter,
 } from "./inMemoryAuthBackendAdapter";
 import {
+  SupabaseAuthBackendAdapter,
+} from "./supabaseAuthBackendAdapter";
+import {
   getAuthBackendAdapter,
 } from "./createAuthBackendAdapter";
 
@@ -26,6 +29,12 @@ export async function createAuthDiagnostics():
     await adapter.listMigrationDrafts();
   const latestMigration =
     migrationDrafts.at(-1);
+  const isPrototypeAdapter =
+    adapter instanceof
+    InMemoryAuthBackendAdapter;
+  const isSupabaseAdapter =
+    adapter instanceof
+    SupabaseAuthBackendAdapter;
 
   return {
     enabled:
@@ -34,9 +43,18 @@ export async function createAuthDiagnostics():
       authFeatureConfig.provider,
     sessionStatus:
       session.status,
+    adapterType:
+      isPrototypeAdapter
+        ? "prototype"
+        : isSupabaseAdapter
+          ? "supabase"
+          : "disabled",
     isPrototypeAdapter:
-      adapter instanceof
-      InMemoryAuthBackendAdapter,
+      isPrototypeAdapter,
+    isSupabaseAdapter,
+    isSupabaseConfigured:
+      isSupabaseAdapter &&
+      adapter.isConfigured(),
     membershipCount:
       memberships.length,
     invitationCount:

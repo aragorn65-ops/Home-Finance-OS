@@ -130,11 +130,20 @@ export default function AuthDiagnosticsPanel() {
             <div>
               <dt>Adapter</dt>
               <dd>
-                {diagnostics.isPrototypeAdapter
-                  ? "Prototype"
-                  : "Disabled"}
+                {diagnostics.adapterType}
               </dd>
             </div>
+
+            {diagnostics.isSupabaseAdapter && (
+              <div>
+                <dt>Supabase config</dt>
+                <dd>
+                  {diagnostics.isSupabaseConfigured
+                    ? "configured"
+                    : "missing env"}
+                </dd>
+              </div>
+            )}
 
             <div>
               <dt>Memberships</dt>

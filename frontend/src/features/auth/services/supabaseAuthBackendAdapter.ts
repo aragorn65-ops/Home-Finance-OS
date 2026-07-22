@@ -34,7 +34,7 @@ export class SupabaseAuthBackendAdapter
 
   async getSession():
     Promise<AuthSession> {
-    if (!this.hasRequiredConfig()) {
+    if (!this.isConfigured()) {
       return {
         status: "disabled",
       };
@@ -120,7 +120,7 @@ export class SupabaseAuthBackendAdapter
     return Promise.resolve();
   }
 
-  private hasRequiredConfig():
+  isConfigured():
     boolean {
     return Boolean(
       this.config.projectUrl &&
@@ -131,7 +131,7 @@ export class SupabaseAuthBackendAdapter
   private createUnavailableMessage(
     action: string
   ): string {
-    if (!this.hasRequiredConfig()) {
+    if (!this.isConfigured()) {
       return (
         "Supabase auth spike is missing " +
         "VITE_SUPABASE_URL or " +

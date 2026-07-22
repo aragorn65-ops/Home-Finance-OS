@@ -19,6 +19,10 @@ test(
         status: "disabled",
       }
     );
+    assert.equal(
+      adapter.isConfigured(),
+      false
+    );
 
     const validation =
       await adapter.validateMigrationDraft(
@@ -58,6 +62,10 @@ test(
       {
         status: "signed-out",
       }
+    );
+    assert.equal(
+      adapter.isConfigured(),
+      true
     );
 
     await assert.rejects(

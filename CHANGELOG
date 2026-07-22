@@ -8,6 +8,21 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.42.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 42 notes and release notes for Supabase client wiring
+  readiness.
+* Added auth diagnostics visibility for Supabase adapter selection and
+  missing environment configuration.
+
+### Verified
+
+* Pending Sprint 42 validation.
+
+---
+
 ## [0.41.0-alpha] - 2026-07-22
 
 ### Added

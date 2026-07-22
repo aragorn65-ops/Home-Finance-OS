@@ -10,7 +10,9 @@ process around that decision. Sprint 38 moved the beta candidate to a
 repeatable Cloudflare Pages deployment. Sprint 39 hardens the deployed beta
 experience around local-first data safety, backup/restore confidence, and
 post-deploy smoke testing. Sprint 40 prepares the auth and cloud architecture
-decision path before any production migration work begins.
+decision path before any production migration work begins. Sprint 41 starts the
+Supabase auth/cloud spike, and Sprint 42 prepares disabled-by-default Supabase
+client wiring for disposable-project testing.
 
 ---
 
@@ -28,6 +30,7 @@ decision path before any production migration work begins.
 | v0.39.0-alpha | Post-deploy beta hardening |
 | v0.40.0-alpha | Auth and cloud decision prep |
 | v0.41.0-alpha | Supabase auth/cloud spike |
+| v0.42.0-alpha | Supabase client wiring readiness |
 
 ---
 
@@ -40,6 +43,8 @@ Production cloud sync, multi-device shared households, and production auth provi
 The current gate is an auth and cloud decision pass. HFOS should keep the
 deployed local-first beta stable while choosing production auth, remote
 storage, and migration boundaries deliberately.
+Sprint 42 keeps that work behind explicit Supabase spike configuration so the
+Cloudflare Pages beta remains local-first by default.
 
 The Sprint 40 decision criteria are tracked in:
 
