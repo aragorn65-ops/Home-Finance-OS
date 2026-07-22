@@ -8,6 +8,24 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.60.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 60 notes and release notes for migration checkpoint ordering.
+* Added deterministic migration checkpoint sorting by newest lifecycle activity.
+* Wired the migration checkpoint panel to show newest lifecycle activity first.
+* Added test coverage for lifecycle-aware checkpoint ordering.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twenty-nine passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified checkpoint ordering does not depend on adapter return order.
+
+---
+
 ## [0.59.0-alpha] - 2026-07-22
 
 ### Added
