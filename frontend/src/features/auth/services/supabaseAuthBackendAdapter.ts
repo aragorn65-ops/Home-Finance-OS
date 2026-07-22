@@ -726,6 +726,15 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before claiming a household."
+      );
+    }
+
     const {
       data,
       error,

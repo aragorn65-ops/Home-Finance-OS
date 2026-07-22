@@ -67,6 +67,8 @@ Sprint 68 extends that fail-closed behavior across disabled or misconfigured
 migration Validate and Commit paths.
 Sprint 69 requires a signed-in Supabase user before migration Commit or Abort
 can call remote write RPCs.
+Sprint 70 requires a signed-in Supabase user before household claim can call
+the remote household creation RPC.
 
 ---
 
@@ -112,6 +114,7 @@ can call remote write RPCs.
 | v0.67.0-alpha | Migration abort disabled guard |
 | v0.68.0-alpha | Migration lifecycle disabled guards |
 | v0.69.0-alpha | Migration write sign-in guards |
+| v0.70.0-alpha | Household claim sign-in guard |
 
 ---
 
@@ -127,6 +130,8 @@ storage, and migration boundaries deliberately.
 Sprint 68 keeps the migration lifecycle actions fail-closed when remote auth is
 disabled or misconfigured.
 Sprint 69 keeps signed-out migration write actions from reaching remote RPCs.
+Sprint 70 keeps signed-out household claim from reaching remote household
+creation RPCs.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior
