@@ -8,6 +8,26 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.76.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 76 notes and release notes for authenticated link storage
+  conflict guards.
+* Added a storage-level guard against conflicting authenticated household links.
+* Added tests proving matching links are allowed and conflicting links are
+  preserved without overwrite.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with fifty-six passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified conflicting authenticated links cannot overwrite local household
+  link metadata.
+
+---
+
 ## [0.75.0-alpha] - 2026-07-22
 
 ### Added
