@@ -27,7 +27,7 @@ real beta household data or replacing local-first storage.
       Supabase provider.
 * [x] Add a Supabase adapter skeleton behind `VITE_HFOS_AUTH_PROVIDER=supabase`
       without adding live data migration.
-* [ ] Add spike validation notes for what must be tested in a disposable
+* [x] Add spike validation notes for what must be tested in a disposable
       Supabase project.
 
 ---

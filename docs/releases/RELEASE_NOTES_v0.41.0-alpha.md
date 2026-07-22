@@ -31,6 +31,7 @@ configuration flags and must not migrate real household data.
 * Documented disabled-by-default Supabase Vite environment variables.
 * Added a dependency-free Supabase auth adapter skeleton behind the
   `supabase` provider flag.
+* Added disposable-project Supabase spike validation notes.
 
 ---
 
