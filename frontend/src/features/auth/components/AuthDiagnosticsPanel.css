@@ -233,26 +233,30 @@
   overflow-wrap: anywhere;
 }
 
-.auth-diagnostics__account-summary {
+.auth-diagnostics__account-summary,
+.auth-diagnostics__transaction-summary {
   display: grid;
   gap: var(--space-3);
 }
 
-.auth-diagnostics__account-summary h3 {
+.auth-diagnostics__account-summary h3,
+.auth-diagnostics__transaction-summary h3 {
   margin: 0;
   color: var(--color-text-strong);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
 }
 
-.auth-diagnostics__account-summary dl {
+.auth-diagnostics__account-summary dl,
+.auth-diagnostics__transaction-summary dl {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-2);
   margin: 0;
 }
 
-.auth-diagnostics__account-summary div {
+.auth-diagnostics__account-summary div,
+.auth-diagnostics__transaction-summary div {
   min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -260,13 +264,15 @@
   padding: var(--space-3);
 }
 
-.auth-diagnostics__account-summary dt {
+.auth-diagnostics__account-summary dt,
+.auth-diagnostics__transaction-summary dt {
   color: var(--color-text-muted);
   font-size: 0.6875rem;
   font-weight: var(--font-weight-semibold);
 }
 
-.auth-diagnostics__account-summary dd {
+.auth-diagnostics__account-summary dd,
+.auth-diagnostics__transaction-summary dd {
   margin: var(--space-1) 0 0;
   color: var(--color-text-strong);
   font-size: var(--font-size-sm);
@@ -283,7 +289,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .auth-diagnostics__account-summary dl {
+  .auth-diagnostics__account-summary dl,
+  .auth-diagnostics__transaction-summary dl {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -297,7 +304,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .auth-diagnostics__account-summary dl {
+  .auth-diagnostics__account-summary dl,
+  .auth-diagnostics__transaction-summary dl {
     grid-template-columns: minmax(0, 1fr);
   }
 }

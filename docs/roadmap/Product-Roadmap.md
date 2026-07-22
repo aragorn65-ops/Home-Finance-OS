@@ -24,6 +24,8 @@ disposable-project verification.
 Sprint 47 enriches that diagnostics-only view with read-only household names.
 Sprint 48 adds aggregate-only account diagnostics for household and
 member-private visibility checks.
+Sprint 49 adds aggregate-only transaction diagnostics for household,
+participant, and private visibility checks.
 
 ---
 
@@ -48,6 +50,7 @@ member-private visibility checks.
 | v0.46.0-alpha | Supabase membership diagnostics |
 | v0.47.0-alpha | Supabase household diagnostics |
 | v0.48.0-alpha | Supabase account diagnostics |
+| v0.49.0-alpha | Supabase transaction diagnostics |
 
 ---
 
@@ -72,6 +75,8 @@ Sprint 46 keeps the membership output diagnostics-only and read-only.
 Sprint 47 keeps household names diagnostics-only and read-only.
 Sprint 48 keeps account diagnostics aggregate-only, read-only, and free of
 account names or balances.
+Sprint 49 keeps transaction diagnostics aggregate-only, read-only, and free of
+amounts, categories, descriptions, or account ids.
 
 The Sprint 40 decision criteria are tracked in:
 

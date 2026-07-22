@@ -24,6 +24,20 @@ export interface AuthAccountDiagnosticSummary {
   currencies: string[];
 }
 
+export interface AuthTransactionDiagnosticSummary {
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  incomeCount: number;
+  expenseCount: number;
+  transferCount: number;
+  householdVisibleCount: number;
+  participantVisibleCount: number;
+  privateVisibleCount: number;
+  earliestTransactionDate?: string;
+  latestTransactionDate?: string;
+}
+
 export interface AuthDiagnostics {
   enabled: boolean;
   provider: AuthProvider;
@@ -40,6 +54,8 @@ export interface AuthDiagnostics {
     AuthMembershipDiagnostic[];
   accountSummary?:
     AuthAccountDiagnosticSummary;
+  transactionSummary?:
+    AuthTransactionDiagnosticSummary;
   invitationCount: number;
   migrationDraftCount: number;
   latestMigrationStatus?: string;

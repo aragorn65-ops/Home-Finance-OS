@@ -64,6 +64,16 @@ export async function createAuthDiagnostics():
           )
         )
       : undefined;
+  const transactionSummary =
+    isSupabaseAdapter
+      ? await adapter
+        .createTransactionDiagnosticSummary(
+          memberships.map(
+            (membership) =>
+              membership.householdId
+          )
+        )
+      : undefined;
 
   return {
     enabled:
@@ -104,6 +114,7 @@ export async function createAuthDiagnostics():
         })
       ),
     accountSummary,
+    transactionSummary,
     invitationCount:
       invitations.length,
     migrationDraftCount:

@@ -8,6 +8,30 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.49.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 49 notes and release notes for Supabase transaction
+  diagnostics.
+* Added aggregate-only Supabase transaction diagnostics by membership
+  household id.
+* Added transaction visibility, type, activity, and date-range counts to Auth
+  Diagnostics.
+* Added tests for transaction diagnostics query shape, id deduplication, and
+  aggregate output.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with fifteen passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified transaction diagnostics remain aggregate-only and read-only.
+* Confirmed amounts, categories, descriptions, and account ids are not selected
+  or rendered.
+
+---
+
 ## [0.48.0-alpha] - 2026-07-22
 
 ### Added

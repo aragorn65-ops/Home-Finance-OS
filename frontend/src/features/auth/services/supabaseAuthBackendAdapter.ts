@@ -59,6 +59,7 @@ interface SupabaseFilterBuilder {
   ): Promise<
     | SupabaseHouseholdRowsResult
     | SupabaseAccountRowsResult
+    | SupabaseTransactionRowsResult
   >;
 }
 
@@ -118,6 +119,15 @@ interface SupabaseHouseholdRowsResult {
 interface SupabaseAccountRowsResult {
   data:
     | SupabaseAccountRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseTransactionRowsResult {
+  data:
+    | SupabaseTransactionRow[]
     | null;
   error:
     | SupabaseAuthError
@@ -184,6 +194,14 @@ interface SupabaseAccountRow {
   is_active: boolean;
 }
 
+interface SupabaseTransactionRow {
+  household_id: string;
+  type: string;
+  visibility: string;
+  transaction_date: string;
+  is_active: boolean;
+}
+
 export interface SupabaseHouseholdDiagnostic {
   householdId: string;
   householdName: string;
@@ -199,6 +217,20 @@ export interface SupabaseAccountDiagnosticSummary {
   assetCount: number;
   liabilityCount: number;
   currencies: string[];
+}
+
+export interface SupabaseTransactionDiagnosticSummary {
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  incomeCount: number;
+  expenseCount: number;
+  transferCount: number;
+  householdVisibleCount: number;
+  participantVisibleCount: number;
+  privateVisibleCount: number;
+  earliestTransactionDate?: string;
+  latestTransactionDate?: string;
 }
 
 export interface SupabaseAuthBackendAdapterConfig {
@@ -512,6 +544,57 @@ export class SupabaseAuthBackendAdapter
     }
 
     return summarizeSupabaseAccountRows(
+      data ?? []
+    );
+  }
+
+  async createTransactionDiagnosticSummary(
+    householdIds: string[]
+  ): Promise<SupabaseTransactionDiagnosticSummary> {
+    const uniqueHouseholdIds =
+      Array.from(
+        new Set(
+          householdIds.filter(Boolean)
+        )
+      );
+
+    if (
+      uniqueHouseholdIds.length ===
+      0
+    ) {
+      return createEmptyTransactionDiagnosticSummary();
+    }
+
+    const transactionResult =
+      await (
+      await this.getClient()
+      )
+        .from("transactions")
+        .select(
+          [
+            "household_id",
+            "type",
+            "visibility",
+            "transaction_date",
+            "is_active",
+          ].join(",")
+        )
+        .in(
+          "household_id",
+          uniqueHouseholdIds
+        ) as SupabaseTransactionRowsResult;
+    const {
+      data,
+      error,
+    } = transactionResult;
+
+    if (error) {
+      throw new Error(
+        `Supabase transaction diagnostics failed: ${error.message}`
+      );
+    }
+
+    return summarizeSupabaseTransactionRows(
       data ?? []
     );
   }
@@ -876,6 +959,91 @@ function summarizeSupabaseAccountRows(
   summary.currencies =
     Array.from(currencies)
       .sort();
+
+  return summary;
+}
+
+function createEmptyTransactionDiagnosticSummary():
+  SupabaseTransactionDiagnosticSummary {
+  return {
+    totalCount:
+      0,
+    activeCount:
+      0,
+    inactiveCount:
+      0,
+    incomeCount:
+      0,
+    expenseCount:
+      0,
+    transferCount:
+      0,
+    householdVisibleCount:
+      0,
+    participantVisibleCount:
+      0,
+    privateVisibleCount:
+      0,
+  };
+}
+
+function summarizeSupabaseTransactionRows(
+  rows: SupabaseTransactionRow[]
+): SupabaseTransactionDiagnosticSummary {
+  const summary =
+    createEmptyTransactionDiagnosticSummary();
+
+  rows.forEach((row) => {
+    summary.totalCount += 1;
+
+    if (row.is_active) {
+      summary.activeCount += 1;
+    } else {
+      summary.inactiveCount += 1;
+    }
+
+    if (row.type === "income") {
+      summary.incomeCount += 1;
+    } else if (row.type === "expense") {
+      summary.expenseCount += 1;
+    } else if (row.type === "transfer") {
+      summary.transferCount += 1;
+    }
+
+    if (row.visibility === "private") {
+      summary.privateVisibleCount += 1;
+    } else if (
+      row.visibility === "participants"
+    ) {
+      summary.participantVisibleCount += 1;
+    } else if (
+      row.visibility === "household"
+    ) {
+      summary.householdVisibleCount += 1;
+    }
+
+    if (!row.transaction_date) {
+      return;
+    }
+
+    if (
+      !summary.earliestTransactionDate ||
+      row.transaction_date <
+        summary.earliestTransactionDate
+    ) {
+      summary.earliestTransactionDate =
+        row.transaction_date;
+    }
+
+    if (
+      !summary.latestTransactionDate ||
+      row.transaction_date >
+        summary.latestTransactionDate
+    ) {
+      summary.latestTransactionDate =
+        row.transaction_date;
+    }
+  });
 
   return summary;
 }
