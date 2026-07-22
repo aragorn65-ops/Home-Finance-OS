@@ -361,6 +361,21 @@ export function linkHouseholdToAuthenticatedTenant(
     return null;
   }
 
+  const existingLink =
+    household.authenticatedLink;
+
+  if (
+    existingLink &&
+    (
+      existingLink.remoteHouseholdId !==
+        input.remoteHouseholdId ||
+      existingLink.migrationId !==
+        input.migrationId
+    )
+  ) {
+    return null;
+  }
+
   const ownerMember =
     household.members.find(
       (member) =>
