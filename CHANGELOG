@@ -8,22 +8,54 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.39.0-alpha] - 2026-07-22
+
+### Added
+
+* Added an app-wide local-first beta notice so deployed testers know browser
+  storage remains the active data store.
+* Added Sprint 39 notes and release notes for post-deploy beta hardening.
+* Added a Cloudflare Pages smoke-check note with the live beta URL and
+  backup/restore validation steps.
+
+### Changed
+
+* Updated the product roadmap with the post-deploy beta hardening track.
+
+### Verified
+
+* Verified backup import and restore on the deployed Cloudflare Pages site.
+* Verified Dashboard, Transactions, Settlements, and Analytics load after
+  restoring a deployed-site backup.
+
+---
+
 ## [0.38.0-alpha] - 2026-07-21
 
 ### Added
 
+* Deployed the guided local-first beta to Cloudflare Pages at
+  https://home-finance-os.pages.dev.
 * Added Cloudflare Pages deployment documentation.
 * Added a Cloudflare Pages SPA fallback for client-side routes.
 * Added Sprint 38 notes and release notes for the Cloudflare Pages beta
   deployment track.
+* Added household member monthly expense contribution reporting to the
+  Dashboard and Analytics surfaces.
 
 ### Changed
 
 * Updated the roadmap to include the Cloudflare Pages beta deployment gate.
+* Updated shared Analytics reporting to avoid showing household-wide income,
+  cash flow, and net cash flow in the shared household view.
 
 ### Verified
 
-* Pending deployed Cloudflare Pages smoke check.
+* Verified `npm.cmd test` completes with seven passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified the deployed Cloudflare Pages site passes smoke checks.
+* Verified the member expense contribution summary appears on the deployed site.
 
 ---
 

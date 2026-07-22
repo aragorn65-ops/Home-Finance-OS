@@ -21,9 +21,26 @@ Root directory: frontend
 Build command: npm run build
 Build output directory: dist
 Production branch: main
+Environment variable: NODE_VERSION=22
 ```
 
+If the Cloudflare preset list does not include `Vite`, leave the framework
+preset as `None` and enter the build command, output directory, and root
+directory manually.
+
 Preview deployments should remain enabled for pull request branches.
+
+During beta validation, the production branch may temporarily be set to the
+active deployment branch before the branch is merged to `main`. For Sprint 38,
+that branch is:
+
+```text
+sprint-38-cloudflare-pages-beta-deploy
+```
+
+After deployment branch validation is complete and the branch is merged to
+`main`, switch the Cloudflare Pages production branch back to `main` and rerun
+the deployed smoke check.
 
 ---
 
