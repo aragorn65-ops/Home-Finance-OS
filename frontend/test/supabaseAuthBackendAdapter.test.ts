@@ -541,7 +541,7 @@ test(
                 member_id:
                   "33333333-3333-4333-8333-333333333333",
                 user_id:
-                  "44444444-4444-4444-8444-444444444444",
+                  "user-1",
                 role:
                   "owner",
                 membership_status:
@@ -621,6 +621,68 @@ test(
       claim.migrationDraft.updatedAt
         .toISOString(),
       "2026-07-22T03:00:00.000Z"
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter rejects household claim results for another user",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc() {
+            return {
+              data: {
+                household_id:
+                  "11111111-1111-4111-8111-111111111111",
+                membership_id:
+                  "22222222-2222-4222-8222-222222222222",
+                member_id:
+                  "33333333-3333-4333-8333-333333333333",
+                user_id:
+                  "other-user",
+                role:
+                  "owner",
+                membership_status:
+                  "active",
+                migration_draft_id:
+                  "55555555-5555-4555-8555-555555555555",
+                migration_status:
+                  "uploaded",
+                created_at:
+                  "2026-07-22T02:00:00Z",
+                updated_at:
+                  "2026-07-22T03:00:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.createHouseholdClaimDraft({
+          householdName:
+            "Casa Test",
+          ownerMemberId:
+            "local-owner",
+          backupSummary:
+            createBackupSummary(),
+        }),
+      /Supabase household claim returned an invalid user\./
     );
   }
 );

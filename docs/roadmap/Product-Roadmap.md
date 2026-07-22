@@ -69,6 +69,8 @@ Sprint 69 requires a signed-in Supabase user before migration Commit or Abort
 can call remote write RPCs.
 Sprint 70 requires a signed-in Supabase user before household claim can call
 the remote household creation RPC.
+Sprint 71 verifies the household claim RPC result still belongs to the signed-in
+Supabase user before trusting returned membership and migration data.
 
 ---
 
@@ -115,6 +117,7 @@ the remote household creation RPC.
 | v0.68.0-alpha | Migration lifecycle disabled guards |
 | v0.69.0-alpha | Migration write sign-in guards |
 | v0.70.0-alpha | Household claim sign-in guard |
+| v0.71.0-alpha | Household claim result guard |
 
 ---
 
@@ -132,6 +135,7 @@ disabled or misconfigured.
 Sprint 69 keeps signed-out migration write actions from reaching remote RPCs.
 Sprint 70 keeps signed-out household claim from reaching remote household
 creation RPCs.
+Sprint 71 rejects household claim RPC results that belong to a different user.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior
