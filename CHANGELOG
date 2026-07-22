@@ -8,6 +8,55 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.41.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 41 notes and release notes for the Supabase auth/cloud spike.
+* Added a disposable Supabase schema and RLS SQL draft for review.
+* Documented disabled-by-default Supabase spike environment variables.
+* Added a dependency-free Supabase auth adapter skeleton behind the
+  `supabase` provider flag.
+* Added disposable-project Supabase spike validation notes.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with nine passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified Supabase remains disabled by default for the Cloudflare Pages beta.
+
+---
+
+## [0.40.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 40 notes and release notes for auth and cloud decision prep.
+* Documented that Google Drive backup remains disabled unless
+  `VITE_GOOGLE_CLIENT_ID` is configured for the Cloudflare Pages build.
+* Added auth and cloud decision criteria covering identity provider, remote
+  storage, migration ownership, private record enforcement, sync conflicts, and
+  Google Drive backup boundaries.
+* Added an auth provider comparison matrix for Supabase, Firebase,
+  Cloudflare-native storage, and a custom backend.
+* Added a Supabase spike plan with schema draft, RLS policy sketch, adapter
+  mapping, proof criteria, and stop conditions.
+
+### Changed
+
+* Updated the product roadmap from deployed beta hardening to auth and cloud
+  decision prep.
+
+### Verified
+
+* Verified `npm.cmd test` completes with seven passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified Sprint 40 remained docs/decision scope only.
+
+---
+
 ## [0.39.0-alpha] - 2026-07-22
 
 ### Added
