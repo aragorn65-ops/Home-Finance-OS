@@ -65,6 +65,8 @@ Sprint 67 makes disabled or misconfigured migration Abort paths fail closed
 instead of reporting silent no-op success.
 Sprint 68 extends that fail-closed behavior across disabled or misconfigured
 migration Validate and Commit paths.
+Sprint 69 requires a signed-in Supabase user before migration Commit or Abort
+can call remote write RPCs.
 
 ---
 
@@ -109,6 +111,7 @@ migration Validate and Commit paths.
 | v0.66.0-alpha | Migration action preconditions |
 | v0.67.0-alpha | Migration abort disabled guard |
 | v0.68.0-alpha | Migration lifecycle disabled guards |
+| v0.69.0-alpha | Migration write sign-in guards |
 
 ---
 
@@ -123,6 +126,7 @@ deployed local-first beta stable while choosing production auth, remote
 storage, and migration boundaries deliberately.
 Sprint 68 keeps the migration lifecycle actions fail-closed when remote auth is
 disabled or misconfigured.
+Sprint 69 keeps signed-out migration write actions from reaching remote RPCs.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior
