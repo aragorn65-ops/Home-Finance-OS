@@ -25,7 +25,7 @@ real beta household data or replacing local-first storage.
       Supabase project.
 * [x] Add environment variable documentation for a disabled-by-default
       Supabase provider.
-* [ ] Add a Supabase adapter skeleton behind `VITE_HFOS_AUTH_PROVIDER=supabase`
+* [x] Add a Supabase adapter skeleton behind `VITE_HFOS_AUTH_PROVIDER=supabase`
       without adding live data migration.
 * [ ] Add spike validation notes for what must be tested in a disposable
       Supabase project.

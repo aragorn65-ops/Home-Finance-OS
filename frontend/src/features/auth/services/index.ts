@@ -32,6 +32,14 @@ export {
 } from "./inMemoryAuthBackendAdapter";
 
 export {
+  SupabaseAuthBackendAdapter,
+} from "./supabaseAuthBackendAdapter";
+
+export type {
+  SupabaseAuthBackendAdapterConfig,
+} from "./supabaseAuthBackendAdapter";
+
+export {
   InMemoryAuthStore,
   createId,
   createMembership,

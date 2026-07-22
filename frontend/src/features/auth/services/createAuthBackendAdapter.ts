@@ -12,6 +12,9 @@ import {
 import {
   InMemoryAuthBackendAdapter,
 } from "./inMemoryAuthBackendAdapter";
+import {
+  SupabaseAuthBackendAdapter,
+} from "./supabaseAuthBackendAdapter";
 
 let adapter:
   AuthBackendAdapter | undefined;
@@ -37,6 +40,13 @@ function createAuthBackendAdapter():
     "prototype"
   ) {
     return new InMemoryAuthBackendAdapter();
+  }
+
+  if (
+    authFeatureConfig.provider ===
+    "supabase"
+  ) {
+    return new SupabaseAuthBackendAdapter();
   }
 
   return new DisabledAuthBackendAdapter();

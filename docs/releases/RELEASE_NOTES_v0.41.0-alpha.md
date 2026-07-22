@@ -29,6 +29,8 @@ configuration flags and must not migrate real household data.
 
 * Added a disposable Supabase SQL spike draft for schema and RLS review.
 * Documented disabled-by-default Supabase Vite environment variables.
+* Added a dependency-free Supabase auth adapter skeleton behind the
+  `supabase` provider flag.
 
 ---
 
