@@ -94,6 +94,8 @@ sidebar route.
 Sprint 82 clarifies Cloudflare Pages Google Drive backup configuration and
 OAuth origin setup.
 Sprint 83 makes Google Drive backup configuration status visible in Settings.
+Sprint 84 strengthens in-app public beta safety language around low-risk data,
+backup timing, account recovery, and production sync.
 
 ---
 
@@ -153,6 +155,7 @@ Sprint 83 makes Google Drive backup configuration status visible in Settings.
 | v0.81.0-alpha | Cloudflare route smoke checklist |
 | v0.82.0-alpha | Cloudflare Google Drive backup config |
 | v0.83.0-alpha | Google Drive Settings status clarity |
+| v0.84.0-alpha | Public beta safety notice |
 
 ---
 
@@ -195,6 +198,8 @@ Sprint 82 makes deployed Google Drive backup enablement explicit through
 Cloudflare Pages environment variables and OAuth origin configuration.
 Sprint 83 surfaces that same Google Drive configuration status inside Settings
 so disabled Drive buttons explain the missing build variable.
+Sprint 84 keeps public beta testers reminded that data is local-first, recovery
+depends on backups, and production sync is not available.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior

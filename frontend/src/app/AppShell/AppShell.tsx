@@ -238,7 +238,7 @@ export default function AppShell() {
           </strong>
 
           <span>
-            Data is saved in this browser. Export a backup before and after meaningful testing.
+            Use low-risk data. This build has no account recovery or production sync; export a backup before and after meaningful testing.
           </span>
         </section>
 

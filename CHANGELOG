@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.84.0-alpha] - 2026-07-23
+
+### Added
+
+* Added Sprint 84 notes and release notes for public beta safety notices.
+* Updated the app-shell beta banner to mention low-risk data, no account
+  recovery, no production sync, and backup timing.
+* Updated the Settings backup warning with the same public beta safety framing.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with sixty-one passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the app shell and Settings backup area carry public beta safety
+  language.
+
+---
+
 ## [0.83.0-alpha] - 2026-07-23
 
 ### Added
