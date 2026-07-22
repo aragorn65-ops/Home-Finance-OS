@@ -18,5 +18,20 @@ export function requireMigrationCommitDraft(
     );
   }
 
+  if (draft.status !== "validated") {
+    throw new Error(
+      "Validate the migration checkpoint before committing."
+    );
+  }
+
+  if (
+    !draft.ownerMemberId ||
+    !draft.requestedByUserId
+  ) {
+    throw new Error(
+      "Migration checkpoint is missing local link metadata. Refresh diagnostics before committing."
+    );
+  }
+
   return draft;
 }

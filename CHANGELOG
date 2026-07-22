@@ -8,6 +8,24 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.64.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 64 notes and release notes for migration commit preconditions.
+* Required a validated local checkpoint before remote commit.
+* Required local owner member and requesting user metadata before commit.
+* Added tests for invalid local commit preconditions.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with thirty-six passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified non-validated or incomplete local checkpoints block commit.
+
+---
+
 ## [0.63.0-alpha] - 2026-07-22
 
 ### Added

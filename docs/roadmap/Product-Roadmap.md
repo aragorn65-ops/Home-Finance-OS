@@ -55,6 +55,8 @@ Sprint 62 adds fail-closed adapter guards for malformed Supabase validation,
 commit, and abort RPC success payloads.
 Sprint 63 adds a local checkpoint precondition so remote commit cannot skip the
 local household link when diagnostics state is stale.
+Sprint 64 tightens that precondition by requiring validated local checkpoint
+state and local link metadata before remote commit.
 
 ---
 
@@ -94,6 +96,7 @@ local household link when diagnostics state is stale.
 | v0.61.0-alpha | Supabase spike QA runbook |
 | v0.62.0-alpha | Supabase RPC result guards |
 | v0.63.0-alpha | Migration commit local-link guard |
+| v0.64.0-alpha | Migration commit preconditions |
 
 ---
 
@@ -154,6 +157,9 @@ migration disabled.
 Sprint 63 keeps commit linked to explicit local checkpoint state and still
 leaves production credentials, full record import, sync, local data deletion,
 and production migration disabled.
+Sprint 64 keeps commit blocked until local preconditions pass and still leaves
+production credentials, full record import, sync, local data deletion, and
+production migration disabled.
 
 The Sprint 40 decision criteria are tracked in:
 
