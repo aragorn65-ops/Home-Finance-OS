@@ -791,15 +791,24 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
+    const migrationDraft =
+      mapSupabaseClaimMigrationDraft(
+        row,
+        draft
+      );
+
+    if (!migrationDraft) {
+      throw new Error(
+        "Supabase household claim returned an invalid migration draft."
+      );
+    }
+
     return {
       householdId:
         row.household_id,
       membership,
       migrationDraft:
-        mapSupabaseClaimMigrationDraft(
-          row,
-          draft
-        ),
+        migrationDraft,
     };
   }
 
@@ -1513,7 +1522,21 @@ function mapSupabaseClaimMembership(
 function mapSupabaseClaimMigrationDraft(
   row: SupabaseHouseholdClaimRpcRow,
   draft: HouseholdClaimDraft
-): RemoteMigrationDraft {
+): RemoteMigrationDraft | undefined {
+  const status =
+    normalizeMigrationStatus(
+      row.migration_status
+    );
+
+  if (
+    !row.household_id ||
+    !row.member_id ||
+    !row.migration_draft_id ||
+    !status
+  ) {
+    return undefined;
+  }
+
   return {
     id:
       row.migration_draft_id,
@@ -1532,9 +1555,7 @@ function mapSupabaseClaimMigrationDraft(
         draft.backupSummary
       ),
     status:
-      normalizeMigrationStatus(
-        row.migration_status
-      ) ?? "uploaded",
+      status,
     createdAt:
       mapSupabaseDate(
         row.created_at ??

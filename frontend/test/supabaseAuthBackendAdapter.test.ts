@@ -688,6 +688,68 @@ test(
 );
 
 test(
+  "Supabase auth adapter rejects invalid household claim migration drafts",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc() {
+            return {
+              data: {
+                household_id:
+                  "11111111-1111-4111-8111-111111111111",
+                membership_id:
+                  "22222222-2222-4222-8222-222222222222",
+                member_id:
+                  "33333333-3333-4333-8333-333333333333",
+                user_id:
+                  "user-1",
+                role:
+                  "owner",
+                membership_status:
+                  "active",
+                migration_draft_id:
+                  "55555555-5555-4555-8555-555555555555",
+                migration_status:
+                  "unknown",
+                created_at:
+                  "2026-07-22T02:00:00Z",
+                updated_at:
+                  "2026-07-22T03:00:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.createHouseholdClaimDraft({
+          householdName:
+            "Casa Test",
+          ownerMemberId:
+            "local-owner",
+          backupSummary:
+            createBackupSummary(),
+        }),
+      /Supabase household claim returned an invalid migration draft\./
+    );
+  }
+);
+
+test(
   "Supabase auth adapter validates migration draft metadata for the current user",
   async () => {
     const {
