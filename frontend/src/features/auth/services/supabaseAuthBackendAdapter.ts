@@ -956,6 +956,21 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
+    const validationRow =
+      readSingleSupabaseRpcRow(
+        validationResult.data
+      );
+
+    if (
+      !validationRow ||
+      validationRow.draft_id !== draftId ||
+      validationRow.status !== "validated"
+    ) {
+      throw new Error(
+        "Supabase migration validation returned an invalid result."
+      );
+    }
+
     return {
       draftId,
       isValid: true,
@@ -1007,6 +1022,16 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
+    if (
+      row.draft_id !== draftId ||
+      row.status !== "committed" ||
+      !row.household_id
+    ) {
+      throw new Error(
+        "Supabase migration commit returned an invalid result."
+      );
+    }
+
     return {
       householdId:
         row.household_id,
@@ -1043,6 +1068,21 @@ export class SupabaseAuthBackendAdapter
     if (abortResult.error) {
       throw new Error(
         `Supabase migration abort failed: ${abortResult.error.message}`
+      );
+    }
+
+    const abortRow =
+      readSingleSupabaseRpcRow(
+        abortResult.data
+      );
+
+    if (
+      !abortRow ||
+      abortRow.draft_id !== draftId ||
+      abortRow.status !== "aborted"
+    ) {
+      throw new Error(
+        "Supabase migration abort returned an invalid result."
       );
     }
   }
@@ -1534,6 +1574,18 @@ function createSupabaseMigrationValidationBlockers(
   }
 
   return blockers;
+}
+
+function readSingleSupabaseRpcRow<T>(
+  data:
+    | T
+    | T[]
+    | null
+): T | undefined {
+  return Array.isArray(data)
+    ? data[0]
+    : data ??
+      undefined;
 }
 
 function countRemoteMigrationRecords(

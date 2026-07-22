@@ -51,6 +51,8 @@ Sprint 60 orders migration checkpoints by newest lifecycle activity in the
 diagnostics panel.
 Sprint 61 turns the disposable Supabase spike checks into a clearer QA runbook
 covering lifecycle diagnostics, checkpoint ordering, and cross-user RLS checks.
+Sprint 62 adds fail-closed adapter guards for malformed Supabase validation,
+commit, and abort RPC success payloads.
 
 ---
 
@@ -88,6 +90,7 @@ covering lifecycle diagnostics, checkpoint ordering, and cross-user RLS checks.
 | v0.59.0-alpha | Latest migration diagnostics |
 | v0.60.0-alpha | Migration checkpoint ordering |
 | v0.61.0-alpha | Supabase spike QA runbook |
+| v0.62.0-alpha | Supabase RPC result guards |
 
 ---
 
@@ -142,6 +145,9 @@ record import, sync, local data deletion, and production migration disabled.
 Sprint 61 keeps Supabase validation disposable-project-only and still leaves
 production credentials, full record import, sync, local data deletion, and
 production migration disabled.
+Sprint 62 keeps lifecycle RPC hardening fail-closed and still leaves production
+credentials, full record import, sync, local data deletion, and production
+migration disabled.
 
 The Sprint 40 decision criteria are tracked in:
 

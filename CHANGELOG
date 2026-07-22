@@ -8,6 +8,24 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.62.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 62 notes and release notes for Supabase RPC result guards.
+* Added fail-closed adapter guards for malformed validation, commit, and abort
+  RPC success payloads.
+* Added tests for invalid Supabase lifecycle RPC results.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with thirty-two passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified malformed lifecycle RPC success payloads are rejected.
+
+---
+
 ## [0.61.0-alpha] - 2026-07-22
 
 ### Added
