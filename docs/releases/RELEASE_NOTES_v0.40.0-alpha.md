@@ -26,6 +26,8 @@ criteria are explicit.
 * Defined production auth/provider decision criteria.
 * Defined remote storage and migration decision criteria.
 * Identified the next smallest implementation slice after the decision.
+* Compared provider/storage candidates and identified Supabase Auth +
+  Postgres/RLS as the leading spike candidate.
 
 ---
 

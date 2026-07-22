@@ -18,6 +18,8 @@ This project follows a sprint-based development process.
 * Added auth and cloud decision criteria covering identity provider, remote
   storage, migration ownership, private record enforcement, sync conflicts, and
   Google Drive backup boundaries.
+* Added an auth provider comparison matrix for Supabase, Firebase,
+  Cloudflare-native storage, and a custom backend.
 
 ### Changed
 

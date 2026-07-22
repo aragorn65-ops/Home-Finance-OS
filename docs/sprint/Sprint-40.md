@@ -29,6 +29,7 @@ mixing prototype auth with production data migration.
 * [x] Define the production auth/provider decision criteria.
 * [x] Define the remote storage and migration decision criteria.
 * [x] Identify the next smallest implementation slice after the decision.
+* [x] Compare provider/storage candidates for the first implementation spike.
 
 ---
 
