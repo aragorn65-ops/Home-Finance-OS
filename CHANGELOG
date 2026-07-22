@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.40.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 40 notes and release notes for auth and cloud decision prep.
+* Documented that Google Drive backup remains disabled unless
+  `VITE_GOOGLE_CLIENT_ID` is configured for the Cloudflare Pages build.
+
+### Changed
+
+* Updated the product roadmap from deployed beta hardening to auth and cloud
+  decision prep.
+
+### Verified
+
+* Pending Sprint 40 validation.
+
+---
+
 ## [0.39.0-alpha] - 2026-07-22
 
 ### Added

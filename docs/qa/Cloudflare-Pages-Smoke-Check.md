@@ -51,6 +51,17 @@ member expense contribution summary appears again in Analytics.
 
 ---
 
+## Google Drive Backup Status
+
+Google Drive backup is optional and configuration-dependent. If
+`VITE_GOOGLE_CLIENT_ID` is not configured for the Cloudflare Pages build,
+Settings will keep Save to Google Drive and Restore from Google Drive disabled.
+
+For the deployed local-first beta, local Export Backup and Import Backup remain
+the required smoke-check path.
+
+---
+
 ## Sprint 39 Result
 
 **Date:** 2026-07-22
