@@ -19,6 +19,8 @@ Sprint 44 handles auth callback/session refresh for that disposable-project
 flow.
 Sprint 45 adds read-only Supabase household membership lookup for signed-in
 disposable-project users.
+Sprint 46 exposes those membership results in Auth Diagnostics for
+disposable-project verification.
 
 ---
 
@@ -40,6 +42,7 @@ disposable-project users.
 | v0.43.0-alpha | Supabase magic-link spike |
 | v0.44.0-alpha | Supabase auth callback handling |
 | v0.45.0-alpha | Supabase membership read spike |
+| v0.46.0-alpha | Supabase membership diagnostics |
 
 ---
 
@@ -60,6 +63,7 @@ Sprint 44 continues the same guardrails while adding callback/session refresh
 behavior for disposable Supabase auth tests.
 Sprint 45 keeps those guardrails while reading RLS-protected household
 membership state for diagnostics only.
+Sprint 46 keeps the membership output diagnostics-only and read-only.
 
 The Sprint 40 decision criteria are tracked in:
 

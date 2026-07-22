@@ -57,6 +57,19 @@ export async function createAuthDiagnostics():
       adapter.isConfigured(),
     membershipCount:
       memberships.length,
+    memberships:
+      memberships.map(
+        (membership) => ({
+          householdId:
+            membership.householdId,
+          memberId:
+            membership.memberId,
+          role:
+            membership.role,
+          status:
+            membership.status,
+        })
+      ),
     invitationCount:
       invitations.length,
     migrationDraftCount:
