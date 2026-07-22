@@ -18,11 +18,11 @@ frontend, and household data remains in the tester's browser localStorage.
 
 ---
 
-## Planned Highlights
+## Highlights
 
-* Add a visible local-first beta notice to the deployed app shell.
-* Reconfirm backup export and restore on the deployed Cloudflare Pages site.
-* Document the deployed smoke-test path using the live beta URL.
+* Added a visible local-first beta notice to the deployed app shell.
+* Reconfirmed backup export and restore on the deployed Cloudflare Pages site.
+* Documented the deployed smoke-test path using the live beta URL.
 * Keep production login, sync, and shared household collaboration out of scope.
 
 ---
@@ -34,3 +34,12 @@ frontend, and household data remains in the tester's browser localStorage.
 * Server-side storage.
 * Shared household invites and collaboration.
 * New finance modules.
+
+---
+
+## Validation
+
+* Backup import and restore passed on https://home-finance-os.pages.dev.
+* Dashboard, Transactions, Settlements, and Analytics loaded successfully after
+  restore.
+* Settings backup/restore copy required no changes during this pass.

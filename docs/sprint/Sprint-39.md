@@ -23,9 +23,9 @@ recover test data while the app remains browser-storage based.
 ## Planned Scope
 
 * [x] Add an app-wide local-first beta notice.
-* [ ] Verify backup export and restore on the Cloudflare Pages deployment.
-* [ ] Add deployed beta smoke-test notes with the live URL.
-* [ ] Improve Settings backup/restore guidance if the deployed workflow reveals
+* [x] Verify backup export and restore on the Cloudflare Pages deployment.
+* [x] Add deployed beta smoke-test notes with the live URL.
+* [x] Improve Settings backup/restore guidance if the deployed workflow reveals
       confusing copy.
 * [ ] Prepare the merge path back to `main` after Sprint 38 deployment branch
       validation.
@@ -49,3 +49,14 @@ npm.cmd test
 npm.cmd run build
 git diff --check
 ```
+
+---
+
+## Validation Notes
+
+**Cloudflare Pages URL:** https://home-finance-os.pages.dev
+
+Backup import and restore passed on the deployed site. Dashboard,
+Transactions, Settlements, and Analytics loaded successfully after restore.
+
+No Settings backup/restore copy changes were needed during this pass.

@@ -15,6 +15,8 @@ This project follows a sprint-based development process.
 * Added an app-wide local-first beta notice so deployed testers know browser
   storage remains the active data store.
 * Added Sprint 39 notes and release notes for post-deploy beta hardening.
+* Added a Cloudflare Pages smoke-check note with the live beta URL and
+  backup/restore validation steps.
 
 ### Changed
 
@@ -22,7 +24,9 @@ This project follows a sprint-based development process.
 
 ### Verified
 
-* Pending Sprint 39 validation.
+* Verified backup import and restore on the deployed Cloudflare Pages site.
+* Verified Dashboard, Transactions, Settlements, and Analytics load after
+  restoring a deployed-site backup.
 
 ---
 
