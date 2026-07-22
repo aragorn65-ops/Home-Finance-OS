@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.66.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 66 notes and release notes for migration action preconditions.
+* Added local preflight guards for Validate and Abort checkpoint actions.
+* Added tests for uploaded-only validation, final-state abort blocking, and
+  missing local checkpoint state.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with forty-three passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified invalid local Validate and Abort actions are blocked before remote
+  RPC calls.
+
+---
+
 ## [0.65.0-alpha] - 2026-07-22
 
 ### Added

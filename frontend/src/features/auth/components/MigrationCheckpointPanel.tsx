@@ -29,6 +29,10 @@ import {
   assertMigrationCommitResultMatchesDraft,
   requireMigrationCommitDraft,
 } from "./migrationCheckpointCommit";
+import {
+  requireMigrationAbortDraft,
+  requireMigrationValidateDraft,
+} from "./migrationCheckpointActionGuards";
 
 export interface MigrationCheckpointPanelProps {
   refreshToken?: number;
@@ -105,6 +109,11 @@ export default function MigrationCheckpointPanel({
             getAuthBackendAdapter();
 
           if (action === "validate") {
+            requireMigrationValidateDraft(
+              drafts,
+              draftId
+            );
+
             const validation =
               await adapter
                 .validateMigrationDraft(
@@ -166,6 +175,11 @@ export default function MigrationCheckpointPanel({
           }
 
           if (action === "abort") {
+            requireMigrationAbortDraft(
+              drafts,
+              draftId
+            );
+
             await adapter
               .abortMigrationDraft(
                 draftId
