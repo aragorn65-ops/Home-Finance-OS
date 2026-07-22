@@ -5,7 +5,7 @@
 **Release:** v0.41.0-alpha
 **Date:** 2026-07-22
 **Branch:** sprint-41-supabase-auth-cloud-spike
-**Status:** In progress
+**Status:** Complete
 
 ---
 
@@ -49,3 +49,13 @@ npm.cmd test
 npm.cmd run build
 git diff --check
 ```
+
+---
+
+## Verification Results
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with nine passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the deployed beta remains local-first because Supabase remains
+  disabled unless explicit spike environment variables are set.
