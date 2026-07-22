@@ -27,7 +27,7 @@ recover test data while the app remains browser-storage based.
 * [x] Add deployed beta smoke-test notes with the live URL.
 * [x] Improve Settings backup/restore guidance if the deployed workflow reveals
       confusing copy.
-* [ ] Prepare the merge path back to `main` after Sprint 38 deployment branch
+* [x] Prepare the merge path back to `main` after Sprint 38 deployment branch
       validation.
 
 ---
@@ -60,3 +60,25 @@ Backup import and restore passed on the deployed site. Dashboard,
 Transactions, Settlements, and Analytics loaded successfully after restore.
 
 No Settings backup/restore copy changes were needed during this pass.
+
+---
+
+## Merge-Back Plan
+
+After Sprint 39 validation, merge the deployment branches back to `main` in
+order:
+
+```text
+sprint-38-cloudflare-pages-beta-deploy
+sprint-39-post-deploy-beta-hardening
+```
+
+Then update the Cloudflare Pages production branch from the Sprint 38 branch
+back to:
+
+```text
+main
+```
+
+Run the Cloudflare Pages smoke check again after the `main` deployment
+succeeds.

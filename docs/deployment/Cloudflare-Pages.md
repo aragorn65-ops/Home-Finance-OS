@@ -38,6 +38,10 @@ that branch is:
 sprint-38-cloudflare-pages-beta-deploy
 ```
 
+After deployment branch validation is complete and the branch is merged to
+`main`, switch the Cloudflare Pages production branch back to `main` and rerun
+the deployed smoke check.
+
 ---
 
 ## Routing

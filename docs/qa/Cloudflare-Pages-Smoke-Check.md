@@ -14,6 +14,9 @@ usable on the deployed site.
 
 Use sample or low-risk data only.
 
+Also rerun this checklist after switching the Cloudflare Pages production branch
+back to `main`.
+
 ---
 
 ## Route Checks
