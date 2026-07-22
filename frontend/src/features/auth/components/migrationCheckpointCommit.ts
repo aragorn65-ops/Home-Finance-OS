@@ -1,4 +1,7 @@
 import type {
+  AuthenticatedHouseholdLink,
+} from "../../household/services/householdStorage";
+import type {
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
 } from "../models";
@@ -50,6 +53,29 @@ export function requireMigrationCommitLocalOwner(
       "Migration checkpoint owner member is not available locally. Refresh diagnostics before committing."
     );
   }
+}
+
+export function requireMigrationCommitLocalLink(
+  draft: RemoteMigrationDraft,
+  link:
+    | AuthenticatedHouseholdLink
+    | undefined
+): void {
+  if (!link) {
+    return;
+  }
+
+  if (
+    link.remoteHouseholdId ===
+      draft.householdId &&
+    link.migrationId === draft.id
+  ) {
+    return;
+  }
+
+  throw new Error(
+    "Local household is already linked to a different remote checkpoint. Review the authenticated link before committing."
+  );
 }
 
 export function assertMigrationCommitResultMatchesDraft(

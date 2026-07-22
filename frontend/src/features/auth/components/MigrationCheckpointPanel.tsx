@@ -28,6 +28,7 @@ import {
 } from "./migrationCheckpointLifecycle";
 import {
   assertMigrationCommitResultMatchesDraft,
+  requireMigrationCommitLocalLink,
   requireMigrationCommitLocalOwner,
   requireMigrationCommitDraft,
 } from "./migrationCheckpointCommit";
@@ -148,6 +149,10 @@ export default function MigrationCheckpointPanel({
               localHousehold?.members.map(
                 (member) => member.id
               ) ?? []
+            );
+            requireMigrationCommitLocalLink(
+              draft,
+              localHousehold?.authenticatedLink
             );
 
             const commitResult =

@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   assertMigrationCommitResultMatchesDraft,
+  requireMigrationCommitLocalLink,
   requireMigrationCommitLocalOwner,
   requireMigrationCommitDraft,
 } from "../src/features/auth/components/migrationCheckpointCommit.ts";
@@ -170,6 +171,66 @@ test(
           ]
         ),
       /Migration checkpoint owner member is not available locally\. Refresh diagnostics before committing\./
+    );
+  }
+);
+
+test(
+  "allows migration commit when local household is not linked",
+  () => {
+    assert.doesNotThrow(() => {
+      requireMigrationCommitLocalLink(
+        createValidatedDraft(),
+        undefined
+      );
+    });
+  }
+);
+
+test(
+  "allows migration commit when local link matches checkpoint",
+  () => {
+    assert.doesNotThrow(() => {
+      requireMigrationCommitLocalLink(
+        createValidatedDraft(),
+        {
+          remoteHouseholdId:
+            "household-1",
+          migrationId:
+            "migration-1",
+          ownerMemberId:
+            "member-1",
+          linkedByUserId:
+            "user-1",
+          linkedAt:
+            "2026-07-22T06:00:00.000Z",
+        }
+      );
+    });
+  }
+);
+
+test(
+  "blocks migration commit when local link points elsewhere",
+  () => {
+    assert.throws(
+      () =>
+        requireMigrationCommitLocalLink(
+          createValidatedDraft(),
+          {
+            remoteHouseholdId:
+              "household-2",
+            migrationId:
+              "migration-2",
+            ownerMemberId:
+              "member-1",
+            linkedByUserId:
+              "user-1",
+            linkedAt:
+              "2026-07-22T06:00:00.000Z",
+          }
+        ),
+      /Local household is already linked to a different remote checkpoint\. Review the authenticated link before committing\./
     );
   }
 );
