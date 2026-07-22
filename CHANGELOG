@@ -8,6 +8,19 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.41.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 41 notes and release notes for the Supabase auth/cloud spike.
+* Added a disposable Supabase schema and RLS SQL draft for review.
+
+### Verified
+
+* Pending Sprint 41 validation.
+
+---
+
 ## [0.40.0-alpha] - 2026-07-22
 
 ### Added

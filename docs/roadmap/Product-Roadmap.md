@@ -27,6 +27,7 @@ decision path before any production migration work begins.
 | v0.38.0-alpha | Cloudflare Pages beta deployment |
 | v0.39.0-alpha | Post-deploy beta hardening |
 | v0.40.0-alpha | Auth and cloud decision prep |
+| v0.41.0-alpha | Supabase auth/cloud spike |
 
 ---
 
