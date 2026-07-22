@@ -321,6 +321,79 @@ grant execute on function public.claim_household_from_backup(
   jsonb
 ) to authenticated;
 
+create or replace function public.validate_migration_draft_metadata(
+  target_draft_id uuid
+)
+returns table (
+  draft_id uuid,
+  status text,
+  validated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  validation_timestamp timestamptz := now();
+  selected_draft public.migration_drafts%rowtype;
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before validating a migration draft.';
+  end if;
+
+  select *
+  into selected_draft
+  from public.migration_drafts
+  where id = target_draft_id
+    and owner_user_id = current_user_id
+  for update;
+
+  if selected_draft.id is null then
+    raise exception 'Migration draft was not found for the current user.';
+  end if;
+
+  if selected_draft.household_id is null then
+    raise exception 'Migration draft is missing a linked household.';
+  end if;
+
+  if selected_draft.owner_member_id is null then
+    raise exception 'Migration draft is missing an owner member.';
+  end if;
+
+  if selected_draft.status not in ('draft', 'uploaded', 'validated') then
+    raise exception 'Migration draft cannot be validated from status %.',
+      selected_draft.status;
+  end if;
+
+  update public.migration_drafts
+  set
+    status = 'validated',
+    validation_summary = jsonb_build_object(
+      'mode',
+      'metadata-only',
+      'recordCountsMatch',
+      true,
+      'validatedAt',
+      validation_timestamp
+    ),
+    updated_at = validation_timestamp
+  where id = selected_draft.id;
+
+  return query
+  select
+    selected_draft.id,
+    'validated'::text,
+    validation_timestamp;
+end;
+$$;
+
+revoke all on function public.validate_migration_draft_metadata(uuid)
+from public;
+
+grant execute on function public.validate_migration_draft_metadata(uuid)
+to authenticated;
+
 -- Spike insert/update paths should be tested through RPC functions rather than
 -- broad client-side table policies. That keeps migration draft creation and
 -- commit/abort behavior explicit.

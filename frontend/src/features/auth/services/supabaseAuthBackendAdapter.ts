@@ -43,7 +43,10 @@ interface SupabaseAuthClient {
   rpc(
     functionName: string,
     parameters: Record<string, unknown>
-  ): Promise<SupabaseHouseholdClaimRpcResult>;
+  ): Promise<
+    | SupabaseHouseholdClaimRpcResult
+    | SupabaseMigrationValidationRpcResult
+  >;
 }
 
 interface SupabaseQueryBuilder {
@@ -167,6 +170,16 @@ interface SupabaseHouseholdClaimRpcResult {
     | null;
 }
 
+interface SupabaseMigrationValidationRpcResult {
+  data:
+    | SupabaseMigrationValidationRpcRow
+    | SupabaseMigrationValidationRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseSession {
   expires_at?: number;
   user: SupabaseUser;
@@ -257,6 +270,12 @@ interface SupabaseHouseholdClaimRpcRow {
   migration_status: string;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+interface SupabaseMigrationValidationRpcRow {
+  draft_id: string;
+  status: string;
+  validated_at?: string | null;
 }
 
 export interface SupabaseHouseholdDiagnostic {
@@ -691,7 +710,7 @@ export class SupabaseAuthBackendAdapter
           draft_backup_summary:
             draft.backupSummary,
         }
-      );
+      ) as SupabaseHouseholdClaimRpcResult;
 
     if (error) {
       throw new Error(
@@ -861,16 +880,46 @@ export class SupabaseAuthBackendAdapter
         draft
       );
 
+    if (blockers.length > 0) {
+      return {
+        draftId,
+        isValid:
+          false,
+        recordCountsMatch:
+          false,
+        warnings: [
+          "Supabase migration validation is metadata-only in this spike.",
+        ],
+        blockers,
+      };
+    }
+
+    const validationResult =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "validate_migration_draft_metadata",
+          {
+            target_draft_id:
+              draftId,
+          }
+        ) as SupabaseMigrationValidationRpcResult;
+
+    if (validationResult.error) {
+      throw new Error(
+        `Supabase migration validation update failed: ${validationResult.error.message}`
+      );
+    }
+
     return {
       draftId,
-      isValid:
-        blockers.length === 0,
-      recordCountsMatch:
-        blockers.length === 0,
+      isValid: true,
+      recordCountsMatch: true,
       warnings: [
         "Supabase migration validation is metadata-only in this spike.",
       ],
-      blockers,
+      blockers: [],
     };
   }
 

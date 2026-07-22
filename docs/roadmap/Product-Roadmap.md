@@ -34,6 +34,8 @@ Sprint 52 adds an explicit disposable-project Supabase household-claim RPC for
 creating the remote household, owner membership, and uploaded migration draft.
 Sprint 53 adds metadata-only migration validation scoped to the current
 Supabase user and draft id.
+Sprint 54 adds a validation RPC that marks owned drafts as validated only
+after metadata blockers pass.
 
 ---
 
@@ -63,6 +65,7 @@ Supabase user and draft id.
 | v0.51.0-alpha | Auth diagnostics fail-soft |
 | v0.52.0-alpha | Supabase household claim RPC |
 | v0.53.0-alpha | Supabase migration validation |
+| v0.54.0-alpha | Supabase validation RPC |
 
 ---
 
@@ -97,6 +100,8 @@ Sprint 52 keeps Supabase writes limited to one explicit disposable-project RPC
 and leaves broad table writes, sync, and real migration disabled.
 Sprint 53 keeps migration validation read-only and fail-closed before any
 commit or abort behavior is wired.
+Sprint 54 keeps validation updates behind one explicit RPC and still leaves
+commit, abort, sync, and production migration disabled.
 
 The Sprint 40 decision criteria are tracked in:
 

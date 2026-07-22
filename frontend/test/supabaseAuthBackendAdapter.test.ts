@@ -116,6 +116,7 @@ test(
       "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
     );
     const queries: unknown[] = [];
+    const rpcCalls: unknown[] = [];
 
     const adapter =
       new SupabaseAuthBackendAdapter({
@@ -170,6 +171,27 @@ test(
                   },
                 };
               },
+            };
+          },
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                draft_id:
+                  "migration-1",
+                status:
+                  "validated",
+                validated_at:
+                  "2026-07-22T04:00:00Z",
+              },
+              error: null,
             };
           },
         },
@@ -519,6 +541,7 @@ test(
       "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
     );
     const queries: unknown[] = [];
+    const rpcCalls: unknown[] = [];
 
     const adapter =
       new SupabaseAuthBackendAdapter({
@@ -603,6 +626,27 @@ test(
               },
             };
           },
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                draft_id:
+                  "migration-1",
+                status:
+                  "validated",
+                validated_at:
+                  "2026-07-22T04:00:00Z",
+              },
+              error: null,
+            };
+          },
         },
       });
 
@@ -638,6 +682,19 @@ test(
       ]
     );
     assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "validate_migration_draft_metadata",
+          parameters: {
+            target_draft_id:
+              "migration-1",
+          },
+        },
+      ]
+    );
+    assert.deepEqual(
       validation,
       {
         draftId:
@@ -663,6 +720,7 @@ test(
     } = await import(
       "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
     );
+    const rpcCalls: unknown[] = [];
 
     const adapter =
       new SupabaseAuthBackendAdapter({
@@ -725,6 +783,20 @@ test(
               },
             };
           },
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: null,
+              error: null,
+            };
+          },
         },
       });
 
@@ -741,6 +813,10 @@ test(
     assert.equal(
       validation.recordCountsMatch,
       false
+    );
+    assert.deepEqual(
+      rpcCalls,
+      []
     );
     assert.deepEqual(
       validation.blockers,

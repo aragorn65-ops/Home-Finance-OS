@@ -8,6 +8,27 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.54.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 54 notes and release notes for the Supabase validation RPC.
+* Added `validate_migration_draft_metadata` to the disposable Supabase spike
+  schema.
+* Wired Supabase migration validation to mark owned drafts as validated through
+  the RPC after metadata blockers pass.
+* Added tests for validation RPC payloads and blocked-draft no-op behavior.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twenty passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the validation RPC runs only after metadata blockers pass.
+* Verified blocked draft metadata does not call the validation RPC.
+
+---
+
 ## [0.53.0-alpha] - 2026-07-22
 
 ### Added
