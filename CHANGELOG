@@ -8,6 +8,26 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.52.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 52 notes and release notes for the Supabase household claim RPC.
+* Added `claim_household_from_backup` to the disposable Supabase spike schema.
+* Wired `SupabaseAuthBackendAdapter.createHouseholdClaimDraft` through the RPC.
+* Added tests for RPC payload shape, returned membership, returned migration
+  draft, and remote record count.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with eighteen passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the claim path uses an explicit Supabase RPC rather than broad table
+  writes.
+
+---
+
 ## [0.51.0-alpha] - 2026-07-22
 
 ### Added

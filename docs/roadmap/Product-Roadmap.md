@@ -30,6 +30,8 @@ Sprint 50 adds read-only migration draft metadata diagnostics without reading
 backup or validation payloads.
 Sprint 51 hardens Auth Diagnostics so disposable Supabase read failures surface
 as warnings instead of hiding the whole diagnostics panel.
+Sprint 52 adds an explicit disposable-project Supabase household-claim RPC for
+creating the remote household, owner membership, and uploaded migration draft.
 
 ---
 
@@ -57,6 +59,7 @@ as warnings instead of hiding the whole diagnostics panel.
 | v0.49.0-alpha | Supabase transaction diagnostics |
 | v0.50.0-alpha | Supabase migration draft diagnostics |
 | v0.51.0-alpha | Auth diagnostics fail-soft |
+| v0.52.0-alpha | Supabase household claim RPC |
 
 ---
 
@@ -87,6 +90,8 @@ Sprint 50 keeps migration draft diagnostics metadata-only and avoids selecting
 backup or validation payloads.
 Sprint 51 keeps those diagnostics visible during partial Supabase read
 failures by collecting warnings and using empty fallbacks.
+Sprint 52 keeps Supabase writes limited to one explicit disposable-project RPC
+and leaves broad table writes, sync, and real migration disabled.
 
 The Sprint 40 decision criteria are tracked in:
 
