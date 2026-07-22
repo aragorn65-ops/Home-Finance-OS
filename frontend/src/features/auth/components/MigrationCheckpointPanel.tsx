@@ -26,6 +26,7 @@ import {
   sortMigrationCheckpointDrafts,
 } from "./migrationCheckpointLifecycle";
 import {
+  assertMigrationCommitResultMatchesDraft,
   requireMigrationCommitDraft,
 } from "./migrationCheckpointCommit";
 
@@ -133,6 +134,11 @@ export default function MigrationCheckpointPanel({
               .commitMigrationDraft(
                 draftId
               );
+
+            assertMigrationCommitResultMatchesDraft(
+              draft,
+              commitResult
+            );
 
             const linkedHousehold =
               linkHouseholdToAuthenticatedTenant({

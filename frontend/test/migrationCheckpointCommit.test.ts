@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  assertMigrationCommitResultMatchesDraft,
   requireMigrationCommitDraft,
 } from "../src/features/auth/components/migrationCheckpointCommit.ts";
 
@@ -131,6 +132,50 @@ test(
           "migration-1"
         ),
       /Migration checkpoint is no longer available locally\. Refresh diagnostics before committing\./
+    );
+  }
+);
+
+test(
+  "accepts matching remote commit result for local linking",
+  () => {
+    assert.doesNotThrow(() => {
+      assertMigrationCommitResultMatchesDraft(
+        createValidatedDraft(),
+        {
+          householdId:
+            "household-1",
+          migrationId:
+            "migration-1",
+          committedAt:
+            new Date(
+              "2026-07-22T06:00:00Z"
+            ),
+        }
+      );
+    });
+  }
+);
+
+test(
+  "blocks local link when remote commit result does not match the checkpoint",
+  () => {
+    assert.throws(
+      () =>
+        assertMigrationCommitResultMatchesDraft(
+          createValidatedDraft(),
+          {
+            householdId:
+              "household-2",
+            migrationId:
+              "migration-1",
+            committedAt:
+              new Date(
+                "2026-07-22T06:00:00Z"
+              ),
+          }
+        ),
+      /Remote persistence committed, but the returned household link does not match the local checkpoint\./
     );
   }
 );
