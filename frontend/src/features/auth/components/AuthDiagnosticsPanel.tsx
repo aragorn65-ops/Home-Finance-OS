@@ -318,6 +318,57 @@ export default function AuthDiagnosticsPanel() {
               )}
             </form>
           )}
+
+          {diagnostics.memberships.length >
+            0 && (
+            <section className="auth-diagnostics__memberships">
+              <h3>
+                Memberships
+              </h3>
+              <div className="auth-diagnostics__membership-list">
+                {diagnostics.memberships.map(
+                  (membership) => (
+                    <dl
+                      key={`${membership.householdId}:${membership.memberId}`}
+                    >
+                      <div>
+                        <dt>
+                          Household
+                        </dt>
+                        <dd>
+                          {membership.householdId}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>
+                          Member
+                        </dt>
+                        <dd>
+                          {membership.memberId}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>
+                          Role
+                        </dt>
+                        <dd>
+                          {membership.role}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>
+                          Status
+                        </dt>
+                        <dd>
+                          {membership.status}
+                        </dd>
+                      </div>
+                    </dl>
+                  )
+                )}
+              </div>
+            </section>
+          )}
         </>
       )}
 

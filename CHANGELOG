@@ -8,6 +8,21 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.46.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 46 notes and release notes for Supabase membership diagnostics.
+* Added diagnostics-safe membership summaries containing household id, member
+  id, role, and status.
+* Added read-only membership summary rendering in the Auth Diagnostics panel.
+
+### Verified
+
+* Pending Sprint 46 validation.
+
+---
+
 ## [0.45.0-alpha] - 2026-07-22
 
 ### Added
