@@ -47,6 +47,8 @@ Sprint 58 surfaces those lifecycle timestamps in the migration checkpoint
 diagnostics UI as stable UTC values.
 Sprint 59 makes latest migration diagnostics deterministic by selecting the
 newest lifecycle timestamp instead of relying on adapter return order.
+Sprint 60 orders migration checkpoints by newest lifecycle activity in the
+diagnostics panel.
 
 ---
 
@@ -82,6 +84,7 @@ newest lifecycle timestamp instead of relying on adapter return order.
 | v0.57.0-alpha | Supabase migration lifecycle timestamps |
 | v0.58.0-alpha | Migration lifecycle diagnostics UI |
 | v0.59.0-alpha | Latest migration diagnostics |
+| v0.60.0-alpha | Migration checkpoint ordering |
 
 ---
 
@@ -131,6 +134,8 @@ disabled.
 Sprint 59 keeps latest migration selection diagnostics-only and still leaves
 full record import, sync, local data deletion, and production migration
 disabled.
+Sprint 60 keeps checkpoint ordering diagnostics-only and still leaves full
+record import, sync, local data deletion, and production migration disabled.
 
 The Sprint 40 decision criteria are tracked in:
 

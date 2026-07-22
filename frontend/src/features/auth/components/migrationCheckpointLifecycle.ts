@@ -48,6 +48,40 @@ export function getMigrationCheckpointLifecycleEntries(
     }));
 }
 
+export function sortMigrationCheckpointDrafts(
+  drafts: RemoteMigrationDraft[]
+): RemoteMigrationDraft[] {
+  return [
+    ...drafts,
+  ].sort((first, second) => {
+    const secondTime =
+      getMigrationCheckpointSortDate(
+        second
+      ).getTime();
+    const firstTime =
+      getMigrationCheckpointSortDate(
+        first
+      ).getTime();
+
+    if (secondTime !== firstTime) {
+      return secondTime - firstTime;
+    }
+
+    return first.id.localeCompare(
+      second.id
+    );
+  });
+}
+
+export function getMigrationCheckpointSortDate(
+  draft: RemoteMigrationDraft
+): Date {
+  return draft.abortedAt ??
+    draft.committedAt ??
+    draft.validatedAt ??
+    draft.updatedAt;
+}
+
 export function formatMigrationCheckpointDate(
   date: Date
 ): string {

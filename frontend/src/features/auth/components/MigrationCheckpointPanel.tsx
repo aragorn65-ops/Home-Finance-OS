@@ -23,6 +23,7 @@ import {
 } from "../services/createAuthBackendAdapter";
 import {
   getMigrationCheckpointLifecycleEntries,
+  sortMigrationCheckpointDrafts,
 } from "./migrationCheckpointLifecycle";
 
 export interface MigrationCheckpointPanelProps {
@@ -61,8 +62,10 @@ export default function MigrationCheckpointPanel({
 
       try {
         setDrafts(
-          await getAuthBackendAdapter()
-            .listMigrationDrafts()
+          sortMigrationCheckpointDrafts(
+            await getAuthBackendAdapter()
+              .listMigrationDrafts()
+          )
         );
       } catch {
         setDrafts([]);
