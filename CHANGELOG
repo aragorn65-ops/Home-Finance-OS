@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.56.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 56 notes and release notes for the Supabase commit RPC.
+* Added `commit_migration_draft` to the disposable Supabase spike schema.
+* Wired `SupabaseAuthBackendAdapter.commitMigrationDraft` through the RPC.
+* Added tests for successful commit payloads and Supabase rejection handling.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twenty-four passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified commit uses the explicit Supabase RPC.
+* Verified Supabase commit rejections are surfaced clearly.
+
+---
+
 ## [0.55.0-alpha] - 2026-07-22
 
 ### Added

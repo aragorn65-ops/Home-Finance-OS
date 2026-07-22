@@ -38,6 +38,9 @@ Sprint 54 adds a validation RPC that marks owned drafts as validated only
 after metadata blockers pass.
 Sprint 55 adds an abort RPC that marks owned non-committed drafts as aborted
 without deleting local browser data.
+Sprint 56 adds a commit RPC that marks owned validated drafts as committed and
+returns local-link metadata without importing records, syncing, or deleting
+local browser data.
 
 ---
 
@@ -69,6 +72,7 @@ without deleting local browser data.
 | v0.53.0-alpha | Supabase migration validation |
 | v0.54.0-alpha | Supabase validation RPC |
 | v0.55.0-alpha | Supabase abort RPC |
+| v0.56.0-alpha | Supabase commit RPC |
 
 ---
 
@@ -107,6 +111,8 @@ Sprint 54 keeps validation updates behind one explicit RPC and still leaves
 commit, abort, sync, and production migration disabled.
 Sprint 55 keeps abort behind one explicit RPC and still leaves commit, sync,
 local data deletion, and production migration disabled.
+Sprint 56 keeps commit behind one explicit RPC and still leaves full record
+import, sync, local data deletion, and production migration disabled.
 
 The Sprint 40 decision criteria are tracked in:
 
