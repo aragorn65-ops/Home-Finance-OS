@@ -25,10 +25,10 @@ mixing prototype auth with production data migration.
 
 * [x] Record that Google Drive backup is disabled unless
       `VITE_GOOGLE_CLIENT_ID` is configured.
-* [ ] Review existing auth and cloud-sync architecture notes.
-* [ ] Define the production auth/provider decision criteria.
-* [ ] Define the remote storage and migration decision criteria.
-* [ ] Identify the next smallest implementation slice after the decision.
+* [x] Review existing auth and cloud-sync architecture notes.
+* [x] Define the production auth/provider decision criteria.
+* [x] Define the remote storage and migration decision criteria.
+* [x] Identify the next smallest implementation slice after the decision.
 
 ---
 

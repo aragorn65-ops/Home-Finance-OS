@@ -15,6 +15,9 @@ This project follows a sprint-based development process.
 * Added Sprint 40 notes and release notes for auth and cloud decision prep.
 * Documented that Google Drive backup remains disabled unless
   `VITE_GOOGLE_CLIENT_ID` is configured for the Cloudflare Pages build.
+* Added auth and cloud decision criteria covering identity provider, remote
+  storage, migration ownership, private record enforcement, sync conflicts, and
+  Google Drive backup boundaries.
 
 ### Changed
 

@@ -19,13 +19,13 @@ criteria are explicit.
 
 ---
 
-## Planned Highlights
+## Highlights
 
-* Document current Google Drive backup configuration status.
-* Review existing auth and cloud-sync architecture notes.
-* Define production auth/provider decision criteria.
-* Define remote storage and migration decision criteria.
-* Identify the next smallest implementation slice after the decision.
+* Documented current Google Drive backup configuration status.
+* Reviewed existing auth and cloud-sync architecture notes.
+* Defined production auth/provider decision criteria.
+* Defined remote storage and migration decision criteria.
+* Identified the next smallest implementation slice after the decision.
 
 ---
 

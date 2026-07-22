@@ -40,6 +40,12 @@ The current gate is an auth and cloud decision pass. HFOS should keep the
 deployed local-first beta stable while choosing production auth, remote
 storage, and migration boundaries deliberately.
 
+The Sprint 40 decision criteria are tracked in:
+
+```text
+docs/architecture/AUTH_CLOUD_DECISION_CRITERIA.md
+```
+
 ---
 
 ## Later Candidates
