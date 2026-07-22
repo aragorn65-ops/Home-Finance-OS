@@ -21,7 +21,11 @@ This project follows a sprint-based development process.
 
 ### Verified
 
-* Pending Sprint 44 validation.
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with eleven passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified Supabase auth callback handling remains behind explicit spike
+  environment configuration.
 
 ---
 

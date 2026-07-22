@@ -3,7 +3,7 @@
 ## Supabase Auth Callback Handling
 
 **Release Date:** July 22, 2026
-**Status:** In progress
+**Status:** Complete
 **Sprint:** Sprint 44
 
 ---
@@ -34,3 +34,13 @@ Production login and remote household migration remain disabled.
 * Household claims against Supabase.
 * Remote CRUD and sync.
 * Real household migration.
+
+---
+
+## Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with eleven passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Confirmed Supabase auth callback handling remains behind explicit spike
+  environment configuration.
