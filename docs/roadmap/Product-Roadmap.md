@@ -59,6 +59,8 @@ Sprint 64 tightens that precondition by requiring validated local checkpoint
 state and local link metadata before remote commit.
 Sprint 65 verifies the remote commit result still matches the local checkpoint
 before saving the local household link.
+Sprint 66 adds local preflight guards for migration Validate and Abort actions
+before remote RPC calls.
 
 ---
 
@@ -100,6 +102,7 @@ before saving the local household link.
 | v0.63.0-alpha | Migration commit local-link guard |
 | v0.64.0-alpha | Migration commit preconditions |
 | v0.65.0-alpha | Migration commit result link guard |
+| v0.66.0-alpha | Migration action preconditions |
 
 ---
 
@@ -166,6 +169,9 @@ production migration disabled.
 Sprint 65 keeps local link persistence guarded by matching commit results and
 still leaves production credentials, full record import, sync, local data
 deletion, and production migration disabled.
+Sprint 66 keeps Validate and Abort behind local action preconditions and still
+leaves production credentials, full record import, sync, local data deletion,
+and production migration disabled.
 
 The Sprint 40 decision criteria are tracked in:
 
