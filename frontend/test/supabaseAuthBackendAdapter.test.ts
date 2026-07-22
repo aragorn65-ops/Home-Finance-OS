@@ -104,6 +104,14 @@ test(
       validation.blockers[0],
       /VITE_SUPABASE_URL/
     );
+
+    await assert.rejects(
+      () =>
+        adapter.abortMigrationDraft(
+          "draft-1"
+        ),
+      /Supabase auth spike is missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY\./
+    );
   }
 );
 
