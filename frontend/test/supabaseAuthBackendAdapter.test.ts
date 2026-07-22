@@ -68,6 +68,29 @@ function createSignedOutClient(
   };
 }
 
+function createSignedInClient(
+  overrides: Record<string, unknown> = {}
+) {
+  return createSignedOutClient({
+    async getUser() {
+      return {
+        data: {
+          user: {
+            id:
+              "user-1",
+            email:
+              "test@example.com",
+            created_at:
+              "2026-07-22T00:00:00Z",
+          },
+        },
+        error: null,
+      };
+    },
+    ...overrides,
+  });
+}
+
 test(
   "Supabase auth adapter stays disabled without spike credentials",
   async () => {
@@ -942,7 +965,7 @@ test(
 );
 
 test(
-  "Supabase auth adapter aborts migration draft through RPC",
+  "Supabase auth adapter requires sign-in before migration write actions",
   async () => {
     const {
       SupabaseAuthBackendAdapter,
@@ -959,6 +982,64 @@ test(
           "anon-key",
         client: {
           ...createSignedOutClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: null,
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.commitMigrationDraft(
+          "migration-1"
+        ),
+      /Sign in before committing a migration draft\./
+    );
+
+    await assert.rejects(
+      () =>
+        adapter.abortMigrationDraft(
+          "migration-1"
+        ),
+      /Sign in before aborting a migration draft\./
+    );
+
+    assert.deepEqual(
+      rpcCalls,
+      []
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter aborts migration draft through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
           async rpc(
             functionName: string,
             parameters: Record<string, unknown>
@@ -1019,7 +1100,7 @@ test(
         anonKey:
           "anon-key",
         client: {
-          ...createSignedOutClient(),
+          ...createSignedInClient(),
           async rpc() {
             return {
               data: {
@@ -1062,7 +1143,7 @@ test(
         anonKey:
           "anon-key",
         client: {
-          ...createSignedOutClient(),
+          ...createSignedInClient(),
           async rpc() {
             return {
               data: null,
@@ -1101,7 +1182,7 @@ test(
         anonKey:
           "anon-key",
         client: {
-          ...createSignedOutClient(),
+          ...createSignedInClient(),
           async rpc() {
             return {
               data: {
@@ -1147,7 +1228,7 @@ test(
         anonKey:
           "anon-key",
         client: {
-          ...createSignedOutClient(),
+          ...createSignedInClient(),
           async rpc(
             functionName: string,
             parameters: Record<string, unknown>
@@ -1224,7 +1305,7 @@ test(
         anonKey:
           "anon-key",
         client: {
-          ...createSignedOutClient(),
+          ...createSignedInClient(),
           async rpc() {
             return {
               data: null,

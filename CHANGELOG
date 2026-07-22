@@ -8,6 +8,23 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.69.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 69 notes and release notes for migration write sign-in guards.
+* Added explicit sign-in guards before Supabase migration Commit and Abort RPCs.
+* Added tests proving signed-out migration write actions do not call RPCs.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with forty-five passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified signed-out Commit and Abort actions stop before remote writes.
+
+---
+
 ## [0.68.0-alpha] - 2026-07-22
 
 ### Added

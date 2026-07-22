@@ -992,6 +992,15 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before committing a migration draft."
+      );
+    }
+
     const commitResult =
       await (
       await this.getClient()
@@ -1053,6 +1062,15 @@ export class SupabaseAuthBackendAdapter
         this.createUnavailableMessage(
           `migration abort for ${draftId}`
         )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before aborting a migration draft."
       );
     }
 
