@@ -86,4 +86,5 @@ export {
 
 export {
   createAuthDiagnostics,
+  createAuthDiagnosticsForAdapter,
 } from "./createAuthDiagnostics";

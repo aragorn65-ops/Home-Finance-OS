@@ -8,6 +8,32 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.51.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 51 notes and release notes for Auth Diagnostics fail-soft
+  behavior.
+* Added warning collection and rendering to Auth Diagnostics.
+* Added fail-soft handling for diagnostics reads so partial Supabase failures
+  do not hide the whole panel.
+* Added an adapter-injected diagnostics service seam and test coverage for
+  optional Supabase read failures.
+
+### Changed
+
+* Hardened auth config imports for non-Vite test tooling.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with seventeen passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified optional Supabase diagnostics failures produce warnings while core
+  provider/session status remains visible.
+
+---
+
 ## [0.50.0-alpha] - 2026-07-22
 
 ### Added

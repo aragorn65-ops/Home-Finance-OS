@@ -1027,3 +1027,151 @@ test(
     );
   }
 );
+
+test(
+  "auth diagnostics keep core Supabase status when optional reads fail",
+  async () => {
+    const {
+      createAuthDiagnosticsForAdapter,
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/index.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient({
+            async getSession() {
+              return {
+                data: {
+                  session: {
+                    user: {
+                      id:
+                        "user-1",
+                      email:
+                        "test@example.com",
+                      created_at:
+                        "2026-07-22T00:00:00Z",
+                    },
+                  },
+                },
+                error: null,
+              };
+            },
+            async getUser() {
+              return {
+                data: {
+                  user: {
+                    id:
+                      "user-1",
+                    email:
+                      "test@example.com",
+                    created_at:
+                      "2026-07-22T00:00:00Z",
+                  },
+                },
+                error: null,
+              };
+            },
+          }),
+          from(tableName: string) {
+            return {
+              select() {
+                return {
+                  async eq() {
+                    if (
+                      tableName ===
+                      "household_memberships"
+                    ) {
+                      return {
+                        data: [
+                          {
+                            id:
+                              "membership-1",
+                            household_id:
+                              "household-1",
+                            user_id:
+                              "user-1",
+                            member_id:
+                              "member-1",
+                            role:
+                              "owner",
+                            status:
+                              "active",
+                            created_at:
+                              "2026-07-22T00:00:00Z",
+                            updated_at:
+                              "2026-07-22T01:00:00Z",
+                          },
+                        ],
+                        error: null,
+                      };
+                    }
+
+                    return {
+                      data: [],
+                      error: null,
+                    };
+                  },
+                  async in() {
+                    return {
+                      data: null,
+                      error: {
+                        message:
+                          `${tableName} unavailable`,
+                      },
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const diagnostics =
+      await createAuthDiagnosticsForAdapter(
+        adapter,
+        {
+          enabled:
+            true,
+          provider:
+            "supabase",
+        }
+      );
+
+    assert.equal(
+      diagnostics.sessionStatus,
+      "signed-in"
+    );
+    assert.equal(
+      diagnostics.adapterType,
+      "supabase"
+    );
+    assert.equal(
+      diagnostics.membershipCount,
+      1
+    );
+    assert.deepEqual(
+      diagnostics.warnings,
+      [
+        "Household diagnostics could not be loaded: Supabase household lookup failed: households unavailable",
+        "Account diagnostics could not be loaded: Supabase account diagnostics failed: accounts unavailable",
+        "Transaction diagnostics could not be loaded: Supabase transaction diagnostics failed: transactions unavailable",
+      ]
+    );
+    assert.equal(
+      diagnostics.accountSummary,
+      undefined
+    );
+    assert.equal(
+      diagnostics.transactionSummary,
+      undefined
+    );
+  }
+);

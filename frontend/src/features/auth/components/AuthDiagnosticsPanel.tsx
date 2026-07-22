@@ -143,6 +143,22 @@ export default function AuthDiagnosticsPanel() {
 
       {diagnostics && (
         <>
+          {diagnostics.warnings.length >
+            0 && (
+            <div
+              role="status"
+              className="auth-diagnostics__warnings"
+            >
+              {diagnostics.warnings.map(
+                (warning) => (
+                  <p key={warning}>
+                    {warning}
+                  </p>
+                )
+              )}
+            </div>
+          )}
+
           <dl className="auth-diagnostics__grid">
             <div>
               <dt>Auth</dt>

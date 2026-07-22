@@ -10,12 +10,15 @@ export interface AuthFeatureConfig {
   provider: AuthProvider;
 }
 
+const viteEnv =
+  import.meta.env ?? {};
+
 const authEnabledValue =
-  import.meta.env
+  viteEnv
     .VITE_HFOS_AUTH_ENABLED;
 
 const authProviderValue =
-  import.meta.env
+  viteEnv
     .VITE_HFOS_AUTH_PROVIDER;
 
 export const authFeatureConfig:
