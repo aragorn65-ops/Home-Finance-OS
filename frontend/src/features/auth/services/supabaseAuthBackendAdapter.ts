@@ -59,7 +59,7 @@ interface SupabaseFilterBuilder {
   ): Promise<
     | SupabaseMembershipRowsResult
     | SupabaseMigrationDraftRowsResult
-  >;
+  > | SupabaseChainedFilterBuilder;
   in(
     column: string,
     values: string[]
@@ -68,6 +68,13 @@ interface SupabaseFilterBuilder {
     | SupabaseAccountRowsResult
     | SupabaseTransactionRowsResult
   >;
+}
+
+interface SupabaseChainedFilterBuilder {
+  eq(
+    column: string,
+    value: string
+  ): Promise<SupabaseMigrationDraftRowsResult>;
 }
 
 type SupabaseAuthChangeCallback = (
@@ -782,16 +789,88 @@ export class SupabaseAuthBackendAdapter
   async validateMigrationDraft(
     draftId: string
   ): Promise<RemoteMigrationValidation> {
-    return {
-      draftId,
-      isValid: false,
-      recordCountsMatch: false,
-      warnings: [],
-      blockers: [
+    if (!this.isConfigured()) {
+      return createBlockedMigrationValidation(
+        draftId,
         this.createUnavailableMessage(
           "migration validation"
-        ),
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      return createBlockedMigrationValidation(
+        draftId,
+        "Sign in before validating a migration draft."
+      );
+    }
+
+    const migrationFilter =
+      (
+      await this.getClient()
+      )
+        .from("migration_drafts")
+        .select(
+          [
+            "id",
+            "household_id",
+            "owner_user_id",
+            "owner_member_id",
+            "household_name",
+            "status",
+            "created_at",
+            "updated_at",
+          ].join(",")
+        )
+        .eq(
+          "id",
+          draftId
+        ) as SupabaseChainedFilterBuilder;
+    const migrationResult =
+      await migrationFilter
+        .eq(
+          "owner_user_id",
+          user.id
+        );
+    const {
+      data,
+      error,
+    } = migrationResult;
+
+    if (error) {
+      throw new Error(
+        `Supabase migration validation failed: ${error.message}`
+      );
+    }
+
+    const draft =
+      (data ?? [])[0];
+
+    if (!draft) {
+      return createBlockedMigrationValidation(
+        draftId,
+        "Migration draft was not found for the current user."
+      );
+    }
+
+    const blockers =
+      createSupabaseMigrationValidationBlockers(
+        draft
+      );
+
+    return {
+      draftId,
+      isValid:
+        blockers.length === 0,
+      recordCountsMatch:
+        blockers.length === 0,
+      warnings: [
+        "Supabase migration validation is metadata-only in this spike.",
       ],
+      blockers,
     };
   }
 
@@ -1222,6 +1301,69 @@ function mapSupabaseClaimMigrationDraft(
           undefined
       ),
   };
+}
+
+function createBlockedMigrationValidation(
+  draftId: string,
+  blocker: string
+): RemoteMigrationValidation {
+  return {
+    draftId,
+    isValid:
+      false,
+    recordCountsMatch:
+      false,
+    warnings: [],
+    blockers: [
+      blocker,
+    ],
+  };
+}
+
+function createSupabaseMigrationValidationBlockers(
+  draft: SupabaseMigrationDraftRow
+): string[] {
+  const blockers: string[] = [];
+
+  if (!draft.household_id) {
+    blockers.push(
+      "Migration draft is missing a linked household."
+    );
+  }
+
+  if (!draft.owner_member_id) {
+    blockers.push(
+      "Migration draft is missing an owner member."
+    );
+  }
+
+  if (
+    !normalizeMigrationStatus(
+      draft.status
+    )
+  ) {
+    blockers.push(
+      "Migration draft has an unknown status."
+    );
+  }
+
+  if (
+    draft.status === "aborted"
+  ) {
+    blockers.push(
+      "Migration draft has already been aborted."
+    );
+  }
+
+  if (
+    draft.status === "committed"
+  ) {
+    blockers.push(
+      "Migration draft has already been committed."
+    );
+  }
+
+  return blockers;
 }
 
 function countRemoteMigrationRecords(

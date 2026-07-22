@@ -511,6 +511,249 @@ test(
 );
 
 test(
+  "Supabase auth adapter validates migration draft metadata for the current user",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const queries: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient({
+            async getUser() {
+              return {
+                data: {
+                  user: {
+                    id:
+                      "user-1",
+                    email:
+                      "test@example.com",
+                    created_at:
+                      "2026-07-22T00:00:00Z",
+                  },
+                },
+                error: null,
+              };
+            },
+          }),
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  eq(
+                    column: string,
+                    value: string
+                  ) {
+                    queries.push({
+                      tableName,
+                      columns,
+                      column,
+                      value,
+                    });
+
+                    return {
+                      async eq(
+                        nestedColumn: string,
+                        nestedValue: string
+                      ) {
+                        queries.push({
+                          tableName,
+                          columns,
+                          column:
+                            nestedColumn,
+                          value:
+                            nestedValue,
+                        });
+
+                        return {
+                          data: [
+                            {
+                              id:
+                                "migration-1",
+                              household_id:
+                                "household-1",
+                              owner_user_id:
+                                "user-1",
+                              owner_member_id:
+                                "member-1",
+                              household_name:
+                                "Casa Test",
+                              status:
+                                "uploaded",
+                              created_at:
+                                "2026-07-22T02:00:00Z",
+                              updated_at:
+                                "2026-07-22T03:00:00Z",
+                            },
+                          ],
+                          error: null,
+                        };
+                      },
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const validation =
+      await adapter
+        .validateMigrationDraft(
+          "migration-1"
+        );
+
+    assert.deepEqual(
+      queries,
+      [
+        {
+          tableName:
+            "migration_drafts",
+          columns:
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,created_at,updated_at",
+          column:
+            "id",
+          value:
+            "migration-1",
+        },
+        {
+          tableName:
+            "migration_drafts",
+          columns:
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,created_at,updated_at",
+          column:
+            "owner_user_id",
+          value:
+            "user-1",
+        },
+      ]
+    );
+    assert.deepEqual(
+      validation,
+      {
+        draftId:
+          "migration-1",
+        isValid:
+          true,
+        recordCountsMatch:
+          true,
+        warnings: [
+          "Supabase migration validation is metadata-only in this spike.",
+        ],
+        blockers: [],
+      }
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter blocks invalid migration draft metadata",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient({
+            async getUser() {
+              return {
+                data: {
+                  user: {
+                    id:
+                      "user-1",
+                    email:
+                      "test@example.com",
+                    created_at:
+                      "2026-07-22T00:00:00Z",
+                  },
+                },
+                error: null,
+              };
+            },
+          }),
+          from() {
+            return {
+              select() {
+                return {
+                  eq() {
+                    return {
+                      async eq() {
+                        return {
+                          data: [
+                            {
+                              id:
+                                "migration-1",
+                              household_id:
+                                null,
+                              owner_user_id:
+                                "user-1",
+                              owner_member_id:
+                                "",
+                              household_name:
+                                "Casa Test",
+                              status:
+                                "aborted",
+                              created_at:
+                                "2026-07-22T02:00:00Z",
+                              updated_at:
+                                "2026-07-22T03:00:00Z",
+                            },
+                          ],
+                          error: null,
+                        };
+                      },
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const validation =
+      await adapter
+        .validateMigrationDraft(
+          "migration-1"
+        );
+
+    assert.equal(
+      validation.isValid,
+      false
+    );
+    assert.equal(
+      validation.recordCountsMatch,
+      false
+    );
+    assert.deepEqual(
+      validation.blockers,
+      [
+        "Migration draft is missing a linked household.",
+        "Migration draft is missing an owner member.",
+        "Migration draft has already been aborted.",
+      ]
+    );
+  }
+);
+
+test(
   "Supabase auth adapter subscribes to auth callback changes",
   async () => {
     const {
