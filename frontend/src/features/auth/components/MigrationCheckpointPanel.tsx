@@ -25,6 +25,9 @@ import {
   getMigrationCheckpointLifecycleEntries,
   sortMigrationCheckpointDrafts,
 } from "./migrationCheckpointLifecycle";
+import {
+  requireMigrationCommitDraft,
+} from "./migrationCheckpointCommit";
 
 export interface MigrationCheckpointPanelProps {
   refreshToken?: number;
@@ -121,10 +124,9 @@ export default function MigrationCheckpointPanel({
 
           if (action === "commit") {
             const draft =
-              drafts.find(
-                (candidate) =>
-                  candidate.id ===
-                  draftId
+              requireMigrationCommitDraft(
+                drafts,
+                draftId
               );
             const commitResult =
               await adapter
@@ -132,26 +134,24 @@ export default function MigrationCheckpointPanel({
                 draftId
               );
 
-            if (draft) {
-              const linkedHousehold =
-                linkHouseholdToAuthenticatedTenant({
-                  remoteHouseholdId:
-                    commitResult.householdId,
-                  migrationId:
-                    commitResult.migrationId,
-                  ownerMemberId:
-                    draft.ownerMemberId,
-                  linkedByUserId:
-                    draft.requestedByUserId,
-                  linkedAt:
-                    commitResult.committedAt,
-                });
+            const linkedHousehold =
+              linkHouseholdToAuthenticatedTenant({
+                remoteHouseholdId:
+                  commitResult.householdId,
+                migrationId:
+                  commitResult.migrationId,
+                ownerMemberId:
+                  draft.ownerMemberId,
+                linkedByUserId:
+                  draft.requestedByUserId,
+                linkedAt:
+                  commitResult.committedAt,
+              });
 
-              if (!linkedHousehold) {
-                throw new Error(
-                  "Remote persistence committed, but local link state could not be saved."
-                );
-              }
+            if (!linkedHousehold) {
+              throw new Error(
+                "Remote persistence committed, but local link state could not be saved."
+              );
             }
 
             setMessage(
