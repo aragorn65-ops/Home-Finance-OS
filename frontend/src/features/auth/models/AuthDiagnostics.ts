@@ -60,4 +60,5 @@ export interface AuthDiagnostics {
   invitationCount: number;
   migrationDraftCount: number;
   latestMigrationStatus?: string;
+  latestMigrationAt?: Date;
 }

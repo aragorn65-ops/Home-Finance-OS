@@ -77,7 +77,9 @@ export async function createAuthDiagnosticsForAdapter(
         adapter.listMigrationDrafts()
     );
   const latestMigration =
-    migrationDrafts.at(-1);
+    findLatestMigrationDraft(
+      migrationDrafts
+    );
   const isPrototypeAdapter =
     adapter instanceof
     InMemoryAuthBackendAdapter;
@@ -185,7 +187,53 @@ export async function createAuthDiagnosticsForAdapter(
       migrationDrafts.length,
     latestMigrationStatus:
       latestMigration?.status,
+    latestMigrationAt:
+      latestMigration
+        ? getMigrationDiagnosticDate(
+          latestMigration
+        )
+        : undefined,
   };
+}
+
+export function findLatestMigrationDraft<
+  T extends {
+    updatedAt: Date;
+    validatedAt?: Date;
+    committedAt?: Date;
+    abortedAt?: Date;
+  },
+>(drafts: T[]): T | undefined {
+  return drafts.reduce<
+    T | undefined
+  >((latest, draft) => {
+    if (!latest) {
+      return draft;
+    }
+
+    return getMigrationDiagnosticDate(
+      draft
+    ).getTime() >
+      getMigrationDiagnosticDate(
+        latest
+      ).getTime()
+      ? draft
+      : latest;
+  }, undefined);
+}
+
+export function getMigrationDiagnosticDate(
+  draft: {
+    updatedAt: Date;
+    validatedAt?: Date;
+    committedAt?: Date;
+    abortedAt?: Date;
+  }
+): Date {
+  return draft.abortedAt ??
+    draft.committedAt ??
+    draft.validatedAt ??
+    draft.updatedAt;
 }
 
 async function createOptionalDiagnostic<T>(
