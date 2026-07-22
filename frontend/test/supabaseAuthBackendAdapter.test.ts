@@ -836,6 +836,102 @@ test(
 );
 
 test(
+  "Supabase auth adapter rejects invalid migration validation RPC results",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient({
+            async getUser() {
+              return {
+                data: {
+                  user: {
+                    id:
+                      "user-1",
+                    email:
+                      "test@example.com",
+                    created_at:
+                      "2026-07-22T00:00:00Z",
+                  },
+                },
+                error: null,
+              };
+            },
+          }),
+          from() {
+            return {
+              select() {
+                return {
+                  eq() {
+                    return {
+                      async eq() {
+                        return {
+                          data: [
+                            {
+                              id:
+                                "migration-1",
+                              household_id:
+                                "household-1",
+                              owner_user_id:
+                                "user-1",
+                              owner_member_id:
+                                "member-1",
+                              household_name:
+                                "Casa Test",
+                              status:
+                                "uploaded",
+                              created_at:
+                                "2026-07-22T02:00:00Z",
+                              updated_at:
+                                "2026-07-22T03:00:00Z",
+                            },
+                          ],
+                          error: null,
+                        };
+                      },
+                    };
+                  },
+                };
+              },
+            };
+          },
+          async rpc() {
+            return {
+              data: {
+                draft_id:
+                  "migration-1",
+                status:
+                  "uploaded",
+                validated_at:
+                  null,
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.validateMigrationDraft(
+          "migration-1"
+        ),
+      /Supabase migration validation returned an invalid result\./
+    );
+  }
+);
+
+test(
   "Supabase auth adapter aborts migration draft through RPC",
   async () => {
     const {
@@ -898,6 +994,49 @@ test(
 );
 
 test(
+  "Supabase auth adapter rejects invalid migration abort RPC results",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc() {
+            return {
+              data: {
+                draft_id:
+                  "migration-2",
+                status:
+                  "aborted",
+                aborted_at:
+                  "2026-07-22T05:00:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.abortMigrationDraft(
+          "migration-1"
+        ),
+      /Supabase migration abort returned an invalid result\./
+    );
+  }
+);
+
+test(
   "Supabase auth adapter reports migration abort failures",
   async () => {
     const {
@@ -932,6 +1071,51 @@ test(
           "migration-1"
         ),
       /Supabase migration abort failed: Committed migration drafts cannot be aborted\./
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter rejects invalid migration commit RPC results",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc() {
+            return {
+              data: {
+                draft_id:
+                  "migration-1",
+                household_id:
+                  "",
+                status:
+                  "validated",
+                committed_at:
+                  "2026-07-22T06:00:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.commitMigrationDraft(
+          "migration-1"
+        ),
+      /Supabase migration commit returned an invalid result\./
     );
   }
 );
