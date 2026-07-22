@@ -77,6 +77,8 @@ Sprint 73 verifies household claim membership identifiers before creating local
 auth membership state from RPC results.
 Sprint 74 verifies the migration checkpoint owner exists locally before remote
 commit can run and before local link persistence is attempted.
+Sprint 75 verifies existing local authenticated-link state before remote commit
+can overwrite or conflict with it.
 
 ---
 
@@ -127,6 +129,7 @@ commit can run and before local link persistence is attempted.
 | v0.72.0-alpha | Household claim migration result guard |
 | v0.73.0-alpha | Household claim membership result guard |
 | v0.74.0-alpha | Migration commit local owner guard |
+| v0.75.0-alpha | Migration commit existing link guard |
 
 ---
 
@@ -151,6 +154,8 @@ Sprint 73 rejects malformed household claim membership results before they
 become local auth state.
 Sprint 74 stops remote commit when the checkpoint owner member cannot be found
 in local household state.
+Sprint 75 stops remote commit when local authenticated-link state already points
+to a different remote checkpoint.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior

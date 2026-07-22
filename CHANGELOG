@@ -8,6 +8,26 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.75.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 75 notes and release notes for migration commit existing link
+  guards.
+* Added a local authenticated-link preflight before remote migration commit.
+* Added tests proving commit is blocked when the local household is linked
+  elsewhere.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with fifty-four passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified remote commit is not called when local authenticated link state
+  conflicts with the checkpoint.
+
+---
+
 ## [0.74.0-alpha] - 2026-07-22
 
 ### Added
