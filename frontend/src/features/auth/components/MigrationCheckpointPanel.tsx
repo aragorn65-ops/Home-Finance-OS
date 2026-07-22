@@ -21,6 +21,9 @@ import {
 import {
   getAuthBackendAdapter,
 } from "../services/createAuthBackendAdapter";
+import {
+  getMigrationCheckpointLifecycleEntries,
+} from "./migrationCheckpointLifecycle";
 
 export interface MigrationCheckpointPanelProps {
   refreshToken?: number;
@@ -235,6 +238,10 @@ export default function MigrationCheckpointPanel({
           const canAbort =
             draft.status !== "committed" &&
             draft.status !== "aborted";
+          const lifecycleEntries =
+            getMigrationCheckpointLifecycleEntries(
+              draft
+            );
 
           return (
             <article
@@ -271,6 +278,22 @@ export default function MigrationCheckpointPanel({
                     {draft.id}
                   </dd>
                 </div>
+
+                {lifecycleEntries.map(
+                  (entry) => (
+                    <div
+                      key={entry.label}
+                      className="migration-checkpoint-panel__lifecycle"
+                    >
+                      <dt>
+                        {entry.label}
+                      </dt>
+                      <dd>
+                        {entry.value}
+                      </dd>
+                    </div>
+                  )
+                )}
               </dl>
 
               <div className="migration-checkpoint-panel__actions">

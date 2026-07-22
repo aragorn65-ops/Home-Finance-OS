@@ -134,6 +134,10 @@
   overflow-wrap: anywhere;
 }
 
+.migration-checkpoint-panel__lifecycle dd {
+  color: var(--color-text-muted);
+}
+
 .migration-checkpoint-panel__actions {
   display: flex;
   flex-wrap: wrap;
