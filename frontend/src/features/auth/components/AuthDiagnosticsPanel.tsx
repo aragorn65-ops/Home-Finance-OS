@@ -1,6 +1,13 @@
 import "./AuthDiagnosticsPanel.css";
 
 import {
+  useState,
+} from "react";
+import type {
+  FormEvent,
+} from "react";
+
+import {
   RotateCw,
 } from "lucide-react";
 
@@ -39,11 +46,46 @@ export default function AuthDiagnosticsPanel() {
       : null;
   const authenticatedLink =
     household?.authenticatedLink;
+  const [
+    supabaseEmail,
+    setSupabaseEmail,
+  ] = useState("");
+  const [
+    supabaseSignInMessage,
+    setSupabaseSignInMessage,
+  ] = useState("");
 
   const handleSignIn =
     async (): Promise<void> => {
       await signIn();
       await refreshDiagnostics();
+    };
+
+  const handleSupabaseSignIn =
+    async (
+      event: FormEvent
+    ): Promise<void> => {
+      event.preventDefault();
+      setSupabaseSignInMessage("");
+
+      try {
+        await signIn({
+          email:
+            supabaseEmail,
+          redirectTo:
+            window.location.origin +
+            window.location.pathname,
+        });
+        setSupabaseSignInMessage(
+          "Magic link requested. Check the disposable-project mailbox."
+        );
+      } catch {
+        setSupabaseSignInMessage(
+          "Magic link request failed."
+        );
+      } finally {
+        await refreshDiagnostics();
+      }
     };
 
   const handleSignOut =
@@ -227,6 +269,54 @@ export default function AuthDiagnosticsPanel() {
                 Sign out prototype
               </button>
             </div>
+          )}
+
+          {diagnostics.isSupabaseAdapter && (
+            <form
+              className="auth-diagnostics__supabase-form"
+              onSubmit={(event) => {
+                void handleSupabaseSignIn(
+                  event
+                );
+              }}
+            >
+              <label htmlFor="supabase-email">
+                Supabase email
+              </label>
+              <div className="auth-diagnostics__supabase-row">
+                <input
+                  id="supabase-email"
+                  type="email"
+                  value={supabaseEmail}
+                  onChange={(event) => {
+                    setSupabaseEmail(
+                      event.target.value
+                    );
+                  }}
+                  disabled={
+                    !diagnostics.isSupabaseConfigured ||
+                    session.status ===
+                      "loading"
+                  }
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={
+                    !diagnostics.isSupabaseConfigured ||
+                    session.status ===
+                      "loading"
+                  }
+                >
+                  Send magic link
+                </button>
+              </div>
+              {supabaseSignInMessage && (
+                <p>
+                  {supabaseSignInMessage}
+                </p>
+              )}
+            </form>
           )}
         </>
       )}

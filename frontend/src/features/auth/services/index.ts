@@ -1,5 +1,6 @@
 export type {
   AuthBackendAdapter,
+  AuthSignInRequest,
   HouseholdClaimDraft,
   HouseholdClaimResult,
 } from "./AuthBackendAdapter";

@@ -13,6 +13,8 @@ post-deploy smoke testing. Sprint 40 prepares the auth and cloud architecture
 decision path before any production migration work begins. Sprint 41 starts the
 Supabase auth/cloud spike, and Sprint 42 prepares disabled-by-default Supabase
 client wiring for disposable-project testing.
+Sprint 43 adds a disposable-project magic-link request path behind the same
+disabled-by-default Supabase provider configuration.
 
 ---
 
@@ -31,6 +33,7 @@ client wiring for disposable-project testing.
 | v0.40.0-alpha | Auth and cloud decision prep |
 | v0.41.0-alpha | Supabase auth/cloud spike |
 | v0.42.0-alpha | Supabase client wiring readiness |
+| v0.43.0-alpha | Supabase magic-link spike |
 
 ---
 
@@ -45,6 +48,8 @@ deployed local-first beta stable while choosing production auth, remote
 storage, and migration boundaries deliberately.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
+Sprint 43 continues that constraint while testing magic-link request behavior
+only in disposable Supabase projects.
 
 The Sprint 40 decision criteria are tracked in:
 

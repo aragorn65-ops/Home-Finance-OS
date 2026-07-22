@@ -4,6 +4,10 @@ export type {
 } from "./AuthSession";
 
 export type {
+  AuthSignInRequest,
+} from "../services/AuthBackendAdapter";
+
+export type {
   AuthDiagnostics,
 } from "./AuthDiagnostics";
 

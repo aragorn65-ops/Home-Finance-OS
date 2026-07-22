@@ -24,10 +24,17 @@ export interface HouseholdClaimResult {
   migrationDraft: RemoteMigrationDraft;
 }
 
+export interface AuthSignInRequest {
+  email?: string;
+  redirectTo?: string;
+}
+
 export interface AuthBackendAdapter {
   getSession(): Promise<AuthSession>;
 
-  signIn(): Promise<AuthSession>;
+  signIn(
+    request?: AuthSignInRequest
+  ): Promise<AuthSession>;
 
   signOut(): Promise<void>;
 
