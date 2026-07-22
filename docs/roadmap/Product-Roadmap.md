@@ -21,6 +21,7 @@ Sprint 45 adds read-only Supabase household membership lookup for signed-in
 disposable-project users.
 Sprint 46 exposes those membership results in Auth Diagnostics for
 disposable-project verification.
+Sprint 47 enriches that diagnostics-only view with read-only household names.
 
 ---
 
@@ -43,6 +44,7 @@ disposable-project verification.
 | v0.44.0-alpha | Supabase auth callback handling |
 | v0.45.0-alpha | Supabase membership read spike |
 | v0.46.0-alpha | Supabase membership diagnostics |
+| v0.47.0-alpha | Supabase household diagnostics |
 
 ---
 
@@ -64,6 +66,7 @@ behavior for disposable Supabase auth tests.
 Sprint 45 keeps those guardrails while reading RLS-protected household
 membership state for diagnostics only.
 Sprint 46 keeps the membership output diagnostics-only and read-only.
+Sprint 47 keeps household names diagnostics-only and read-only.
 
 The Sprint 40 decision criteria are tracked in:
 

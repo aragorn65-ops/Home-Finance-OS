@@ -35,6 +35,25 @@ export async function createAuthDiagnostics():
   const isSupabaseAdapter =
     adapter instanceof
     SupabaseAuthBackendAdapter;
+  const householdDiagnostics =
+    isSupabaseAdapter
+      ? await adapter
+        .listHouseholdDiagnostics(
+          memberships.map(
+            (membership) =>
+              membership.householdId
+          )
+        )
+      : [];
+  const householdNameById =
+    new Map(
+      householdDiagnostics.map(
+        (household) => [
+          household.householdId,
+          household.householdName,
+        ]
+      )
+    );
 
   return {
     enabled:
@@ -62,6 +81,10 @@ export async function createAuthDiagnostics():
         (membership) => ({
           householdId:
             membership.householdId,
+          householdName:
+            householdNameById.get(
+              membership.householdId
+            ),
           memberId:
             membership.memberId,
           role:

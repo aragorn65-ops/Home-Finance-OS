@@ -8,6 +8,26 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.47.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 47 notes and release notes for Supabase household diagnostics.
+* Added read-only Supabase household diagnostics lookup by membership household
+  id.
+* Added household-name enrichment to Auth Diagnostics membership summaries.
+* Added tests for household diagnostics query shape, id deduplication, and
+  active-row filtering.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with thirteen passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified household diagnostics remain read-only and diagnostics-only.
+
+---
+
 ## [0.46.0-alpha] - 2026-07-22
 
 ### Added

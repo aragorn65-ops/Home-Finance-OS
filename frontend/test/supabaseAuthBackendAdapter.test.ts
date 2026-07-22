@@ -55,6 +55,12 @@ function createSignedOutClient(
                 error: null,
               };
             },
+            async in() {
+              return {
+                data: [],
+                error: null,
+              };
+            },
           };
         },
       };
@@ -97,6 +103,116 @@ test(
     assert.match(
       validation.blockers[0],
       /VITE_SUPABASE_URL/
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter reads active household diagnostics",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const queries: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  async eq() {
+                    return {
+                      data: [],
+                      error: null,
+                    };
+                  },
+                  async in(
+                    column: string,
+                    values: string[]
+                  ) {
+                    queries.push({
+                      tableName,
+                      columns,
+                      column,
+                      values,
+                    });
+
+                    return {
+                      data: [
+                        {
+                          id:
+                            "household-1",
+                          name:
+                            "Casa Test",
+                          status:
+                            "active",
+                        },
+                        {
+                          id:
+                            "household-2",
+                          name:
+                            "Archived Home",
+                          status:
+                            "archived",
+                        },
+                      ],
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const households =
+      await adapter
+        .listHouseholdDiagnostics([
+          "household-1",
+          "household-1",
+          "household-2",
+          "",
+        ]);
+
+    assert.deepEqual(
+      queries,
+      [
+        {
+          tableName:
+            "households",
+          columns:
+            "id,name,status",
+          column:
+            "id",
+          values: [
+            "household-1",
+            "household-2",
+          ],
+        },
+      ]
+    );
+    assert.deepEqual(
+      households,
+      [
+        {
+          householdId:
+            "household-1",
+          householdName:
+            "Casa Test",
+          status:
+            "active",
+        },
+      ]
     );
   }
 );
