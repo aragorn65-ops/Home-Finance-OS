@@ -49,6 +49,7 @@ export interface AuthDiagnostics {
   isPrototypeAdapter: boolean;
   isSupabaseAdapter: boolean;
   isSupabaseConfigured: boolean;
+  warnings: string[];
   membershipCount: number;
   memberships:
     AuthMembershipDiagnostic[];

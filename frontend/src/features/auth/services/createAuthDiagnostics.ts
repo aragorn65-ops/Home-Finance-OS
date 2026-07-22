@@ -1,10 +1,17 @@
 import {
   authFeatureConfig,
 } from "../../../config/auth";
+import type {
+  AuthFeatureConfig,
+} from "../../../config/auth";
 
 import type {
+  AuthSession,
   AuthDiagnostics,
 } from "../models";
+import type {
+  AuthBackendAdapter,
+} from "./AuthBackendAdapter";
 import {
   InMemoryAuthBackendAdapter,
 } from "./inMemoryAuthBackendAdapter";
@@ -19,14 +26,56 @@ export async function createAuthDiagnostics():
   Promise<AuthDiagnostics> {
   const adapter =
     getAuthBackendAdapter();
+
+  return createAuthDiagnosticsForAdapter(
+    adapter,
+    authFeatureConfig
+  );
+}
+
+export async function createAuthDiagnosticsForAdapter(
+  adapter: AuthBackendAdapter,
+  config: AuthFeatureConfig =
+    authFeatureConfig
+): Promise<AuthDiagnostics> {
+  const warnings: string[] = [];
   const session =
-    await adapter.getSession();
+    await createOptionalDiagnostic<
+      AuthSession
+    >(
+      warnings,
+      "Session diagnostics",
+      {
+        status:
+          "signed-out",
+      },
+      () =>
+        adapter.getSession()
+    );
   const memberships =
-    await adapter.listMemberships();
+    await createOptionalDiagnostic(
+      warnings,
+      "Membership diagnostics",
+      [],
+      () =>
+        adapter.listMemberships()
+    );
   const invitations =
-    await adapter.listInvitations();
+    await createOptionalDiagnostic(
+      warnings,
+      "Invitation diagnostics",
+      [],
+      () =>
+        adapter.listInvitations()
+    );
   const migrationDrafts =
-    await adapter.listMigrationDrafts();
+    await createOptionalDiagnostic(
+      warnings,
+      "Migration diagnostics",
+      [],
+      () =>
+        adapter.listMigrationDrafts()
+    );
   const latestMigration =
     migrationDrafts.at(-1);
   const isPrototypeAdapter =
@@ -35,16 +84,24 @@ export async function createAuthDiagnostics():
   const isSupabaseAdapter =
     adapter instanceof
     SupabaseAuthBackendAdapter;
+  const householdIds =
+    memberships.map(
+      (membership) =>
+        membership.householdId
+    );
   const householdDiagnostics =
-    isSupabaseAdapter
-      ? await adapter
-        .listHouseholdDiagnostics(
-          memberships.map(
-            (membership) =>
-              membership.householdId
-          )
-        )
-      : [];
+    await createOptionalDiagnostic(
+      warnings,
+      "Household diagnostics",
+      [],
+      () =>
+        isSupabaseAdapter
+          ? adapter
+            .listHouseholdDiagnostics(
+              householdIds
+            )
+          : Promise.resolve([])
+    );
   const householdNameById =
     new Map(
       householdDiagnostics.map(
@@ -55,31 +112,37 @@ export async function createAuthDiagnostics():
       )
     );
   const accountSummary =
-    isSupabaseAdapter
-      ? await adapter
-        .createAccountDiagnosticSummary(
-          memberships.map(
-            (membership) =>
-              membership.householdId
-          )
-        )
-      : undefined;
+    await createOptionalDiagnostic(
+      warnings,
+      "Account diagnostics",
+      undefined,
+      () =>
+        isSupabaseAdapter
+          ? adapter
+            .createAccountDiagnosticSummary(
+              householdIds
+            )
+          : Promise.resolve(undefined)
+    );
   const transactionSummary =
-    isSupabaseAdapter
-      ? await adapter
-        .createTransactionDiagnosticSummary(
-          memberships.map(
-            (membership) =>
-              membership.householdId
-          )
-        )
-      : undefined;
+    await createOptionalDiagnostic(
+      warnings,
+      "Transaction diagnostics",
+      undefined,
+      () =>
+        isSupabaseAdapter
+          ? adapter
+            .createTransactionDiagnosticSummary(
+              householdIds
+            )
+          : Promise.resolve(undefined)
+    );
 
   return {
     enabled:
-      authFeatureConfig.enabled,
+      config.enabled,
     provider:
-      authFeatureConfig.provider,
+      config.provider,
     sessionStatus:
       session.status,
     adapterType:
@@ -94,6 +157,7 @@ export async function createAuthDiagnostics():
     isSupabaseConfigured:
       isSupabaseAdapter &&
       adapter.isConfigured(),
+    warnings,
     membershipCount:
       memberships.length,
     memberships:
@@ -122,4 +186,29 @@ export async function createAuthDiagnostics():
     latestMigrationStatus:
       latestMigration?.status,
   };
+}
+
+async function createOptionalDiagnostic<T>(
+  warnings: string[],
+  label: string,
+  fallback: T,
+  load: () => Promise<T>
+): Promise<T> {
+  try {
+    return await load();
+  } catch (error) {
+    warnings.push(
+      `${label} could not be loaded: ${getErrorMessage(error)}`
+    );
+
+    return fallback;
+  }
+}
+
+function getErrorMessage(
+  error: unknown
+): string {
+  return error instanceof Error
+    ? error.message
+    : "Unknown error.";
 }
