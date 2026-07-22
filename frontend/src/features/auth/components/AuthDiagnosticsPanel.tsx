@@ -423,6 +423,73 @@ export default function AuthDiagnosticsPanel() {
               </dl>
             </section>
           )}
+
+          {diagnostics.transactionSummary && (
+            <section className="auth-diagnostics__transaction-summary">
+              <h3>
+                Transaction Visibility
+              </h3>
+              <dl>
+                <div>
+                  <dt>Total</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.totalCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Active</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.activeCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Income</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.incomeCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Expenses</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.expenseCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Transfers</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.transferCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Private</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.privateVisibleCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Participants</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.participantVisibleCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Household</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.householdVisibleCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Date Range</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.earliestTransactionDate &&
+                    diagnostics.transactionSummary.latestTransactionDate
+                      ? `${diagnostics.transactionSummary.earliestTransactionDate} to ${diagnostics.transactionSummary.latestTransactionDate}`
+                      : "none"}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          )}
         </>
       )}
 

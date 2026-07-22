@@ -730,3 +730,147 @@ test(
     );
   }
 );
+
+test(
+  "Supabase auth adapter creates aggregate transaction diagnostics",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const queries: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  async eq() {
+                    return {
+                      data: [],
+                      error: null,
+                    };
+                  },
+                  async in(
+                    column: string,
+                    values: string[]
+                  ) {
+                    queries.push({
+                      tableName,
+                      columns,
+                      column,
+                      values,
+                    });
+
+                    return {
+                      data: [
+                        {
+                          household_id:
+                            "household-1",
+                          type:
+                            "income",
+                          visibility:
+                            "private",
+                          transaction_date:
+                            "2026-07-01",
+                          is_active:
+                            true,
+                        },
+                        {
+                          household_id:
+                            "household-1",
+                          type:
+                            "expense",
+                          visibility:
+                            "participants",
+                          transaction_date:
+                            "2026-07-11",
+                          is_active:
+                            true,
+                        },
+                        {
+                          household_id:
+                            "household-2",
+                          type:
+                            "transfer",
+                          visibility:
+                            "household",
+                          transaction_date:
+                            "2026-07-20",
+                          is_active:
+                            false,
+                        },
+                      ],
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const summary =
+      await adapter
+        .createTransactionDiagnosticSummary([
+          "household-1",
+          "household-2",
+          "household-1",
+          "",
+        ]);
+
+    assert.deepEqual(
+      queries,
+      [
+        {
+          tableName:
+            "transactions",
+          columns:
+            "household_id,type,visibility,transaction_date,is_active",
+          column:
+            "household_id",
+          values: [
+            "household-1",
+            "household-2",
+          ],
+        },
+      ]
+    );
+    assert.deepEqual(
+      summary,
+      {
+        totalCount:
+          3,
+        activeCount:
+          2,
+        inactiveCount:
+          1,
+        incomeCount:
+          1,
+        expenseCount:
+          1,
+        transferCount:
+          1,
+        householdVisibleCount:
+          1,
+        participantVisibleCount:
+          1,
+        privateVisibleCount:
+          1,
+        earliestTransactionDate:
+          "2026-07-01",
+        latestTransactionDate:
+          "2026-07-20",
+      }
+    );
+  }
+);
