@@ -21,9 +21,9 @@ real beta household data or replacing local-first storage.
 
 ## Planned Scope
 
-* [ ] Add a Supabase spike SQL draft that can be reviewed before running in a
+* [x] Add a Supabase spike SQL draft that can be reviewed before running in a
       Supabase project.
-* [ ] Add environment variable documentation for a disabled-by-default
+* [x] Add environment variable documentation for a disabled-by-default
       Supabase provider.
 * [ ] Add a Supabase adapter skeleton behind `VITE_HFOS_AUTH_PROVIDER=supabase`
       without adding live data migration.

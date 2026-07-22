@@ -14,6 +14,7 @@ This project follows a sprint-based development process.
 
 * Added Sprint 41 notes and release notes for the Supabase auth/cloud spike.
 * Added a disposable Supabase schema and RLS SQL draft for review.
+* Documented disabled-by-default Supabase spike environment variables.
 
 ### Verified
 

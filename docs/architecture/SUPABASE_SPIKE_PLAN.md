@@ -166,6 +166,18 @@ APIs.
 The existing `AuthBackendAdapter` should wrap Supabase without changing calling
 UI surfaces.
 
+The spike provider remains disabled unless these Vite variables are set:
+
+```text
+VITE_HFOS_AUTH_ENABLED=true
+VITE_HFOS_AUTH_PROVIDER=supabase
+VITE_SUPABASE_URL=<disposable-project-url>
+VITE_SUPABASE_ANON_KEY=<disposable-project-anon-key>
+```
+
+Do not add Supabase production credentials to the Cloudflare Pages beta until
+the proof criteria below pass in a disposable project.
+
 | Adapter Method | Supabase Spike Mapping |
 | --- | --- |
 | `getSession` | `supabase.auth.getSession()` |

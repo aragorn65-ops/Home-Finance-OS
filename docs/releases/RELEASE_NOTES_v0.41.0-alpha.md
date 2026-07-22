@@ -25,6 +25,11 @@ configuration flags and must not migrate real household data.
 * Add a disabled-by-default Supabase adapter skeleton.
 * Document disposable-project validation steps.
 
+## Added
+
+* Added a disposable Supabase SQL spike draft for schema and RLS review.
+* Documented disabled-by-default Supabase Vite environment variables.
+
 ---
 
 ## Deferred
