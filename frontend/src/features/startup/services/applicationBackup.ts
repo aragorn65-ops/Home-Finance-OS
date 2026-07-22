@@ -1367,11 +1367,10 @@ function isBackupSummary(
       "linked" ||
     value.authenticatedLinkStatus ===
       "unlinked";
-  const optionalRemoteHouseholdIdIsValid =
-    value.remoteHouseholdId ===
-      undefined ||
-    typeof value.remoteHouseholdId ===
-      "string";
+  const linkMetadataIsValid =
+    isBackupSummaryLinkMetadataValid(
+      value
+    );
 
   return (
     typeof value.householdName ===
@@ -1405,7 +1404,37 @@ function isBackupSummary(
     optionalNumbersAreValid &&
     optionalThemeIsValid &&
     optionalLinkStatusIsValid &&
-    optionalRemoteHouseholdIdIsValid
+    linkMetadataIsValid
+  );
+}
+
+function isBackupSummaryLinkMetadataValid(
+  value: Record<string, unknown>
+): boolean {
+  if (
+    value.authenticatedLinkStatus ===
+    "linked"
+  ) {
+    return isNonEmptyString(
+      value.remoteHouseholdId
+    );
+  }
+
+  if (
+    value.authenticatedLinkStatus ===
+      "unlinked" &&
+    value.remoteHouseholdId !==
+      undefined
+  ) {
+    return false;
+  }
+
+  return (
+    value.remoteHouseholdId ===
+      undefined ||
+    isNonEmptyString(
+      value.remoteHouseholdId
+    )
   );
 }
 
