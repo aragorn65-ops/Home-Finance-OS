@@ -229,6 +229,19 @@ export default function AppShell() {
           }
         />
 
+        <section
+          className="app-beta-notice"
+          aria-label="Local-first beta notice"
+        >
+          <strong>
+            Local-first beta
+          </strong>
+
+          <span>
+            Data is saved in this browser. Export a backup before and after meaningful testing.
+          </span>
+        </section>
+
         <main className="app-content">
           <div className="page-container">
             <Outlet />

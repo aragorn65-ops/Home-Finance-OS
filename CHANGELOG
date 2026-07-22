@@ -8,6 +8,24 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.39.0-alpha] - 2026-07-22
+
+### Added
+
+* Added an app-wide local-first beta notice so deployed testers know browser
+  storage remains the active data store.
+* Added Sprint 39 notes and release notes for post-deploy beta hardening.
+
+### Changed
+
+* Updated the product roadmap with the post-deploy beta hardening track.
+
+### Verified
+
+* Pending Sprint 39 validation.
+
+---
+
 ## [0.38.0-alpha] - 2026-07-21
 
 ### Added
