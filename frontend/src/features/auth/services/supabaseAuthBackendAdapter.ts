@@ -40,6 +40,10 @@ interface SupabaseAuthClient {
   from(
     tableName: string
   ): SupabaseQueryBuilder;
+  rpc(
+    functionName: string,
+    parameters: Record<string, unknown>
+  ): Promise<SupabaseHouseholdClaimRpcResult>;
 }
 
 interface SupabaseQueryBuilder {
@@ -146,6 +150,16 @@ interface SupabaseMigrationDraftRowsResult {
     | null;
 }
 
+interface SupabaseHouseholdClaimRpcResult {
+  data:
+    | SupabaseHouseholdClaimRpcRow
+    | SupabaseHouseholdClaimRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseSession {
   expires_at?: number;
   user: SupabaseUser;
@@ -221,6 +235,19 @@ interface SupabaseMigrationDraftRow {
   owner_member_id: string;
   household_name: string;
   status: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+interface SupabaseHouseholdClaimRpcRow {
+  household_id: string;
+  membership_id: string;
+  member_id: string;
+  user_id: string;
+  role: string;
+  membership_status: string;
+  migration_draft_id: string;
+  migration_status: string;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -627,11 +654,74 @@ export class SupabaseAuthBackendAdapter
   async createHouseholdClaimDraft(
     draft: HouseholdClaimDraft
   ): Promise<HouseholdClaimResult> {
-    throw new Error(
-      this.createUnavailableMessage(
-        `household claim for ${draft.householdName}`
-      )
-    );
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `household claim for ${draft.householdName}`
+        )
+      );
+    }
+
+    const {
+      data,
+      error,
+    } = await (
+      await this.getClient()
+    )
+      .rpc(
+        "claim_household_from_backup",
+        {
+          draft_household_name:
+            draft.householdName,
+          draft_country:
+            "PH",
+          draft_currency:
+            "PHP",
+          draft_timezone:
+            Intl.DateTimeFormat()
+              .resolvedOptions()
+              .timeZone,
+          draft_backup_summary:
+            draft.backupSummary,
+        }
+      );
+
+    if (error) {
+      throw new Error(
+        `Supabase household claim failed: ${error.message}`
+      );
+    }
+
+    const row =
+      Array.isArray(data)
+        ? data[0]
+        : data;
+
+    if (!row) {
+      throw new Error(
+        "Supabase household claim returned no result."
+      );
+    }
+
+    const membership =
+      mapSupabaseClaimMembership(row);
+
+    if (!membership) {
+      throw new Error(
+        "Supabase household claim returned an invalid membership."
+      );
+    }
+
+    return {
+      householdId:
+        row.household_id,
+      membership,
+      migrationDraft:
+        mapSupabaseClaimMigrationDraft(
+          row,
+          draft
+        ),
+    };
   }
 
   async listMigrationDrafts():
@@ -1047,6 +1137,112 @@ function createRedactedMigrationBackupSummary(
     providerBillCount:
       0,
   };
+}
+
+function mapSupabaseClaimMembership(
+  row: SupabaseHouseholdClaimRpcRow
+): HouseholdMembership | undefined {
+  const role =
+    normalizeMembershipRole(
+      row.role
+    );
+  const status =
+    normalizeMembershipStatus(
+      row.membership_status
+    );
+
+  if (!role || !status) {
+    return undefined;
+  }
+
+  return {
+    id:
+      row.membership_id,
+    householdId:
+      row.household_id,
+    userId:
+      row.user_id,
+    memberId:
+      row.member_id,
+    role,
+    status,
+    acceptedAt:
+      mapSupabaseDate(
+        row.created_at ??
+          undefined
+      ),
+    createdAt:
+      mapSupabaseDate(
+        row.created_at ??
+          undefined
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        row.updated_at ??
+          row.created_at ??
+          undefined
+      ),
+  };
+}
+
+function mapSupabaseClaimMigrationDraft(
+  row: SupabaseHouseholdClaimRpcRow,
+  draft: HouseholdClaimDraft
+): RemoteMigrationDraft {
+  return {
+    id:
+      row.migration_draft_id,
+    householdId:
+      row.household_id,
+    householdName:
+      draft.householdName,
+    ownerMemberId:
+      row.member_id,
+    requestedByUserId:
+      row.user_id,
+    backupSummary:
+      draft.backupSummary,
+    remoteRecordCount:
+      countRemoteMigrationRecords(
+        draft.backupSummary
+      ),
+    status:
+      normalizeMigrationStatus(
+        row.migration_status
+      ) ?? "uploaded",
+    createdAt:
+      mapSupabaseDate(
+        row.created_at ??
+          undefined
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        row.updated_at ??
+          row.created_at ??
+          undefined
+      ),
+  };
+}
+
+function countRemoteMigrationRecords(
+  summary: HouseholdClaimDraft["backupSummary"]
+): number {
+  const counts: number[] = [
+    summary.accountCount ?? 0,
+    summary.transactionCount ?? 0,
+    summary.expenseAllocationCount ?? 0,
+    summary.settlementCount ?? 0,
+    summary.settlementApplicationCount ?? 0,
+    summary.savingsGoalCount ?? 0,
+    summary.savingsActivityCount ?? 0,
+    summary.providerBillCount ?? 0,
+  ];
+
+  return counts.reduce(
+    (total, count) =>
+      total + count,
+    1
+  );
 }
 
 function mapOptionalSupabaseDate(

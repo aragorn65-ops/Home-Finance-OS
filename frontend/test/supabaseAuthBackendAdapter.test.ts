@@ -371,6 +371,146 @@ test(
 );
 
 test(
+  "Supabase auth adapter creates a household claim through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                household_id:
+                  "11111111-1111-4111-8111-111111111111",
+                membership_id:
+                  "22222222-2222-4222-8222-222222222222",
+                member_id:
+                  "33333333-3333-4333-8333-333333333333",
+                user_id:
+                  "44444444-4444-4444-8444-444444444444",
+                role:
+                  "owner",
+                membership_status:
+                  "active",
+                migration_draft_id:
+                  "55555555-5555-4555-8555-555555555555",
+                migration_status:
+                  "uploaded",
+                created_at:
+                  "2026-07-22T02:00:00Z",
+                updated_at:
+                  "2026-07-22T03:00:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    const backupSummary = {
+      householdName:
+        "Casa Test",
+      exportedAt:
+        "2026-07-22T01:00:00Z",
+      accountCount:
+        2,
+      transactionCount:
+        3,
+      expenseAllocationCount:
+        4,
+      settlementCount:
+        1,
+      settlementApplicationCount:
+        1,
+      savingsGoalCount:
+        1,
+      savingsActivityCount:
+        2,
+      providerBillCount:
+        1,
+    };
+
+    const claim =
+      await adapter
+        .createHouseholdClaimDraft({
+          householdName:
+            "Casa Test",
+          ownerMemberId:
+            "local-owner",
+          backupSummary,
+        });
+
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "claim_household_from_backup",
+          parameters: {
+            draft_household_name:
+              "Casa Test",
+            draft_country:
+              "PH",
+            draft_currency:
+              "PHP",
+            draft_timezone:
+              Intl.DateTimeFormat()
+                .resolvedOptions()
+                .timeZone,
+            draft_backup_summary:
+              backupSummary,
+          },
+        },
+      ]
+    );
+    assert.equal(
+      claim.householdId,
+      "11111111-1111-4111-8111-111111111111"
+    );
+    assert.equal(
+      claim.membership.memberId,
+      "33333333-3333-4333-8333-333333333333"
+    );
+    assert.equal(
+      claim.membership.role,
+      "owner"
+    );
+    assert.equal(
+      claim.migrationDraft.id,
+      "55555555-5555-4555-8555-555555555555"
+    );
+    assert.equal(
+      claim.migrationDraft.remoteRecordCount,
+      16
+    );
+    assert.equal(
+      claim.migrationDraft.updatedAt
+        .toISOString(),
+      "2026-07-22T03:00:00.000Z"
+    );
+  }
+);
+
+test(
   "Supabase auth adapter subscribes to auth callback changes",
   async () => {
     const {

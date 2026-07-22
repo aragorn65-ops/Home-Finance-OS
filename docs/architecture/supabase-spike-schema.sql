@@ -173,6 +173,154 @@ on public.migration_drafts
 for select
 using (owner_user_id = auth.uid());
 
+create or replace function public.claim_household_from_backup(
+  draft_household_name text,
+  draft_country text default 'PH',
+  draft_currency text default 'PHP',
+  draft_timezone text default 'Asia/Manila',
+  draft_backup_summary jsonb default '{}'::jsonb
+)
+returns table (
+  household_id uuid,
+  membership_id uuid,
+  member_id uuid,
+  user_id uuid,
+  role text,
+  membership_status text,
+  migration_draft_id uuid,
+  migration_status text,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  created_household_id uuid;
+  created_member_id uuid;
+  created_membership_id uuid;
+  created_migration_id uuid;
+  created_timestamp timestamptz := now();
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before claiming a household.';
+  end if;
+
+  insert into public.households (
+    name,
+    country,
+    currency,
+    timezone,
+    status,
+    created_at,
+    updated_at
+  )
+  values (
+    draft_household_name,
+    draft_country,
+    draft_currency,
+    draft_timezone,
+    'active',
+    created_timestamp,
+    created_timestamp
+  )
+  returning id into created_household_id;
+
+  insert into public.household_members (
+    household_id,
+    display_name,
+    role,
+    status,
+    linked_user_id,
+    created_at,
+    updated_at
+  )
+  values (
+    created_household_id,
+    'Household owner',
+    'owner',
+    'active',
+    current_user_id,
+    created_timestamp,
+    created_timestamp
+  )
+  returning id into created_member_id;
+
+  insert into public.household_memberships (
+    household_id,
+    member_id,
+    user_id,
+    role,
+    status,
+    created_at,
+    updated_at
+  )
+  values (
+    created_household_id,
+    created_member_id,
+    current_user_id,
+    'owner',
+    'active',
+    created_timestamp,
+    created_timestamp
+  )
+  returning id into created_membership_id;
+
+  insert into public.migration_drafts (
+    household_id,
+    owner_user_id,
+    owner_member_id,
+    household_name,
+    backup_summary,
+    status,
+    created_at,
+    updated_at
+  )
+  values (
+    created_household_id,
+    current_user_id,
+    created_member_id,
+    draft_household_name,
+    draft_backup_summary,
+    'uploaded',
+    created_timestamp,
+    created_timestamp
+  )
+  returning id into created_migration_id;
+
+  return query
+  select
+    created_household_id,
+    created_membership_id,
+    created_member_id,
+    current_user_id,
+    'owner'::text,
+    'active'::text,
+    created_migration_id,
+    'uploaded'::text,
+    created_timestamp,
+    created_timestamp;
+end;
+$$;
+
+revoke all on function public.claim_household_from_backup(
+  text,
+  text,
+  text,
+  text,
+  jsonb
+) from public;
+
+grant execute on function public.claim_household_from_backup(
+  text,
+  text,
+  text,
+  text,
+  jsonb
+) to authenticated;
+
 -- Spike insert/update paths should be tested through RPC functions rather than
 -- broad client-side table policies. That keeps migration draft creation and
 -- commit/abort behavior explicit.
