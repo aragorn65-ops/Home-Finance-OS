@@ -43,6 +43,8 @@ returns local-link metadata without importing records, syncing, or deleting
 local browser data.
 Sprint 57 makes validation, commit, and abort timestamps durable on disposable
 Supabase migration drafts and maps them back into diagnostics after refresh.
+Sprint 58 surfaces those lifecycle timestamps in the migration checkpoint
+diagnostics UI as stable UTC values.
 
 ---
 
@@ -76,6 +78,7 @@ Supabase migration drafts and maps them back into diagnostics after refresh.
 | v0.55.0-alpha | Supabase abort RPC |
 | v0.56.0-alpha | Supabase commit RPC |
 | v0.57.0-alpha | Supabase migration lifecycle timestamps |
+| v0.58.0-alpha | Migration lifecycle diagnostics UI |
 
 ---
 
@@ -117,6 +120,9 @@ local data deletion, and production migration disabled.
 Sprint 56 keeps commit behind one explicit RPC and still leaves full record
 import, sync, local data deletion, and production migration disabled.
 Sprint 57 keeps lifecycle timestamp persistence metadata-only and still leaves
+full record import, sync, local data deletion, and production migration
+disabled.
+Sprint 58 keeps lifecycle timestamp visibility diagnostics-only and still leaves
 full record import, sync, local data deletion, and production migration
 disabled.
 

@@ -8,6 +8,27 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.58.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 58 notes and release notes for migration lifecycle diagnostics
+  UI.
+* Added UTC lifecycle timestamp rows to migration checkpoint diagnostics.
+* Added a tested formatter for migration checkpoint lifecycle timestamps.
+* Added coverage for present-only validated, committed, and aborted timestamp
+  display entries.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twenty-six passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified migration checkpoint timestamps render as deterministic UTC
+  diagnostic values.
+
+---
+
 ## [0.57.0-alpha] - 2026-07-22
 
 ### Added
