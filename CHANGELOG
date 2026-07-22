@@ -8,6 +8,27 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.48.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 48 notes and release notes for Supabase account diagnostics.
+* Added aggregate-only Supabase account diagnostics by membership household id.
+* Added account visibility, class, activity, and currency counts to Auth
+  Diagnostics.
+* Added tests for account diagnostics query shape, id deduplication, and
+  aggregate output.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with fourteen passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified account diagnostics remain aggregate-only and read-only.
+* Confirmed account names and balances are not selected or rendered.
+
+---
+
 ## [0.47.0-alpha] - 2026-07-22
 
 ### Added

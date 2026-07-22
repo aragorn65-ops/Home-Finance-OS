@@ -22,6 +22,8 @@ disposable-project users.
 Sprint 46 exposes those membership results in Auth Diagnostics for
 disposable-project verification.
 Sprint 47 enriches that diagnostics-only view with read-only household names.
+Sprint 48 adds aggregate-only account diagnostics for household and
+member-private visibility checks.
 
 ---
 
@@ -45,6 +47,7 @@ Sprint 47 enriches that diagnostics-only view with read-only household names.
 | v0.45.0-alpha | Supabase membership read spike |
 | v0.46.0-alpha | Supabase membership diagnostics |
 | v0.47.0-alpha | Supabase household diagnostics |
+| v0.48.0-alpha | Supabase account diagnostics |
 
 ---
 
@@ -67,6 +70,8 @@ Sprint 45 keeps those guardrails while reading RLS-protected household
 membership state for diagnostics only.
 Sprint 46 keeps the membership output diagnostics-only and read-only.
 Sprint 47 keeps household names diagnostics-only and read-only.
+Sprint 48 keeps account diagnostics aggregate-only, read-only, and free of
+account names or balances.
 
 The Sprint 40 decision criteria are tracked in:
 

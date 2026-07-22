@@ -40,6 +40,7 @@ export {
 
 export type {
   SupabaseAuthBackendAdapterConfig,
+  SupabaseAccountDiagnosticSummary,
   SupabaseHouseholdDiagnostic,
 } from "./supabaseAuthBackendAdapter";
 

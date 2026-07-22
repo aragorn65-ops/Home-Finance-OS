@@ -13,6 +13,17 @@ export interface AuthMembershipDiagnostic {
   status: string;
 }
 
+export interface AuthAccountDiagnosticSummary {
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  householdVisibleCount: number;
+  privateVisibleCount: number;
+  assetCount: number;
+  liabilityCount: number;
+  currencies: string[];
+}
+
 export interface AuthDiagnostics {
   enabled: boolean;
   provider: AuthProvider;
@@ -27,6 +38,8 @@ export interface AuthDiagnostics {
   membershipCount: number;
   memberships:
     AuthMembershipDiagnostic[];
+  accountSummary?:
+    AuthAccountDiagnosticSummary;
   invitationCount: number;
   migrationDraftCount: number;
   latestMigrationStatus?: string;
