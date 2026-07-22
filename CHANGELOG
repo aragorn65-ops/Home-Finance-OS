@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.80.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 80 notes and release notes for Cloudflare Pages Node runtime
+  pinning.
+* Added a frontend Node engine requirement of `>=22.13.0`.
+* Updated Cloudflare Pages deployment guidance to use `NODE_VERSION=22.13.0`.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with sixty-one passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the documented Cloudflare Pages runtime matches the frontend package
+  engine requirement.
+
+---
+
 ## [0.79.0-alpha] - 2026-07-22
 
 ### Added

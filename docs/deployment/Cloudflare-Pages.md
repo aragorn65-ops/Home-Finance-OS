@@ -21,8 +21,12 @@ Root directory: frontend
 Build command: npm run build
 Build output directory: dist
 Production branch: main
-Environment variable: NODE_VERSION=22
+Environment variable: NODE_VERSION=22.13.0
 ```
+
+The frontend dependency tree expects Node 22.13.0 or newer for the Vite and
+Supabase packages used by the beta build. Keep the Cloudflare Pages
+`NODE_VERSION` value aligned with `frontend/package.json`.
 
 If the Cloudflare preset list does not include `Vite`, leave the framework
 preset as `None` and enter the build command, output directory, and root
