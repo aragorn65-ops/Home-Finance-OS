@@ -102,6 +102,9 @@ create table migration_drafts (
   backup_summary jsonb not null,
   status text not null default 'uploaded',
   validation_summary jsonb,
+  validated_at timestamptz,
+  committed_at timestamptz,
+  aborted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -611,6 +611,12 @@ test(
                                 "Casa Test",
                               status:
                                 "uploaded",
+                              validated_at:
+                                null,
+                              committed_at:
+                                null,
+                              aborted_at:
+                                null,
                               created_at:
                                 "2026-07-22T02:00:00Z",
                               updated_at:
@@ -663,7 +669,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,status,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,committed_at,aborted_at,created_at,updated_at",
           column:
             "id",
           value:
@@ -673,7 +679,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,status,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,committed_at,aborted_at,created_at,updated_at",
           column:
             "owner_user_id",
           value:
@@ -1616,6 +1622,12 @@ test(
                             "Casa Test",
                           status:
                             "uploaded",
+                          validated_at:
+                            "2026-07-22T04:00:00Z",
+                          committed_at:
+                            "2026-07-22T05:00:00Z",
+                          aborted_at:
+                            null,
                           created_at:
                             "2026-07-22T02:00:00Z",
                           updated_at:
@@ -1634,6 +1646,12 @@ test(
                             "Casa Test",
                           status:
                             "unknown",
+                          validated_at:
+                            null,
+                          committed_at:
+                            null,
+                          aborted_at:
+                            null,
                           created_at:
                             "2026-07-22T02:00:00Z",
                           updated_at:
@@ -1666,7 +1684,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,status,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,committed_at,aborted_at,created_at,updated_at",
           column:
             "owner_user_id",
           value:
@@ -1701,6 +1719,18 @@ test(
     assert.equal(
       drafts[0]?.updatedAt.toISOString(),
       "2026-07-22T03:00:00.000Z"
+    );
+    assert.equal(
+      drafts[0]?.validatedAt?.toISOString(),
+      "2026-07-22T04:00:00.000Z"
+    );
+    assert.equal(
+      drafts[0]?.committedAt?.toISOString(),
+      "2026-07-22T05:00:00.000Z"
+    );
+    assert.equal(
+      drafts[0]?.abortedAt,
+      undefined
     );
   }
 );
