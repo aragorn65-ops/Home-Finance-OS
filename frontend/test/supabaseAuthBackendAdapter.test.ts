@@ -41,7 +41,7 @@ test(
 );
 
 test(
-  "Supabase auth adapter blocks live actions until the spike is wired",
+  "Supabase auth adapter reads a configured client session",
   async () => {
     const {
       SupabaseAuthBackendAdapter,
@@ -55,17 +55,82 @@ test(
           "https://example.supabase.co",
         anonKey:
           "anon-key",
+        client: {
+          auth: {
+            async getSession() {
+              return {
+                data: {
+                  session: {
+                    expires_at:
+                      1767225600,
+                    user: {
+                      id:
+                        "user-1",
+                      email:
+                        "test@example.com",
+                      created_at:
+                        "2026-07-22T00:00:00Z",
+                      updated_at:
+                        "2026-07-22T01:00:00Z",
+                      user_metadata: {
+                        display_name:
+                          "Test User",
+                      },
+                    },
+                  },
+                },
+                error: null,
+              };
+            },
+            async getUser() {
+              return {
+                data: {
+                  user: {
+                    id:
+                      "user-1",
+                    email:
+                      "test@example.com",
+                    created_at:
+                      "2026-07-22T00:00:00Z",
+                    updated_at:
+                      "2026-07-22T01:00:00Z",
+                    user_metadata: {
+                      display_name:
+                        "Test User",
+                    },
+                  },
+                },
+                error: null,
+              };
+            },
+            async signOut() {
+              return {
+                error: null,
+              };
+            },
+          },
+        },
       });
 
-    assert.deepEqual(
-      await adapter.getSession(),
-      {
-        status: "signed-out",
-      }
-    );
     assert.equal(
       adapter.isConfigured(),
       true
+    );
+
+    const session =
+      await adapter.getSession();
+
+    assert.equal(
+      session.status,
+      "signed-in"
+    );
+    assert.equal(
+      session.user?.email,
+      "test@example.com"
+    );
+    assert.equal(
+      session.user?.displayName,
+      "Test User"
     );
 
     await assert.rejects(

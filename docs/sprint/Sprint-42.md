@@ -23,12 +23,12 @@ Supabase spike environment variables are set.
 ## Planned Scope
 
 * [x] Show Supabase adapter selection and missing-env state in auth diagnostics.
-* [ ] Add dependency-gated Supabase client creation for disposable-project
+* [x] Add dependency-gated Supabase client creation for disposable-project
       testing.
-* [ ] Wire read-only Supabase session lookup behind
+* [x] Wire read-only Supabase session lookup behind
       `VITE_HFOS_AUTH_PROVIDER=supabase`.
-* [ ] Add tests proving missing env fails closed and configured env stays
-      signed out until live auth is intentionally wired.
+* [x] Add tests proving missing env fails closed and configured env can map a
+      Supabase session without enabling migration writes.
 
 ---
 

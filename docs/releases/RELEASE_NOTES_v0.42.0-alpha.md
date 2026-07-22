@@ -19,6 +19,12 @@ disposable-project runtime testing while keeping the deployed beta local-first.
 
 * Added auth diagnostics visibility for Supabase adapter selection and missing
   environment configuration.
+* Added the Supabase JavaScript client dependency for the disposable-project
+  spike.
+* Wired read-only Supabase session and current-user lookup behind the
+  `supabase` provider flag.
+* Lazy-loaded the Supabase client so default local-first beta builds do not
+  pull it into the initial app bundle.
 
 ---
 

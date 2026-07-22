@@ -16,6 +16,12 @@ This project follows a sprint-based development process.
   readiness.
 * Added auth diagnostics visibility for Supabase adapter selection and
   missing environment configuration.
+* Added the Supabase JavaScript client dependency for disposable-project
+  testing.
+* Wired read-only Supabase session and current-user lookup behind the
+  `supabase` provider flag.
+* Lazy-loaded the Supabase client so default local-first beta builds do not
+  pull it into the initial app bundle.
 
 ### Verified
 
