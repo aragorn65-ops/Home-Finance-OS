@@ -1050,7 +1050,11 @@ export class SupabaseAuthBackendAdapter
   ):
     Promise<void> {
     if (!this.isConfigured()) {
-      return Promise.resolve();
+      throw new Error(
+        this.createUnavailableMessage(
+          `migration abort for ${draftId}`
+        )
+      );
     }
 
     const abortResult =

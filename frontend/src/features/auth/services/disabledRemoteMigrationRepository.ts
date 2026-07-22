@@ -48,8 +48,12 @@ export class DisabledRemoteMigrationRepository
     );
   }
 
-  async abortDraft():
+  async abortDraft(
+    draftId: string
+  ):
     Promise<void> {
-    return Promise.resolve();
+    throw new Error(
+      `Remote migration abort is disabled for ${draftId}.`
+    );
   }
 }

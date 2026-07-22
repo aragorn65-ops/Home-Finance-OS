@@ -8,6 +8,23 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.67.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 67 notes and release notes for migration abort disabled guards.
+* Changed disabled and misconfigured migration abort paths to fail closed.
+* Added tests proving disabled and misconfigured abort cannot report success.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with forty-four passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified disabled or misconfigured Abort actions reject instead of no-op.
+
+---
+
 ## [0.66.0-alpha] - 2026-07-22
 
 ### Added

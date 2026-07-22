@@ -61,6 +61,8 @@ Sprint 65 verifies the remote commit result still matches the local checkpoint
 before saving the local household link.
 Sprint 66 adds local preflight guards for migration Validate and Abort actions
 before remote RPC calls.
+Sprint 67 makes disabled or misconfigured migration Abort paths fail closed
+instead of reporting silent no-op success.
 
 ---
 
@@ -103,6 +105,7 @@ before remote RPC calls.
 | v0.64.0-alpha | Migration commit preconditions |
 | v0.65.0-alpha | Migration commit result link guard |
 | v0.66.0-alpha | Migration action preconditions |
+| v0.67.0-alpha | Migration abort disabled guard |
 
 ---
 
@@ -170,6 +173,9 @@ Sprint 65 keeps local link persistence guarded by matching commit results and
 still leaves production credentials, full record import, sync, local data
 deletion, and production migration disabled.
 Sprint 66 keeps Validate and Abort behind local action preconditions and still
+leaves production credentials, full record import, sync, local data deletion,
+and production migration disabled.
+Sprint 67 keeps disabled and misconfigured Abort paths fail-closed and still
 leaves production credentials, full record import, sync, local data deletion,
 and production migration disabled.
 
