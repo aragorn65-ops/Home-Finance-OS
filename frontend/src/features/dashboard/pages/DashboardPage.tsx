@@ -11,6 +11,7 @@ import {
   ReceiptText,
   ShieldCheck,
   Target,
+  UsersRound,
   WalletCards,
   WalletMinimal,
 } from "lucide-react";
@@ -54,6 +55,7 @@ import SettlementAllocationService from "../../settlements/services/SettlementAl
 import SettlementApplicationDetailsService from "../../settlements/services/SettlementApplicationDetailsService";
 import SettlementService from "../../settlements/services/SettlementService";
 import TransactionService from "../../transactions/services/TransactionService";
+import HouseholdExpenseContributionService from "../../transactions/services/HouseholdExpenseContributionService";
 import UtilityProviderBillService from "../../utilities/services/UtilityProviderBillService";
 
 import type {
@@ -616,6 +618,25 @@ export default function DashboardPage() {
       )
     );
 
+  const expenseContributionSummary =
+    useMemo(
+      () =>
+        householdId
+          ? HouseholdExpenseContributionService
+              .getMonthlySummary(
+                householdId,
+                selectedMonth
+              )
+          : {
+              totalAmount: 0,
+              memberContributions: [],
+            },
+      [
+        householdId,
+        selectedMonth,
+      ]
+    );
+
   const effectiveRemittanceRate =
     lockedExpenseCurrency ===
     remittanceCurrency
@@ -909,6 +930,95 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
+        </section>
+
+        <section className="dashboard-panel dashboard-panel--contributions">
+          <div className="dashboard-panel__header">
+            <h2>Member Expense Contribution</h2>
+
+            <Link to="/app/analytics">
+              Analyze
+              <ArrowRight
+                size={14}
+                aria-hidden="true"
+              />
+            </Link>
+          </div>
+
+          <div className="member-contribution-total">
+            <span>
+              Household expenses
+            </span>
+
+            <strong>
+              {formatCurrency(
+                expenseContributionSummary.totalAmount,
+                lockedExpenseCurrency
+              )}
+            </strong>
+          </div>
+
+          {expenseContributionSummary
+            .memberContributions.length ===
+            0 ||
+          expenseContributionSummary.totalAmount ===
+            0 ? (
+            <p className="dashboard-empty">
+              No shared household expense contributions for this month.
+            </p>
+          ) : (
+            <div className="member-contribution-list">
+              {expenseContributionSummary
+                .memberContributions
+                .slice(0, 5)
+                .map((contribution) => (
+                  <div
+                    key={contribution.memberId}
+                    className="member-contribution-row"
+                  >
+                    <div className="member-contribution-row__top">
+                      <span>
+                        <UsersRound
+                          size={14}
+                          aria-hidden="true"
+                        />
+                        {contribution.memberName}
+                      </span>
+
+                      <strong>
+                        {formatCurrency(
+                          contribution.amount,
+                          lockedExpenseCurrency
+                        )}
+                      </strong>
+                    </div>
+
+                    <div className="member-contribution-row__track">
+                      <div
+                        className="member-contribution-row__bar"
+                        style={{
+                          width: `${Math.max(
+                            contribution.percentage,
+                            contribution.amount > 0
+                              ? 4
+                              : 0
+                          )}%`,
+                        }}
+                      />
+                    </div>
+
+                    <p>
+                      {contribution.percentage}% across{" "}
+                      {contribution.expenseCount} expense
+                      {contribution.expenseCount ===
+                      1
+                        ? ""
+                        : "s"}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          )}
         </section>
 
         <section className="dashboard-panel dashboard-panel--private">

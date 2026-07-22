@@ -180,12 +180,14 @@
 
 .analytics-category__top span,
 .analytics-settlement__top > div,
+.analytics-contribution__top span,
 .analytics-account-row__top span,
 .analytics-savings-goal__top span {
   min-width: 0;
 }
 
 .analytics-category__top strong,
+.analytics-contribution__top strong,
 .analytics-account-row__top strong,
 .analytics-savings-goal__top strong {
   overflow-wrap: anywhere;
@@ -256,6 +258,71 @@
   font-size: var(--font-size-sm);
   overflow-wrap: anywhere;
   text-align: right;
+}
+
+.analytics-contributions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.analytics-contribution-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border: 1px solid var(--color-brand-200);
+  border-radius: var(--radius-lg);
+  background: var(--color-brand-50);
+  color: var(--color-brand-800);
+  padding: var(--space-3);
+}
+
+.analytics-contribution-total span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.analytics-contribution-total strong {
+  color: var(--color-text-strong);
+  font-size: var(--font-size-lg);
+  overflow-wrap: anywhere;
+}
+
+.analytics-contribution {
+  min-width: 0;
+}
+
+.analytics-contribution__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+  color: var(--color-text-strong);
+  font-size: var(--font-size-sm);
+}
+
+.analytics-contribution__track {
+  overflow: hidden;
+  height: 0.55rem;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+}
+
+.analytics-contribution__bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-info);
+}
+
+.analytics-contribution p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
 }
 
 .analytics-settled-state {
@@ -538,6 +605,7 @@
   }
 
   .analytics-category__top,
+  .analytics-contribution__top,
   .analytics-settlement-total,
   .analytics-settlement__top,
   .analytics-account-total,
@@ -548,6 +616,7 @@
   }
 
   .analytics-category__top strong,
+  .analytics-contribution__top strong,
   .analytics-drilldown__item strong,
   .analytics-settlement__top strong,
   .analytics-account-row__top strong,

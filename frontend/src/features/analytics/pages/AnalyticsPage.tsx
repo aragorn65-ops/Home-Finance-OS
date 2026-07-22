@@ -2,14 +2,16 @@ import "./AnalyticsPage.css";
 
 import {
   AlertCircle,
-  BarChart3,
   CheckCircle2,
   HandCoins,
   PiggyBank,
   ReceiptText,
   TrendingDown,
-  TrendingUp,
+  UsersRound,
   WalletCards,
+} from "lucide-react";
+import type {
+  LucideIcon,
 } from "lucide-react";
 import {
   useMemo,
@@ -34,7 +36,7 @@ import AccountService from "../../accounts/services/AccountService";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 import SettlementAllocationService from "../../settlements/services/SettlementAllocationService";
 import useSavings from "../../savings/hooks/useSavings";
-import TransactionAnalyticsService from "../../transactions/services/TransactionAnalyticsService";
+import HouseholdExpenseContributionService from "../../transactions/services/HouseholdExpenseContributionService";
 import TransactionService from "../../transactions/services/TransactionService";
 
 import {
@@ -50,7 +52,7 @@ interface AnalyticsMetricProps {
   label: string;
   value: string;
   subtitle: string;
-  icon: typeof TrendingUp;
+  icon: LucideIcon;
   tone: "positive" | "negative" | "neutral";
 }
 
@@ -395,6 +397,9 @@ export default function AnalyticsPage() {
   const household =
     loadHousehold();
 
+  const householdId =
+    household?.id ?? "";
+
   const currency =
     household?.currency ?? "PHP";
 
@@ -588,18 +593,10 @@ export default function AnalyticsPage() {
       ]
     );
 
-  const totalIncome =
-    TransactionService.getTotalIncome(
-      selectedMonth
-    );
-
   const totalExpenses =
     TransactionService.getTotalExpenses(
       selectedMonth
     );
-
-  const netCashFlow =
-    totalIncome - totalExpenses;
 
   const categoryTotals =
     useMemo(
@@ -660,26 +657,33 @@ export default function AnalyticsPage() {
       0
     );
 
-  const cashFlowTrend =
+  const expenseContributionSummary =
     useMemo(
       () =>
-        TransactionAnalyticsService
-          .getMonthlyCashFlow(
-            selectedMonth
-          ),
-      [selectedMonth]
+        householdId
+          ? HouseholdExpenseContributionService
+              .getMonthlySummary(
+                householdId,
+                selectedMonth
+              )
+          : {
+              totalAmount: 0,
+              memberContributions: [],
+            },
+      [
+        householdId,
+        selectedMonth,
+      ]
     );
 
-  const maximumTrendAmount =
-    Math.max(
-      1,
-      ...cashFlowTrend.flatMap(
-        (item) => [
-          item.income,
-          item.expenses,
-        ]
+  const contributingMemberCount =
+    expenseContributionSummary
+      .memberContributions
+      .filter(
+        (contribution) =>
+          contribution.amount > 0
       )
-    );
+      .length;
 
   return (
     <>
@@ -705,44 +709,35 @@ export default function AnalyticsPage() {
       <div className="analytics-page">
         <section className="analytics-metrics">
           <AnalyticsMetric
-            label="Income"
-            value={formatCurrency(
-              totalIncome,
-              currency
-            )}
-            subtitle="Selected month"
-            icon={TrendingUp}
-            tone="positive"
-          />
-
-          <AnalyticsMetric
-            label="Expenses"
+            label="Household Expenses"
             value={formatCurrency(
               totalExpenses,
               currency
             )}
             subtitle="Selected month"
-            icon={TrendingDown}
+            icon={ReceiptText}
             tone="negative"
           />
 
           <AnalyticsMetric
-            label="Net Cash Flow"
+            label="Members Contributing"
+            value={String(
+              contributingMemberCount
+            )}
+            subtitle={`${expenseContributionSummary.memberContributions.length} active members tracked`}
+            icon={UsersRound}
+            tone="neutral"
+          />
+
+          <AnalyticsMetric
+            label="Outstanding"
             value={formatCurrency(
-              netCashFlow,
+              totalSettlementOutstanding,
               currency
             )}
-            subtitle={
-              netCashFlow >= 0
-                ? "Income exceeds expenses"
-                : "Expenses exceed income"
-            }
-            icon={BarChart3}
-            tone={
-              netCashFlow >= 0
-                ? "positive"
-                : "negative"
-            }
+            subtitle="Unpaid member reimbursements"
+            icon={TrendingDown}
+            tone="negative"
           />
         </section>
 
@@ -750,88 +745,90 @@ export default function AnalyticsPage() {
           <Card className="analytics-panel analytics-panel--wide">
             <div className="analytics-panel__header">
               <div>
-                <h2>Six-Month Cash Flow</h2>
+                <h2>Member Expense Contribution</h2>
 
                 <p>
-                  Income and expenses ending in{" "}
+                  Household-expense responsibility for{" "}
                   {formatMonthLabel(
                     selectedMonth
                   )}
                   .
                 </p>
               </div>
+
+              <UsersRound
+                size={18}
+                aria-hidden="true"
+              />
             </div>
 
-            <div className="analytics-trend">
-              {cashFlowTrend.map((item) => {
-                const incomeWidth =
-                  Math.max(
-                    2,
-                    (
-                      item.income /
-                      maximumTrendAmount
-                    ) *
-                      100
-                  );
+            {expenseContributionSummary.totalAmount ===
+            0 ? (
+              <p className="analytics-empty">
+                No shared household expense contributions for this month.
+              </p>
+            ) : (
+              <div className="analytics-contributions">
+                <div className="analytics-contribution-total">
+                  <span>
+                    Household expenses
+                  </span>
 
-                const expenseWidth =
-                  Math.max(
-                    2,
-                    (
-                      item.expenses /
-                      maximumTrendAmount
-                    ) *
-                      100
-                  );
+                  <strong>
+                    {formatCurrency(
+                      expenseContributionSummary.totalAmount,
+                      currency
+                    )}
+                  </strong>
+                </div>
 
-                return (
+                {expenseContributionSummary
+                  .memberContributions
+                  .map((contribution) => (
                   <div
-                    key={item.month}
-                    className="analytics-trend__row"
+                    key={contribution.memberId}
+                    className="analytics-contribution"
                   >
-                    <span className="analytics-trend__month">
-                      {item.month}
-                    </span>
-
-                    <div className="analytics-trend__bars">
-                      <div className="analytics-trend__track">
-                        <span
-                          className="analytics-trend__bar analytics-trend__bar--income"
-                          style={{
-                            width: `${incomeWidth}%`,
-                          }}
-                        />
-                      </div>
-
-                      <div className="analytics-trend__track">
-                        <span
-                          className="analytics-trend__bar analytics-trend__bar--expense"
-                          style={{
-                            width: `${expenseWidth}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="analytics-trend__values">
+                    <div className="analytics-contribution__top">
                       <span>
-                        {formatCurrency(
-                          item.income,
-                          currency
-                        )}
+                        {contribution.memberName}
                       </span>
 
-                      <span>
+                      <strong>
                         {formatCurrency(
-                          item.expenses,
+                          contribution.amount,
                           currency
                         )}
-                      </span>
+                      </strong>
                     </div>
+
+                    <div className="analytics-contribution__track">
+                      <span
+                        className="analytics-contribution__bar"
+                        style={{
+                          width: `${Math.max(
+                            contribution.percentage,
+                            contribution.amount >
+                              0
+                              ? 3
+                              : 0
+                          )}%`,
+                        }}
+                      />
+                    </div>
+
+                    <p>
+                      {contribution.percentage}% across{" "}
+                      {contribution.expenseCount} expense
+                      {contribution.expenseCount ===
+                      1
+                        ? ""
+                        : "s"}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
+                  ))}
+              </div>
+            )}
           </Card>
 
           <Card className="analytics-panel">
