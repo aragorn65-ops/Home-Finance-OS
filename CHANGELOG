@@ -8,6 +8,27 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.78.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 78 notes and release notes for backup summary link-status
+  guards.
+* Added validation that linked backup summaries must include a non-empty remote
+  household id.
+* Added tests proving ordinary and password-protected backup summaries reject
+  blank linked remote household ids.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with fifty-nine passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified contradictory linked backup summary metadata is rejected before
+  restore.
+
+---
+
 ## [0.77.0-alpha] - 2026-07-22
 
 ### Added
