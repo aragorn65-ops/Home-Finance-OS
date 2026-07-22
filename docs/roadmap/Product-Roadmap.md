@@ -89,6 +89,8 @@ Sprint 79 adds focused coverage for unlinked backup summaries that incorrectly
 carry remote household ids.
 Sprint 80 pins the frontend Node runtime expectation for repeatable Cloudflare
 Pages builds.
+Sprint 81 expands Cloudflare Pages route smoke checks across every first-class
+sidebar route.
 
 ---
 
@@ -145,6 +147,7 @@ Pages builds.
 | v0.78.0-alpha | Backup summary link-status guard |
 | v0.79.0-alpha | Unlinked backup summary guard coverage |
 | v0.80.0-alpha | Cloudflare Pages Node runtime pin |
+| v0.81.0-alpha | Cloudflare route smoke checklist |
 
 ---
 
@@ -181,6 +184,8 @@ Sprint 79 proves unlinked ordinary and password-protected backup summaries
 cannot carry remote household ids through validation.
 Sprint 80 keeps Cloudflare Pages builds aligned with the frontend Node engine
 requirement.
+Sprint 81 makes deployed route refresh validation explicit for every
+first-class app route.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior

@@ -8,6 +8,26 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.81.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 81 notes and release notes for expanded Cloudflare route smoke
+  checks.
+* Expanded the Cloudflare Pages smoke checklist to cover every first-class
+  sidebar route.
+* Added the same full route refresh list to the deployment guide.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with sixty-one passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the smoke checklist covers `/`, `/app`, and each top-level app
+  route.
+
+---
+
 ## [0.80.0-alpha] - 2026-07-22
 
 ### Added

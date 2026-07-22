@@ -21,17 +21,25 @@ back to `main`.
 
 ## Route Checks
 
-Open and refresh each route:
+Open and refresh each route. These are the first-class sidebar routes plus the
+startup route:
 
 ```text
 /
 /app
+/app/household-members
+/app/accounts
 /app/analytics
 /app/transactions
+/app/utilities
 /app/settlements
+/app/savings
+/app/help-center
+/app/settings
 ```
 
-Expected result: each route loads without a Cloudflare 404.
+Expected result: each route loads without a Cloudflare 404, browser console
+chunk-load error, or blank app shell.
 
 ---
 
