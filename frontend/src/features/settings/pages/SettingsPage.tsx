@@ -1740,6 +1740,18 @@ export default function SettingsPage() {
               </p>
             </div>
 
+            <div className="settings-backup-safety-note">
+              <strong>
+                Keep your backup file safe.
+              </strong>
+
+              <p>
+                HFOS saves beta data in this browser. If browser
+                data is cleared or the device is lost, HFOS cannot
+                recover the household without a backup file.
+              </p>
+            </div>
+
             {(backupMessage || backupError) && (
               <div
                 role={

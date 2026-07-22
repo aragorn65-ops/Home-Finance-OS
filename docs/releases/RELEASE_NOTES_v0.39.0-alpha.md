@@ -3,7 +3,7 @@
 ## Post-Deploy Beta Hardening
 
 **Release Date:** July 22, 2026
-**Status:** In progress
+**Status:** Complete
 **Sprint:** Sprint 39
 
 ---
@@ -21,9 +21,10 @@ frontend, and household data remains in the tester's browser localStorage.
 ## Highlights
 
 * Added a visible local-first beta notice to the deployed app shell.
+* Added a Settings backup safety note for browser-local data recovery limits.
 * Reconfirmed backup export and restore on the deployed Cloudflare Pages site.
 * Documented the deployed smoke-test path using the live beta URL.
-* Keep production login, sync, and shared household collaboration out of scope.
+* Kept production login, sync, and shared household collaboration out of scope.
 
 ---
 
@@ -42,4 +43,6 @@ frontend, and household data remains in the tester's browser localStorage.
 * Backup import and restore passed on https://home-finance-os.pages.dev.
 * Dashboard, Transactions, Settlements, and Analytics loaded successfully after
   restore.
-* Settings backup/restore copy required no changes during this pass.
+* `npm.cmd test` passed.
+* `npm.cmd run build` passed.
+* `git diff --check` passed.
