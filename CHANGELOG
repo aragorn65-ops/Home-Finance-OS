@@ -30,7 +30,10 @@ This project follows a sprint-based development process.
 
 ### Verified
 
-* Pending Sprint 40 validation.
+* Verified `npm.cmd test` completes with seven passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified Sprint 40 remained docs/decision scope only.
 
 ---
 

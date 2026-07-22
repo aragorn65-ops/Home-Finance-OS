@@ -5,7 +5,7 @@
 **Release:** v0.40.0-alpha
 **Date:** 2026-07-22
 **Branch:** sprint-40-auth-cloud-decision
-**Status:** In progress
+**Status:** Completed
 
 ---
 
@@ -45,6 +45,25 @@ mixing prototype auth with production data migration.
 ---
 
 ## Verification Targets
+
+```text
+npm.cmd test
+npm.cmd run build
+git diff --check
+```
+
+---
+
+## Closure Notes
+
+Sprint 40 closed as a decision-prep sprint. No production auth, cloud sync,
+Google Drive configuration, server-side storage, or automatic local-to-cloud
+migration was implemented.
+
+Supabase Auth + Postgres/RLS is the leading candidate for the next spike, with
+decision criteria and stop conditions documented before implementation.
+
+Final closure validation:
 
 ```text
 npm.cmd test
