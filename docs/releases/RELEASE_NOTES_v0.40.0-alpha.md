@@ -28,6 +28,8 @@ criteria are explicit.
 * Identified the next smallest implementation slice after the decision.
 * Compared provider/storage candidates and identified Supabase Auth +
   Postgres/RLS as the leading spike candidate.
+* Drafted the Supabase schema, RLS, adapter, and proof plan for the first
+  implementation spike.
 
 ---
 

@@ -45,6 +45,7 @@ The Sprint 40 decision criteria are tracked in:
 ```text
 docs/architecture/AUTH_CLOUD_DECISION_CRITERIA.md
 docs/architecture/AUTH_PROVIDER_COMPARISON.md
+docs/architecture/SUPABASE_SPIKE_PLAN.md
 ```
 
 ---

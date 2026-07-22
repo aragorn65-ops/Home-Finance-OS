@@ -20,6 +20,8 @@ This project follows a sprint-based development process.
   Google Drive backup boundaries.
 * Added an auth provider comparison matrix for Supabase, Firebase,
   Cloudflare-native storage, and a custom backend.
+* Added a Supabase spike plan with schema draft, RLS policy sketch, adapter
+  mapping, proof criteria, and stop conditions.
 
 ### Changed
 
