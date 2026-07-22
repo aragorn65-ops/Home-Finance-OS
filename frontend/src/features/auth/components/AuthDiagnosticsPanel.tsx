@@ -370,6 +370,59 @@ export default function AuthDiagnosticsPanel() {
               </div>
             </section>
           )}
+
+          {diagnostics.accountSummary && (
+            <section className="auth-diagnostics__account-summary">
+              <h3>
+                Account Visibility
+              </h3>
+              <dl>
+                <div>
+                  <dt>Total</dt>
+                  <dd>
+                    {diagnostics.accountSummary.totalCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Active</dt>
+                  <dd>
+                    {diagnostics.accountSummary.activeCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Private</dt>
+                  <dd>
+                    {diagnostics.accountSummary.privateVisibleCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Household</dt>
+                  <dd>
+                    {diagnostics.accountSummary.householdVisibleCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Assets</dt>
+                  <dd>
+                    {diagnostics.accountSummary.assetCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Liabilities</dt>
+                  <dd>
+                    {diagnostics.accountSummary.liabilityCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Currencies</dt>
+                  <dd>
+                    {diagnostics.accountSummary.currencies.join(", ") ||
+                      "none"}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          )}
         </>
       )}
 

@@ -56,7 +56,10 @@ interface SupabaseFilterBuilder {
   in(
     column: string,
     values: string[]
-  ): Promise<SupabaseHouseholdRowsResult>;
+  ): Promise<
+    | SupabaseHouseholdRowsResult
+    | SupabaseAccountRowsResult
+  >;
 }
 
 type SupabaseAuthChangeCallback = (
@@ -106,6 +109,15 @@ interface SupabaseMembershipRowsResult {
 interface SupabaseHouseholdRowsResult {
   data:
     | SupabaseHouseholdRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseAccountRowsResult {
+  data:
+    | SupabaseAccountRow[]
     | null;
   error:
     | SupabaseAuthError
@@ -163,10 +175,30 @@ interface SupabaseHouseholdRow {
   status: string;
 }
 
+interface SupabaseAccountRow {
+  household_id: string;
+  owner_member_id?: string | null;
+  account_class: string;
+  visibility: string;
+  currency: string;
+  is_active: boolean;
+}
+
 export interface SupabaseHouseholdDiagnostic {
   householdId: string;
   householdName: string;
   status: string;
+}
+
+export interface SupabaseAccountDiagnosticSummary {
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  householdVisibleCount: number;
+  privateVisibleCount: number;
+  assetCount: number;
+  liabilityCount: number;
+  currencies: string[];
 }
 
 export interface SupabaseAuthBackendAdapterConfig {
@@ -396,18 +428,20 @@ export class SupabaseAuthBackendAdapter
       return [];
     }
 
+    const householdResult =
+      await (
+      await this.getClient()
+      )
+        .from("households")
+        .select("id,name,status")
+        .in(
+          "id",
+          uniqueHouseholdIds
+        ) as SupabaseHouseholdRowsResult;
     const {
       data,
       error,
-    } = await (
-      await this.getClient()
-    )
-      .from("households")
-      .select("id,name,status")
-      .in(
-        "id",
-        uniqueHouseholdIds
-      );
+    } = householdResult;
 
     if (error) {
       throw new Error(
@@ -428,6 +462,58 @@ export class SupabaseAuthBackendAdapter
         status:
           row.status,
       }));
+  }
+
+  async createAccountDiagnosticSummary(
+    householdIds: string[]
+  ): Promise<SupabaseAccountDiagnosticSummary> {
+    const uniqueHouseholdIds =
+      Array.from(
+        new Set(
+          householdIds.filter(Boolean)
+        )
+      );
+
+    if (
+      uniqueHouseholdIds.length ===
+      0
+    ) {
+      return createEmptyAccountDiagnosticSummary();
+    }
+
+    const accountResult =
+      await (
+      await this.getClient()
+      )
+        .from("accounts")
+        .select(
+          [
+            "household_id",
+            "owner_member_id",
+            "account_class",
+            "visibility",
+            "currency",
+            "is_active",
+          ].join(",")
+        )
+        .in(
+          "household_id",
+          uniqueHouseholdIds
+        ) as SupabaseAccountRowsResult;
+    const {
+      data,
+      error,
+    } = accountResult;
+
+    if (error) {
+      throw new Error(
+        `Supabase account diagnostics failed: ${error.message}`
+      );
+    }
+
+    return summarizeSupabaseAccountRows(
+      data ?? []
+    );
   }
 
   async createHouseholdClaimDraft(
@@ -718,6 +804,80 @@ function mapOptionalSupabaseDate(
   return value
     ? new Date(value)
     : undefined;
+}
+
+function createEmptyAccountDiagnosticSummary():
+  SupabaseAccountDiagnosticSummary {
+  return {
+    totalCount:
+      0,
+    activeCount:
+      0,
+    inactiveCount:
+      0,
+    householdVisibleCount:
+      0,
+    privateVisibleCount:
+      0,
+    assetCount:
+      0,
+    liabilityCount:
+      0,
+    currencies: [],
+  };
+}
+
+function summarizeSupabaseAccountRows(
+  rows: SupabaseAccountRow[]
+): SupabaseAccountDiagnosticSummary {
+  const summary =
+    createEmptyAccountDiagnosticSummary();
+  const currencies =
+    new Set<string>();
+
+  rows.forEach((row) => {
+    summary.totalCount += 1;
+
+    if (row.is_active) {
+      summary.activeCount += 1;
+    } else {
+      summary.inactiveCount += 1;
+    }
+
+    if (
+      row.visibility ===
+      "private"
+    ) {
+      summary.privateVisibleCount += 1;
+    } else if (
+      row.visibility ===
+      "household"
+    ) {
+      summary.householdVisibleCount += 1;
+    }
+
+    if (
+      row.account_class ===
+      "asset"
+    ) {
+      summary.assetCount += 1;
+    } else if (
+      row.account_class ===
+      "liability"
+    ) {
+      summary.liabilityCount += 1;
+    }
+
+    if (row.currency) {
+      currencies.add(row.currency);
+    }
+  });
+
+  summary.currencies =
+    Array.from(currencies)
+      .sort();
+
+  return summary;
 }
 
 function createSupabaseAdapterConfig():

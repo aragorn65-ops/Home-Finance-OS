@@ -584,3 +584,149 @@ test(
     );
   }
 );
+
+test(
+  "Supabase auth adapter creates aggregate account diagnostics",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const queries: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  async eq() {
+                    return {
+                      data: [],
+                      error: null,
+                    };
+                  },
+                  async in(
+                    column: string,
+                    values: string[]
+                  ) {
+                    queries.push({
+                      tableName,
+                      columns,
+                      column,
+                      values,
+                    });
+
+                    return {
+                      data: [
+                        {
+                          household_id:
+                            "household-1",
+                          owner_member_id:
+                            "member-1",
+                          account_class:
+                            "asset",
+                          visibility:
+                            "household",
+                          currency:
+                            "PHP",
+                          is_active:
+                            true,
+                        },
+                        {
+                          household_id:
+                            "household-1",
+                          owner_member_id:
+                            "member-1",
+                          account_class:
+                            "liability",
+                          visibility:
+                            "private",
+                          currency:
+                            "USD",
+                          is_active:
+                            false,
+                        },
+                        {
+                          household_id:
+                            "household-2",
+                          owner_member_id:
+                            "member-2",
+                          account_class:
+                            "asset",
+                          visibility:
+                            "private",
+                          currency:
+                            "PHP",
+                          is_active:
+                            true,
+                        },
+                      ],
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const summary =
+      await adapter
+        .createAccountDiagnosticSummary([
+          "household-1",
+          "household-2",
+          "household-1",
+          "",
+        ]);
+
+    assert.deepEqual(
+      queries,
+      [
+        {
+          tableName:
+            "accounts",
+          columns:
+            "household_id,owner_member_id,account_class,visibility,currency,is_active",
+          column:
+            "household_id",
+          values: [
+            "household-1",
+            "household-2",
+          ],
+        },
+      ]
+    );
+    assert.deepEqual(
+      summary,
+      {
+        totalCount:
+          3,
+        activeCount:
+          2,
+        inactiveCount:
+          1,
+        householdVisibleCount:
+          1,
+        privateVisibleCount:
+          2,
+        assetCount:
+          2,
+        liabilityCount:
+          1,
+        currencies: [
+          "PHP",
+          "USD",
+        ],
+      }
+    );
+  }
+);
