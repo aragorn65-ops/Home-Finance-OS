@@ -8,6 +8,30 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.42.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 42 notes and release notes for Supabase client wiring
+  readiness.
+* Added auth diagnostics visibility for Supabase adapter selection and
+  missing environment configuration.
+* Added the Supabase JavaScript client dependency for disposable-project
+  testing.
+* Wired read-only Supabase session and current-user lookup behind the
+  `supabase` provider flag.
+* Lazy-loaded the Supabase client so default local-first beta builds do not
+  pull it into the initial app bundle.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with nine passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the Supabase client is lazy-loaded for configured spike sessions.
+
+---
+
 ## [0.41.0-alpha] - 2026-07-22
 
 ### Added

@@ -13,9 +13,71 @@ import type {
   RemoteMigrationValidation,
 } from "../models";
 
+interface SupabaseAuthClient {
+  auth: {
+    getSession():
+      Promise<SupabaseSessionResult>;
+    getUser():
+      Promise<SupabaseUserResult>;
+    signOut():
+      Promise<SupabaseErrorResult>;
+  };
+}
+
+interface SupabaseSessionResult {
+  data: {
+    session:
+      | SupabaseSession
+      | null;
+  };
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseUserResult {
+  data: {
+    user:
+      | SupabaseUser
+      | null;
+  };
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseErrorResult {
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseSession {
+  expires_at?: number;
+  user: SupabaseUser;
+}
+
+interface SupabaseUser {
+  id: string;
+  email?: string;
+  created_at?: string;
+  updated_at?: string;
+  user_metadata?: {
+    display_name?: string;
+    full_name?: string;
+    name?: string;
+    avatar_url?: string;
+  };
+}
+
+interface SupabaseAuthError {
+  message: string;
+}
+
 export interface SupabaseAuthBackendAdapterConfig {
   projectUrl?: string;
   anonKey?: string;
+  client?: SupabaseAuthClient;
 }
 
 export class SupabaseAuthBackendAdapter
@@ -34,14 +96,41 @@ export class SupabaseAuthBackendAdapter
 
   async getSession():
     Promise<AuthSession> {
-    if (!this.hasRequiredConfig()) {
+    if (!this.isConfigured()) {
       return {
         status: "disabled",
       };
     }
 
+    const client =
+      await this.getClient();
+    const {
+      data,
+      error,
+    } = await client.auth.getSession();
+
+    if (error) {
+      throw new Error(
+        `Supabase session lookup failed: ${error.message}`
+      );
+    }
+
+    if (!data.session) {
+      return {
+        status: "signed-out",
+      };
+    }
+
     return {
-      status: "signed-out",
+      status: "signed-in",
+      user:
+        mapSupabaseUser(
+          data.session.user
+        ),
+      expiresAt:
+        mapSupabaseSessionExpiry(
+          data.session
+        ),
     };
   }
 
@@ -56,12 +145,47 @@ export class SupabaseAuthBackendAdapter
 
   async signOut():
     Promise<void> {
-    return Promise.resolve();
+    if (!this.isConfigured()) {
+      return Promise.resolve();
+    }
+
+    const {
+      error,
+    } = await (
+      await this.getClient()
+    )
+      .auth.signOut();
+
+    if (error) {
+      throw new Error(
+        `Supabase sign-out failed: ${error.message}`
+      );
+    }
   }
 
   async getCurrentUser():
     Promise<AuthUser | undefined> {
-    return undefined;
+    if (!this.isConfigured()) {
+      return undefined;
+    }
+
+    const {
+      data,
+      error,
+    } = await (
+      await this.getClient()
+    )
+      .auth.getUser();
+
+    if (error) {
+      throw new Error(
+        `Supabase user lookup failed: ${error.message}`
+      );
+    }
+
+    return data.user
+      ? mapSupabaseUser(data.user)
+      : undefined;
   }
 
   async listMemberships():
@@ -120,7 +244,7 @@ export class SupabaseAuthBackendAdapter
     return Promise.resolve();
   }
 
-  private hasRequiredConfig():
+  isConfigured():
     boolean {
     return Boolean(
       this.config.projectUrl &&
@@ -131,7 +255,7 @@ export class SupabaseAuthBackendAdapter
   private createUnavailableMessage(
     action: string
   ): string {
-    if (!this.hasRequiredConfig()) {
+    if (!this.isConfigured()) {
       return (
         "Supabase auth spike is missing " +
         "VITE_SUPABASE_URL or " +
@@ -145,6 +269,89 @@ export class SupabaseAuthBackendAdapter
       "enabling production beta auth."
     );
   }
+
+  private async getClient():
+    Promise<SupabaseAuthClient> {
+    if (this.config.client) {
+      return this.config.client;
+    }
+
+    if (
+      !this.config.projectUrl ||
+      !this.config.anonKey
+    ) {
+      throw new Error(
+        this.createUnavailableMessage(
+          "client creation"
+        )
+      );
+    }
+
+    const {
+      createClient,
+    } = await import(
+      "@supabase/supabase-js"
+    );
+
+    this.config.client =
+      createClient(
+        this.config.projectUrl,
+        this.config.anonKey
+      ) as SupabaseAuthClient;
+
+    return this.config.client;
+  }
+}
+
+function mapSupabaseUser(
+  user: SupabaseUser
+): AuthUser {
+  return {
+    id:
+      user.id,
+    email:
+      user.email ??
+      "unknown@supabase.local",
+    displayName:
+      user.user_metadata
+        ?.display_name ??
+      user.user_metadata
+        ?.full_name ??
+      user.user_metadata
+        ?.name,
+    avatarUrl:
+      user.user_metadata
+        ?.avatar_url,
+    createdAt:
+      mapSupabaseDate(
+        user.created_at
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        user.updated_at ??
+          user.created_at
+      ),
+  };
+}
+
+function mapSupabaseSessionExpiry(
+  session: SupabaseSession
+): Date | undefined {
+  if (!session.expires_at) {
+    return undefined;
+  }
+
+  return new Date(
+    session.expires_at * 1000
+  );
+}
+
+function mapSupabaseDate(
+  value: string | undefined
+): Date {
+  return value
+    ? new Date(value)
+    : new Date(0);
 }
 
 function createSupabaseAdapterConfig():
