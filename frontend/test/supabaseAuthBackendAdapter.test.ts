@@ -103,6 +103,11 @@ test(
                 error: null,
               };
             },
+            async signInWithOtp() {
+              return {
+                error: null,
+              };
+            },
             async signOut() {
               return {
                 error: null,
@@ -135,7 +140,88 @@ test(
 
     await assert.rejects(
       () => adapter.signIn(),
-      /disposable-project spike/
+      /requires an email/
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter sends a disposable magic-link request",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const requests: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          auth: {
+            async getSession() {
+              return {
+                data: {
+                  session: null,
+                },
+                error: null,
+              };
+            },
+            async getUser() {
+              return {
+                data: {
+                  user: null,
+                },
+                error: null,
+              };
+            },
+            async signInWithOtp(
+              request: unknown
+            ) {
+              requests.push(request);
+              return {
+                error: null,
+              };
+            },
+            async signOut() {
+              return {
+                error: null,
+              };
+            },
+          },
+        },
+      });
+
+    const session =
+      await adapter.signIn({
+        email:
+          " tester@example.com ",
+        redirectTo:
+          "https://home-finance-os.pages.dev/app/settings",
+      });
+
+    assert.equal(
+      session.status,
+      "signed-out"
+    );
+    assert.deepEqual(
+      requests,
+      [
+        {
+          email:
+            "tester@example.com",
+          options: {
+            emailRedirectTo:
+              "https://home-finance-os.pages.dev/app/settings",
+            shouldCreateUser:
+              false,
+          },
+        },
+      ]
     );
   }
 );

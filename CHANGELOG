@@ -8,6 +8,27 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.43.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 43 notes and release notes for the Supabase magic-link spike.
+* Added optional email and redirect input to the auth sign-in contract.
+* Added Supabase magic-link request support behind the `supabase` provider flag.
+* Added a Supabase-only diagnostics form for disposable-project magic-link
+  testing.
+* Added tests for trimmed email, redirect preservation, and disabled automatic
+  user creation.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with ten passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified Supabase magic-link requests use `shouldCreateUser: false`.
+
+---
+
 ## [0.42.0-alpha] - 2026-07-22
 
 ### Added

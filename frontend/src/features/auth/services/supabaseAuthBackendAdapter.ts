@@ -1,5 +1,6 @@
 import type {
   AuthBackendAdapter,
+  AuthSignInRequest,
   HouseholdClaimDraft,
   HouseholdClaimResult,
 } from "./AuthBackendAdapter";
@@ -19,6 +20,10 @@ interface SupabaseAuthClient {
       Promise<SupabaseSessionResult>;
     getUser():
       Promise<SupabaseUserResult>;
+    signInWithOtp(
+      credentials:
+        SupabasePasswordlessCredentials
+    ): Promise<SupabaseErrorResult>;
     signOut():
       Promise<SupabaseErrorResult>;
   };
@@ -72,6 +77,14 @@ interface SupabaseUser {
 
 interface SupabaseAuthError {
   message: string;
+}
+
+interface SupabasePasswordlessCredentials {
+  email: string;
+  options?: {
+    emailRedirectTo?: string;
+    shouldCreateUser?: boolean;
+  };
 }
 
 export interface SupabaseAuthBackendAdapterConfig {
@@ -134,13 +147,49 @@ export class SupabaseAuthBackendAdapter
     };
   }
 
-  async signIn():
+  async signIn(
+    request: AuthSignInRequest = {}
+  ):
     Promise<AuthSession> {
-    throw new Error(
-      this.createUnavailableMessage(
-        "sign-in"
-      )
-    );
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          "sign-in"
+        )
+      );
+    }
+
+    const email =
+      request.email?.trim();
+
+    if (!email) {
+      throw new Error(
+        "Supabase magic-link sign-in requires an email address."
+      );
+    }
+
+    const {
+      error,
+    } = await (
+      await this.getClient()
+    )
+      .auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo:
+            request.redirectTo,
+          shouldCreateUser:
+            false,
+        },
+      });
+
+    if (error) {
+      throw new Error(
+        `Supabase magic-link sign-in failed: ${error.message}`
+      );
+    }
+
+    return this.getSession();
   }
 
   async signOut():

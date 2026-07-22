@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import type {
+  AuthSignInRequest,
   AuthSession,
 } from "../models";
 import {
@@ -53,7 +54,9 @@ export function useAuthSession() {
     }, []);
 
   const signIn =
-    useCallback(async () => {
+    useCallback(async (
+      request?: AuthSignInRequest
+    ) => {
       setError("");
       setSession({
         status: "loading",
@@ -62,7 +65,7 @@ export function useAuthSession() {
       try {
         const nextSession =
           await getAuthBackendAdapter()
-            .signIn();
+            .signIn(request);
 
         setSession(nextSession);
         window.dispatchEvent(
