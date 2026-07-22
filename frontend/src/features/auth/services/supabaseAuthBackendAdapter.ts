@@ -53,6 +53,10 @@ interface SupabaseFilterBuilder {
     column: string,
     value: string
   ): Promise<SupabaseMembershipRowsResult>;
+  in(
+    column: string,
+    values: string[]
+  ): Promise<SupabaseHouseholdRowsResult>;
 }
 
 type SupabaseAuthChangeCallback = (
@@ -93,6 +97,15 @@ interface SupabaseErrorResult {
 interface SupabaseMembershipRowsResult {
   data:
     | SupabaseMembershipRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseHouseholdRowsResult {
+  data:
+    | SupabaseHouseholdRow[]
     | null;
   error:
     | SupabaseAuthError
@@ -142,6 +155,18 @@ interface SupabaseMembershipRow {
   removed_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+interface SupabaseHouseholdRow {
+  id: string;
+  name: string;
+  status: string;
+}
+
+export interface SupabaseHouseholdDiagnostic {
+  householdId: string;
+  householdName: string;
+  status: string;
 }
 
 export interface SupabaseAuthBackendAdapterConfig {
@@ -352,6 +377,57 @@ export class SupabaseAuthBackendAdapter
   async listInvitations():
     Promise<HouseholdInvitation[]> {
     return [];
+  }
+
+  async listHouseholdDiagnostics(
+    householdIds: string[]
+  ): Promise<SupabaseHouseholdDiagnostic[]> {
+    const uniqueHouseholdIds =
+      Array.from(
+        new Set(
+          householdIds.filter(Boolean)
+        )
+      );
+
+    if (
+      uniqueHouseholdIds.length ===
+      0
+    ) {
+      return [];
+    }
+
+    const {
+      data,
+      error,
+    } = await (
+      await this.getClient()
+    )
+      .from("households")
+      .select("id,name,status")
+      .in(
+        "id",
+        uniqueHouseholdIds
+      );
+
+    if (error) {
+      throw new Error(
+        `Supabase household lookup failed: ${error.message}`
+      );
+    }
+
+    return (data ?? [])
+      .filter(
+        (row) =>
+          row.status === "active"
+      )
+      .map((row) => ({
+        householdId:
+          row.id,
+        householdName:
+          row.name,
+        status:
+          row.status,
+      }));
   }
 
   async createHouseholdClaimDraft(

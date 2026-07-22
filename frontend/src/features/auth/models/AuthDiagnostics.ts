@@ -7,6 +7,7 @@ import type {
 
 export interface AuthMembershipDiagnostic {
   householdId: string;
+  householdName?: string;
   memberId: string;
   role: string;
   status: string;

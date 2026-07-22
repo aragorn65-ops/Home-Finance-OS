@@ -336,7 +336,8 @@ export default function AuthDiagnosticsPanel() {
                           Household
                         </dt>
                         <dd>
-                          {membership.householdId}
+                          {membership.householdName ??
+                            membership.householdId}
                         </dd>
                       </div>
                       <div>

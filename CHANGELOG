@@ -8,6 +8,23 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.47.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 47 notes and release notes for Supabase household diagnostics.
+* Added read-only Supabase household diagnostics lookup by membership household
+  id.
+* Added household-name enrichment to Auth Diagnostics membership summaries.
+* Added tests for household diagnostics query shape, id deduplication, and
+  active-row filtering.
+
+### Verified
+
+* Pending Sprint 47 validation.
+
+---
+
 ## [0.46.0-alpha] - 2026-07-22
 
 ### Added
