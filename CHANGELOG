@@ -8,6 +8,24 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.63.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 63 notes and release notes for the migration commit local-link
+  guard.
+* Added a local checkpoint precondition before remote migration commit.
+* Added tests proving commit linking requires the local migration draft.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with thirty-four passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified missing local checkpoint state blocks commit before the remote RPC.
+
+---
+
 ## [0.62.0-alpha] - 2026-07-22
 
 ### Added
