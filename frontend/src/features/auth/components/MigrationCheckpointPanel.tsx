@@ -17,6 +17,7 @@ import type {
 } from "../models";
 import {
   linkHouseholdToAuthenticatedTenant,
+  loadHousehold,
 } from "../../household/services/householdStorage";
 import {
   getAuthBackendAdapter,
@@ -27,6 +28,7 @@ import {
 } from "./migrationCheckpointLifecycle";
 import {
   assertMigrationCommitResultMatchesDraft,
+  requireMigrationCommitLocalOwner,
   requireMigrationCommitDraft,
 } from "./migrationCheckpointCommit";
 import {
@@ -138,6 +140,16 @@ export default function MigrationCheckpointPanel({
                 drafts,
                 draftId
               );
+            const localHousehold =
+              loadHousehold();
+
+            requireMigrationCommitLocalOwner(
+              draft,
+              localHousehold?.members.map(
+                (member) => member.id
+              ) ?? []
+            );
+
             const commitResult =
               await adapter
               .commitMigrationDraft(

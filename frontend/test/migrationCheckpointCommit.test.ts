@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   assertMigrationCommitResultMatchesDraft,
+  requireMigrationCommitLocalOwner,
   requireMigrationCommitDraft,
 } from "../src/features/auth/components/migrationCheckpointCommit.ts";
 
@@ -132,6 +133,43 @@ test(
           "migration-1"
         ),
       /Migration checkpoint is no longer available locally\. Refresh diagnostics before committing\./
+    );
+  }
+);
+
+test(
+  "allows migration commit when checkpoint owner exists locally",
+  () => {
+    assert.doesNotThrow(() => {
+      requireMigrationCommitLocalOwner(
+        createValidatedDraft({
+          ownerMemberId:
+            "member-local-owner",
+        }),
+        [
+          "member-local-owner",
+          "member-2",
+        ]
+      );
+    });
+  }
+);
+
+test(
+  "blocks migration commit when checkpoint owner is not local",
+  () => {
+    assert.throws(
+      () =>
+        requireMigrationCommitLocalOwner(
+          createValidatedDraft({
+            ownerMemberId:
+              "member-remote-owner",
+          }),
+          [
+            "member-local-owner",
+          ]
+        ),
+      /Migration checkpoint owner member is not available locally\. Refresh diagnostics before committing\./
     );
   }
 );
