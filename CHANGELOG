@@ -8,6 +8,25 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.68.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 68 notes and release notes for migration lifecycle disabled
+  guards.
+* Changed disabled and misconfigured migration validation paths to fail closed.
+* Added tests proving disabled validation, commit, and abort reject clearly.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with forty-four passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified disabled or misconfigured migration lifecycle actions reject instead
+  of returning blocked or no-op success.
+
+---
+
 ## [0.67.0-alpha] - 2026-07-22
 
 ### Added

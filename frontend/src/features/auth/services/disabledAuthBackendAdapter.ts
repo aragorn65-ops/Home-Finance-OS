@@ -63,15 +63,9 @@ export class DisabledAuthBackendAdapter
   async validateMigrationDraft(
     draftId: string
   ): Promise<RemoteMigrationValidation> {
-    return {
-      draftId,
-      isValid: false,
-      recordCountsMatch: false,
-      warnings: [],
-      blockers: [
-        "Remote migration is disabled.",
-      ],
-    };
+    throw new Error(
+      `Remote migration validation is disabled for ${draftId}.`
+    );
   }
 
   async commitMigrationDraft(

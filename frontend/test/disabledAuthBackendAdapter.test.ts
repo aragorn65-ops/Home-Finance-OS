@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 test(
-  "disabled auth adapter rejects migration abort",
+  "disabled auth adapter rejects migration lifecycle actions",
   async () => {
     const {
       DisabledAuthBackendAdapter,
@@ -12,6 +12,22 @@ test(
 
     const adapter =
       new DisabledAuthBackendAdapter();
+
+    await assert.rejects(
+      () =>
+        adapter.validateMigrationDraft(
+          "migration-1"
+        ),
+      /Remote migration validation is disabled for migration-1\./
+    );
+
+    await assert.rejects(
+      () =>
+        adapter.commitMigrationDraft(
+          "migration-1"
+        ),
+      /Remote migration commit is disabled for migration-1\./
+    );
 
     await assert.rejects(
       () =>

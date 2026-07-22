@@ -91,18 +91,20 @@ test(
       false
     );
 
-    const validation =
-      await adapter.validateMigrationDraft(
-        "draft-1"
-      );
-
-    assert.equal(
-      validation.isValid,
-      false
+    await assert.rejects(
+      () =>
+        adapter.validateMigrationDraft(
+          "draft-1"
+        ),
+      /Supabase auth spike is missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY\./
     );
-    assert.match(
-      validation.blockers[0],
-      /VITE_SUPABASE_URL/
+
+    await assert.rejects(
+      () =>
+        adapter.commitMigrationDraft(
+          "draft-1"
+        ),
+      /Supabase auth spike is missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY\./
     );
 
     await assert.rejects(

@@ -63,6 +63,8 @@ Sprint 66 adds local preflight guards for migration Validate and Abort actions
 before remote RPC calls.
 Sprint 67 makes disabled or misconfigured migration Abort paths fail closed
 instead of reporting silent no-op success.
+Sprint 68 extends that fail-closed behavior across disabled or misconfigured
+migration Validate and Commit paths.
 
 ---
 
@@ -106,6 +108,7 @@ instead of reporting silent no-op success.
 | v0.65.0-alpha | Migration commit result link guard |
 | v0.66.0-alpha | Migration action preconditions |
 | v0.67.0-alpha | Migration abort disabled guard |
+| v0.68.0-alpha | Migration lifecycle disabled guards |
 
 ---
 
@@ -118,6 +121,8 @@ Production cloud sync, multi-device shared households, and production auth provi
 The current gate is an auth and cloud decision pass. HFOS should keep the
 deployed local-first beta stable while choosing production auth, remote
 storage, and migration boundaries deliberately.
+Sprint 68 keeps the migration lifecycle actions fail-closed when remote auth is
+disabled or misconfigured.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior
