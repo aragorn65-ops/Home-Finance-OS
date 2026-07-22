@@ -8,6 +8,23 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.44.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 44 notes and release notes for Supabase auth callback handling.
+* Added optional auth session subscription support for backend adapters.
+* Wired Supabase `onAuthStateChange` into the HFOS auth session hook.
+* Added browser hash-change and focus refresh signals for magic-link callback
+  testing.
+* Added tests for Supabase auth-state notification and unsubscribe behavior.
+
+### Verified
+
+* Pending Sprint 44 validation.
+
+---
+
 ## [0.43.0-alpha] - 2026-07-22
 
 ### Added

@@ -1,6 +1,53 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+function createSignedOutClient(
+  overrides: Record<string, unknown> = {}
+) {
+  return {
+    auth: {
+      async getSession() {
+        return {
+          data: {
+            session: null,
+          },
+          error: null,
+        };
+      },
+      async getUser() {
+        return {
+          data: {
+            user: null,
+          },
+          error: null,
+        };
+      },
+      async signInWithOtp() {
+        return {
+          error: null,
+        };
+      },
+      async signOut() {
+        return {
+          error: null,
+        };
+      },
+      onAuthStateChange() {
+        return {
+          data: {
+            subscription: {
+              unsubscribe() {
+                return undefined;
+              },
+            },
+          },
+        };
+      },
+      ...overrides,
+    },
+  };
+}
+
 test(
   "Supabase auth adapter stays disabled without spike credentials",
   async () => {
@@ -55,8 +102,8 @@ test(
           "https://example.supabase.co",
         anonKey:
           "anon-key",
-        client: {
-          auth: {
+        client:
+          createSignedOutClient({
             async getSession() {
               return {
                 data: {
@@ -103,18 +150,7 @@ test(
                 error: null,
               };
             },
-            async signInWithOtp() {
-              return {
-                error: null,
-              };
-            },
-            async signOut() {
-              return {
-                error: null,
-              };
-            },
-          },
-        },
+          }),
       });
 
     assert.equal(
@@ -161,24 +197,8 @@ test(
           "https://example.supabase.co",
         anonKey:
           "anon-key",
-        client: {
-          auth: {
-            async getSession() {
-              return {
-                data: {
-                  session: null,
-                },
-                error: null,
-              };
-            },
-            async getUser() {
-              return {
-                data: {
-                  user: null,
-                },
-                error: null,
-              };
-            },
+        client:
+          createSignedOutClient({
             async signInWithOtp(
               request: unknown
             ) {
@@ -187,13 +207,7 @@ test(
                 error: null,
               };
             },
-            async signOut() {
-              return {
-                error: null,
-              };
-            },
-          },
-        },
+          }),
       });
 
     const session =
@@ -222,6 +236,75 @@ test(
           },
         },
       ]
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter subscribes to auth callback changes",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    let callback:
+      | (() => void)
+      | undefined;
+    let unsubscribeCount = 0;
+    let changeCount = 0;
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client:
+          createSignedOutClient({
+            onAuthStateChange(
+              onChange: () => void
+            ) {
+              callback = onChange;
+
+              return {
+                data: {
+                  subscription: {
+                    unsubscribe() {
+                      unsubscribeCount += 1;
+                    },
+                  },
+                },
+              };
+            },
+          }),
+      });
+
+    const subscription =
+      adapter.subscribeToSessionChanges(
+        () => {
+          changeCount += 1;
+        }
+      );
+
+    await Promise.resolve();
+    callback?.();
+    assert.equal(
+      changeCount,
+      1
+    );
+
+    subscription.unsubscribe();
+    await Promise.resolve();
+    callback?.();
+
+    assert.equal(
+      unsubscribeCount,
+      1
+    );
+    assert.equal(
+      changeCount,
+      1
     );
   }
 );
