@@ -1,6 +1,7 @@
 import type {
   AuthBackendAdapter,
   AuthSignInRequest,
+  AuthSessionSubscription,
   HouseholdClaimDraft,
   HouseholdClaimResult,
 } from "./AuthBackendAdapter";
@@ -26,8 +27,24 @@ interface SupabaseAuthClient {
     ): Promise<SupabaseErrorResult>;
     signOut():
       Promise<SupabaseErrorResult>;
+    onAuthStateChange(
+      callback:
+        SupabaseAuthChangeCallback
+    ): {
+      data: {
+        subscription:
+          AuthSessionSubscription;
+      };
+    };
   };
 }
+
+type SupabaseAuthChangeCallback = (
+  event: string,
+  session:
+    | SupabaseSession
+    | null
+) => void;
 
 interface SupabaseSessionResult {
   data: {
@@ -291,6 +308,43 @@ export class SupabaseAuthBackendAdapter
   async abortMigrationDraft():
     Promise<void> {
     return Promise.resolve();
+  }
+
+  subscribeToSessionChanges(
+    onChange: () => void
+  ): AuthSessionSubscription {
+    if (!this.isConfigured()) {
+      return {
+        unsubscribe() {
+          return undefined;
+        },
+      };
+    }
+
+    let isDisposed = false;
+    const subscriptionPromise =
+      this.getClient()
+        .then((client) =>
+          client.auth
+            .onAuthStateChange(
+              () => {
+                if (!isDisposed) {
+                  onChange();
+                }
+              }
+            )
+            .data.subscription
+        );
+
+    return {
+      unsubscribe() {
+        isDisposed = true;
+        void subscriptionPromise
+          .then((subscription) => {
+            subscription.unsubscribe();
+          });
+      },
+    };
   }
 
   isConfigured():

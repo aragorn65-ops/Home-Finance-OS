@@ -29,6 +29,16 @@ export interface AuthSignInRequest {
   redirectTo?: string;
 }
 
+export interface AuthSessionSubscription {
+  unsubscribe(): void;
+}
+
+export interface AuthSessionObserver {
+  subscribeToSessionChanges?(
+    onChange: () => void
+  ): AuthSessionSubscription;
+}
+
 export interface AuthBackendAdapter {
   getSession(): Promise<AuthSession>;
 

@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import type {
+  AuthSessionObserver,
   AuthSignInRequest,
   AuthSession,
 } from "../models";
@@ -14,6 +15,11 @@ import {
 
 const authSessionChangedEvent =
   "hfos-auth-session-changed";
+const authCallbackSignals:
+  Array<keyof WindowEventMap> = [
+    "hashchange",
+    "focus",
+  ];
 
 const initialSession:
   AuthSession = {
@@ -109,14 +115,31 @@ export function useAuthSession() {
   }, [refreshSession]);
 
   useEffect(() => {
+    const adapter =
+      getAuthBackendAdapter();
     const handleAuthSessionChanged =
       () => {
         void refreshSession();
       };
+    const subscription =
+      (
+        adapter as
+          AuthSessionObserver
+      ).subscribeToSessionChanges?.(
+        handleAuthSessionChanged
+      );
 
     window.addEventListener(
       authSessionChangedEvent,
       handleAuthSessionChanged
+    );
+    authCallbackSignals.forEach(
+      (eventName) => {
+        window.addEventListener(
+          eventName,
+          handleAuthSessionChanged
+        );
+      }
     );
 
     return () => {
@@ -124,6 +147,15 @@ export function useAuthSession() {
         authSessionChangedEvent,
         handleAuthSessionChanged
       );
+      authCallbackSignals.forEach(
+        (eventName) => {
+          window.removeEventListener(
+            eventName,
+            handleAuthSessionChanged
+          );
+        }
+      );
+      subscription?.unsubscribe();
     };
   }, [refreshSession]);
 

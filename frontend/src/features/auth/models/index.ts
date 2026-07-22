@@ -5,6 +5,8 @@ export type {
 
 export type {
   AuthSignInRequest,
+  AuthSessionObserver,
+  AuthSessionSubscription,
 } from "../services/AuthBackendAdapter";
 
 export type {

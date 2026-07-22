@@ -15,6 +15,8 @@ Supabase auth/cloud spike, and Sprint 42 prepares disabled-by-default Supabase
 client wiring for disposable-project testing.
 Sprint 43 adds a disposable-project magic-link request path behind the same
 disabled-by-default Supabase provider configuration.
+Sprint 44 handles auth callback/session refresh for that disposable-project
+flow.
 
 ---
 
@@ -34,6 +36,7 @@ disabled-by-default Supabase provider configuration.
 | v0.41.0-alpha | Supabase auth/cloud spike |
 | v0.42.0-alpha | Supabase client wiring readiness |
 | v0.43.0-alpha | Supabase magic-link spike |
+| v0.44.0-alpha | Supabase auth callback handling |
 
 ---
 
@@ -50,6 +53,8 @@ Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior
 only in disposable Supabase projects.
+Sprint 44 continues the same guardrails while adding callback/session refresh
+behavior for disposable Supabase auth tests.
 
 The Sprint 40 decision criteria are tracked in:
 
