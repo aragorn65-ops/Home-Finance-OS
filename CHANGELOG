@@ -8,6 +8,24 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.77.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 77 notes and release notes for backup authenticated-link
+  required-field guards.
+* Added non-empty authenticated-link field validation before backup restore.
+* Added a test proving blank remote household ids are rejected.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with fifty-seven passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified blank authenticated-link identifiers are rejected before restore.
+
+---
+
 ## [0.76.0-alpha] - 2026-07-22
 
 ### Added

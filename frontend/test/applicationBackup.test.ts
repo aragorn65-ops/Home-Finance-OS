@@ -120,3 +120,57 @@ test(
     );
   }
 );
+
+test(
+  "backup validation rejects blank authenticated link identifiers",
+  async () => {
+    installBrowserStorage();
+    const {
+      validateApplicationBackup,
+    } = await import(
+      "../src/features/startup/services/applicationBackup.ts"
+    );
+    const household =
+      createLinkedHousehold();
+    household.authenticatedLink.remoteHouseholdId =
+      "";
+
+    const backup = {
+      kind: "hfos-local-backup",
+      backupVersion: 1,
+      app: "Home Finance OS",
+      exportedAt:
+        "2026-07-21T03:00:00.000Z",
+      storageSchemaVersion: 1,
+      records: {
+        "hfos.v1.household":
+          household,
+        "hfos.v1.accounts": [],
+        "hfos.v1.transactions": [],
+        "hfos.v1.expense-allocations": [],
+        "hfos.v1.settlements": [],
+        "hfos.v1.settlement-applications": [],
+        "hfos.v1.savings-goals": [],
+        "hfos.v1.savings-activities": [],
+      },
+      preferences: {
+        themePreference:
+          "system",
+      },
+    };
+
+    const validation =
+      await validateApplicationBackup(
+        JSON.stringify(backup)
+      );
+
+    assert.equal(
+      validation.success,
+      false
+    );
+    assert.match(
+      validation.message,
+      /authenticated-link/
+    );
+  }
+);

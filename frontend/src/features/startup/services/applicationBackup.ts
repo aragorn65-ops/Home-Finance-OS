@@ -1437,21 +1437,35 @@ function isBackupAuthenticatedLink(
   }
 
   return (
-    typeof value.remoteHouseholdId ===
-      "string" &&
-    typeof value.migrationId ===
-      "string" &&
-    typeof value.ownerMemberId ===
-      "string" &&
-    typeof value.linkedByUserId ===
-      "string" &&
-    typeof value.linkedAt ===
-      "string" &&
+    isNonEmptyString(
+      value.remoteHouseholdId
+    ) &&
+    isNonEmptyString(
+      value.migrationId
+    ) &&
+    isNonEmptyString(
+      value.ownerMemberId
+    ) &&
+    isNonEmptyString(
+      value.linkedByUserId
+    ) &&
+    isNonEmptyString(
+      value.linkedAt
+    ) &&
     !Number.isNaN(
       new Date(
         value.linkedAt
       ).getTime()
     )
+  );
+}
+
+function isNonEmptyString(
+  value: unknown
+): value is string {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0
   );
 }
 
