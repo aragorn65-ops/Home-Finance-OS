@@ -45,6 +45,8 @@ Sprint 57 makes validation, commit, and abort timestamps durable on disposable
 Supabase migration drafts and maps them back into diagnostics after refresh.
 Sprint 58 surfaces those lifecycle timestamps in the migration checkpoint
 diagnostics UI as stable UTC values.
+Sprint 59 makes latest migration diagnostics deterministic by selecting the
+newest lifecycle timestamp instead of relying on adapter return order.
 
 ---
 
@@ -79,6 +81,7 @@ diagnostics UI as stable UTC values.
 | v0.56.0-alpha | Supabase commit RPC |
 | v0.57.0-alpha | Supabase migration lifecycle timestamps |
 | v0.58.0-alpha | Migration lifecycle diagnostics UI |
+| v0.59.0-alpha | Latest migration diagnostics |
 
 ---
 
@@ -123,6 +126,9 @@ Sprint 57 keeps lifecycle timestamp persistence metadata-only and still leaves
 full record import, sync, local data deletion, and production migration
 disabled.
 Sprint 58 keeps lifecycle timestamp visibility diagnostics-only and still leaves
+full record import, sync, local data deletion, and production migration
+disabled.
+Sprint 59 keeps latest migration selection diagnostics-only and still leaves
 full record import, sync, local data deletion, and production migration
 disabled.
 

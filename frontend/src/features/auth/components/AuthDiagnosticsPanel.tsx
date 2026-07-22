@@ -23,6 +23,9 @@ import {
 } from "../../startup/services/applicationBackup";
 import HouseholdClaimPanel from "./HouseholdClaimPanel";
 import MigrationCheckpointPanel from "./MigrationCheckpointPanel";
+import {
+  formatMigrationCheckpointDate,
+} from "./migrationCheckpointLifecycle";
 
 export default function AuthDiagnosticsPanel() {
   const {
@@ -235,6 +238,17 @@ export default function AuthDiagnosticsPanel() {
               <dd>
                 {diagnostics.latestMigrationStatus ??
                   "none"}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Latest migration at</dt>
+              <dd>
+                {diagnostics.latestMigrationAt
+                  ? formatMigrationCheckpointDate(
+                    diagnostics.latestMigrationAt
+                  )
+                  : "none"}
               </dd>
             </div>
 
