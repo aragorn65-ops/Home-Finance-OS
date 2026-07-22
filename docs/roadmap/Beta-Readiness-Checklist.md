@@ -61,9 +61,9 @@ any restore, reset, attachment, currency, or mobile layout issue immediately.
 
 ## Final Gate
 
-The current gate is private beta candidate with guided testers.
+The current gate is public beta safety review.
 
-HFOS should stay on hardening work before any public beta until browser-based
-smoke QA is repeatable, backup/restore receives more end-to-end coverage, and
-production auth/sync scope is either implemented or clearly kept out of the
-release.
+HFOS should not be opened to public beta testers until the public beta launch
+checklist passes against the current Cloudflare Pages production deployment.
+Production auth and sync remain explicitly out of scope unless a later release
+implements them deliberately.

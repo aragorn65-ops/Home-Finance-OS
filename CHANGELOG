@@ -8,6 +8,26 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.85.0-alpha] - 2026-07-23
+
+### Added
+
+* Added Sprint 85 notes and release notes for the public beta launch checklist.
+* Added a public beta launch checklist covering Cloudflare deployment, route
+  smoke checks, safety notices, backup/restore, reset behavior, and optional
+  Google Drive validation.
+* Updated the beta guide to point testers at the Cloudflare Pages URL.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with sixty-one passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the public beta checklist keeps public launch gated on production
+  Cloudflare validation.
+
+---
+
 ## [0.84.0-alpha] - 2026-07-23
 
 ### Added
