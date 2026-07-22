@@ -49,6 +49,8 @@ Sprint 59 makes latest migration diagnostics deterministic by selecting the
 newest lifecycle timestamp instead of relying on adapter return order.
 Sprint 60 orders migration checkpoints by newest lifecycle activity in the
 diagnostics panel.
+Sprint 61 turns the disposable Supabase spike checks into a clearer QA runbook
+covering lifecycle diagnostics, checkpoint ordering, and cross-user RLS checks.
 
 ---
 
@@ -85,6 +87,7 @@ diagnostics panel.
 | v0.58.0-alpha | Migration lifecycle diagnostics UI |
 | v0.59.0-alpha | Latest migration diagnostics |
 | v0.60.0-alpha | Migration checkpoint ordering |
+| v0.61.0-alpha | Supabase spike QA runbook |
 
 ---
 
@@ -136,6 +139,9 @@ full record import, sync, local data deletion, and production migration
 disabled.
 Sprint 60 keeps checkpoint ordering diagnostics-only and still leaves full
 record import, sync, local data deletion, and production migration disabled.
+Sprint 61 keeps Supabase validation disposable-project-only and still leaves
+production credentials, full record import, sync, local data deletion, and
+production migration disabled.
 
 The Sprint 40 decision criteria are tracked in:
 

@@ -8,6 +8,28 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.61.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 61 notes and release notes for the Supabase spike QA runbook.
+* Expanded disposable Supabase validation notes with checkpoint lifecycle UI
+  checks.
+* Added cross-user RLS checks for household membership and migration
+  checkpoints.
+* Clarified that normal Cloudflare/private beta smoke testing remains
+  local-first and separate from disposable Supabase validation.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with twenty-nine passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified the QA docs keep production data and Supabase spike validation
+  separated.
+
+---
+
 ## [0.60.0-alpha] - 2026-07-22
 
 ### Added
