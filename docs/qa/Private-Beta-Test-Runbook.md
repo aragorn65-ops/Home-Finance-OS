@@ -22,6 +22,16 @@ copy, layout, and restore issues before any wider beta decision.
 
 ---
 
+## Auth And Cloud Scope
+
+Normal private beta testing remains local-first. Do not connect production
+household data to disposable Supabase projects.
+
+Supabase auth/cloud spike validation is separate from this runbook and should
+use only `docs/architecture/SUPABASE_SPIKE_VALIDATION_NOTES.md`.
+
+---
+
 ## Core Smoke Path
 
 Run this path once per tester/browser:

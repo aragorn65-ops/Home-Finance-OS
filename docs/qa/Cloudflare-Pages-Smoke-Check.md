@@ -62,6 +62,17 @@ the required smoke-check path.
 
 ---
 
+## Supabase Spike Status
+
+Supabase auth/cloud validation is disposable-project-only. Do not enable
+Supabase production credentials on the Cloudflare Pages beta until the
+architecture decision criteria and disposable-project validation notes pass.
+
+The deployed local-first smoke check does not require Supabase auth, remote
+migration, sync, or production cloud storage.
+
+---
+
 ## Sprint 39 Result
 
 **Date:** 2026-07-22
