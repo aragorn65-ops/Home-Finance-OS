@@ -17,6 +17,8 @@ Sprint 43 adds a disposable-project magic-link request path behind the same
 disabled-by-default Supabase provider configuration.
 Sprint 44 handles auth callback/session refresh for that disposable-project
 flow.
+Sprint 45 adds read-only Supabase household membership lookup for signed-in
+disposable-project users.
 
 ---
 
@@ -37,6 +39,7 @@ flow.
 | v0.42.0-alpha | Supabase client wiring readiness |
 | v0.43.0-alpha | Supabase magic-link spike |
 | v0.44.0-alpha | Supabase auth callback handling |
+| v0.45.0-alpha | Supabase membership read spike |
 
 ---
 
@@ -55,6 +58,8 @@ Sprint 43 continues that constraint while testing magic-link request behavior
 only in disposable Supabase projects.
 Sprint 44 continues the same guardrails while adding callback/session refresh
 behavior for disposable Supabase auth tests.
+Sprint 45 keeps those guardrails while reading RLS-protected household
+membership state for diagnostics only.
 
 The Sprint 40 decision criteria are tracked in:
 

@@ -45,6 +45,20 @@ function createSignedOutClient(
       },
       ...overrides,
     },
+    from() {
+      return {
+        select() {
+          return {
+            async eq() {
+              return {
+                data: [],
+                error: null,
+              };
+            },
+          };
+        },
+      };
+    },
   };
 }
 
@@ -305,6 +319,152 @@ test(
     assert.equal(
       changeCount,
       1
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter reads memberships for the current user",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const queries: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient({
+            async getUser() {
+              return {
+                data: {
+                  user: {
+                    id:
+                      "user-1",
+                    email:
+                      "test@example.com",
+                    created_at:
+                      "2026-07-22T00:00:00Z",
+                  },
+                },
+                error: null,
+              };
+            },
+          }),
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  async eq(
+                    column: string,
+                    value: string
+                  ) {
+                    queries.push({
+                      tableName,
+                      columns,
+                      column,
+                      value,
+                    });
+
+                    return {
+                      data: [
+                        {
+                          id:
+                            "membership-1",
+                          household_id:
+                            "household-1",
+                          user_id:
+                            "user-1",
+                          member_id:
+                            "member-1",
+                          role:
+                            "owner",
+                          status:
+                            "active",
+                          invited_by_user_id:
+                            null,
+                          invited_at:
+                            null,
+                          accepted_at:
+                            "2026-07-22T02:00:00Z",
+                          removed_at:
+                            null,
+                          created_at:
+                            "2026-07-22T00:00:00Z",
+                          updated_at:
+                            "2026-07-22T01:00:00Z",
+                        },
+                        {
+                          id:
+                            "membership-invalid",
+                          household_id:
+                            "household-2",
+                          user_id:
+                            "user-1",
+                          member_id:
+                            "member-2",
+                          role:
+                            "unknown",
+                          status:
+                            "active",
+                          created_at:
+                            "2026-07-22T00:00:00Z",
+                        },
+                      ],
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const memberships =
+      await adapter.listMemberships();
+
+    assert.equal(
+      memberships.length,
+      1
+    );
+    assert.deepEqual(
+      queries,
+      [
+        {
+          tableName:
+            "household_memberships",
+          columns:
+            "id,household_id,user_id,member_id,role,status,invited_by_user_id,invited_at,accepted_at,removed_at,created_at,updated_at",
+          column:
+            "user_id",
+          value:
+            "user-1",
+        },
+      ]
+    );
+    assert.equal(
+      memberships[0]?.householdId,
+      "household-1"
+    );
+    assert.equal(
+      memberships[0]?.memberId,
+      "member-1"
+    );
+    assert.equal(
+      memberships[0]?.role,
+      "owner"
+    );
+    assert.equal(
+      memberships[0]?.acceptedAt
+        ?.toISOString(),
+      "2026-07-22T02:00:00.000Z"
     );
   }
 );
