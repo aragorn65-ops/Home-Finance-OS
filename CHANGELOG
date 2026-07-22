@@ -8,6 +8,26 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.83.0-alpha] - 2026-07-23
+
+### Added
+
+* Added Sprint 83 notes and release notes for Google Drive Settings status
+  clarity.
+* Added an always-visible Settings note that reports whether Google Drive backup
+  is configured for the current build.
+* Updated the unconfigured note to name `VITE_GOOGLE_CLIENT_ID`, Cloudflare
+  Pages, and the redeploy step.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with sixty-one passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified Settings explains why Google Drive buttons are enabled or disabled.
+
+---
+
 ## [0.82.0-alpha] - 2026-07-23
 
 ### Added
