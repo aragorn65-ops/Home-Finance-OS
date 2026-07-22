@@ -8,6 +8,24 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.72.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 72 notes and release notes for household claim migration result
+  guards.
+* Added fail-closed validation for household claim migration draft payloads.
+* Added tests proving invalid claim migration status is rejected.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with forty-eight passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified malformed household claim migration draft results fail closed.
+
+---
+
 ## [0.71.0-alpha] - 2026-07-22
 
 ### Added
