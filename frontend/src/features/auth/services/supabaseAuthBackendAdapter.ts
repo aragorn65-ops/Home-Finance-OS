@@ -52,7 +52,10 @@ interface SupabaseFilterBuilder {
   eq(
     column: string,
     value: string
-  ): Promise<SupabaseMembershipRowsResult>;
+  ): Promise<
+    | SupabaseMembershipRowsResult
+    | SupabaseMigrationDraftRowsResult
+  >;
   in(
     column: string,
     values: string[]
@@ -134,6 +137,15 @@ interface SupabaseTransactionRowsResult {
     | null;
 }
 
+interface SupabaseMigrationDraftRowsResult {
+  data:
+    | SupabaseMigrationDraftRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseSession {
   expires_at?: number;
   user: SupabaseUser;
@@ -200,6 +212,17 @@ interface SupabaseTransactionRow {
   visibility: string;
   transaction_date: string;
   is_active: boolean;
+}
+
+interface SupabaseMigrationDraftRow {
+  id: string;
+  household_id?: string | null;
+  owner_user_id: string;
+  owner_member_id: string;
+  household_name: string;
+  status: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface SupabaseHouseholdDiagnostic {
@@ -392,35 +415,37 @@ export class SupabaseAuthBackendAdapter
       return [];
     }
 
+    const membershipResult =
+      await (
+      await this.getClient()
+      )
+        .from(
+          "household_memberships"
+        )
+        .select(
+          [
+            "id",
+            "household_id",
+            "user_id",
+            "member_id",
+            "role",
+            "status",
+            "invited_by_user_id",
+            "invited_at",
+            "accepted_at",
+            "removed_at",
+            "created_at",
+            "updated_at",
+          ].join(",")
+        )
+        .eq(
+          "user_id",
+          user.id
+        ) as SupabaseMembershipRowsResult;
     const {
       data,
       error,
-    } = await (
-      await this.getClient()
-    )
-      .from(
-        "household_memberships"
-      )
-      .select(
-        [
-          "id",
-          "household_id",
-          "user_id",
-          "member_id",
-          "role",
-          "status",
-          "invited_by_user_id",
-          "invited_at",
-          "accepted_at",
-          "removed_at",
-          "created_at",
-          "updated_at",
-        ].join(",")
-      )
-      .eq(
-        "user_id",
-        user.id
-      );
+    } = membershipResult;
 
     if (error) {
       throw new Error(
@@ -611,7 +636,57 @@ export class SupabaseAuthBackendAdapter
 
   async listMigrationDrafts():
     Promise<RemoteMigrationDraft[]> {
-    return [];
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      return [];
+    }
+
+    const migrationResult =
+      await (
+      await this.getClient()
+      )
+        .from("migration_drafts")
+        .select(
+          [
+            "id",
+            "household_id",
+            "owner_user_id",
+            "owner_member_id",
+            "household_name",
+            "status",
+            "created_at",
+            "updated_at",
+          ].join(",")
+        )
+        .eq(
+          "owner_user_id",
+          user.id
+        ) as SupabaseMigrationDraftRowsResult;
+    const {
+      data,
+      error,
+    } = migrationResult;
+
+    if (error) {
+      throw new Error(
+        `Supabase migration draft lookup failed: ${error.message}`
+      );
+    }
+
+    return (data ?? [])
+      .map(mapSupabaseMigrationDraft)
+      .filter(
+        (
+          draft
+        ): draft is RemoteMigrationDraft =>
+          Boolean(draft)
+      );
   }
 
   async validateMigrationDraft(
@@ -876,6 +951,102 @@ function normalizeMembershipStatus(
   }
 
   return undefined;
+}
+
+function mapSupabaseMigrationDraft(
+  row: SupabaseMigrationDraftRow
+): RemoteMigrationDraft | undefined {
+  const status =
+    normalizeMigrationStatus(
+      row.status
+    );
+
+  if (!status) {
+    return undefined;
+  }
+
+  return {
+    id:
+      row.id,
+    householdId:
+      row.household_id ??
+      "",
+    householdName:
+      row.household_name,
+    ownerMemberId:
+      row.owner_member_id,
+    requestedByUserId:
+      row.owner_user_id,
+    backupSummary:
+      createRedactedMigrationBackupSummary(
+        row
+      ),
+    remoteRecordCount:
+      0,
+    status,
+    createdAt:
+      mapSupabaseDate(
+        row.created_at ??
+          undefined
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        row.updated_at ??
+          row.created_at ??
+          undefined
+      ),
+  };
+}
+
+function normalizeMigrationStatus(
+  value: string
+): RemoteMigrationDraft["status"] | undefined {
+  if (
+    value === "draft" ||
+    value === "uploaded" ||
+    value === "validated" ||
+    value === "committed" ||
+    value === "aborted"
+  ) {
+    return value;
+  }
+
+  return undefined;
+}
+
+function createRedactedMigrationBackupSummary(
+  row: SupabaseMigrationDraftRow
+): RemoteMigrationDraft["backupSummary"] {
+  return {
+    householdName:
+      row.household_name,
+    remoteHouseholdId:
+      row.household_id ??
+      undefined,
+    authenticatedLinkStatus:
+      row.household_id
+        ? "linked"
+        : "unlinked",
+    exportedAt:
+      row.created_at ??
+      new Date(0).toISOString(),
+    accountCount:
+      0,
+    transactionCount:
+      0,
+    expenseAllocationCount:
+      0,
+    settlementCount:
+      0,
+    settlementApplicationCount:
+      0,
+    savingsGoalCount:
+      0,
+    savingsActivityCount:
+      0,
+    providerBillCount:
+      0,
+  };
 }
 
 function mapOptionalSupabaseDate(

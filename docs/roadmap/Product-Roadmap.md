@@ -26,6 +26,8 @@ Sprint 48 adds aggregate-only account diagnostics for household and
 member-private visibility checks.
 Sprint 49 adds aggregate-only transaction diagnostics for household,
 participant, and private visibility checks.
+Sprint 50 adds read-only migration draft metadata diagnostics without reading
+backup or validation payloads.
 
 ---
 
@@ -51,6 +53,7 @@ participant, and private visibility checks.
 | v0.47.0-alpha | Supabase household diagnostics |
 | v0.48.0-alpha | Supabase account diagnostics |
 | v0.49.0-alpha | Supabase transaction diagnostics |
+| v0.50.0-alpha | Supabase migration draft diagnostics |
 
 ---
 
@@ -77,6 +80,8 @@ Sprint 48 keeps account diagnostics aggregate-only, read-only, and free of
 account names or balances.
 Sprint 49 keeps transaction diagnostics aggregate-only, read-only, and free of
 amounts, categories, descriptions, or account ids.
+Sprint 50 keeps migration draft diagnostics metadata-only and avoids selecting
+backup or validation payloads.
 
 The Sprint 40 decision criteria are tracked in:
 

@@ -874,3 +874,156 @@ test(
     );
   }
 );
+
+test(
+  "Supabase auth adapter reads migration draft diagnostics for the current user",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const queries: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient({
+            async getUser() {
+              return {
+                data: {
+                  user: {
+                    id:
+                      "user-1",
+                    email:
+                      "test@example.com",
+                    created_at:
+                      "2026-07-22T00:00:00Z",
+                  },
+                },
+                error: null,
+              };
+            },
+          }),
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  async eq(
+                    column: string,
+                    value: string
+                  ) {
+                    queries.push({
+                      tableName,
+                      columns,
+                      column,
+                      value,
+                    });
+
+                    return {
+                      data: [
+                        {
+                          id:
+                            "migration-1",
+                          household_id:
+                            "household-1",
+                          owner_user_id:
+                            "user-1",
+                          owner_member_id:
+                            "member-1",
+                          household_name:
+                            "Casa Test",
+                          status:
+                            "uploaded",
+                          created_at:
+                            "2026-07-22T02:00:00Z",
+                          updated_at:
+                            "2026-07-22T03:00:00Z",
+                        },
+                        {
+                          id:
+                            "migration-invalid",
+                          household_id:
+                            "household-1",
+                          owner_user_id:
+                            "user-1",
+                          owner_member_id:
+                            "member-1",
+                          household_name:
+                            "Casa Test",
+                          status:
+                            "unknown",
+                          created_at:
+                            "2026-07-22T02:00:00Z",
+                          updated_at:
+                            "2026-07-22T03:00:00Z",
+                        },
+                      ],
+                      error: null,
+                    };
+                  },
+                  async in() {
+                    return {
+                      data: [],
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const drafts =
+      await adapter.listMigrationDrafts();
+
+    assert.deepEqual(
+      queries,
+      [
+        {
+          tableName:
+            "migration_drafts",
+          columns:
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,created_at,updated_at",
+          column:
+            "owner_user_id",
+          value:
+            "user-1",
+        },
+      ]
+    );
+    assert.equal(
+      drafts.length,
+      1
+    );
+    assert.equal(
+      drafts[0]?.id,
+      "migration-1"
+    );
+    assert.equal(
+      drafts[0]?.householdName,
+      "Casa Test"
+    );
+    assert.equal(
+      drafts[0]?.status,
+      "uploaded"
+    );
+    assert.equal(
+      drafts[0]?.backupSummary.accountCount,
+      0
+    );
+    assert.equal(
+      drafts[0]?.backupSummary.transactionCount,
+      0
+    );
+    assert.equal(
+      drafts[0]?.updatedAt.toISOString(),
+      "2026-07-22T03:00:00.000Z"
+    );
+  }
+);

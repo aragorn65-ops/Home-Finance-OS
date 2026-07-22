@@ -8,6 +8,29 @@ This project follows a sprint-based development process.
 
 ---
 
+## [0.50.0-alpha] - 2026-07-22
+
+### Added
+
+* Added Sprint 50 notes and release notes for Supabase migration draft
+  diagnostics.
+* Added read-only Supabase migration draft metadata reads scoped to the current
+  signed-in user.
+* Added redacted migration draft mapping for Auth Diagnostics count and latest
+  status.
+* Added tests for query shape, user scoping, status filtering, and redacted
+  summary output.
+
+### Verified
+
+* Verified `git diff --check` completes with no whitespace errors.
+* Verified `npm.cmd test` completes with sixteen passing tests.
+* Verified `npm.cmd run build` completes with zero errors.
+* Verified migration draft diagnostics remain read-only.
+* Confirmed `backup_summary` and `validation_summary` are not selected.
+
+---
+
 ## [0.49.0-alpha] - 2026-07-22
 
 ### Added
