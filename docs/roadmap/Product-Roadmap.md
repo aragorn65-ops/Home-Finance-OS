@@ -96,6 +96,9 @@ OAuth origin setup.
 Sprint 83 makes Google Drive backup configuration status visible in Settings.
 Sprint 84 strengthens in-app public beta safety language around low-risk data,
 backup timing, account recovery, and production sync.
+Sprint 85 adds a public beta launch checklist that keeps launch gated on
+Cloudflare production validation, safety notices, backup/restore, reset
+behavior, and optional Google Drive checks.
 
 ---
 
@@ -156,18 +159,19 @@ backup timing, account recovery, and production sync.
 | v0.82.0-alpha | Cloudflare Google Drive backup config |
 | v0.83.0-alpha | Google Drive Settings status clarity |
 | v0.84.0-alpha | Public beta safety notice |
+| v0.85.0-alpha | Public beta launch checklist |
 
 ---
 
 ## Beta Target
 
-The near-term beta target is a private local-first beta.
+The near-term beta target is a safety-gated public local-first beta.
 
 Production cloud sync, multi-device shared households, and production auth provider integration remain post-hardening decisions unless they become necessary for beta safety.
 
-The current gate is an auth and cloud decision pass. HFOS should keep the
-deployed local-first beta stable while choosing production auth, remote
-storage, and migration boundaries deliberately.
+The current gate is the public beta launch checklist. HFOS should keep the
+deployed local-first beta stable while choosing production auth, remote storage,
+and migration boundaries deliberately.
 Sprint 68 keeps the migration lifecycle actions fail-closed when remote auth is
 disabled or misconfigured.
 Sprint 69 keeps signed-out migration write actions from reaching remote RPCs.
@@ -200,6 +204,9 @@ Sprint 83 surfaces that same Google Drive configuration status inside Settings
 so disabled Drive buttons explain the missing build variable.
 Sprint 84 keeps public beta testers reminded that data is local-first, recovery
 depends on backups, and production sync is not available.
+Sprint 85 keeps public beta launch blocked until the Cloudflare production
+deployment, route refreshes, backup/restore, reset behavior, safety notices, and
+optional Google Drive checks are verified.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior

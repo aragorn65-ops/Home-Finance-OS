@@ -17,7 +17,7 @@ available, and backups can optionally be password protected.
 Use the preview link:
 
 ```text
-https://aragorn65-ops.github.io/Home-Finance-OS/
+https://home-finance-os.pages.dev
 ```
 
 If running locally:
