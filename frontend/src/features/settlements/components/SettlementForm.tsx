@@ -79,15 +79,39 @@ const settlementFieldLabels:
 
 const acceptedAttachmentMimeTypes = [
   "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
   "image/png",
   "image/webp",
   "application/pdf",
+] as const;
+
+const acceptedAttachmentExtensions = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".pdf",
 ] as const;
 
 const maximumAttachmentCount = 3;
 
 const maximumAttachmentSizeBytes =
   1024 * 1024;
+
+const maximumStoredImageDimension =
+  1600;
+
+const storedImageQuality =
+  0.78;
+
+const storedImageQualityFallbacks = [
+  storedImageQuality,
+  0.68,
+  0.58,
+  0.48,
+  0.38,
+] as const;
 
 function isAcceptedAttachmentMimeType(
   mimeType: string
@@ -96,6 +120,67 @@ function isAcceptedAttachmentMimeType(
     mimeType as
       typeof acceptedAttachmentMimeTypes[number]
   );
+}
+
+function isAcceptedAttachmentFile(
+  file: File
+): boolean {
+  if (
+    file.type &&
+    isAcceptedAttachmentMimeType(
+      file.type
+    )
+  ) {
+    return true;
+  }
+
+  const fileName =
+    file.name.toLowerCase();
+
+  return acceptedAttachmentExtensions.some(
+    (extension) =>
+      fileName.endsWith(extension)
+  );
+}
+
+function getAttachmentMimeType(
+  file: File
+): string {
+  if (
+    file.type &&
+    isAcceptedAttachmentMimeType(
+      file.type
+    )
+  ) {
+    return file.type === "image/jpg" ||
+      file.type === "image/pjpeg"
+      ? "image/jpeg"
+      : file.type;
+  }
+
+  const fileName =
+    file.name.toLowerCase();
+
+  if (
+    fileName.endsWith(".jpg") ||
+    fileName.endsWith(".jpeg")
+  ) {
+    return "image/jpeg";
+  }
+
+  if (fileName.endsWith(".png")) {
+    return "image/png";
+  }
+
+  if (fileName.endsWith(".webp")) {
+    return "image/webp";
+  }
+
+  if (fileName.endsWith(".pdf")) {
+    return "application/pdf";
+  }
+
+  return file.type;
 }
 
 function formatFileSize(
@@ -111,7 +196,7 @@ function formatFileSize(
 }
 
 function readFileAsDataUrl(
-  file: File
+  file: Blob
 ): Promise<string> {
   return new Promise(
     (
@@ -154,6 +239,189 @@ function readFileAsDataUrl(
       );
     }
   );
+}
+
+function loadImage(
+  source: string
+): Promise<HTMLImageElement> {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+      const image = new Image();
+
+      image.onload = () =>
+        resolve(image);
+
+      image.onerror = () =>
+        reject(
+          new Error(
+            "The selected transfer receipt image could not be prepared."
+          )
+        );
+
+      image.src = source;
+    }
+  );
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  quality: number
+): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      resolve,
+      "image/jpeg",
+      quality
+    );
+  });
+}
+
+async function compressCanvasToAttachmentBlob(
+  canvas: HTMLCanvasElement
+): Promise<Blob | null> {
+  let smallestBlob: Blob | null =
+    null;
+
+  for (const quality of storedImageQualityFallbacks) {
+    const blob =
+      await canvasToBlob(
+        canvas,
+        quality
+      );
+
+    if (!blob) {
+      continue;
+    }
+
+    if (
+      !smallestBlob ||
+      blob.size < smallestBlob.size
+    ) {
+      smallestBlob = blob;
+    }
+
+    if (
+      blob.size <=
+      maximumAttachmentSizeBytes
+    ) {
+      return blob;
+    }
+  }
+
+  return smallestBlob;
+}
+
+async function prepareAttachmentFile(
+  file: File
+): Promise<{
+  dataUrl: string;
+  mimeType: string;
+  sizeBytes: number;
+}> {
+  const mimeType =
+    getAttachmentMimeType(
+      file
+    );
+
+  if (!mimeType.startsWith("image/")) {
+    return {
+      dataUrl:
+        await readFileAsDataUrl(
+          file
+        ),
+      mimeType,
+      sizeBytes:
+        file.size,
+    };
+  }
+
+  const objectUrl =
+    URL.createObjectURL(file);
+
+  try {
+    const image =
+      await loadImage(objectUrl);
+
+    const scale =
+      Math.min(
+        1,
+        maximumStoredImageDimension /
+          Math.max(
+            image.naturalWidth,
+            image.naturalHeight
+          )
+      );
+
+    const width =
+      Math.max(
+        1,
+        Math.round(
+          image.naturalWidth * scale
+        )
+      );
+
+    const height =
+      Math.max(
+        1,
+        Math.round(
+          image.naturalHeight * scale
+        )
+      );
+
+    const canvas =
+      document.createElement(
+        "canvas"
+      );
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const context =
+      canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error(
+        "The selected transfer receipt image could not be prepared."
+      );
+    }
+
+    context.drawImage(
+      image,
+      0,
+      0,
+      width,
+      height
+    );
+
+    const compressedBlob =
+      await compressCanvasToAttachmentBlob(
+        canvas
+      );
+
+    if (!compressedBlob) {
+      throw new Error(
+        "The selected transfer receipt image could not be prepared."
+      );
+    }
+
+    return {
+      dataUrl:
+        await readFileAsDataUrl(
+          compressedBlob
+        ),
+      mimeType:
+        "image/jpeg",
+      sizeBytes:
+        compressedBlob.size,
+    };
+  } finally {
+    URL.revokeObjectURL(
+      objectUrl
+    );
+  }
 }
 
 function getTodayInputValue(): string {
@@ -857,8 +1125,8 @@ export default function SettlementForm({
 
       for (const file of selectedFiles) {
         if (
-          !isAcceptedAttachmentMimeType(
-            file.type
+          !isAcceptedAttachmentFile(
+            file
           )
         ) {
           throw new Error(
@@ -868,10 +1136,27 @@ export default function SettlementForm({
 
         if (
           file.size >
-          maximumAttachmentSizeBytes
+            maximumAttachmentSizeBytes &&
+          !getAttachmentMimeType(
+            file
+          ).startsWith("image/")
         ) {
           throw new Error(
             "Each transfer receipt must be 1 MB or smaller."
+          );
+        }
+
+        const preparedFile =
+          await prepareAttachmentFile(
+            file
+          );
+
+        if (
+          preparedFile.sizeBytes >
+          maximumAttachmentSizeBytes
+        ) {
+          throw new Error(
+            `${file.name} is still larger than 1 MB after image preparation.`
           );
         }
 
@@ -883,13 +1168,11 @@ export default function SettlementForm({
           fileName:
             file.name,
           mimeType:
-            file.type,
+            preparedFile.mimeType,
           sizeBytes:
-            file.size,
+            preparedFile.sizeBytes,
           dataUrl:
-            await readFileAsDataUrl(
-              file
-            ),
+            preparedFile.dataUrl,
           createdAt:
             new Date(),
         });
@@ -1811,7 +2094,7 @@ export default function SettlementForm({
           <input
             ref={attachmentInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,application/pdf"
+            accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/jpg,image/pjpeg,image/png,image/webp,application/pdf"
             multiple
             className="hidden"
             onChange={
