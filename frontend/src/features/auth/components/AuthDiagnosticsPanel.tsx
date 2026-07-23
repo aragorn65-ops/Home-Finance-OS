@@ -94,7 +94,7 @@ export default function AuthDiagnosticsPanel() {
             window.location.pathname,
         });
         setSupabaseSignInMessage(
-          "Magic link requested. Check the disposable-project mailbox."
+          "Magic link requested. Check your email inbox."
         );
       } catch {
         setSupabaseSignInMessage(

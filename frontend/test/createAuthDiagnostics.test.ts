@@ -2,10 +2,98 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  createAuthDiagnosticsForAdapter,
   createProductionAuthReadinessChecks,
   findLatestMigrationDraft,
   getMigrationDiagnosticDate,
 } from "../src/features/auth/services/createAuthDiagnostics.ts";
+
+test(
+  "auth diagnostics skip user-dependent reads while signed out",
+  async () => {
+    const diagnostics =
+      await createAuthDiagnosticsForAdapter(
+        {
+          async getSession() {
+            return {
+              status:
+                "signed-out",
+            };
+          },
+          async signIn() {
+            return {
+              status:
+                "signed-out",
+            };
+          },
+          async signOut() {
+            return undefined;
+          },
+          async getCurrentUser() {
+            throw new Error(
+              "not expected"
+            );
+          },
+          async listMemberships() {
+            throw new Error(
+              "not expected"
+            );
+          },
+          async listInvitations() {
+            throw new Error(
+              "not expected"
+            );
+          },
+          async createHouseholdClaimDraft() {
+            throw new Error(
+              "not expected"
+            );
+          },
+          async listMigrationDrafts() {
+            throw new Error(
+              "not expected"
+            );
+          },
+          async validateMigrationDraft() {
+            throw new Error(
+              "not expected"
+            );
+          },
+          async commitMigrationDraft() {
+            throw new Error(
+              "not expected"
+            );
+          },
+          async abortMigrationDraft() {
+            throw new Error(
+              "not expected"
+            );
+          },
+        },
+        {
+          enabled: true,
+          provider: "supabase",
+        }
+      );
+
+    assert.equal(
+      diagnostics.sessionStatus,
+      "signed-out"
+    );
+    assert.deepEqual(
+      diagnostics.warnings,
+      []
+    );
+    assert.equal(
+      diagnostics.membershipCount,
+      0
+    );
+    assert.equal(
+      diagnostics.migrationDraftCount,
+      0
+    );
+  }
+);
 
 test(
   "production auth readiness passes the configured Supabase baseline",

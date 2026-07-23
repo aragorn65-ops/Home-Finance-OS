@@ -53,30 +53,38 @@ export async function createAuthDiagnosticsForAdapter(
       () =>
         adapter.getSession()
     );
+  const hasSignedInSession =
+    session.status === "signed-in";
   const memberships =
-    await createOptionalDiagnostic(
-      warnings,
-      "Membership diagnostics",
-      [],
-      () =>
-        adapter.listMemberships()
-    );
+    hasSignedInSession
+      ? await createOptionalDiagnostic(
+        warnings,
+        "Membership diagnostics",
+        [],
+        () =>
+          adapter.listMemberships()
+      )
+      : [];
   const invitations =
-    await createOptionalDiagnostic(
-      warnings,
-      "Invitation diagnostics",
-      [],
-      () =>
-        adapter.listInvitations()
-    );
+    hasSignedInSession
+      ? await createOptionalDiagnostic(
+        warnings,
+        "Invitation diagnostics",
+        [],
+        () =>
+          adapter.listInvitations()
+      )
+      : [];
   const migrationDrafts =
-    await createOptionalDiagnostic(
-      warnings,
-      "Migration diagnostics",
-      [],
-      () =>
-        adapter.listMigrationDrafts()
-    );
+    hasSignedInSession
+      ? await createOptionalDiagnostic(
+        warnings,
+        "Migration diagnostics",
+        [],
+        () =>
+          adapter.listMigrationDrafts()
+      )
+      : [];
   const latestMigration =
     findLatestMigrationDraft(
       migrationDrafts
