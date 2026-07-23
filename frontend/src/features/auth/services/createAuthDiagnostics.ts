@@ -8,6 +8,7 @@ import type {
 import type {
   AuthSession,
   AuthDiagnostics,
+  AuthProductionReadinessCheck,
 } from "../models";
 import type {
   AuthBackendAdapter,
@@ -139,6 +140,20 @@ export async function createAuthDiagnosticsForAdapter(
             )
           : Promise.resolve(undefined)
     );
+  const productionReadinessChecks =
+    createProductionAuthReadinessChecks({
+      config,
+      sessionStatus:
+        session.status,
+      isSupabaseAdapter,
+      isSupabaseConfigured:
+        isSupabaseAdapter &&
+        adapter.isConfigured(),
+      membershipCount:
+        memberships.length,
+      warningCount:
+        warnings.length,
+    });
 
   return {
     enabled:
@@ -181,6 +196,7 @@ export async function createAuthDiagnosticsForAdapter(
       ),
     accountSummary,
     transactionSummary,
+    productionReadinessChecks,
     invitationCount:
       invitations.length,
     migrationDraftCount:
@@ -194,6 +210,96 @@ export async function createAuthDiagnosticsForAdapter(
         )
         : undefined,
   };
+}
+
+export function createProductionAuthReadinessChecks({
+  config,
+  sessionStatus,
+  isSupabaseAdapter,
+  isSupabaseConfigured,
+  membershipCount,
+  warningCount,
+}: {
+  config: AuthFeatureConfig;
+  sessionStatus: AuthSession["status"];
+  isSupabaseAdapter: boolean;
+  isSupabaseConfigured: boolean;
+  membershipCount: number;
+  warningCount: number;
+}): AuthProductionReadinessCheck[] {
+  return [
+    {
+      id: "provider",
+      label: "Production provider",
+      status:
+        config.enabled &&
+        config.provider === "supabase" &&
+        isSupabaseAdapter
+          ? "pass"
+          : "action",
+      detail:
+        config.enabled &&
+        config.provider === "supabase" &&
+        isSupabaseAdapter
+          ? "Supabase auth adapter is selected for this build."
+          : "Enable auth with VITE_HFOS_AUTH_PROVIDER=supabase before production auth testing.",
+    },
+    {
+      id: "env",
+      label: "Supabase environment",
+      status:
+        isSupabaseConfigured
+          ? "pass"
+          : "blocked",
+      detail:
+        isSupabaseConfigured
+          ? "Supabase URL and anon key are present in this build."
+          : "Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Cloudflare Pages.",
+    },
+    {
+      id: "session",
+      label: "Magic-link session",
+      status:
+        sessionStatus === "signed-in"
+          ? "pass"
+          : "action",
+      detail:
+        sessionStatus === "signed-in"
+          ? "A signed-in session is available in this browser."
+          : "Send and open a Supabase magic link from the production URL.",
+    },
+    {
+      id: "membership",
+      label: "Household membership",
+      status:
+        membershipCount > 0
+          ? "pass"
+          : "action",
+      detail:
+        membershipCount > 0
+          ? "The signed-in user has at least one household membership."
+          : "Claim or invite a household after sign-in before testing migration.",
+    },
+    {
+      id: "diagnostics",
+      label: "Remote diagnostics",
+      status:
+        warningCount === 0
+          ? "pass"
+          : "blocked",
+      detail:
+        warningCount === 0
+          ? "Auth diagnostics completed without remote read warnings."
+          : "Resolve auth diagnostic warnings before enabling migration or sync.",
+    },
+    {
+      id: "sync-boundary",
+      label: "Sync boundary",
+      status: "pass",
+      detail:
+        "Remote CRUD and automatic multi-device sync remain disabled for this sprint.",
+    },
+  ];
 }
 
 export function findLatestMigrationDraft<

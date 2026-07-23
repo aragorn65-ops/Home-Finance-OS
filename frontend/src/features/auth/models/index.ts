@@ -11,6 +11,8 @@ export type {
 
 export type {
   AuthDiagnostics,
+  AuthProductionReadinessCheck,
+  AuthProductionReadinessCheckStatus,
 } from "./AuthDiagnostics";
 
 export type {

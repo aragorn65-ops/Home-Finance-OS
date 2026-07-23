@@ -38,6 +38,18 @@ export interface AuthTransactionDiagnosticSummary {
   latestTransactionDate?: string;
 }
 
+export type AuthProductionReadinessCheckStatus =
+  | "pass"
+  | "action"
+  | "blocked";
+
+export interface AuthProductionReadinessCheck {
+  id: string;
+  label: string;
+  status: AuthProductionReadinessCheckStatus;
+  detail: string;
+}
+
 export interface AuthDiagnostics {
   enabled: boolean;
   provider: AuthProvider;
@@ -57,6 +69,8 @@ export interface AuthDiagnostics {
     AuthAccountDiagnosticSummary;
   transactionSummary?:
     AuthTransactionDiagnosticSummary;
+  productionReadinessChecks:
+    AuthProductionReadinessCheck[];
   invitationCount: number;
   migrationDraftCount: number;
   latestMigrationStatus?: string;

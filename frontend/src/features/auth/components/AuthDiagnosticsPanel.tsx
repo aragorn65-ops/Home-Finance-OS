@@ -27,6 +27,20 @@ import {
   formatMigrationCheckpointDate,
 } from "./migrationCheckpointLifecycle";
 
+function formatReadinessStatus(
+  status: string
+): string {
+  if (status === "pass") {
+    return "Pass";
+  }
+
+  if (status === "blocked") {
+    return "Blocked";
+  }
+
+  return "Action needed";
+}
+
 export default function AuthDiagnosticsPanel() {
   const {
     diagnostics,
@@ -270,6 +284,45 @@ export default function AuthDiagnosticsPanel() {
               </dd>
             </div>
           </dl>
+
+          <section className="auth-diagnostics__readiness">
+            <div>
+              <h3>
+                Production Auth Baseline
+              </h3>
+              <p>
+                Sprint 86 checks before migration or sync is enabled.
+              </p>
+            </div>
+
+            <div className="auth-diagnostics__readiness-list">
+              {diagnostics.productionReadinessChecks.map(
+                (check) => (
+                  <article
+                    key={check.id}
+                    className="auth-diagnostics__readiness-item"
+                    data-status={
+                      check.status
+                    }
+                  >
+                    <div>
+                      <h4>
+                        {check.label}
+                      </h4>
+                      <p>
+                        {check.detail}
+                      </p>
+                    </div>
+                    <span>
+                      {formatReadinessStatus(
+                        check.status
+                      )}
+                    </span>
+                  </article>
+                )
+              )}
+            </div>
+          </section>
 
           {diagnostics.isPrototypeAdapter && (
             <div className="auth-diagnostics__actions">
