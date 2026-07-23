@@ -41,6 +41,19 @@ function formatReadinessStatus(
   return "Action needed";
 }
 
+function getErrorMessage(
+  error: unknown
+): string {
+  if (
+    error instanceof Error &&
+    error.message.trim()
+  ) {
+    return error.message;
+  }
+
+  return "Unknown error";
+}
+
 export default function AuthDiagnosticsPanel() {
   const {
     diagnostics,
@@ -96,9 +109,9 @@ export default function AuthDiagnosticsPanel() {
         setSupabaseSignInMessage(
           "Magic link requested. Check your email inbox."
         );
-      } catch {
+      } catch (error) {
         setSupabaseSignInMessage(
-          "Magic link request failed."
+          `Magic link request failed: ${getErrorMessage(error)}`
         );
       } finally {
         await refreshDiagnostics();
