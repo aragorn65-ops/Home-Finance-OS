@@ -22,9 +22,6 @@ import {
   type ThemePreference,
 } from "../../../shared/theme/themePreference";
 import {
-  isAuthFeatureEnabled,
-} from "../../../config/auth";
-import {
   loadHousehold,
   saveHouseholdPreferences,
 } from "../../household/services/householdStorage";
@@ -380,9 +377,6 @@ export default function SettingsPage() {
           "Add VITE_GOOGLE_CLIENT_ID to Cloudflare Pages, redeploy, then return here.",
           "Local Export Backup and Import Backup still work.",
         ].join(" ");
-
-  const showAuthDiagnostics =
-    isAuthFeatureEnabled();
 
   const hasPreferenceChanges =
     Boolean(household) &&
@@ -1647,11 +1641,9 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {showAuthDiagnostics && (
-          <Card>
-            <AuthDiagnosticsPanel />
-          </Card>
-        )}
+        <Card>
+          <AuthDiagnosticsPanel />
+        </Card>
 
         <Card>
           <div className="space-y-5">
