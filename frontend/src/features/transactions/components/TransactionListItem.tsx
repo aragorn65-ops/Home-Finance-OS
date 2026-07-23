@@ -81,7 +81,7 @@ function getAccountSummary(
   if (transaction.type === "expense") {
     return sourceAccountName
       ? `From ${sourceAccountName}`
-      : "Source account unavailable";
+      : "From Cash";
   }
 
   if (sourceAccountName && destinationAccountName) {

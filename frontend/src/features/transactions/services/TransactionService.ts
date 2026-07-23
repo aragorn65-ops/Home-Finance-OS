@@ -62,6 +62,32 @@ interface NormalizedTransactionCurrency {
 }
 
 export default class TransactionService {
+  private static normalizeSourceAccountId(
+    form: TransactionForm
+  ): string | null {
+    if (form.type === "income") {
+      return null;
+    }
+
+    const sourceAccountId =
+      form.sourceAccountId.trim();
+
+    return sourceAccountId || null;
+  }
+
+  private static normalizeDestinationAccountId(
+    form: TransactionForm
+  ): string | null {
+    if (form.type === "expense") {
+      return null;
+    }
+
+    const destinationAccountId =
+      form.destinationAccountId.trim();
+
+    return destinationAccountId || null;
+  }
+
   private static normalizeCategoryForStorage(
     category: string
   ): string {
@@ -592,18 +618,14 @@ export default class TransactionService {
             .exchangeRateProvider,
 
         sourceAccountId:
-          form.type ===
-          "income"
-            ? null
-            : form.sourceAccountId
-                .trim(),
+          this.normalizeSourceAccountId(
+            form
+          ),
 
         destinationAccountId:
-          form.type ===
-          "expense"
-            ? null
-            : form.destinationAccountId
-                .trim(),
+          this.normalizeDestinationAccountId(
+            form
+          ),
 
         category:
           this.normalizeCategoryForStorage(
@@ -897,18 +919,14 @@ export default class TransactionService {
             .exchangeRateProvider,
 
         sourceAccountId:
-          form.type ===
-          "income"
-            ? null
-            : form.sourceAccountId
-                .trim(),
+          this.normalizeSourceAccountId(
+            form
+          ),
 
         destinationAccountId:
-          form.type ===
-          "expense"
-            ? null
-            : form.destinationAccountId
-                .trim(),
+          this.normalizeDestinationAccountId(
+            form
+          ),
 
         category:
           this.normalizeCategoryForStorage(

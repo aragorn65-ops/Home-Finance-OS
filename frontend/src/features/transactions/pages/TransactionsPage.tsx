@@ -58,6 +58,9 @@ type TransactionDialogMode =
   | "delete"
   | null;
 
+const unlinkedCashPaymentAccountId =
+  "__cash__";
+
 function mapTransactionToForm(
   transaction: Transaction
 ): TransactionFormData {
@@ -115,8 +118,10 @@ function mapTransactionToForm(
       "household",
 
     sourceAccountId:
-      transaction.sourceAccountId ??
-      "",
+      transaction.type === "expense" &&
+      !transaction.sourceAccountId
+        ? unlinkedCashPaymentAccountId
+        : transaction.sourceAccountId ?? "",
 
     destinationAccountId:
       transaction.destinationAccountId ??
