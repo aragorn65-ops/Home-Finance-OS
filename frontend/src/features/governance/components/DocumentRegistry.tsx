@@ -14,9 +14,11 @@ export default function DocumentRegistry({
   return (
     <div
       style={{
-        background: "#fff",
+        background: "var(--color-surface)",
+        border: "1px solid var(--color-border-subtle)",
         borderRadius: 12,
         padding: 20,
+        color: "var(--color-text)",
       }}
     >
       <h3>Knowledge Explorer</h3>
@@ -30,8 +32,14 @@ export default function DocumentRegistry({
             marginBottom: "8px",
             borderRadius: "8px",
             cursor: "pointer",
+            color:
+              selectedId === doc.id
+                ? "var(--color-success-text)"
+                : "var(--color-text)",
             background:
-              selectedId === doc.id ? "#E8F5E9" : "transparent",
+              selectedId === doc.id
+                ? "var(--color-success-background)"
+                : "transparent",
             fontWeight:
               selectedId === doc.id ? "bold" : "normal",
           }}
