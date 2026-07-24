@@ -184,6 +184,49 @@ test(
 );
 
 test(
+  "commit unlock checklist stays passed after committed checkpoint refresh",
+  () => {
+    const checklist =
+      createMigrationCommitUnlockChecklist(
+        createDraft({
+          status:
+            "committed",
+          committedAt:
+            new Date(
+              "2026-07-24T07:03:46Z"
+            ),
+        }),
+        createDryRunContract()
+      );
+
+    assert.equal(
+      checklist.isReadyForUnlockReview,
+      true
+    );
+    assert.deepEqual(
+      checklist.items.map(
+        (item) => item.status
+      ),
+      [
+        "pass",
+        "pass",
+        "pass",
+        "pass",
+        "pass",
+        "pass",
+      ]
+    );
+    assert.equal(
+      checklist.items.find(
+        (item) =>
+          item.id === "commit-control"
+      )?.detail,
+      "Remote persistence is committed."
+    );
+  }
+);
+
+test(
   "commit unlock checklist blocks when pre-commit audit counts drift",
   () => {
     const checklist =

@@ -29,6 +29,13 @@ export function createMigrationCommitUnlockChecklist(
   dryRunContract: MigrationUploadDryRunContract,
   audit?: RemoteMigrationPreCommitAudit
 ): MigrationCommitUnlockChecklist {
+  if (draft.status === "committed") {
+    return createCommittedChecklist(
+      draft,
+      dryRunContract
+    );
+  }
+
   const gateItems:
     MigrationCommitUnlockChecklistItem[] = [
       createDryRunItem(dryRunContract),
@@ -69,6 +76,61 @@ export function createMigrationCommitUnlockChecklist(
     isReadyForUnlockReview:
       gatesPassed,
     items,
+  };
+}
+
+function createCommittedChecklist(
+  draft: RemoteMigrationDraft,
+  dryRunContract: MigrationUploadDryRunContract
+): MigrationCommitUnlockChecklist {
+  const accountCount =
+    draft.backupSummary.accountCount ?? 0;
+  const transactionCount =
+    draft.backupSummary.transactionCount ?? 0;
+
+  return {
+    isReadyForUnlockReview:
+      true,
+    items: [
+      createDryRunItem(
+        dryRunContract
+      ),
+      {
+        id: "upload-manifest",
+        label: "Upload manifest",
+        detail:
+          `${draft.uploadStagedRecordCount ?? dryRunContract.currentRecordCount} records accounted for.`,
+        status: "pass",
+      },
+      {
+        id: "account-staging",
+        label: "Account staging",
+        detail:
+          `${accountCount} accounts staged.`,
+        status: "pass",
+      },
+      {
+        id: "transaction-staging",
+        label: "Transaction staging",
+        detail:
+          `${transactionCount} transactions staged.`,
+        status: "pass",
+      },
+      {
+        id: "pre-commit-audit",
+        label: "Pre-commit audit",
+        detail:
+          "Pre-commit audit passed before commit.",
+        status: "pass",
+      },
+      {
+        id: "commit-control",
+        label: "Commit control",
+        detail:
+          "Remote persistence is committed.",
+        status: "pass",
+      },
+    ],
   };
 }
 

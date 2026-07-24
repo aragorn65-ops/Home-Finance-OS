@@ -640,10 +640,12 @@ export default function MigrationCheckpointPanel({
                         : "action-needed"
                     }
                   >
-                    {unlockChecklist
-                      .isReadyForUnlockReview
-                      ? "Ready for review"
-                      : "Review"}
+                    {draft.status === "committed"
+                      ? "Committed"
+                      : unlockChecklist
+                        .isReadyForUnlockReview
+                        ? "Ready for review"
+                        : "Review"}
                   </span>
                 </div>
                 <ul>
@@ -798,7 +800,9 @@ export default function MigrationCheckpointPanel({
                     isLoading || !canCommit
                   }
                   title={
-                    canCommit
+                    draft.status === "committed"
+                      ? "Remote persistence is committed"
+                      : canCommit
                       ? "Commit remote persistence after checklist review"
                       : "Commit remains locked until checklist review passes"
                   }
@@ -809,7 +813,9 @@ export default function MigrationCheckpointPanel({
                   />
                   {isCurrentAction
                     ? "Working"
-                    : canCommit
+                    : draft.status === "committed"
+                      ? "Committed"
+                      : canCommit
                       ? "Commit"
                       : "Commit locked"}
                 </button>
