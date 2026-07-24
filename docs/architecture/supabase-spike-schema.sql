@@ -34,10 +34,26 @@ create table if not exists public.household_memberships (
   user_id uuid not null references auth.users(id),
   role text not null,
   status text not null default 'active',
+  invited_by_user_id uuid references auth.users(id),
+  invited_at timestamptz,
+  accepted_at timestamptz,
+  removed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (household_id, user_id)
 );
+
+alter table public.household_memberships
+add column if not exists invited_by_user_id uuid references auth.users(id);
+
+alter table public.household_memberships
+add column if not exists invited_at timestamptz;
+
+alter table public.household_memberships
+add column if not exists accepted_at timestamptz;
+
+alter table public.household_memberships
+add column if not exists removed_at timestamptz;
 
 create table if not exists public.accounts (
   id uuid primary key default gen_random_uuid(),
