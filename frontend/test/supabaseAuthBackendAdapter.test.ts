@@ -2257,6 +2257,103 @@ test(
 );
 
 test(
+  "Supabase auth adapter probes cloud schema readiness",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const probes: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  async eq(
+                    column: string,
+                    value: string
+                  ) {
+                    probes.push({
+                      tableName,
+                      columns,
+                      column,
+                      value,
+                    });
+
+                    return {
+                      data: [],
+                      error:
+                        tableName ===
+                        "settlements"
+                          ? {
+                              message:
+                                "settlements unavailable",
+                            }
+                          : null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const checks =
+      await adapter
+        .listSchemaReadinessChecks();
+
+    assert.deepEqual(
+      probes.map(
+        (probe) =>
+          (probe as {
+            tableName: string;
+          }).tableName
+      ),
+      [
+        "accounts",
+        "transactions",
+        "expense_allocations",
+        "utility_provider_bills",
+        "settlements",
+        "settlement_applications",
+        "savings_goals",
+        "savings_activities",
+      ]
+    );
+    assert.equal(
+      checks.length,
+      8
+    );
+    assert.equal(
+      checks.find(
+        (check) =>
+          check.id ===
+          "settlements"
+      )?.ready,
+      false
+    );
+    assert.equal(
+      checks.find(
+        (check) =>
+          check.id ===
+          "accounts"
+      )?.ready,
+      true
+    );
+  }
+);
+
+test(
   "auth diagnostics keep core Supabase status when optional reads fail",
   async () => {
     const {

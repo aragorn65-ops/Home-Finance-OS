@@ -337,6 +337,48 @@ export default function AuthDiagnosticsPanel() {
             </div>
           </section>
 
+          {diagnostics.schemaReadinessChecks.length >
+            0 && (
+            <section className="auth-diagnostics__readiness">
+              <div>
+                <h3>
+                  Cloud Schema Readiness
+                </h3>
+                <p>
+                  Sprint 88 checks before upload or sync paths are enabled.
+                </p>
+              </div>
+
+              <div className="auth-diagnostics__readiness-list">
+                {diagnostics.schemaReadinessChecks.map(
+                  (check) => (
+                    <article
+                      key={check.id}
+                      className="auth-diagnostics__readiness-item"
+                      data-status={
+                        check.status
+                      }
+                    >
+                      <div>
+                        <h4>
+                          {check.label}
+                        </h4>
+                        <p>
+                          {check.detail}
+                        </p>
+                      </div>
+                      <span>
+                        {formatReadinessStatus(
+                          check.status
+                        )}
+                      </span>
+                    </article>
+                  )
+                )}
+              </div>
+            </section>
+          )}
+
           {diagnostics.isPrototypeAdapter && (
             <div className="auth-diagnostics__actions">
               <button

@@ -148,6 +148,17 @@ export async function createAuthDiagnosticsForAdapter(
             )
           : Promise.resolve(undefined)
     );
+  const schemaReadinessChecks =
+    await createOptionalDiagnostic(
+      warnings,
+      "Schema readiness diagnostics",
+      [],
+      () =>
+        isSupabaseAdapter
+          ? adapter
+            .listSchemaReadinessChecks()
+          : Promise.resolve([])
+    );
   const productionReadinessChecks =
     createProductionAuthReadinessChecks({
       config,
@@ -204,6 +215,21 @@ export async function createAuthDiagnosticsForAdapter(
       ),
     accountSummary,
     transactionSummary,
+    schemaReadinessChecks:
+      schemaReadinessChecks.map(
+        (check) => ({
+          id:
+            check.id,
+          label:
+            check.label,
+          status:
+            check.ready
+              ? "pass"
+              : "blocked",
+          detail:
+            check.detail,
+        })
+      ),
     productionReadinessChecks,
     invitationCount:
       invitations.length,

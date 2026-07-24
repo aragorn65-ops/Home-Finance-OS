@@ -162,6 +162,17 @@ interface SupabaseMigrationDraftRowsResult {
     | null;
 }
 
+interface SupabaseSchemaProbeRowsResult {
+  data:
+    | Array<{
+        id: string;
+      }>
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseHouseholdClaimRpcResult {
   data:
     | SupabaseHouseholdClaimRpcRow
@@ -345,6 +356,13 @@ export interface SupabaseTransactionDiagnosticSummary {
   privateVisibleCount: number;
   earliestTransactionDate?: string;
   latestTransactionDate?: string;
+}
+
+export interface SupabaseSchemaReadinessCheck {
+  id: string;
+  label: string;
+  ready: boolean;
+  detail: string;
 }
 
 export interface SupabaseAuthBackendAdapterConfig {
@@ -713,6 +731,26 @@ export class SupabaseAuthBackendAdapter
     return summarizeSupabaseTransactionRows(
       data ?? []
     );
+  }
+
+  async listSchemaReadinessChecks():
+    Promise<SupabaseSchemaReadinessCheck[]> {
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    const checks:
+      SupabaseSchemaReadinessCheck[] = [];
+
+    for (const table of schemaReadinessTables) {
+      checks.push(
+        await this.createSchemaReadinessCheck(
+          table
+        )
+      );
+    }
+
+    return checks;
   }
 
   async createHouseholdClaimDraft(
@@ -1195,6 +1233,43 @@ export class SupabaseAuthBackendAdapter
     );
   }
 
+  private async createSchemaReadinessCheck(
+    table: SupabaseSchemaReadinessTable
+  ): Promise<SupabaseSchemaReadinessCheck> {
+    const probeResult =
+      await (
+      await this.getClient()
+      )
+        .from(table.tableName)
+        .select("id")
+        .eq(
+          "id",
+          schemaReadinessProbeId
+        ) as SupabaseSchemaProbeRowsResult;
+
+    if (probeResult.error) {
+      return {
+        id:
+          table.id,
+        label:
+          table.label,
+        ready: false,
+        detail:
+          probeResult.error.message,
+      };
+    }
+
+    return {
+      id:
+        table.id,
+      label:
+        table.label,
+      ready: true,
+      detail:
+        `${table.tableName} is queryable.`,
+    };
+  }
+
   private async getClient():
     Promise<SupabaseAuthClient> {
     if (this.config.client) {
@@ -1227,6 +1302,59 @@ export class SupabaseAuthBackendAdapter
     return this.config.client;
   }
 }
+
+const schemaReadinessProbeId =
+  "00000000-0000-0000-0000-000000000000";
+
+interface SupabaseSchemaReadinessTable {
+  id: string;
+  label: string;
+  tableName: string;
+}
+
+const schemaReadinessTables:
+  SupabaseSchemaReadinessTable[] = [
+    {
+      id: "accounts",
+      label: "Accounts",
+      tableName: "accounts",
+    },
+    {
+      id: "transactions",
+      label: "Transactions",
+      tableName: "transactions",
+    },
+    {
+      id: "expense-allocations",
+      label: "Expense allocations",
+      tableName: "expense_allocations",
+    },
+    {
+      id: "utility-provider-bills",
+      label: "Provider bills",
+      tableName: "utility_provider_bills",
+    },
+    {
+      id: "settlements",
+      label: "Settlements",
+      tableName: "settlements",
+    },
+    {
+      id: "settlement-applications",
+      label: "Settlement applications",
+      tableName: "settlement_applications",
+    },
+    {
+      id: "savings-goals",
+      label: "Savings goals",
+      tableName: "savings_goals",
+    },
+    {
+      id: "savings-activities",
+      label: "Savings activities",
+      tableName: "savings_activities",
+    },
+  ];
 
 function mapSupabaseUser(
   user: SupabaseUser

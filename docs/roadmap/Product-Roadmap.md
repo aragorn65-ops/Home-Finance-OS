@@ -103,6 +103,8 @@ Sprint 86 makes the production Supabase auth baseline visible in Auth
 Diagnostics before any sync behavior is enabled.
 Sprint 87 adds the first cloud data schema target for authenticated household
 records while keeping remote CRUD and automatic sync disabled.
+Sprint 88 surfaces the configured Supabase cloud schema readiness inside Auth
+Diagnostics before any upload or sync paths are introduced.
 
 ---
 
@@ -166,6 +168,7 @@ records while keeping remote CRUD and automatic sync disabled.
 | v0.85.0-alpha | Public beta launch checklist |
 | v0.86.0-alpha | Production auth baseline |
 | v0.87.0-alpha | Cloud data schema groundwork |
+| v0.88.0-alpha | Cloud schema readiness diagnostics |
 
 ---
 

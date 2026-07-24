@@ -50,6 +50,17 @@ export interface AuthProductionReadinessCheck {
   detail: string;
 }
 
+export type AuthSchemaReadinessCheckStatus =
+  | "pass"
+  | "blocked";
+
+export interface AuthSchemaReadinessCheck {
+  id: string;
+  label: string;
+  status: AuthSchemaReadinessCheckStatus;
+  detail: string;
+}
+
 export interface AuthDiagnostics {
   enabled: boolean;
   provider: AuthProvider;
@@ -69,6 +80,8 @@ export interface AuthDiagnostics {
     AuthAccountDiagnosticSummary;
   transactionSummary?:
     AuthTransactionDiagnosticSummary;
+  schemaReadinessChecks:
+    AuthSchemaReadinessCheck[];
   productionReadinessChecks:
     AuthProductionReadinessCheck[];
   invitationCount: number;
