@@ -78,6 +78,14 @@ export function requireMigrationCommitLocalLink(
   );
 }
 
+export function requireMigrationCommitUploadStaged(
+  draft: RemoteMigrationDraft
+): void {
+  throw new Error(
+    `Migration checkpoint ${draft.id} cannot be committed until full upload staging is implemented and verified.`
+  );
+}
+
 export function assertMigrationCommitResultMatchesDraft(
   draft: RemoteMigrationDraft,
   result: RemoteMigrationCommitResult

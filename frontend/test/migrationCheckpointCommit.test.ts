@@ -6,6 +6,7 @@ import {
   requireMigrationCommitLocalLink,
   requireMigrationCommitLocalOwner,
   requireMigrationCommitDraft,
+  requireMigrationCommitUploadStaged,
 } from "../src/features/auth/components/migrationCheckpointCommit.ts";
 
 function createValidatedDraft(
@@ -253,6 +254,19 @@ test(
         }
       );
     });
+  }
+);
+
+test(
+  "blocks migration commit until upload staging is implemented",
+  () => {
+    assert.throws(
+      () =>
+        requireMigrationCommitUploadStaged(
+          createValidatedDraft()
+        ),
+      /cannot be committed until full upload staging is implemented and verified\./
+    );
   }
 );
 

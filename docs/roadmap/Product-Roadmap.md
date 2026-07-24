@@ -107,6 +107,8 @@ Sprint 88 surfaces the configured Supabase cloud schema readiness inside Auth
 Diagnostics before any upload or sync paths are introduced.
 Sprint 89 adds a local migration upload dry-run contract so checkpoint
 validation can detect browser data drift before remote calls.
+Sprint 90 locks migration Commit until full upload staging is implemented and
+verified.
 
 ---
 
@@ -172,6 +174,7 @@ validation can detect browser data drift before remote calls.
 | v0.87.0-alpha | Cloud data schema groundwork |
 | v0.88.0-alpha | Cloud schema readiness diagnostics |
 | v0.89.0-alpha | Migration upload dry-run contract |
+| v0.90.0-alpha | Commit upload-staging guard |
 
 ---
 

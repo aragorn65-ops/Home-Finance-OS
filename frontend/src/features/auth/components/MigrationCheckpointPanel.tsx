@@ -34,6 +34,7 @@ import {
   requireMigrationCommitLocalLink,
   requireMigrationCommitLocalOwner,
   requireMigrationCommitDraft,
+  requireMigrationCommitUploadStaged,
 } from "./migrationCheckpointCommit";
 import {
   requireMigrationAbortDraft,
@@ -175,6 +176,9 @@ export default function MigrationCheckpointPanel({
               draft,
               localHousehold?.authenticatedLink
             );
+            requireMigrationCommitUploadStaged(
+              draft
+            );
 
             const commitResult =
               await adapter
@@ -295,7 +299,7 @@ export default function MigrationCheckpointPanel({
           const canValidate =
             draft.status === "uploaded";
           const canCommit =
-            draft.status === "validated";
+            false;
           const canAbort =
             draft.status !== "committed" &&
             draft.status !== "aborted";
@@ -418,7 +422,7 @@ export default function MigrationCheckpointPanel({
                   disabled={
                     isLoading || !canCommit
                   }
-                  title="Commit remote persistence"
+                  title="Commit requires full upload staging in a later sprint"
                 >
                   <CheckCircle2
                     size={16}
@@ -426,7 +430,7 @@ export default function MigrationCheckpointPanel({
                   />
                   {isCurrentAction
                     ? "Working"
-                    : "Commit"}
+                    : "Commit locked"}
                 </button>
 
                 <button
