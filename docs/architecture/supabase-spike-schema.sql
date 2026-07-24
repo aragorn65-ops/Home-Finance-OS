@@ -955,7 +955,6 @@ declare
   staging_timestamp timestamptz := now();
   selected_draft public.migration_drafts%rowtype;
   expected_checkpoint_count integer;
-  fallback_cash_account_id uuid;
 begin
   if current_user_id is null then
     raise exception 'Sign in before staging migration accounts.';
@@ -1179,6 +1178,7 @@ declare
   staging_timestamp timestamptz := now();
   selected_draft public.migration_drafts%rowtype;
   expected_checkpoint_count integer;
+  fallback_cash_account_id uuid;
 begin
   if current_user_id is null then
     raise exception 'Sign in before staging migration transactions.';
