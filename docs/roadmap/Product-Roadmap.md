@@ -115,6 +115,8 @@ keeping transactions, remote CRUD, sync, and Commit disabled.
 Sprint 92 adds explicit transaction upload staging after accounts while keeping
 allocations, settlements, provider bills, savings, remote CRUD, sync, and Commit
 disabled.
+Sprint 93 adds read-only transaction account-link diagnostics before allocation
+staging decisions.
 
 ---
 
@@ -183,6 +185,7 @@ disabled.
 | v0.90.0-alpha | Upload manifest staging guard |
 | v0.91.0-alpha | Account upload staging |
 | v0.92.0-alpha | Transaction upload staging |
+| v0.93.0-alpha | Transaction link diagnostics |
 
 ---
 
@@ -235,6 +238,8 @@ manifest staging passes, while keeping Commit and automatic sync disabled.
 Sprint 92 keeps that incremental staging path going by uploading transactions
 only after account staging passes, while keeping Commit and automatic sync
 disabled.
+Sprint 93 keeps the path diagnostic-first by surfacing staged transaction
+account-link gaps before allocation staging or sync behavior is enabled.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior

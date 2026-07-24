@@ -2418,6 +2418,10 @@ test(
                             "2026-07-01",
                           is_active:
                             true,
+                          source_account_id:
+                            "account-1",
+                          destination_account_id:
+                            null,
                         },
                         {
                           household_id:
@@ -2430,6 +2434,10 @@ test(
                             "2026-07-11",
                           is_active:
                             true,
+                          source_account_id:
+                            null,
+                          destination_account_id:
+                            null,
                         },
                         {
                           household_id:
@@ -2442,6 +2450,10 @@ test(
                             "2026-07-20",
                           is_active:
                             false,
+                          source_account_id:
+                            "account-2",
+                          destination_account_id:
+                            "account-3",
                         },
                       ],
                       error: null,
@@ -2470,7 +2482,7 @@ test(
           tableName:
             "transactions",
           columns:
-            "household_id,type,visibility,transaction_date,is_active",
+            "household_id,type,visibility,transaction_date,is_active,source_account_id,destination_account_id",
           column:
             "household_id",
           values: [
@@ -2500,6 +2512,14 @@ test(
         participantVisibleCount:
           1,
         privateVisibleCount:
+          1,
+        sourceAccountLinkedCount:
+          2,
+        destinationAccountLinkedCount:
+          1,
+        missingAccountLinkCount:
+          1,
+        expenseMissingSourceAccountCount:
           1,
         earliestTransactionDate:
           "2026-07-01",

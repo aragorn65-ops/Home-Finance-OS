@@ -617,6 +617,30 @@ export default function AuthDiagnosticsPanel() {
                   </dd>
                 </div>
                 <div>
+                  <dt>Source links</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.sourceAccountLinkedCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Destination links</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.destinationAccountLinkedCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>No account link</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.missingAccountLinkCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Expenses without source</dt>
+                  <dd>
+                    {diagnostics.transactionSummary.expenseMissingSourceAccountCount}
+                  </dd>
+                </div>
+                <div>
                   <dt>Date Range</dt>
                   <dd>
                     {diagnostics.transactionSummary.earliestTransactionDate &&

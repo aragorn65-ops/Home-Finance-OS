@@ -34,6 +34,10 @@ export interface AuthTransactionDiagnosticSummary {
   householdVisibleCount: number;
   participantVisibleCount: number;
   privateVisibleCount: number;
+  sourceAccountLinkedCount: number;
+  destinationAccountLinkedCount: number;
+  missingAccountLinkCount: number;
+  expenseMissingSourceAccountCount: number;
   earliestTransactionDate?: string;
   latestTransactionDate?: string;
 }

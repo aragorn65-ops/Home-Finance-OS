@@ -318,6 +318,8 @@ interface SupabaseTransactionRow {
   visibility: string;
   transaction_date: string;
   is_active: boolean;
+  source_account_id?: string | null;
+  destination_account_id?: string | null;
 }
 
 interface SupabaseMigrationDraftRow {
@@ -418,6 +420,10 @@ export interface SupabaseTransactionDiagnosticSummary {
   householdVisibleCount: number;
   participantVisibleCount: number;
   privateVisibleCount: number;
+  sourceAccountLinkedCount: number;
+  destinationAccountLinkedCount: number;
+  missingAccountLinkCount: number;
+  expenseMissingSourceAccountCount: number;
   earliestTransactionDate?: string;
   latestTransactionDate?: string;
 }
@@ -775,6 +781,8 @@ export class SupabaseAuthBackendAdapter
             "visibility",
             "transaction_date",
             "is_active",
+            "source_account_id",
+            "destination_account_id",
           ].join(",")
         )
         .in(
@@ -2321,6 +2329,14 @@ function createEmptyTransactionDiagnosticSummary():
       0,
     privateVisibleCount:
       0,
+    sourceAccountLinkedCount:
+      0,
+    destinationAccountLinkedCount:
+      0,
+    missingAccountLinkCount:
+      0,
+    expenseMissingSourceAccountCount:
+      0,
   };
 }
 
@@ -2357,6 +2373,28 @@ function summarizeSupabaseTransactionRows(
       row.visibility === "household"
     ) {
       summary.householdVisibleCount += 1;
+    }
+
+    if (row.source_account_id) {
+      summary.sourceAccountLinkedCount += 1;
+    }
+
+    if (row.destination_account_id) {
+      summary.destinationAccountLinkedCount += 1;
+    }
+
+    if (
+      !row.source_account_id &&
+      !row.destination_account_id
+    ) {
+      summary.missingAccountLinkCount += 1;
+    }
+
+    if (
+      row.type === "expense" &&
+      !row.source_account_id
+    ) {
+      summary.expenseMissingSourceAccountCount += 1;
     }
 
     if (!row.transaction_date) {
