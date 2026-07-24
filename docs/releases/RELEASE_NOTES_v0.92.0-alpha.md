@@ -16,7 +16,7 @@ the first linked financial activity records.
 * Added a Supabase RPC that upserts staged transaction rows by household and
   local record id.
 * Staged transactions resolve source and destination accounts through staged
-  account local record ids.
+  account local record ids when present.
 * Migration checkpoints now show a transaction-staged lifecycle timestamp.
 * Abort now removes staged transaction rows before staged account rows.
 * Added regression coverage for transaction payload mapping and adapter staging
@@ -29,6 +29,9 @@ the first linked financial activity records.
 * Commit remains locked after transaction staging.
 * Transaction staging requires account staging first.
 * Transaction staging must match the checkpoint transaction count.
+* Transactions with missing or unstaged local account references still stage,
+  but the unresolved account link is left empty for a later reconciliation
+  sprint.
 * Transaction member ownership uses the claimed remote owner until household
   member mapping is introduced in a later sprint.
 * Expense allocations, settlements, provider bills, savings, remote CRUD, and

@@ -24,7 +24,7 @@ staged without turning remote storage into the source of truth.
       drafts with account staging complete.
 * [x] Verify staged transaction counts against the migration checkpoint.
 * [x] Resolve source and destination account links from staged account local
-      record ids.
+      record ids when present.
 * [x] Track transaction-staged count and timestamp on migration drafts.
 * [x] Surface the transaction-staged lifecycle in migration checkpoint
       diagnostics.
@@ -38,6 +38,8 @@ staged without turning remote storage into the source of truth.
 * Expense allocation upload staging.
 * Settlement, provider bill, and savings staging.
 * Household-member ownership remapping beyond the claimed remote owner.
+* Account-link reconciliation for transactions whose local account reference is
+  missing or not staged.
 * Remote CRUD.
 * Automatic multi-device sync.
 * Commit unlock.
@@ -56,7 +58,6 @@ staged without turning remote storage into the source of truth.
 
 ## Notes For Next Step
 
-The next sprint should stage expense allocations after transactions are
-queryable. That will require resolving allocation transaction links by local
-record id and keeping member mapping conservative until a dedicated member
-mapping sprint.
+The next sprint should inspect transaction account-link gaps before expense
+allocation staging. Allocation staging should only proceed after we understand
+which local transaction account references are missing or not staged.

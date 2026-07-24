@@ -1178,7 +1178,6 @@ declare
   staging_timestamp timestamptz := now();
   selected_draft public.migration_drafts%rowtype;
   expected_checkpoint_count integer;
-  unresolved_account_count integer;
 begin
   if current_user_id is null then
     raise exception 'Sign in before staging migration transactions.';
@@ -1228,41 +1227,6 @@ begin
 
   if expected_transaction_count <> expected_checkpoint_count then
     raise exception 'Transaction upload count does not match the migration checkpoint.';
-  end if;
-
-  with transaction_payload as (
-    select
-      transaction_record."sourceAccountId" as source_account_local_id,
-      transaction_record."destinationAccountId" as destination_account_local_id
-    from jsonb_to_recordset(staged_transactions) as transaction_record(
-      "sourceAccountId" text,
-      "destinationAccountId" text
-    )
-  )
-  select count(*)
-  into unresolved_account_count
-  from transaction_payload
-  where (
-      source_account_local_id is not null
-      and not exists (
-        select 1
-        from public.accounts remote_account
-        where remote_account.household_id = selected_draft.household_id
-          and remote_account.local_record_id = source_account_local_id
-      )
-    )
-    or (
-      destination_account_local_id is not null
-      and not exists (
-        select 1
-        from public.accounts remote_account
-        where remote_account.household_id = selected_draft.household_id
-          and remote_account.local_record_id = destination_account_local_id
-      )
-    );
-
-  if unresolved_account_count > 0 then
-    raise exception 'Transaction upload references accounts that have not been staged.';
   end if;
 
   with transaction_payload as (
