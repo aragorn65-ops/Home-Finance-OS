@@ -12,6 +12,8 @@ import type {
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationTransactionUploadPayload,
+  RemoteMigrationTransactionUploadStagingResult,
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
@@ -87,6 +89,15 @@ export class DisabledAuthBackendAdapter
   ): Promise<RemoteMigrationAccountUploadStagingResult> {
     throw new Error(
       `Remote migration account staging is disabled for ${draftId}.`
+    );
+  }
+
+  async stageMigrationTransactions(
+    draftId: string,
+    _payload: RemoteMigrationTransactionUploadPayload
+  ): Promise<RemoteMigrationTransactionUploadStagingResult> {
+    throw new Error(
+      `Remote migration transaction staging is disabled for ${draftId}.`
     );
   }
 

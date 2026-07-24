@@ -4,6 +4,9 @@ import type {
 import type {
   Account,
 } from "../../accounts/models/Account";
+import type {
+  Transaction,
+} from "../../transactions/models/Transaction";
 
 export type RemoteMigrationStatus =
   | "draft"
@@ -28,6 +31,8 @@ export interface RemoteMigrationDraft {
   uploadStagedRecordCount?: number;
   accountUploadStagedAt?: Date;
   accountUploadStagedCount?: number;
+  transactionUploadStagedAt?: Date;
+  transactionUploadStagedCount?: number;
   committedAt?: Date;
   abortedAt?: Date;
 }
@@ -87,5 +92,33 @@ export interface RemoteMigrationAccountUploadPayload {
 export interface RemoteMigrationAccountUploadStagingResult {
   draftId: string;
   stagedAccountCount: number;
+  stagedAt: Date;
+}
+
+export interface RemoteMigrationTransactionUploadRecord
+  extends Omit<
+    Transaction,
+    | "householdId"
+    | "createdByMemberId"
+    | "paidByMemberId"
+    | "transactionDate"
+    | "exchangeRateEffectiveDate"
+    | "createdAt"
+    | "updatedAt"
+  > {
+  transactionDate: string;
+  exchangeRateEffectiveDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RemoteMigrationTransactionUploadPayload {
+  expectedTransactionCount: number;
+  transactions: RemoteMigrationTransactionUploadRecord[];
+}
+
+export interface RemoteMigrationTransactionUploadStagingResult {
+  draftId: string;
+  stagedTransactionCount: number;
   stagedAt: Date;
 }

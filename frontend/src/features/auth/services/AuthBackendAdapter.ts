@@ -6,6 +6,8 @@ import type {
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationTransactionUploadPayload,
+  RemoteMigrationTransactionUploadStagingResult,
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
@@ -81,6 +83,11 @@ export interface AuthBackendAdapter {
     draftId: string,
     payload: RemoteMigrationAccountUploadPayload
   ): Promise<RemoteMigrationAccountUploadStagingResult>;
+
+  stageMigrationTransactions(
+    draftId: string,
+    payload: RemoteMigrationTransactionUploadPayload
+  ): Promise<RemoteMigrationTransactionUploadStagingResult>;
 
   commitMigrationDraft(
     draftId: string

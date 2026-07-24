@@ -23,6 +23,7 @@ import {
   getApplicationDataHealthSummary,
 } from "../../startup/services/applicationBackup";
 import AccountService from "../../accounts/services/AccountService";
+import TransactionService from "../../transactions/services/TransactionService";
 import {
   getAuthBackendAdapter,
 } from "../services/createAuthBackendAdapter";
@@ -45,6 +46,9 @@ import {
 import {
   createMigrationAccountUploadPayload,
 } from "./migrationAccountUpload";
+import {
+  createMigrationTransactionUploadPayload,
+} from "./migrationTransactionUpload";
 import {
   createMigrationUploadManifest,
   createMigrationUploadDryRunContract,
@@ -114,6 +118,7 @@ export default function MigrationCheckpointPanel({
           | "validate"
           | "stage-upload"
           | "stage-accounts"
+          | "stage-transactions"
           | "commit"
           | "abort"
       ) => {
@@ -247,6 +252,56 @@ export default function MigrationCheckpointPanel({
 
             setMessage(
               `Accounts staged. ${staging.stagedAccountCount} accounts written to remote staging.`
+            );
+          }
+
+          if (action === "stage-transactions") {
+            const draft =
+              requireMigrationUploadStagingDraft(
+                drafts,
+                draftId
+              );
+            const localHousehold =
+              loadHousehold();
+
+            if (!localHousehold) {
+              throw new Error(
+                "Local household data is not available for transaction staging."
+              );
+            }
+
+            const payload =
+              createMigrationTransactionUploadPayload(
+                TransactionService.getTransactions(),
+                localHousehold.id
+              );
+
+            if (
+              !draft.accountUploadStagedAt
+            ) {
+              throw new Error(
+                "Stage migration accounts before staging transactions."
+              );
+            }
+
+            if (
+              payload.expectedTransactionCount !==
+              draft.backupSummary.transactionCount
+            ) {
+              throw new Error(
+                "Local transaction count no longer matches the migration checkpoint."
+              );
+            }
+
+            const staging =
+              await adapter
+                .stageMigrationTransactions(
+                  draftId,
+                  payload
+                );
+
+            setMessage(
+              `Transactions staged. ${staging.stagedTransactionCount} transactions written to remote staging.`
             );
           }
 
@@ -407,6 +462,14 @@ export default function MigrationCheckpointPanel({
             draft.backupSummary.accountCount ===
               getApplicationDataHealthSummary()
                 .accountCount;
+          const canStageTransactions =
+            canStageUpload &&
+            Boolean(
+              draft.accountUploadStagedAt
+            ) &&
+            draft.backupSummary.transactionCount ===
+              getApplicationDataHealthSummary()
+                .transactionCount;
           const canCommit =
             false;
           const canAbort =
@@ -557,6 +620,28 @@ export default function MigrationCheckpointPanel({
                   {isCurrentAction
                     ? "Working"
                     : "Stage accounts"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void runAction(
+                      draft.id,
+                      "stage-transactions"
+                    );
+                  }}
+                  disabled={
+                    isLoading || !canStageTransactions
+                  }
+                  title="Stage transaction records after accounts"
+                >
+                  <CloudUpload
+                    size={16}
+                    aria-hidden="true"
+                  />
+                  {isCurrentAction
+                    ? "Working"
+                    : "Stage transactions"}
                 </button>
 
                 <button

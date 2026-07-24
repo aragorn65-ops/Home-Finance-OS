@@ -57,6 +57,19 @@ test(
 
     await assert.rejects(
       () =>
+        adapter.stageMigrationTransactions(
+          "migration-1",
+          {
+            expectedTransactionCount:
+              0,
+            transactions: [],
+          }
+        ),
+      /Remote migration transaction staging is disabled for migration-1\./
+    );
+
+    await assert.rejects(
+      () =>
         adapter.abortMigrationDraft(
           "migration-1"
         ),

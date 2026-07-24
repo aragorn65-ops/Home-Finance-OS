@@ -31,6 +31,12 @@ export function getMigrationCheckpointLifecycleEntries(
     },
     {
       label:
+        "Transactions staged",
+      date:
+        draft.transactionUploadStagedAt,
+    },
+    {
+      label:
         "Committed",
       date:
         draft.committedAt,
@@ -90,6 +96,7 @@ export function getMigrationCheckpointSortDate(
 ): Date {
   return draft.abortedAt ??
     draft.committedAt ??
+    draft.transactionUploadStagedAt ??
     draft.accountUploadStagedAt ??
     draft.uploadStagedAt ??
     draft.validatedAt ??

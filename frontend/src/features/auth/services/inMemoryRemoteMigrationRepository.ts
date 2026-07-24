@@ -3,6 +3,8 @@ import type {
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationTransactionUploadPayload,
+  RemoteMigrationTransactionUploadStagingResult,
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
@@ -211,6 +213,59 @@ export class InMemoryRemoteMigrationRepository
       draftId,
       stagedAccountCount:
         payload.expectedAccountCount,
+      stagedAt,
+    };
+  }
+
+  async stageTransactions(
+    draftId: string,
+    payload: RemoteMigrationTransactionUploadPayload
+  ): Promise<RemoteMigrationTransactionUploadStagingResult> {
+    const draft =
+      this.store.getMigration(
+        draftId
+      );
+
+    if (!draft) {
+      throw new Error(
+        "Migration draft was not found."
+      );
+    }
+
+    if (!draft.accountUploadStagedAt) {
+      throw new Error(
+        "Stage migration accounts before staging transactions."
+      );
+    }
+
+    if (
+      payload.expectedTransactionCount !==
+        draft.backupSummary.transactionCount ||
+      payload.transactions.length !==
+        payload.expectedTransactionCount
+    ) {
+      throw new Error(
+        "Transaction upload payload does not match the migration checkpoint."
+      );
+    }
+
+    const stagedAt =
+      new Date();
+
+    this.store.saveMigration({
+      ...draft,
+      transactionUploadStagedAt:
+        stagedAt,
+      transactionUploadStagedCount:
+        payload.expectedTransactionCount,
+      updatedAt:
+        stagedAt,
+    });
+
+    return {
+      draftId,
+      stagedTransactionCount:
+        payload.expectedTransactionCount,
       stagedAt,
     };
   }

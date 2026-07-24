@@ -3,6 +3,8 @@ import type {
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationTransactionUploadPayload,
+  RemoteMigrationTransactionUploadStagingResult,
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
@@ -32,6 +34,11 @@ export interface RemoteMigrationRepository {
     draftId: string,
     payload: RemoteMigrationAccountUploadPayload
   ): Promise<RemoteMigrationAccountUploadStagingResult>;
+
+  stageTransactions(
+    draftId: string,
+    payload: RemoteMigrationTransactionUploadPayload
+  ): Promise<RemoteMigrationTransactionUploadStagingResult>;
 
   commitDraft(
     draftId: string

@@ -23,6 +23,8 @@ import type {
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationTransactionUploadPayload,
+  RemoteMigrationTransactionUploadStagingResult,
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
@@ -169,6 +171,17 @@ export class InMemoryAuthBackendAdapter
   ): Promise<RemoteMigrationAccountUploadStagingResult> {
     return this.migrationRepository
       .stageAccounts(
+        draftId,
+        payload
+      );
+  }
+
+  async stageMigrationTransactions(
+    draftId: string,
+    payload: RemoteMigrationTransactionUploadPayload
+  ): Promise<RemoteMigrationTransactionUploadStagingResult> {
+    return this.migrationRepository
+      .stageTransactions(
         draftId,
         payload
       );

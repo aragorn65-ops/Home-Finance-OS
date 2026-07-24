@@ -86,6 +86,25 @@ test(
       claim.migrationDraft
         .backupSummary.accountCount
     );
+    const transactionStaging =
+      await adapter
+        .stageMigrationTransactions(
+          claim.migrationDraft.id,
+          {
+            expectedTransactionCount:
+              claim.migrationDraft
+                .backupSummary
+                .transactionCount,
+            transactions: [],
+          }
+        );
+
+    assert.equal(
+      transactionStaging
+        .stagedTransactionCount,
+      claim.migrationDraft
+        .backupSummary.transactionCount
+    );
 
     const commit =
       await adapter.commitMigrationDraft(

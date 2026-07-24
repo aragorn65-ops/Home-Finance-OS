@@ -112,6 +112,9 @@ then adds metadata-only upload manifest staging for validated checkpoints while
 keeping full record upload and Commit disabled.
 Sprint 91 adds explicit account record upload staging after the manifest while
 keeping transactions, remote CRUD, sync, and Commit disabled.
+Sprint 92 adds explicit transaction upload staging after accounts while keeping
+allocations, settlements, provider bills, savings, remote CRUD, sync, and Commit
+disabled.
 
 ---
 
@@ -179,6 +182,7 @@ keeping transactions, remote CRUD, sync, and Commit disabled.
 | v0.89.0-alpha | Migration upload dry-run contract |
 | v0.90.0-alpha | Upload manifest staging guard |
 | v0.91.0-alpha | Account upload staging |
+| v0.92.0-alpha | Transaction upload staging |
 
 ---
 
@@ -228,6 +232,9 @@ deployment, route refreshes, backup/restore, reset behavior, safety notices, and
 optional Google Drive checks are verified.
 Sprint 91 keeps migration staging incremental by uploading accounts only after
 manifest staging passes, while keeping Commit and automatic sync disabled.
+Sprint 92 keeps that incremental staging path going by uploading transactions
+only after account staging passes, while keeping Commit and automatic sync
+disabled.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior

@@ -354,6 +354,8 @@ create table if not exists public.migration_drafts (
   upload_staged_at timestamptz,
   account_upload_staged_count integer,
   account_upload_staged_at timestamptz,
+  transaction_upload_staged_count integer,
+  transaction_upload_staged_at timestamptz,
   committed_at timestamptz,
   aborted_at timestamptz,
   created_at timestamptz not null default now(),
@@ -377,6 +379,12 @@ add column if not exists account_upload_staged_count integer;
 
 alter table public.migration_drafts
 add column if not exists account_upload_staged_at timestamptz;
+
+alter table public.migration_drafts
+add column if not exists transaction_upload_staged_count integer;
+
+alter table public.migration_drafts
+add column if not exists transaction_upload_staged_at timestamptz;
 
 alter table public.migration_drafts
 add column if not exists committed_at timestamptz;
@@ -1151,6 +1159,273 @@ grant execute on function public.stage_migration_accounts(
   jsonb
 ) to authenticated;
 
+create or replace function public.stage_migration_transactions(
+  target_draft_id uuid,
+  expected_transaction_count integer,
+  staged_transactions jsonb
+)
+returns table (
+  draft_id uuid,
+  staged_transaction_count integer,
+  staged_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  staging_timestamp timestamptz := now();
+  selected_draft public.migration_drafts%rowtype;
+  expected_checkpoint_count integer;
+  unresolved_account_count integer;
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before staging migration transactions.';
+  end if;
+
+  if expected_transaction_count < 0 then
+    raise exception 'Transaction upload expected count cannot be negative.';
+  end if;
+
+  if jsonb_typeof(staged_transactions) <> 'array' then
+    raise exception 'Transaction upload payload must be an array.';
+  end if;
+
+  if jsonb_array_length(staged_transactions) <> expected_transaction_count then
+    raise exception 'Transaction upload payload count does not match expected count.';
+  end if;
+
+  select *
+  into selected_draft
+  from public.migration_drafts
+  where id = target_draft_id
+    and owner_user_id = current_user_id
+  for update;
+
+  if selected_draft.id is null then
+    raise exception 'Migration draft was not found for the current user.';
+  end if;
+
+  if selected_draft.household_id is null then
+    raise exception 'Migration draft is missing a linked household.';
+  end if;
+
+  if selected_draft.owner_member_id is null then
+    raise exception 'Migration draft is missing an owner member.';
+  end if;
+
+  if selected_draft.status <> 'validated' then
+    raise exception 'Validate the migration draft before staging transactions.';
+  end if;
+
+  if selected_draft.account_upload_staged_at is null then
+    raise exception 'Stage migration accounts before staging transactions.';
+  end if;
+
+  expected_checkpoint_count :=
+    coalesce((selected_draft.backup_summary ->> 'transactionCount')::integer, 0);
+
+  if expected_transaction_count <> expected_checkpoint_count then
+    raise exception 'Transaction upload count does not match the migration checkpoint.';
+  end if;
+
+  with transaction_payload as (
+    select
+      transaction_record."sourceAccountId" as source_account_local_id,
+      transaction_record."destinationAccountId" as destination_account_local_id
+    from jsonb_to_recordset(staged_transactions) as transaction_record(
+      "sourceAccountId" text,
+      "destinationAccountId" text
+    )
+  )
+  select count(*)
+  into unresolved_account_count
+  from transaction_payload
+  where (
+      source_account_local_id is not null
+      and not exists (
+        select 1
+        from public.accounts remote_account
+        where remote_account.household_id = selected_draft.household_id
+          and remote_account.local_record_id = source_account_local_id
+      )
+    )
+    or (
+      destination_account_local_id is not null
+      and not exists (
+        select 1
+        from public.accounts remote_account
+        where remote_account.household_id = selected_draft.household_id
+          and remote_account.local_record_id = destination_account_local_id
+      )
+    );
+
+  if unresolved_account_count > 0 then
+    raise exception 'Transaction upload references accounts that have not been staged.';
+  end if;
+
+  with transaction_payload as (
+    select transaction_record.id
+    from jsonb_to_recordset(staged_transactions) as transaction_record(
+      id text
+    )
+  )
+  delete from public.transactions remote_transaction
+  where remote_transaction.household_id = selected_draft.household_id
+    and remote_transaction.local_record_id is not null
+    and not exists (
+      select 1
+      from transaction_payload
+      where transaction_payload.id = remote_transaction.local_record_id
+    );
+
+  insert into public.transactions (
+    household_id,
+    local_record_id,
+    created_by_member_id,
+    paid_by_member_id,
+    expense_split_method,
+    source_account_id,
+    destination_account_id,
+    type,
+    amount,
+    entered_amount,
+    entered_currency,
+    base_currency,
+    base_amount,
+    exchange_rate,
+    exchange_rate_effective_date,
+    exchange_rate_source,
+    exchange_rate_provider,
+    category,
+    description,
+    notes,
+    attachments,
+    visibility,
+    transaction_date,
+    is_active,
+    created_at,
+    updated_at,
+    updated_by_user_id
+  )
+  select
+    selected_draft.household_id,
+    transaction_record.id,
+    selected_draft.owner_member_id,
+    case
+      when transaction_record.type = 'expense' then selected_draft.owner_member_id
+      else null
+    end,
+    nullif(transaction_record."expenseSplitMethod", ''),
+    source_account.id,
+    destination_account.id,
+    transaction_record.type,
+    transaction_record.amount,
+    transaction_record."enteredAmount",
+    nullif(transaction_record."enteredCurrency", ''),
+    nullif(transaction_record."baseCurrency", ''),
+    transaction_record."baseAmount",
+    transaction_record."exchangeRate",
+    nullif(transaction_record."exchangeRateEffectiveDate", '')::date,
+    transaction_record."exchangeRateSource",
+    nullif(transaction_record."exchangeRateProvider", ''),
+    transaction_record.category,
+    coalesce(transaction_record.description, ''),
+    coalesce(transaction_record.notes, ''),
+    coalesce(transaction_record.attachments, '[]'::jsonb),
+    coalesce(transaction_record.visibility, 'household'),
+    transaction_record."transactionDate"::date,
+    transaction_record."isActive",
+    coalesce(nullif(transaction_record."createdAt", '')::timestamptz, staging_timestamp),
+    coalesce(nullif(transaction_record."updatedAt", '')::timestamptz, staging_timestamp),
+    current_user_id
+  from jsonb_to_recordset(staged_transactions) as transaction_record(
+    id text,
+    "expenseSplitMethod" text,
+    visibility text,
+    type text,
+    amount numeric,
+    "enteredAmount" numeric,
+    "enteredCurrency" text,
+    "baseCurrency" text,
+    "baseAmount" numeric,
+    "exchangeRate" numeric,
+    "exchangeRateEffectiveDate" text,
+    "exchangeRateSource" text,
+    "exchangeRateProvider" text,
+    "sourceAccountId" text,
+    "destinationAccountId" text,
+    category text,
+    description text,
+    notes text,
+    attachments jsonb,
+    "transactionDate" text,
+    "isActive" boolean,
+    "createdAt" text,
+    "updatedAt" text
+  )
+  left join public.accounts source_account
+    on source_account.household_id = selected_draft.household_id
+   and source_account.local_record_id = transaction_record."sourceAccountId"
+  left join public.accounts destination_account
+    on destination_account.household_id = selected_draft.household_id
+   and destination_account.local_record_id = transaction_record."destinationAccountId"
+  on conflict (household_id, local_record_id)
+  where local_record_id is not null
+  do update set
+    created_by_member_id = excluded.created_by_member_id,
+    paid_by_member_id = excluded.paid_by_member_id,
+    expense_split_method = excluded.expense_split_method,
+    source_account_id = excluded.source_account_id,
+    destination_account_id = excluded.destination_account_id,
+    type = excluded.type,
+    amount = excluded.amount,
+    entered_amount = excluded.entered_amount,
+    entered_currency = excluded.entered_currency,
+    base_currency = excluded.base_currency,
+    base_amount = excluded.base_amount,
+    exchange_rate = excluded.exchange_rate,
+    exchange_rate_effective_date = excluded.exchange_rate_effective_date,
+    exchange_rate_source = excluded.exchange_rate_source,
+    exchange_rate_provider = excluded.exchange_rate_provider,
+    category = excluded.category,
+    description = excluded.description,
+    notes = excluded.notes,
+    attachments = excluded.attachments,
+    visibility = excluded.visibility,
+    transaction_date = excluded.transaction_date,
+    is_active = excluded.is_active,
+    updated_at = excluded.updated_at,
+    updated_by_user_id = excluded.updated_by_user_id;
+
+  update public.migration_drafts
+  set
+    transaction_upload_staged_count = expected_transaction_count,
+    transaction_upload_staged_at = staging_timestamp,
+    updated_at = staging_timestamp
+  where id = selected_draft.id;
+
+  return query
+  select
+    selected_draft.id,
+    expected_transaction_count,
+    staging_timestamp;
+end;
+$$;
+
+revoke all on function public.stage_migration_transactions(
+  uuid,
+  integer,
+  jsonb
+) from public;
+
+grant execute on function public.stage_migration_transactions(
+  uuid,
+  integer,
+  jsonb
+) to authenticated;
+
 create or replace function public.abort_migration_draft(
   target_draft_id uuid
 )
@@ -1186,6 +1461,10 @@ begin
   if selected_draft.status = 'committed' then
     raise exception 'Committed migration drafts cannot be aborted.';
   end if;
+
+  delete from public.transactions
+  where household_id = selected_draft.household_id
+    and local_record_id is not null;
 
   delete from public.accounts
   where household_id = selected_draft.household_id

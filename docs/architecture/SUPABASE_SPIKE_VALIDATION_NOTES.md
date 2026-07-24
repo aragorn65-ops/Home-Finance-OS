@@ -76,12 +76,15 @@ Use disposable records only.
 10. Select Stage accounts.
 11. Confirm an `Accounts staged` UTC timestamp appears and account diagnostics
     can query the staged account rows.
-12. Create a second disposable claim draft in a fresh browser/profile or reset
+12. Select Stage transactions.
+13. Confirm a `Transactions staged` UTC timestamp appears and transaction
+    diagnostics can query the staged transaction rows.
+14. Create a second disposable claim draft in a fresh browser/profile or reset
     disposable local data, then select Abort before commit.
-13. Confirm the checkpoint status becomes `aborted`, an `Aborted` UTC timestamp
-    appears, staged local-record account rows are removed, and no local browser
-    data is deleted.
-14. If multiple checkpoints exist, confirm the panel orders the newest lifecycle
+15. Confirm the checkpoint status becomes `aborted`, an `Aborted` UTC timestamp
+    appears, staged local-record transaction/account rows are removed, and no
+    local browser data is deleted.
+16. If multiple checkpoints exist, confirm the panel orders the newest lifecycle
     activity first and Auth Diagnostics selects the newest lifecycle timestamp
     rather than the adapter return order.
 
@@ -112,10 +115,11 @@ Expected result: user B sees no household or migration data owned by user A.
 * Private member records are hidden from other household users.
 * Normal app flows do not require a service-role key in the browser.
 * Migration validation can fail closed without deleting local browser data.
-* Migration upload staging can record a manifest and account records without
-  importing records, syncing, committing, or deleting local browser data.
+* Migration upload staging can record a manifest, account records, and
+  transaction records without importing records, syncing, committing, or
+  deleting local browser data.
 * Migration abort marks the remote draft aborted without deleting local browser
-  data, and removes staged account rows for non-committed drafts.
+  data, and removes staged transaction/account rows for non-committed drafts.
 * Auth Diagnostics and the Migration Checkpoints panel show durable lifecycle
   timestamps after refresh.
 * Cloudflare Pages hosting remains compatible with the auth/session flow.
