@@ -206,10 +206,19 @@ export default function MigrationCheckpointPanel({
                 drafts,
                 draftId
               );
+            const localHousehold =
+              loadHousehold();
+
+            if (!localHousehold) {
+              throw new Error(
+                "Local household data is not available for account staging."
+              );
+            }
+
             const payload =
               createMigrationAccountUploadPayload(
-                draft,
-                AccountService.getAccounts()
+                AccountService.getAccounts(),
+                localHousehold.id
               );
 
             if (

@@ -62,44 +62,6 @@ test(
 
     const payload =
       createMigrationAccountUploadPayload(
-        {
-          id:
-            "migration-1",
-          householdId:
-            "household-1",
-          householdName:
-            "Casa Test",
-          ownerMemberId:
-            "member-remote-1",
-          requestedByUserId:
-            "user-1",
-          backupSummary: {
-            householdName:
-              "Casa Test",
-            exportedAt:
-              "2026-07-20T00:00:00Z",
-            accountCount:
-              1,
-            transactionCount:
-              0,
-            settlementCount:
-              0,
-            savingsGoalCount:
-              0,
-          },
-          remoteRecordCount:
-            2,
-          status:
-            "validated",
-          createdAt:
-            new Date(
-              "2026-07-20T00:00:00Z"
-            ),
-          updatedAt:
-            new Date(
-              "2026-07-20T00:00:00Z"
-            ),
-        },
         [
           account,
           {
@@ -109,7 +71,8 @@ test(
             householdId:
               "household-2",
           },
-        ]
+        ],
+        "household-1"
       );
 
     assert.equal(

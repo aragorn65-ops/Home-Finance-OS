@@ -4,18 +4,17 @@ import type {
 import type {
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadRecord,
-  RemoteMigrationDraft,
 } from "../models";
 
 export function createMigrationAccountUploadPayload(
-  draft: RemoteMigrationDraft,
-  accounts: Account[]
+  accounts: Account[],
+  localHouseholdId: string
 ): RemoteMigrationAccountUploadPayload {
   const scopedAccounts =
     accounts.filter(
       (account) =>
         account.householdId ===
-        draft.householdId
+        localHouseholdId
     );
 
   return {
