@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  createCloudRestorePreview,
   createAuthDiagnosticsForAdapter,
   createPostCommitSmokeChecks,
   createProductionAuthReadinessChecks,
@@ -202,6 +203,106 @@ test(
 );
 
 test(
+  "cloud restore preview summarizes readable committed data without enabling restore",
+  () => {
+    const preview =
+      createCloudRestorePreview({
+        latestMigration:
+          createCommittedMigrationDraft(),
+        householdDiagnostics: [
+          {
+            householdId:
+              "household-1",
+            householdName:
+              "Team Avatar",
+          },
+        ],
+        accountSummary:
+          createAccountSummary(),
+        transactionSummary:
+          createTransactionSummary(),
+      });
+
+    assert.ok(preview);
+    assert.equal(
+      preview.householdName,
+      "Team Avatar"
+    );
+    assert.equal(
+      preview.readableAccountCount,
+      7
+    );
+    assert.equal(
+      preview.readableTransactionCount,
+      32
+    );
+    assert.equal(
+      preview.dateRange,
+      "2026-05-31 to 2026-07-21"
+    );
+    assert.deepEqual(
+      preview.currencies,
+      ["PHP", "USD"]
+    );
+    assert.deepEqual(
+      preview.checks.map((check) => [
+        check.id,
+        check.status,
+      ]),
+      [
+        ["restore-source", "pass"],
+        ["household-preview", "pass"],
+        ["account-preview", "pass"],
+        [
+          "transaction-preview",
+          "pass",
+        ],
+        ["link-preview", "pass"],
+        ["restore-boundary", "pass"],
+      ]
+    );
+    assert.match(
+      preview.checks.find(
+        (check) =>
+          check.id ===
+          "restore-boundary"
+      )?.detail ?? "",
+      /read-only preview/
+    );
+  }
+);
+
+test(
+  "cloud restore preview waits for a committed migration checkpoint",
+  () => {
+    const preview =
+      createCloudRestorePreview({
+        latestMigration: {
+          ...createCommittedMigrationDraft(),
+          status:
+            "validated",
+          committedAt:
+            undefined,
+        },
+        householdDiagnostics: [],
+        accountSummary:
+          undefined,
+        transactionSummary:
+          undefined,
+      });
+
+    assert.ok(preview);
+    assert.deepEqual(
+      preview.checks.map((check) => [
+        check.id,
+        check.status,
+      ]),
+      [["restore-source", "action"]]
+    );
+  }
+);
+
+test(
   "post-commit smoke checks pass for readable committed remote data",
   () => {
     const checks =
@@ -216,58 +317,10 @@ test(
               "Team Avatar",
           },
         ],
-        accountSummary: {
-          totalCount:
-            7,
-          activeCount:
-            6,
-          inactiveCount:
-            1,
-          householdVisibleCount:
-            0,
-          privateVisibleCount:
-            7,
-          assetCount:
-            5,
-          liabilityCount:
-            2,
-          currencies: [
-            "PHP",
-            "USD",
-          ],
-        },
-        transactionSummary: {
-          totalCount:
-            32,
-          activeCount:
-            32,
-          inactiveCount:
-            0,
-          incomeCount:
-            0,
-          expenseCount:
-            30,
-          transferCount:
-            2,
-          householdVisibleCount:
-            22,
-          participantVisibleCount:
-            8,
-          privateVisibleCount:
-            0,
-          sourceAccountLinkedCount:
-            31,
-          destinationAccountLinkedCount:
-            2,
-          missingAccountLinkCount:
-            0,
-          expenseMissingSourceAccountCount:
-            0,
-          earliestTransactionDate:
-            "2026-05-31",
-          latestTransactionDate:
-            "2026-07-21",
-        },
+        accountSummary:
+          createAccountSummary(),
+        transactionSummary:
+          createTransactionSummary(),
       });
 
     assert.deepEqual(
@@ -431,6 +484,64 @@ function createCommittedMigrationDraft() {
       new Date(
         "2026-07-24T07:03:46Z"
       ),
+  };
+}
+
+function createAccountSummary() {
+  return {
+    totalCount:
+      7,
+    activeCount:
+      6,
+    inactiveCount:
+      1,
+    householdVisibleCount:
+      0,
+    privateVisibleCount:
+      7,
+    assetCount:
+      5,
+    liabilityCount:
+      2,
+    currencies: [
+      "PHP",
+      "USD",
+    ],
+  };
+}
+
+function createTransactionSummary() {
+  return {
+    totalCount:
+      32,
+    activeCount:
+      32,
+    inactiveCount:
+      0,
+    incomeCount:
+      0,
+    expenseCount:
+      30,
+    transferCount:
+      2,
+    householdVisibleCount:
+      22,
+    participantVisibleCount:
+      8,
+    privateVisibleCount:
+      0,
+    sourceAccountLinkedCount:
+      31,
+    destinationAccountLinkedCount:
+      2,
+    missingAccountLinkCount:
+      0,
+    expenseMissingSourceAccountCount:
+      0,
+    earliestTransactionDate:
+      "2026-05-31",
+    latestTransactionDate:
+      "2026-07-21",
   };
 }
 

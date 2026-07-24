@@ -12,6 +12,7 @@ export type {
 export type {
   AuthDiagnostics,
   AuthAccountDiagnosticSummary,
+  AuthCloudRestorePreview,
   AuthPostCommitSmokeCheck,
   AuthProductionReadinessCheck,
   AuthProductionReadinessCheckStatus,

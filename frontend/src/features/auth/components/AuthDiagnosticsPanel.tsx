@@ -421,6 +421,92 @@ export default function AuthDiagnosticsPanel() {
             </section>
           )}
 
+          {diagnostics.cloudRestorePreview && (
+            <section className="auth-diagnostics__readiness">
+              <div>
+                <h3>
+                  Cloud Restore Preview
+                </h3>
+                <p>
+                  Sprint 101 read-only preview before browser restore or sync paths are enabled.
+                </p>
+              </div>
+
+              <dl className="auth-diagnostics__grid">
+                <div>
+                  <dt>Household</dt>
+                  <dd>
+                    {diagnostics.cloudRestorePreview.householdName}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Accounts</dt>
+                  <dd>
+                    {diagnostics.cloudRestorePreview.readableAccountCount}
+                    {" of "}
+                    {diagnostics.cloudRestorePreview.expectedAccountCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Transactions</dt>
+                  <dd>
+                    {diagnostics.cloudRestorePreview.readableTransactionCount}
+                    {" of "}
+                    {diagnostics.cloudRestorePreview.expectedTransactionCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Currencies</dt>
+                  <dd>
+                    {diagnostics.cloudRestorePreview.currencies.join(", ") ||
+                      "none"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Date Range</dt>
+                  <dd>
+                    {diagnostics.cloudRestorePreview.dateRange ??
+                      "none"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Restore mode</dt>
+                  <dd>
+                    preview only
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="auth-diagnostics__readiness-list">
+                {diagnostics.cloudRestorePreview.checks.map(
+                  (check) => (
+                    <article
+                      key={check.id}
+                      className="auth-diagnostics__readiness-item"
+                      data-status={
+                        check.status
+                      }
+                    >
+                      <div>
+                        <h4>
+                          {check.label}
+                        </h4>
+                        <p>
+                          {check.detail}
+                        </p>
+                      </div>
+                      <span>
+                        {formatReadinessStatus(
+                          check.status
+                        )}
+                      </span>
+                    </article>
+                  )
+                )}
+              </div>
+            </section>
+          )}
+
           {diagnostics.isPrototypeAdapter && (
             <div className="auth-diagnostics__actions">
               <button

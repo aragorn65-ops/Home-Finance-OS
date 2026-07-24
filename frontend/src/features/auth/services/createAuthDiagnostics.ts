@@ -9,6 +9,7 @@ import type {
   AuthSession,
   AuthDiagnostics,
   AuthAccountDiagnosticSummary,
+  AuthCloudRestorePreview,
   AuthPostCommitSmokeCheck,
   AuthProductionReadinessCheck,
   AuthTransactionDiagnosticSummary,
@@ -192,6 +193,21 @@ export async function createAuthDiagnosticsForAdapter(
       accountSummary,
       transactionSummary,
     });
+  const cloudRestorePreview =
+    createCloudRestorePreview({
+      latestMigration,
+      householdDiagnostics:
+        householdDiagnostics.map(
+          (household) => ({
+            householdId:
+              household.householdId,
+            householdName:
+              household.householdName,
+          })
+        ),
+      accountSummary,
+      transactionSummary,
+    });
 
   return {
     enabled:
@@ -251,6 +267,7 @@ export async function createAuthDiagnosticsForAdapter(
       ),
     productionReadinessChecks,
     postCommitSmokeChecks,
+    cloudRestorePreview,
     invitationCount:
       invitations.length,
     migrationDraftCount:
@@ -263,6 +280,165 @@ export async function createAuthDiagnosticsForAdapter(
           latestMigration
         )
         : undefined,
+  };
+}
+
+export function createCloudRestorePreview({
+  latestMigration,
+  householdDiagnostics,
+  accountSummary,
+  transactionSummary,
+}: {
+  latestMigration:
+    | RemoteMigrationDraft
+    | undefined;
+  householdDiagnostics: Array<{
+    householdId: string;
+    householdName?: string;
+  }>;
+  accountSummary:
+    | AuthAccountDiagnosticSummary
+    | undefined;
+  transactionSummary:
+    | AuthTransactionDiagnosticSummary
+    | undefined;
+}): AuthCloudRestorePreview | undefined {
+  if (!latestMigration) {
+    return undefined;
+  }
+
+  const householdName =
+    latestMigration.householdName ??
+    latestMigration.backupSummary
+      .householdName ??
+    "Remote household";
+  const expectedAccountCount =
+    latestMigration.backupSummary
+      .accountCount ?? 0;
+  const expectedTransactionCount =
+    latestMigration.backupSummary
+      .transactionCount ?? 0;
+  const readableAccountCount =
+    accountSummary?.totalCount ?? 0;
+  const readableTransactionCount =
+    transactionSummary?.totalCount ?? 0;
+  const remoteHousehold =
+    householdDiagnostics.find(
+      (household) =>
+        household.householdId ===
+        latestMigration.householdId
+    );
+  const dateRange =
+    transactionSummary?.earliestTransactionDate &&
+    transactionSummary?.latestTransactionDate
+      ? `${transactionSummary.earliestTransactionDate} to ${transactionSummary.latestTransactionDate}`
+      : undefined;
+
+  if (latestMigration.status !== "committed") {
+    return {
+      householdName,
+      householdId:
+        latestMigration.householdId,
+      expectedAccountCount,
+      readableAccountCount,
+      expectedTransactionCount,
+      readableTransactionCount,
+      currencies:
+        accountSummary?.currencies ?? [],
+      dateRange,
+      checks: [
+        {
+          id: "restore-source",
+          label: "Restore source",
+          status: "action",
+          detail:
+            "Commit a migration checkpoint before previewing cloud restore data.",
+        },
+      ],
+    };
+  }
+
+  return {
+    householdName,
+    householdId:
+      latestMigration.householdId,
+    expectedAccountCount,
+    readableAccountCount,
+    expectedTransactionCount,
+    readableTransactionCount,
+    currencies:
+      accountSummary?.currencies ?? [],
+    dateRange,
+    checks: [
+      {
+        id: "restore-source",
+        label: "Restore source",
+        status: "pass",
+        detail:
+          `${householdName} has a committed cloud checkpoint available for preview.`,
+      },
+      {
+        id: "household-preview",
+        label: "Household preview",
+        status:
+          remoteHousehold
+            ? "pass"
+            : "blocked",
+        detail:
+          remoteHousehold
+            ? `${remoteHousehold.householdName ?? householdName} is readable without local writes.`
+            : "The committed household is not readable from this session.",
+      },
+      {
+        id: "account-preview",
+        label: "Account preview",
+        status:
+          readableAccountCount ===
+            expectedAccountCount
+            ? "pass"
+            : "blocked",
+        detail:
+          accountSummary
+            ? `${readableAccountCount} of ${expectedAccountCount} accounts are visible for restore preview.`
+            : "Remote account preview data is not available.",
+      },
+      {
+        id: "transaction-preview",
+        label: "Transaction preview",
+        status:
+          readableTransactionCount ===
+            expectedTransactionCount
+            ? "pass"
+            : "blocked",
+        detail:
+          transactionSummary
+            ? `${readableTransactionCount} of ${expectedTransactionCount} transactions are visible for restore preview.`
+            : "Remote transaction preview data is not available.",
+      },
+      {
+        id: "link-preview",
+        label: "Transaction link preview",
+        status:
+          transactionSummary &&
+          transactionSummary
+            .missingAccountLinkCount === 0 &&
+          transactionSummary
+            .expenseMissingSourceAccountCount === 0
+            ? "pass"
+            : "blocked",
+        detail:
+          transactionSummary
+            ? `${transactionSummary.missingAccountLinkCount} transactions lack account links; ${transactionSummary.expenseMissingSourceAccountCount} expenses lack source accounts.`
+            : "Remote transaction link preview data is not available.",
+      },
+      {
+        id: "restore-boundary",
+        label: "Restore boundary",
+        status: "pass",
+        detail:
+          "This is a read-only preview; browser restore, remote CRUD, and automatic sync remain disabled.",
+      },
+    ],
   };
 }
 

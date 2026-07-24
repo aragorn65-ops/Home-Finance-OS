@@ -61,6 +61,18 @@ export interface AuthPostCommitSmokeCheck {
   detail: string;
 }
 
+export interface AuthCloudRestorePreview {
+  householdName: string;
+  householdId: string;
+  expectedAccountCount: number;
+  readableAccountCount: number;
+  expectedTransactionCount: number;
+  readableTransactionCount: number;
+  currencies: string[];
+  dateRange?: string;
+  checks: AuthPostCommitSmokeCheck[];
+}
+
 export type AuthSchemaReadinessCheckStatus =
   | "pass"
   | "blocked";
@@ -97,6 +109,8 @@ export interface AuthDiagnostics {
     AuthProductionReadinessCheck[];
   postCommitSmokeChecks:
     AuthPostCommitSmokeCheck[];
+  cloudRestorePreview?:
+    AuthCloudRestorePreview;
   invitationCount: number;
   migrationDraftCount: number;
   latestMigrationStatus?: string;
