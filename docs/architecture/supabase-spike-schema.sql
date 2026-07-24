@@ -1709,6 +1709,7 @@ declare
   current_user_id uuid := auth.uid();
   commit_timestamp timestamptz := now();
   selected_draft public.migration_drafts%rowtype;
+  expected_record_count integer;
   expected_account_count integer;
   expected_transaction_count integer;
   staged_account_count integer;
@@ -1780,9 +1781,9 @@ begin
 
   select count(*)::integer
   into staged_account_count
-  from public.accounts
-  where household_id = selected_draft.household_id
-    and local_record_id is not null;
+  from public.accounts remote_account
+  where remote_account.household_id = selected_draft.household_id
+    and remote_account.local_record_id is not null;
 
   select
     count(*)::integer,
@@ -1798,9 +1799,9 @@ begin
     staged_transaction_count,
     missing_expense_source_count,
     missing_transaction_link_count
-  from public.transactions
-  where household_id = selected_draft.household_id
-    and local_record_id is not null;
+  from public.transactions remote_transaction
+  where remote_transaction.household_id = selected_draft.household_id
+    and remote_transaction.local_record_id is not null;
 
   if staged_account_count <> expected_account_count then
     raise exception 'Remote account row count does not match the migration checkpoint.';
