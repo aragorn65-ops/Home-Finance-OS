@@ -131,7 +131,7 @@ function createAudit(
 }
 
 test(
-  "commit unlock checklist is ready for review when all gates pass but commit stays locked",
+  "commit unlock checklist is ready for commit when all gates pass",
   () => {
     const checklist =
       createMigrationCommitUnlockChecklist(
@@ -154,7 +154,7 @@ test(
         "pass",
         "pass",
         "pass",
-        "locked",
+        "pass",
       ]
     );
   }

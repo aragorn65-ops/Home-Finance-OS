@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   assertMigrationCommitResultMatchesDraft,
   requireMigrationCommitLocalLink,
-  requireMigrationCommitLocalOwner,
+  resolveMigrationCommitLocalOwnerMemberId,
   requireMigrationCommitDraft,
   requireMigrationCommitUploadStaged,
 } from "../src/features/auth/components/migrationCheckpointCommit.ts";
@@ -58,6 +58,30 @@ function createValidatedDraftBase() {
       0,
     status:
       "validated" as const,
+    createdAt:
+      new Date(
+        "2026-07-22T02:00:00Z"
+      ),
+    updatedAt:
+      new Date(
+        "2026-07-22T03:00:00Z"
+      ),
+  };
+}
+
+function createLocalMember(
+  id: string,
+  role: "owner" | "admin" | "member"
+) {
+  return {
+    id,
+    householdId:
+      "household-local-1",
+    displayName:
+      id,
+    role,
+    isActive:
+      true,
     createdAt:
       new Date(
         "2026-07-22T02:00:00Z"
@@ -142,36 +166,71 @@ test(
 test(
   "allows migration commit when checkpoint owner exists locally",
   () => {
-    assert.doesNotThrow(() => {
-      requireMigrationCommitLocalOwner(
+    assert.equal(
+      resolveMigrationCommitLocalOwnerMemberId(
         createValidatedDraft({
           ownerMemberId:
             "member-local-owner",
         }),
         [
-          "member-local-owner",
-          "member-2",
+          createLocalMember(
+            "member-local-owner",
+            "owner"
+          ),
+          createLocalMember(
+            "member-2",
+            "member"
+          ),
         ]
-      );
-    });
+      ),
+      "member-local-owner"
+    );
   }
 );
 
 test(
-  "blocks migration commit when checkpoint owner is not local",
+  "uses local household owner when checkpoint owner is remote-only",
+  () => {
+    assert.equal(
+      resolveMigrationCommitLocalOwnerMemberId(
+        createValidatedDraft({
+          ownerMemberId:
+            "member-remote-owner",
+        }),
+        [
+          createLocalMember(
+            "member-local-owner",
+            "owner"
+          ),
+          createLocalMember(
+            "member-2",
+            "member"
+          ),
+        ]
+      ),
+      "member-local-owner"
+    );
+  }
+);
+
+test(
+  "blocks migration commit when local household owner is missing",
   () => {
     assert.throws(
       () =>
-        requireMigrationCommitLocalOwner(
+        resolveMigrationCommitLocalOwnerMemberId(
           createValidatedDraft({
             ownerMemberId:
               "member-remote-owner",
           }),
           [
-            "member-local-owner",
+            createLocalMember(
+              "member-local-member",
+              "member"
+            ),
           ]
         ),
-      /Migration checkpoint owner member is not available locally\. Refresh diagnostics before committing\./
+      /Local household owner is not available\. Refresh diagnostics before committing\./
     );
   }
 );

@@ -36,7 +36,7 @@ import {
 import {
   assertMigrationCommitResultMatchesDraft,
   requireMigrationCommitLocalLink,
-  requireMigrationCommitLocalOwner,
+  resolveMigrationCommitLocalOwnerMemberId,
   requireMigrationCommitDraft,
   requireMigrationCommitUploadStaged,
 } from "./migrationCheckpointCommit";
@@ -369,13 +369,12 @@ export default function MigrationCheckpointPanel({
               );
             const localHousehold =
               loadHousehold();
+            const localOwnerMemberId =
+              resolveMigrationCommitLocalOwnerMemberId(
+                draft,
+                localHousehold?.members ?? []
+              );
 
-            requireMigrationCommitLocalOwner(
-              draft,
-              localHousehold?.members.map(
-                (member) => member.id
-              ) ?? []
-            );
             requireMigrationCommitLocalLink(
               draft,
               localHousehold?.authenticatedLink
@@ -403,7 +402,7 @@ export default function MigrationCheckpointPanel({
                 migrationId:
                   commitResult.migrationId,
                 ownerMemberId:
-                  draft.ownerMemberId,
+                  localOwnerMemberId,
                 linkedByUserId:
                   draft.requestedByUserId,
                 linkedAt:
@@ -452,6 +451,7 @@ export default function MigrationCheckpointPanel({
       },
       [
         drafts,
+        auditsByDraftId,
         loadDrafts,
         onStatusChange,
       ]

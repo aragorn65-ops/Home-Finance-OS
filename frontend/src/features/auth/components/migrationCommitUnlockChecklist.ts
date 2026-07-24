@@ -29,7 +29,7 @@ export function createMigrationCommitUnlockChecklist(
   dryRunContract: MigrationUploadDryRunContract,
   audit?: RemoteMigrationPreCommitAudit
 ): MigrationCommitUnlockChecklist {
-  const items:
+  const gateItems:
     MigrationCommitUnlockChecklistItem[] = [
       createDryRunItem(dryRunContract),
       createUploadManifestItem(
@@ -42,22 +42,32 @@ export function createMigrationCommitUnlockChecklist(
         draft,
         audit
       ),
+    ];
+  const gatesPassed =
+    gateItems.every(
+      (item) =>
+        item.status === "pass"
+    );
+  const items:
+    MigrationCommitUnlockChecklistItem[] = [
+      ...gateItems,
       {
-        id: "commit-lock",
+        id: "commit-control",
         label: "Commit control",
         detail:
-          "Commit remains locked until the next explicit unlock sprint.",
-        status: "locked",
+          gatesPassed
+            ? "Commit can run after checklist review."
+            : "Commit remains locked until checklist review passes.",
+        status:
+          gatesPassed
+            ? "pass"
+            : "locked",
       },
     ];
 
   return {
     isReadyForUnlockReview:
-      items.every(
-        (item) =>
-          item.status === "pass" ||
-          item.status === "locked"
-      ),
+      gatesPassed,
     items,
   };
 }

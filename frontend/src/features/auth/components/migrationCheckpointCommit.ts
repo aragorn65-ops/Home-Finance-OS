@@ -2,6 +2,9 @@ import type {
   AuthenticatedHouseholdLink,
 } from "../../household/services/householdStorage";
 import type {
+  HouseholdMember,
+} from "../../household/models/HouseholdMember";
+import type {
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationPreCommitAudit,
@@ -41,19 +44,45 @@ export function requireMigrationCommitDraft(
   return draft;
 }
 
-export function requireMigrationCommitLocalOwner(
+export function resolveMigrationCommitLocalOwnerMemberId(
   draft: RemoteMigrationDraft,
-  localMemberIds: string[]
-): void {
-  if (
-    !localMemberIds.includes(
-      draft.ownerMemberId
-    )
-  ) {
+  localMembers: HouseholdMember[]
+): string {
+  if (localMembers.length === 0) {
     throw new Error(
-      "Migration checkpoint owner member is not available locally. Refresh diagnostics before committing."
+      "Local household members are not available. Refresh diagnostics before committing."
     );
   }
+
+  const matchingRemoteOwner =
+    localMembers.find(
+      (member) =>
+        member.id ===
+        draft.ownerMemberId
+    );
+
+  if (matchingRemoteOwner) {
+    return matchingRemoteOwner.id;
+  }
+
+  const localOwner =
+    localMembers.find(
+      (member) =>
+        member.role === "owner" &&
+        member.isActive
+    ) ??
+    localMembers.find(
+      (member) =>
+        member.role === "owner"
+    );
+
+  if (!localOwner) {
+    throw new Error(
+      "Local household owner is not available. Refresh diagnostics before committing."
+    );
+  }
+
+  return localOwner.id;
 }
 
 export function requireMigrationCommitLocalLink(

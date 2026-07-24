@@ -127,6 +127,8 @@ Sprint 97 adds a visible commit-unlock checklist while keeping the actual
 Commit action locked.
 Sprint 98 unlocks the Commit action only after the checklist and pre-commit
 audit pass, with matching Supabase commit-time guards.
+Sprint 99 fixes commit preflight owner resolution for claimed households whose
+remote Supabase owner member differs from the local browser member id.
 
 ---
 
@@ -201,6 +203,7 @@ audit pass, with matching Supabase commit-time guards.
 | v0.96.0-alpha | Expense source-account staging backfill |
 | v0.97.0-alpha | Commit-unlock checklist |
 | v0.98.0-alpha | Guarded migration commit unlock |
+| v0.99.0-alpha | Commit owner-link resolution |
 
 ---
 
