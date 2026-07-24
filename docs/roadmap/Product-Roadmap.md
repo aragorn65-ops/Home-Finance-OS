@@ -129,6 +129,9 @@ Sprint 98 unlocks the Commit action only after the checklist and pre-commit
 audit pass, with matching Supabase commit-time guards.
 Sprint 99 fixes commit preflight owner resolution for claimed households whose
 remote Supabase owner member differs from the local browser member id.
+Sprint 100 adds read-only post-commit remote readback checks for the committed
+household, accounts, transactions, and transaction account links before restore
+or sync paths are enabled.
 
 ---
 
@@ -204,6 +207,7 @@ remote Supabase owner member differs from the local browser member id.
 | v0.97.0-alpha | Commit-unlock checklist |
 | v0.98.0-alpha | Guarded migration commit unlock |
 | v0.99.0-alpha | Commit owner-link resolution |
+| v0.100.0-alpha | Post-commit remote readback |
 
 ---
 

@@ -379,6 +379,48 @@ export default function AuthDiagnosticsPanel() {
             </section>
           )}
 
+          {diagnostics.postCommitSmokeChecks.length >
+            0 && (
+            <section className="auth-diagnostics__readiness">
+              <div>
+                <h3>
+                  Post-Commit Remote Readback
+                </h3>
+                <p>
+                  Sprint 100 read-only checks before restore or sync paths are enabled.
+                </p>
+              </div>
+
+              <div className="auth-diagnostics__readiness-list">
+                {diagnostics.postCommitSmokeChecks.map(
+                  (check) => (
+                    <article
+                      key={check.id}
+                      className="auth-diagnostics__readiness-item"
+                      data-status={
+                        check.status
+                      }
+                    >
+                      <div>
+                        <h4>
+                          {check.label}
+                        </h4>
+                        <p>
+                          {check.detail}
+                        </p>
+                      </div>
+                      <span>
+                        {formatReadinessStatus(
+                          check.status
+                        )}
+                      </span>
+                    </article>
+                  )
+                )}
+              </div>
+            </section>
+          )}
+
           {diagnostics.isPrototypeAdapter && (
             <div className="auth-diagnostics__actions">
               <button

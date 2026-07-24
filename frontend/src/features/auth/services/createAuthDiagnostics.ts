@@ -8,7 +8,11 @@ import type {
 import type {
   AuthSession,
   AuthDiagnostics,
+  AuthAccountDiagnosticSummary,
+  AuthPostCommitSmokeCheck,
   AuthProductionReadinessCheck,
+  AuthTransactionDiagnosticSummary,
+  RemoteMigrationDraft,
 } from "../models";
 import type {
   AuthBackendAdapter,
@@ -173,6 +177,21 @@ export async function createAuthDiagnosticsForAdapter(
       warningCount:
         warnings.length,
     });
+  const postCommitSmokeChecks =
+    createPostCommitSmokeChecks({
+      latestMigration,
+      householdDiagnostics:
+        householdDiagnostics.map(
+          (household) => ({
+            householdId:
+              household.householdId,
+            householdName:
+              household.householdName,
+          })
+        ),
+      accountSummary,
+      transactionSummary,
+    });
 
   return {
     enabled:
@@ -231,6 +250,7 @@ export async function createAuthDiagnosticsForAdapter(
         })
       ),
     productionReadinessChecks,
+    postCommitSmokeChecks,
     invitationCount:
       invitations.length,
     migrationDraftCount:
@@ -244,6 +264,127 @@ export async function createAuthDiagnosticsForAdapter(
         )
         : undefined,
   };
+}
+
+export function createPostCommitSmokeChecks({
+  latestMigration,
+  householdDiagnostics,
+  accountSummary,
+  transactionSummary,
+}: {
+  latestMigration:
+    | RemoteMigrationDraft
+    | undefined;
+  householdDiagnostics: Array<{
+    householdId: string;
+    householdName?: string;
+  }>;
+  accountSummary:
+    | AuthAccountDiagnosticSummary
+    | undefined;
+  transactionSummary:
+    | AuthTransactionDiagnosticSummary
+    | undefined;
+}): AuthPostCommitSmokeCheck[] {
+  if (!latestMigration) {
+    return [];
+  }
+
+  if (latestMigration.status !== "committed") {
+    return [
+      {
+        id: "committed-checkpoint",
+        label: "Committed checkpoint",
+        status: "action",
+        detail:
+          "Commit the latest migration checkpoint before remote readback checks.",
+      },
+    ];
+  }
+
+  const expectedAccountCount =
+    latestMigration.backupSummary
+      .accountCount ?? 0;
+  const expectedTransactionCount =
+    latestMigration.backupSummary
+      .transactionCount ?? 0;
+  const remoteHousehold =
+    householdDiagnostics.find(
+      (household) =>
+        household.householdId ===
+        latestMigration.householdId
+    );
+
+  return [
+    {
+      id: "committed-checkpoint",
+      label: "Committed checkpoint",
+      status: "pass",
+      detail:
+        "The latest migration checkpoint is committed.",
+    },
+    {
+      id: "remote-household-read",
+      label: "Remote household read",
+      status:
+        remoteHousehold
+          ? "pass"
+          : "blocked",
+      detail:
+        remoteHousehold
+          ? `${remoteHousehold.householdName ?? latestMigration.householdName} is readable.`
+          : "The committed remote household could not be read.",
+    },
+    {
+      id: "remote-account-count",
+      label: "Remote account count",
+      status:
+        accountSummary?.totalCount ===
+          expectedAccountCount
+          ? "pass"
+          : "blocked",
+      detail:
+        accountSummary
+          ? `${accountSummary.totalCount} of ${expectedAccountCount} committed accounts are readable.`
+          : "Remote account diagnostics are not available.",
+    },
+    {
+      id: "remote-transaction-count",
+      label: "Remote transaction count",
+      status:
+        transactionSummary?.totalCount ===
+          expectedTransactionCount
+          ? "pass"
+          : "blocked",
+      detail:
+        transactionSummary
+          ? `${transactionSummary.totalCount} of ${expectedTransactionCount} committed transactions are readable.`
+          : "Remote transaction diagnostics are not available.",
+    },
+    {
+      id: "remote-transaction-links",
+      label: "Remote transaction links",
+      status:
+        transactionSummary &&
+        transactionSummary
+          .missingAccountLinkCount === 0 &&
+        transactionSummary
+          .expenseMissingSourceAccountCount === 0
+          ? "pass"
+          : "blocked",
+      detail:
+        transactionSummary
+          ? `${transactionSummary.missingAccountLinkCount} transactions without account links; ${transactionSummary.expenseMissingSourceAccountCount} expenses without source accounts.`
+          : "Remote transaction link diagnostics are not available.",
+    },
+    {
+      id: "sync-boundary",
+      label: "Sync boundary",
+      status: "pass",
+      detail:
+        "Readback checks are read-only; remote CRUD and automatic sync remain disabled.",
+    },
+  ];
 }
 
 export function createProductionAuthReadinessChecks({

@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   createAuthDiagnosticsForAdapter,
+  createPostCommitSmokeChecks,
   createProductionAuthReadinessChecks,
   findLatestMigrationDraft,
   getMigrationDiagnosticDate,
@@ -201,6 +202,144 @@ test(
 );
 
 test(
+  "post-commit smoke checks pass for readable committed remote data",
+  () => {
+    const checks =
+      createPostCommitSmokeChecks({
+        latestMigration:
+          createCommittedMigrationDraft(),
+        householdDiagnostics: [
+          {
+            householdId:
+              "household-1",
+            householdName:
+              "Team Avatar",
+          },
+        ],
+        accountSummary: {
+          totalCount:
+            7,
+          activeCount:
+            6,
+          inactiveCount:
+            1,
+          householdVisibleCount:
+            0,
+          privateVisibleCount:
+            7,
+          assetCount:
+            5,
+          liabilityCount:
+            2,
+          currencies: [
+            "PHP",
+            "USD",
+          ],
+        },
+        transactionSummary: {
+          totalCount:
+            32,
+          activeCount:
+            32,
+          inactiveCount:
+            0,
+          incomeCount:
+            0,
+          expenseCount:
+            30,
+          transferCount:
+            2,
+          householdVisibleCount:
+            22,
+          participantVisibleCount:
+            8,
+          privateVisibleCount:
+            0,
+          sourceAccountLinkedCount:
+            31,
+          destinationAccountLinkedCount:
+            2,
+          missingAccountLinkCount:
+            0,
+          expenseMissingSourceAccountCount:
+            0,
+          earliestTransactionDate:
+            "2026-05-31",
+          latestTransactionDate:
+            "2026-07-21",
+        },
+      });
+
+    assert.deepEqual(
+      checks.map((check) => [
+        check.id,
+        check.status,
+      ]),
+      [
+        [
+          "committed-checkpoint",
+          "pass",
+        ],
+        [
+          "remote-household-read",
+          "pass",
+        ],
+        [
+          "remote-account-count",
+          "pass",
+        ],
+        [
+          "remote-transaction-count",
+          "pass",
+        ],
+        [
+          "remote-transaction-links",
+          "pass",
+        ],
+        [
+          "sync-boundary",
+          "pass",
+        ],
+      ]
+    );
+  }
+);
+
+test(
+  "post-commit smoke checks wait for a committed checkpoint",
+  () => {
+    const checks =
+      createPostCommitSmokeChecks({
+        latestMigration: {
+          ...createCommittedMigrationDraft(),
+          status:
+            "validated",
+          committedAt:
+            undefined,
+        },
+        householdDiagnostics: [],
+        accountSummary:
+          undefined,
+        transactionSummary:
+          undefined,
+      });
+
+    assert.deepEqual(
+      checks.map((check) => [
+        check.id,
+        check.status,
+      ]),
+      [
+        [
+          "committed-checkpoint",
+          "action",
+        ],
+      ]
+    );
+  }
+);
+
+test(
   "finds latest migration draft by lifecycle timestamp",
   () => {
     const olderCommittedDraft = {
@@ -241,6 +380,59 @@ test(
     );
   }
 );
+
+function createCommittedMigrationDraft() {
+  return {
+    id:
+      "migration-1",
+    householdId:
+      "household-1",
+    householdName:
+      "Team Avatar",
+    ownerMemberId:
+      "member-1",
+    requestedByUserId:
+      "user-1",
+    backupSummary: {
+      householdName:
+        "Team Avatar",
+      exportedAt:
+        "2026-07-24T00:00:00Z",
+      accountCount:
+        7,
+      transactionCount:
+        32,
+      expenseAllocationCount:
+        0,
+      settlementCount:
+        0,
+      settlementApplicationCount:
+        0,
+      savingsGoalCount:
+        0,
+      savingsActivityCount:
+        0,
+      providerBillCount:
+        0,
+    },
+    remoteRecordCount:
+      40,
+    status:
+      "committed" as const,
+    createdAt:
+      new Date(
+        "2026-07-24T00:00:00Z"
+      ),
+    updatedAt:
+      new Date(
+        "2026-07-24T07:03:46Z"
+      ),
+    committedAt:
+      new Date(
+        "2026-07-24T07:03:46Z"
+      ),
+  };
+}
 
 test(
   "finds staged migration drafts newer than validated drafts",

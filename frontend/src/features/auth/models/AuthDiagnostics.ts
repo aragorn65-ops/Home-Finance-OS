@@ -54,6 +54,13 @@ export interface AuthProductionReadinessCheck {
   detail: string;
 }
 
+export interface AuthPostCommitSmokeCheck {
+  id: string;
+  label: string;
+  status: AuthProductionReadinessCheckStatus;
+  detail: string;
+}
+
 export type AuthSchemaReadinessCheckStatus =
   | "pass"
   | "blocked";
@@ -88,6 +95,8 @@ export interface AuthDiagnostics {
     AuthSchemaReadinessCheck[];
   productionReadinessChecks:
     AuthProductionReadinessCheck[];
+  postCommitSmokeChecks:
+    AuthPostCommitSmokeCheck[];
   invitationCount: number;
   migrationDraftCount: number;
   latestMigrationStatus?: string;

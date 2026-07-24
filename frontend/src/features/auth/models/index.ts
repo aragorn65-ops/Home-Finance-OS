@@ -11,8 +11,11 @@ export type {
 
 export type {
   AuthDiagnostics,
+  AuthAccountDiagnosticSummary,
+  AuthPostCommitSmokeCheck,
   AuthProductionReadinessCheck,
   AuthProductionReadinessCheckStatus,
+  AuthTransactionDiagnosticSummary,
 } from "./AuthDiagnostics";
 
 export type {
