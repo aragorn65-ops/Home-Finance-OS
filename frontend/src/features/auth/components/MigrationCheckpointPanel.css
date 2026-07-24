@@ -185,6 +185,83 @@
   font-size: var(--font-size-sm);
 }
 
+.migration-checkpoint-panel__unlock-checklist {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: var(--space-3);
+}
+
+.migration-checkpoint-panel__unlock-checklist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.migration-checkpoint-panel__unlock-checklist-header strong,
+.migration-checkpoint-panel__unlock-checklist li strong {
+  color: var(--color-text-strong);
+  font-size: var(--font-size-sm);
+}
+
+.migration-checkpoint-panel__unlock-checklist-header span,
+.migration-checkpoint-panel__unlock-checklist li > span {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-1) var(--space-2);
+  white-space: nowrap;
+}
+
+.migration-checkpoint-panel__unlock-checklist span[data-status="pass"] {
+  border-color: var(--color-success-border);
+  background: var(--color-success-background);
+  color: var(--color-success-text);
+}
+
+.migration-checkpoint-panel__unlock-checklist span[data-status="action-needed"] {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-background);
+  color: var(--color-warning-text);
+}
+
+.migration-checkpoint-panel__unlock-checklist span[data-status="blocked"] {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-background);
+  color: var(--color-danger-text);
+}
+
+.migration-checkpoint-panel__unlock-checklist span[data-status="locked"] {
+  border-color: var(--color-info-border);
+  background: var(--color-info-background);
+  color: var(--color-info-text);
+}
+
+.migration-checkpoint-panel__unlock-checklist ul {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.migration-checkpoint-panel__unlock-checklist li {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+}
+
+.migration-checkpoint-panel__unlock-checklist li p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
 .migration-checkpoint-panel__actions {
   display: flex;
   flex-wrap: wrap;
@@ -223,7 +300,8 @@
 
 @media (max-width: 32rem) {
   .migration-checkpoint-panel__item-header,
-  .migration-checkpoint-panel__meta {
+  .migration-checkpoint-panel__meta,
+  .migration-checkpoint-panel__unlock-checklist li {
     grid-template-columns: minmax(0, 1fr);
   }
 

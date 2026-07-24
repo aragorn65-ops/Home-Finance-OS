@@ -15,6 +15,7 @@ import {
 
 import type {
   RemoteMigrationDraft,
+  RemoteMigrationPreCommitAudit,
 } from "../models";
 import {
   linkHouseholdToAuthenticatedTenant,
@@ -54,6 +55,9 @@ import {
   createMigrationUploadManifest,
   createMigrationUploadDryRunContract,
 } from "./migrationUploadDryRun";
+import {
+  createMigrationCommitUnlockChecklist,
+} from "./migrationCommitUnlockChecklist";
 
 export interface MigrationCheckpointPanelProps {
   refreshToken?: number;
@@ -84,6 +88,15 @@ export default function MigrationCheckpointPanel({
     message,
     setMessage,
   ] = useState("");
+  const [
+    auditsByDraftId,
+    setAuditsByDraftId,
+  ] = useState<
+    Record<
+      string,
+      RemoteMigrationPreCommitAudit
+    >
+  >({});
 
   const loadDrafts =
     useCallback(async () => {
@@ -328,6 +341,14 @@ export default function MigrationCheckpointPanel({
                   draftId
                 );
 
+            setAuditsByDraftId(
+              (currentAudits) => ({
+                ...currentAudits,
+                [draftId]:
+                  audit,
+              })
+            );
+
             if (!audit.isReady) {
               throw new Error(
                 audit.blockers[0] ??
@@ -519,6 +540,12 @@ export default function MigrationCheckpointPanel({
             getMigrationCheckpointLifecycleEntries(
               draft
             );
+          const unlockChecklist =
+            createMigrationCommitUnlockChecklist(
+              draft,
+              dryRunContract,
+              auditsByDraftId[draft.id]
+            );
 
           return (
             <article
@@ -595,6 +622,56 @@ export default function MigrationCheckpointPanel({
                 <p>
                   {dryRunContract.currentRecordCount} current records compared with {dryRunContract.checkpointRecordCount} checkpoint records.
                 </p>
+              </div>
+
+              <div className="migration-checkpoint-panel__unlock-checklist">
+                <div className="migration-checkpoint-panel__unlock-checklist-header">
+                  <strong>
+                    Commit unlock checklist
+                  </strong>
+                  <span
+                    data-status={
+                      unlockChecklist
+                        .isReadyForUnlockReview
+                        ? "pass"
+                        : "action-needed"
+                    }
+                  >
+                    {unlockChecklist
+                      .isReadyForUnlockReview
+                      ? "Ready for review"
+                      : "Review"}
+                  </span>
+                </div>
+                <ul>
+                  {unlockChecklist.items.map(
+                    (item) => (
+                      <li key={item.id}>
+                        <span
+                          data-status={
+                            item.status
+                          }
+                        >
+                          {item.status === "pass"
+                            ? "Pass"
+                            : item.status === "locked"
+                              ? "Locked"
+                              : item.status === "blocked"
+                                ? "Blocked"
+                                : "Action needed"}
+                        </span>
+                        <div>
+                          <strong>
+                            {item.label}
+                          </strong>
+                          <p>
+                            {item.detail}
+                          </p>
+                        </div>
+                      </li>
+                    )
+                  )}
+                </ul>
               </div>
 
               <div className="migration-checkpoint-panel__actions">
