@@ -341,6 +341,7 @@ export function findLatestMigrationDraft<
     updatedAt: Date;
     validatedAt?: Date;
     uploadStagedAt?: Date;
+    accountUploadStagedAt?: Date;
     committedAt?: Date;
     abortedAt?: Date;
   },
@@ -368,12 +369,14 @@ export function getMigrationDiagnosticDate(
     updatedAt: Date;
     validatedAt?: Date;
     uploadStagedAt?: Date;
+    accountUploadStagedAt?: Date;
     committedAt?: Date;
     abortedAt?: Date;
   }
 ): Date {
   return draft.abortedAt ??
     draft.committedAt ??
+    draft.accountUploadStagedAt ??
     draft.uploadStagedAt ??
     draft.validatedAt ??
     draft.updatedAt;

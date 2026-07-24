@@ -19,6 +19,8 @@ import type {
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteMigrationAccountUploadPayload,
+  RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationUploadManifest,
@@ -158,6 +160,17 @@ export class InMemoryAuthBackendAdapter
       .stageUploadManifest(
         draftId,
         manifest
+      );
+  }
+
+  async stageMigrationAccounts(
+    draftId: string,
+    payload: RemoteMigrationAccountUploadPayload
+  ): Promise<RemoteMigrationAccountUploadStagingResult> {
+    return this.migrationRepository
+      .stageAccounts(
+        draftId,
+        payload
       );
   }
 

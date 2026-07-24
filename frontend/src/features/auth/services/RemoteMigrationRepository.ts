@@ -1,4 +1,6 @@
 import type {
+  RemoteMigrationAccountUploadPayload,
+  RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationUploadManifest,
@@ -25,6 +27,11 @@ export interface RemoteMigrationRepository {
     draftId: string,
     manifest: RemoteMigrationUploadManifest
   ): Promise<RemoteMigrationUploadStagingResult>;
+
+  stageAccounts(
+    draftId: string,
+    payload: RemoteMigrationAccountUploadPayload
+  ): Promise<RemoteMigrationAccountUploadStagingResult>;
 
   commitDraft(
     draftId: string

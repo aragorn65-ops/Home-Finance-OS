@@ -352,6 +352,8 @@ create table if not exists public.migration_drafts (
   upload_manifest jsonb,
   upload_staged_record_count integer,
   upload_staged_at timestamptz,
+  account_upload_staged_count integer,
+  account_upload_staged_at timestamptz,
   committed_at timestamptz,
   aborted_at timestamptz,
   created_at timestamptz not null default now(),
@@ -369,6 +371,12 @@ add column if not exists upload_staged_record_count integer;
 
 alter table public.migration_drafts
 add column if not exists upload_staged_at timestamptz;
+
+alter table public.migration_drafts
+add column if not exists account_upload_staged_count integer;
+
+alter table public.migration_drafts
+add column if not exists account_upload_staged_at timestamptz;
 
 alter table public.migration_drafts
 add column if not exists committed_at timestamptz;
@@ -920,6 +928,229 @@ grant execute on function public.stage_migration_upload_manifest(
   jsonb
 ) to authenticated;
 
+create or replace function public.stage_migration_accounts(
+  target_draft_id uuid,
+  expected_account_count integer,
+  staged_accounts jsonb
+)
+returns table (
+  draft_id uuid,
+  staged_account_count integer,
+  staged_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  staging_timestamp timestamptz := now();
+  selected_draft public.migration_drafts%rowtype;
+  expected_checkpoint_count integer;
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before staging migration accounts.';
+  end if;
+
+  if expected_account_count < 0 then
+    raise exception 'Account upload expected count cannot be negative.';
+  end if;
+
+  if jsonb_typeof(staged_accounts) <> 'array' then
+    raise exception 'Account upload payload must be an array.';
+  end if;
+
+  if jsonb_array_length(staged_accounts) <> expected_account_count then
+    raise exception 'Account upload payload count does not match expected count.';
+  end if;
+
+  select *
+  into selected_draft
+  from public.migration_drafts
+  where id = target_draft_id
+    and owner_user_id = current_user_id
+  for update;
+
+  if selected_draft.id is null then
+    raise exception 'Migration draft was not found for the current user.';
+  end if;
+
+  if selected_draft.household_id is null then
+    raise exception 'Migration draft is missing a linked household.';
+  end if;
+
+  if selected_draft.owner_member_id is null then
+    raise exception 'Migration draft is missing an owner member.';
+  end if;
+
+  if selected_draft.status <> 'validated' then
+    raise exception 'Validate the migration draft before staging accounts.';
+  end if;
+
+  if selected_draft.upload_staged_at is null then
+    raise exception 'Stage the migration upload manifest before staging accounts.';
+  end if;
+
+  expected_checkpoint_count :=
+    coalesce((selected_draft.backup_summary ->> 'accountCount')::integer, 0);
+
+  if expected_account_count <> expected_checkpoint_count then
+    raise exception 'Account upload count does not match the migration checkpoint.';
+  end if;
+
+  with account_payload as (
+    select account_record.id
+    from jsonb_to_recordset(staged_accounts) as account_record(
+      id text
+    )
+  )
+  delete from public.accounts remote_account
+  where remote_account.household_id = selected_draft.household_id
+    and remote_account.local_record_id is not null
+    and not exists (
+      select 1
+      from account_payload
+      where account_payload.id = remote_account.local_record_id
+    );
+
+  insert into public.accounts (
+    household_id,
+    local_record_id,
+    owner_member_id,
+    name,
+    institution,
+    account_class,
+    account_type,
+    visibility,
+    currency,
+    base_currency,
+    exchange_rate,
+    exchange_rate_effective_date,
+    exchange_rate_source,
+    exchange_rate_provider,
+    opening_balance,
+    current_balance,
+    opening_base_balance,
+    current_base_balance,
+    account_number,
+    credit_limit,
+    statement_balance,
+    minimum_payment,
+    payment_due_date,
+    is_active,
+    created_at,
+    updated_at,
+    updated_by_user_id
+  )
+  select
+    selected_draft.household_id,
+    account_record.id,
+    selected_draft.owner_member_id,
+    account_record.name,
+    nullif(account_record.institution, ''),
+    account_record."accountClass",
+    account_record.type,
+    account_record.visibility,
+    account_record.currency,
+    nullif(account_record."baseCurrency", ''),
+    account_record."exchangeRate",
+    nullif(account_record."exchangeRateEffectiveDate", '')::date,
+    account_record."exchangeRateSource",
+    nullif(account_record."exchangeRateProvider", ''),
+    account_record."openingBalance",
+    account_record."currentBalance",
+    account_record."openingBaseBalance",
+    account_record."currentBaseBalance",
+    nullif(account_record."accountNumber", ''),
+    account_record."creditLimit",
+    account_record."statementBalance",
+    account_record."minimumPayment",
+    nullif(account_record."paymentDueDate", '')::date,
+    account_record."isActive",
+    coalesce(nullif(account_record."createdAt", '')::timestamptz, staging_timestamp),
+    coalesce(nullif(account_record."updatedAt", '')::timestamptz, staging_timestamp),
+    current_user_id
+  from jsonb_to_recordset(staged_accounts) as account_record(
+    id text,
+    visibility text,
+    name text,
+    institution text,
+    "accountClass" text,
+    type text,
+    currency text,
+    "baseCurrency" text,
+    "exchangeRate" numeric,
+    "exchangeRateEffectiveDate" text,
+    "exchangeRateSource" text,
+    "exchangeRateProvider" text,
+    "openingBalance" numeric,
+    "currentBalance" numeric,
+    "openingBaseBalance" numeric,
+    "currentBaseBalance" numeric,
+    "accountNumber" text,
+    "creditLimit" numeric,
+    "statementBalance" numeric,
+    "minimumPayment" numeric,
+    "paymentDueDate" text,
+    "isActive" boolean,
+    "createdAt" text,
+    "updatedAt" text
+  )
+  on conflict (household_id, local_record_id)
+  where local_record_id is not null
+  do update set
+    owner_member_id = excluded.owner_member_id,
+    name = excluded.name,
+    institution = excluded.institution,
+    account_class = excluded.account_class,
+    account_type = excluded.account_type,
+    visibility = excluded.visibility,
+    currency = excluded.currency,
+    base_currency = excluded.base_currency,
+    exchange_rate = excluded.exchange_rate,
+    exchange_rate_effective_date = excluded.exchange_rate_effective_date,
+    exchange_rate_source = excluded.exchange_rate_source,
+    exchange_rate_provider = excluded.exchange_rate_provider,
+    opening_balance = excluded.opening_balance,
+    current_balance = excluded.current_balance,
+    opening_base_balance = excluded.opening_base_balance,
+    current_base_balance = excluded.current_base_balance,
+    account_number = excluded.account_number,
+    credit_limit = excluded.credit_limit,
+    statement_balance = excluded.statement_balance,
+    minimum_payment = excluded.minimum_payment,
+    payment_due_date = excluded.payment_due_date,
+    is_active = excluded.is_active,
+    updated_at = excluded.updated_at,
+    updated_by_user_id = excluded.updated_by_user_id;
+
+  update public.migration_drafts
+  set
+    account_upload_staged_count = expected_account_count,
+    account_upload_staged_at = staging_timestamp,
+    updated_at = staging_timestamp
+  where id = selected_draft.id;
+
+  return query
+  select
+    selected_draft.id,
+    expected_account_count,
+    staging_timestamp;
+end;
+$$;
+
+revoke all on function public.stage_migration_accounts(
+  uuid,
+  integer,
+  jsonb
+) from public;
+
+grant execute on function public.stage_migration_accounts(
+  uuid,
+  integer,
+  jsonb
+) to authenticated;
+
 create or replace function public.abort_migration_draft(
   target_draft_id uuid
 )
@@ -955,6 +1186,10 @@ begin
   if selected_draft.status = 'committed' then
     raise exception 'Committed migration drafts cannot be aborted.';
   end if;
+
+  delete from public.accounts
+  where household_id = selected_draft.household_id
+    and local_record_id is not null;
 
   update public.migration_drafts
   set

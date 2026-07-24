@@ -70,6 +70,22 @@ test(
       staging.stagedRecordCount,
       claim.migrationDraft.remoteRecordCount
     );
+    const accountStaging =
+      await adapter.stageMigrationAccounts(
+        claim.migrationDraft.id,
+        {
+          expectedAccountCount:
+            claim.migrationDraft
+              .backupSummary.accountCount,
+          accounts: [],
+        }
+      );
+
+    assert.equal(
+      accountStaging.stagedAccountCount,
+      claim.migrationDraft
+        .backupSummary.accountCount
+    );
 
     const commit =
       await adapter.commitMigrationDraft(

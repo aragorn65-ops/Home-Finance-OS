@@ -1,4 +1,6 @@
 import type {
+  RemoteMigrationAccountUploadPayload,
+  RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationUploadManifest,
@@ -156,6 +158,59 @@ export class InMemoryRemoteMigrationRepository
       draftId,
       stagedRecordCount:
         manifest.expectedRecordCount,
+      stagedAt,
+    };
+  }
+
+  async stageAccounts(
+    draftId: string,
+    payload: RemoteMigrationAccountUploadPayload
+  ): Promise<RemoteMigrationAccountUploadStagingResult> {
+    const draft =
+      this.store.getMigration(
+        draftId
+      );
+
+    if (!draft) {
+      throw new Error(
+        "Migration draft was not found."
+      );
+    }
+
+    if (!draft.uploadStagedAt) {
+      throw new Error(
+        "Stage the migration upload manifest before staging accounts."
+      );
+    }
+
+    if (
+      payload.expectedAccountCount !==
+        draft.backupSummary.accountCount ||
+      payload.accounts.length !==
+        payload.expectedAccountCount
+    ) {
+      throw new Error(
+        "Account upload payload does not match the migration checkpoint."
+      );
+    }
+
+    const stagedAt =
+      new Date();
+
+    this.store.saveMigration({
+      ...draft,
+      accountUploadStagedAt:
+        stagedAt,
+      accountUploadStagedCount:
+        payload.expectedAccountCount,
+      updatedAt:
+        stagedAt,
+    });
+
+    return {
+      draftId,
+      stagedAccountCount:
+        payload.expectedAccountCount,
       stagedAt,
     };
   }

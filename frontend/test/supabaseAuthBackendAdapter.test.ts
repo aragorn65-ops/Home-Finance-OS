@@ -170,6 +170,19 @@ test(
 
     await assert.rejects(
       () =>
+        adapter.stageMigrationAccounts(
+          "draft-1",
+          {
+            expectedAccountCount:
+              0,
+            accounts: [],
+          }
+        ),
+      /Supabase auth spike is missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY\./
+    );
+
+    await assert.rejects(
+      () =>
         adapter.abortMigrationDraft(
           "draft-1"
         ),
@@ -909,6 +922,10 @@ test(
                                 null,
                               upload_staged_record_count:
                                 null,
+                              account_upload_staged_at:
+                                null,
+                              account_upload_staged_count:
+                                null,
                               committed_at:
                                 null,
                               aborted_at:
@@ -965,7 +982,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,upload_staged_at,upload_staged_record_count,committed_at,aborted_at,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,upload_staged_at,upload_staged_record_count,account_upload_staged_at,account_upload_staged_count,committed_at,aborted_at,created_at,updated_at",
           column:
             "id",
           value:
@@ -975,7 +992,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,upload_staged_at,upload_staged_record_count,committed_at,aborted_at,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,upload_staged_at,upload_staged_record_count,account_upload_staged_at,account_upload_staged_count,committed_at,aborted_at,created_at,updated_at",
           column:
             "owner_user_id",
           value:
@@ -1285,6 +1302,19 @@ test(
 
     await assert.rejects(
       () =>
+        adapter.stageMigrationAccounts(
+          "migration-1",
+          {
+            expectedAccountCount:
+              0,
+            accounts: [],
+          }
+        ),
+      /Sign in before staging migration accounts\./
+    );
+
+    await assert.rejects(
+      () =>
         adapter.abortMigrationDraft(
           "migration-1"
         ),
@@ -1391,6 +1421,117 @@ test(
     assert.equal(
       staging.stagedAt.toISOString(),
       "2026-07-22T04:30:00.000Z"
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter stages migration accounts through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+    const payload = {
+      expectedAccountCount:
+        1,
+      accounts: [
+        {
+          id:
+            "account-1",
+          visibility:
+            "household",
+          name:
+            "Main Cash",
+          accountClass:
+            "asset",
+          type:
+            "cash",
+          currency:
+            "PHP",
+          openingBalance:
+            100,
+          currentBalance:
+            150,
+          isActive:
+            true,
+          createdAt:
+            "2026-07-22T01:00:00.000Z",
+          updatedAt:
+            "2026-07-22T02:00:00.000Z",
+        },
+      ],
+    };
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                draft_id:
+                  "migration-1",
+                staged_account_count:
+                  1,
+                staged_at:
+                  "2026-07-22T04:45:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    const staging =
+      await adapter
+        .stageMigrationAccounts(
+          "migration-1",
+          payload
+        );
+
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "stage_migration_accounts",
+          parameters: {
+            target_draft_id:
+              "migration-1",
+            expected_account_count:
+              1,
+            staged_accounts:
+              payload.accounts,
+          },
+        },
+      ]
+    );
+    assert.equal(
+      staging.draftId,
+      "migration-1"
+    );
+    assert.equal(
+      staging.stagedAccountCount,
+      1
+    );
+    assert.equal(
+      staging.stagedAt.toISOString(),
+      "2026-07-22T04:45:00.000Z"
     );
   }
 );
@@ -2298,6 +2439,10 @@ test(
                             "2026-07-22T04:30:00Z",
                           upload_staged_record_count:
                             16,
+                          account_upload_staged_at:
+                            "2026-07-22T04:45:00Z",
+                          account_upload_staged_count:
+                            2,
                           committed_at:
                             "2026-07-22T05:00:00Z",
                           aborted_at:
@@ -2325,6 +2470,10 @@ test(
                           upload_staged_at:
                             null,
                           upload_staged_record_count:
+                            null,
+                          account_upload_staged_at:
+                            null,
+                          account_upload_staged_count:
                             null,
                           committed_at:
                             null,
@@ -2362,7 +2511,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,backup_summary,status,validated_at,upload_staged_at,upload_staged_record_count,committed_at,aborted_at,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,backup_summary,status,validated_at,upload_staged_at,upload_staged_record_count,account_upload_staged_at,account_upload_staged_count,committed_at,aborted_at,created_at,updated_at",
           column:
             "owner_user_id",
           value:
@@ -2421,6 +2570,14 @@ test(
     assert.equal(
       drafts[0]?.uploadStagedRecordCount,
       16
+    );
+    assert.equal(
+      drafts[0]?.accountUploadStagedAt?.toISOString(),
+      "2026-07-22T04:45:00.000Z"
+    );
+    assert.equal(
+      drafts[0]?.accountUploadStagedCount,
+      2
     );
     assert.equal(
       drafts[0]?.committedAt?.toISOString(),

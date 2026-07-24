@@ -70,20 +70,24 @@ Use disposable records only.
 6. Select Validate.
 7. Confirm the checkpoint status becomes `validated` and a `Validated` UTC
    timestamp appears.
-8. Select Commit on a validated checkpoint.
-9. Confirm the checkpoint status becomes `committed`, a `Committed` UTC
-   timestamp appears, Auth Diagnostics shows latest migration `committed`, and
-   the local household link is saved.
-10. Create a second disposable claim draft in a fresh browser/profile or reset
+8. Select Stage upload.
+9. Confirm an `Upload staged` UTC timestamp appears, the staged record count
+   matches the dry-run contract, and Commit remains locked.
+10. Select Stage accounts.
+11. Confirm an `Accounts staged` UTC timestamp appears and account diagnostics
+    can query the staged account rows.
+12. Create a second disposable claim draft in a fresh browser/profile or reset
     disposable local data, then select Abort before commit.
-11. Confirm the checkpoint status becomes `aborted`, an `Aborted` UTC timestamp
-    appears, and no local browser data is deleted.
-12. If multiple checkpoints exist, confirm the panel orders the newest lifecycle
+13. Confirm the checkpoint status becomes `aborted`, an `Aborted` UTC timestamp
+    appears, staged local-record account rows are removed, and no local browser
+    data is deleted.
+14. If multiple checkpoints exist, confirm the panel orders the newest lifecycle
     activity first and Auth Diagnostics selects the newest lifecycle timestamp
     rather than the adapter return order.
 
 Expected result: lifecycle timestamps stay visible after refresh and all
-checkpoint actions remain explicit user actions.
+checkpoint actions remain explicit user actions. Commit remains locked until
+all required remote record staging paths exist.
 
 ---
 
@@ -108,10 +112,10 @@ Expected result: user B sees no household or migration data owned by user A.
 * Private member records are hidden from other household users.
 * Normal app flows do not require a service-role key in the browser.
 * Migration validation can fail closed without deleting local browser data.
-* Migration commit links the local household without importing records, syncing,
-  or deleting local browser data.
+* Migration upload staging can record a manifest and account records without
+  importing records, syncing, committing, or deleting local browser data.
 * Migration abort marks the remote draft aborted without deleting local browser
-  data.
+  data, and removes staged account rows for non-committed drafts.
 * Auth Diagnostics and the Migration Checkpoints panel show durable lifecycle
   timestamps after refresh.
 * Cloudflare Pages hosting remains compatible with the auth/session flow.

@@ -2,6 +2,8 @@ import type {
   ApplicationBackupSummary,
 } from "../../startup/services/applicationBackup";
 import type {
+  RemoteMigrationAccountUploadPayload,
+  RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationUploadManifest,
@@ -74,6 +76,11 @@ export interface AuthBackendAdapter {
     draftId: string,
     manifest: RemoteMigrationUploadManifest
   ): Promise<RemoteMigrationUploadStagingResult>;
+
+  stageMigrationAccounts(
+    draftId: string,
+    payload: RemoteMigrationAccountUploadPayload
+  ): Promise<RemoteMigrationAccountUploadStagingResult>;
 
   commitMigrationDraft(
     draftId: string

@@ -1,6 +1,9 @@
 import type {
   ApplicationBackupSummary,
 } from "../../startup/services/applicationBackup";
+import type {
+  Account,
+} from "../../accounts/models/Account";
 
 export type RemoteMigrationStatus =
   | "draft"
@@ -23,6 +26,8 @@ export interface RemoteMigrationDraft {
   validatedAt?: Date;
   uploadStagedAt?: Date;
   uploadStagedRecordCount?: number;
+  accountUploadStagedAt?: Date;
+  accountUploadStagedCount?: number;
   committedAt?: Date;
   abortedAt?: Date;
 }
@@ -55,5 +60,32 @@ export interface RemoteMigrationUploadManifest {
 export interface RemoteMigrationUploadStagingResult {
   draftId: string;
   stagedRecordCount: number;
+  stagedAt: Date;
+}
+
+export interface RemoteMigrationAccountUploadRecord
+  extends Omit<
+    Account,
+    | "householdId"
+    | "ownerMemberId"
+    | "paymentDueDate"
+    | "exchangeRateEffectiveDate"
+    | "createdAt"
+    | "updatedAt"
+  > {
+  paymentDueDate?: string;
+  exchangeRateEffectiveDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RemoteMigrationAccountUploadPayload {
+  expectedAccountCount: number;
+  accounts: RemoteMigrationAccountUploadRecord[];
+}
+
+export interface RemoteMigrationAccountUploadStagingResult {
+  draftId: string;
+  stagedAccountCount: number;
   stagedAt: Date;
 }

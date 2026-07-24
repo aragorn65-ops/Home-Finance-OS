@@ -41,6 +41,9 @@ export type {
 } from "./RemoteHousehold";
 
 export type {
+  RemoteMigrationAccountUploadPayload,
+  RemoteMigrationAccountUploadRecord,
+  RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationStatus,

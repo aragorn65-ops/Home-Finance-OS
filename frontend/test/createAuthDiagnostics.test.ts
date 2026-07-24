@@ -64,6 +64,11 @@ test(
               "not expected"
             );
           },
+          async stageMigrationAccounts() {
+            throw new Error(
+              "not expected"
+            );
+          },
           async commitMigrationDraft() {
             throw new Error(
               "not expected"
@@ -246,6 +251,10 @@ test(
       uploadStagedAt:
         new Date(
           "2026-07-22T04:30:00Z"
+        ),
+      accountUploadStagedAt:
+        new Date(
+          "2026-07-22T04:45:00Z"
         ),
     };
     const validatedDraft = {

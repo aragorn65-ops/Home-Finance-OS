@@ -44,6 +44,19 @@ test(
 
     await assert.rejects(
       () =>
+        adapter.stageMigrationAccounts(
+          "migration-1",
+          {
+            expectedAccountCount:
+              0,
+            accounts: [],
+          }
+        ),
+      /Remote migration account staging is disabled for migration-1\./
+    );
+
+    await assert.rejects(
+      () =>
         adapter.abortMigrationDraft(
           "migration-1"
         ),

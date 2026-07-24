@@ -22,6 +22,7 @@ import {
 import {
   getApplicationDataHealthSummary,
 } from "../../startup/services/applicationBackup";
+import AccountService from "../../accounts/services/AccountService";
 import {
   getAuthBackendAdapter,
 } from "../services/createAuthBackendAdapter";
@@ -41,6 +42,9 @@ import {
   requireMigrationUploadStagingDraft,
   requireMigrationValidateDraft,
 } from "./migrationCheckpointActionGuards";
+import {
+  createMigrationAccountUploadPayload,
+} from "./migrationAccountUpload";
 import {
   createMigrationUploadManifest,
   createMigrationUploadDryRunContract,
@@ -109,6 +113,7 @@ export default function MigrationCheckpointPanel({
         action:
           | "validate"
           | "stage-upload"
+          | "stage-accounts"
           | "commit"
           | "abort"
       ) => {
@@ -192,6 +197,47 @@ export default function MigrationCheckpointPanel({
 
             setMessage(
               `Upload manifest staged. ${staging.stagedRecordCount} records accounted for.`
+            );
+          }
+
+          if (action === "stage-accounts") {
+            const draft =
+              requireMigrationUploadStagingDraft(
+                drafts,
+                draftId
+              );
+            const payload =
+              createMigrationAccountUploadPayload(
+                draft,
+                AccountService.getAccounts()
+              );
+
+            if (
+              !draft.uploadStagedAt
+            ) {
+              throw new Error(
+                "Stage the migration upload manifest before staging accounts."
+              );
+            }
+
+            if (
+              payload.expectedAccountCount !==
+              draft.backupSummary.accountCount
+            ) {
+              throw new Error(
+                "Local account count no longer matches the migration checkpoint."
+              );
+            }
+
+            const staging =
+              await adapter
+                .stageMigrationAccounts(
+                  draftId,
+                  payload
+                );
+
+            setMessage(
+              `Accounts staged. ${staging.stagedAccountCount} accounts written to remote staging.`
             );
           }
 
@@ -344,6 +390,14 @@ export default function MigrationCheckpointPanel({
           const canStageUpload =
             draft.status === "validated" &&
             dryRunContract.recordCountsMatch;
+          const canStageAccounts =
+            canStageUpload &&
+            Boolean(
+              draft.uploadStagedAt
+            ) &&
+            draft.backupSummary.accountCount ===
+              getApplicationDataHealthSummary()
+                .accountCount;
           const canCommit =
             false;
           const canAbort =
@@ -472,6 +526,28 @@ export default function MigrationCheckpointPanel({
                   {isCurrentAction
                     ? "Working"
                     : "Stage upload"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void runAction(
+                      draft.id,
+                      "stage-accounts"
+                    );
+                  }}
+                  disabled={
+                    isLoading || !canStageAccounts
+                  }
+                  title="Stage account records after the upload manifest"
+                >
+                  <CloudUpload
+                    size={16}
+                    aria-hidden="true"
+                  />
+                  {isCurrentAction
+                    ? "Working"
+                    : "Stage accounts"}
                 </button>
 
                 <button

@@ -78,6 +78,10 @@ test(
           new Date(
             "2026-07-22T04:30:00Z"
           ),
+        accountUploadStagedAt:
+          new Date(
+            "2026-07-22T04:45:00Z"
+          ),
         committedAt:
           new Date(
             "2026-07-22T05:00:00Z"
@@ -101,6 +105,12 @@ test(
         },
         {
           label:
+            "Accounts staged",
+          value:
+            "2026-07-22 04:45:00Z",
+        },
+        {
+          label:
             "Committed",
           value:
             "2026-07-22 05:00:00Z",
@@ -120,6 +130,7 @@ test(
           updatedAt: string;
           validatedAt?: string;
           uploadStagedAt?: string;
+          accountUploadStagedAt?: string;
           committedAt?: string;
           abortedAt?: string;
         }
@@ -185,6 +196,12 @@ test(
               dates.uploadStagedAt
             )
             : undefined,
+        accountUploadStagedAt:
+          dates.accountUploadStagedAt
+            ? new Date(
+              dates.accountUploadStagedAt
+            )
+            : undefined,
         abortedAt:
           dates.abortedAt
             ? new Date(
@@ -223,6 +240,19 @@ test(
           }
         ),
         createDraft(
+          "migration-accounts-staged",
+          {
+            updatedAt:
+              "2026-07-22T01:45:00Z",
+            validatedAt:
+              "2026-07-22T02:30:00Z",
+            uploadStagedAt:
+              "2026-07-22T04:30:00Z",
+            accountUploadStagedAt:
+              "2026-07-22T04:45:00Z",
+          }
+        ),
+        createDraft(
           "migration-aborted",
           {
             updatedAt:
@@ -237,6 +267,7 @@ test(
       sorted.map((draft) => draft.id),
       [
         "migration-aborted",
+        "migration-accounts-staged",
         "migration-upload-staged",
         "migration-validated",
         "migration-old",

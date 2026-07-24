@@ -10,6 +10,8 @@ import type {
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteMigrationAccountUploadPayload,
+  RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationUploadManifest,
@@ -49,6 +51,7 @@ interface SupabaseAuthClient {
     | SupabaseHouseholdClaimRpcResult
     | SupabaseMigrationValidationRpcResult
     | SupabaseMigrationUploadStagingRpcResult
+    | SupabaseMigrationAccountUploadStagingRpcResult
     | SupabaseMigrationAbortRpcResult
     | SupabaseMigrationCommitRpcResult
   >;
@@ -216,6 +219,16 @@ interface SupabaseMigrationUploadStagingRpcResult {
     | null;
 }
 
+interface SupabaseMigrationAccountUploadStagingRpcResult {
+  data:
+    | SupabaseMigrationAccountUploadStagingRpcRow
+    | SupabaseMigrationAccountUploadStagingRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseMigrationCommitRpcResult {
   data:
     | SupabaseMigrationCommitRpcRow
@@ -305,6 +318,8 @@ interface SupabaseMigrationDraftRow {
   validated_at?: string | null;
   upload_staged_at?: string | null;
   upload_staged_record_count?: number | null;
+  account_upload_staged_at?: string | null;
+  account_upload_staged_count?: number | null;
   committed_at?: string | null;
   aborted_at?: string | null;
   created_at?: string | null;
@@ -339,6 +354,12 @@ interface SupabaseMigrationAbortRpcRow {
 interface SupabaseMigrationUploadStagingRpcRow {
   draft_id: string;
   staged_record_count: number;
+  staged_at?: string | null;
+}
+
+interface SupabaseMigrationAccountUploadStagingRpcRow {
+  draft_id: string;
+  staged_account_count: number;
   staged_at?: string | null;
 }
 
@@ -902,6 +923,8 @@ export class SupabaseAuthBackendAdapter
             "validated_at",
             "upload_staged_at",
             "upload_staged_record_count",
+            "account_upload_staged_at",
+            "account_upload_staged_count",
             "committed_at",
             "aborted_at",
             "created_at",
@@ -970,6 +993,8 @@ export class SupabaseAuthBackendAdapter
             "validated_at",
             "upload_staged_at",
             "upload_staged_record_count",
+            "account_upload_staged_at",
+            "account_upload_staged_count",
             "committed_at",
             "aborted_at",
             "created_at",
@@ -1133,6 +1158,77 @@ export class SupabaseAuthBackendAdapter
       draftId,
       stagedRecordCount:
         row.staged_record_count,
+      stagedAt:
+        mapSupabaseDate(
+          row.staged_at ??
+            undefined
+        ),
+    };
+  }
+
+  async stageMigrationAccounts(
+    draftId: string,
+    payload: RemoteMigrationAccountUploadPayload
+  ): Promise<RemoteMigrationAccountUploadStagingResult> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `migration account staging for ${draftId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before staging migration accounts."
+      );
+    }
+
+    const stagingResult =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "stage_migration_accounts",
+          {
+            target_draft_id:
+              draftId,
+            expected_account_count:
+              payload.expectedAccountCount,
+            staged_accounts:
+              payload.accounts,
+          }
+        ) as SupabaseMigrationAccountUploadStagingRpcResult;
+
+    if (stagingResult.error) {
+      throw new Error(
+        `Supabase migration account staging failed: ${stagingResult.error.message}`
+      );
+    }
+
+    const row =
+      readSingleSupabaseRpcRow(
+        stagingResult.data
+      );
+
+    if (
+      !row ||
+      row.draft_id !== draftId ||
+      row.staged_account_count !==
+        payload.expectedAccountCount
+    ) {
+      throw new Error(
+        "Supabase migration account staging returned an invalid result."
+      );
+    }
+
+    return {
+      draftId,
+      stagedAccountCount:
+        row.staged_account_count,
       stagedAt:
         mapSupabaseDate(
           row.staged_at ??
@@ -1647,6 +1743,13 @@ function mapSupabaseMigrationDraft(
       ),
     uploadStagedRecordCount:
       row.upload_staged_record_count ??
+      undefined,
+    accountUploadStagedAt:
+      mapOptionalSupabaseDate(
+        row.account_upload_staged_at
+      ),
+    accountUploadStagedCount:
+      row.account_upload_staged_count ??
       undefined,
     committedAt:
       mapOptionalSupabaseDate(
