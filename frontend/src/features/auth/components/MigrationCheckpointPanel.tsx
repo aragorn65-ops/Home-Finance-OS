@@ -381,7 +381,8 @@ export default function MigrationCheckpointPanel({
               localHousehold?.authenticatedLink
             );
             requireMigrationCommitUploadStaged(
-              draft
+              draft,
+              auditsByDraftId[draft.id]
             );
 
             const commitResult =
@@ -531,8 +532,6 @@ export default function MigrationCheckpointPanel({
             Boolean(
               draft.transactionUploadStagedAt
             );
-          const canCommit =
-            false;
           const canAbort =
             draft.status !== "committed" &&
             draft.status !== "aborted";
@@ -546,6 +545,10 @@ export default function MigrationCheckpointPanel({
               dryRunContract,
               auditsByDraftId[draft.id]
             );
+          const canCommit =
+            draft.status === "validated" &&
+            unlockChecklist
+              .isReadyForUnlockReview;
 
           return (
             <article
@@ -794,7 +797,11 @@ export default function MigrationCheckpointPanel({
                   disabled={
                     isLoading || !canCommit
                   }
-                  title="Commit remains locked until full record upload staging is implemented"
+                  title={
+                    canCommit
+                      ? "Commit remote persistence after checklist review"
+                      : "Commit remains locked until checklist review passes"
+                  }
                 >
                   <CheckCircle2
                     size={16}
@@ -802,7 +809,9 @@ export default function MigrationCheckpointPanel({
                   />
                   {isCurrentAction
                     ? "Working"
-                    : "Commit locked"}
+                    : canCommit
+                      ? "Commit"
+                      : "Commit locked"}
                 </button>
 
                 <button

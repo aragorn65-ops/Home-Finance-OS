@@ -1467,6 +1467,7 @@ declare
   current_user_id uuid := auth.uid();
   audit_timestamp timestamptz := now();
   selected_draft public.migration_drafts%rowtype;
+  expected_record_count integer;
   expected_account_count integer;
   expected_transaction_count integer;
   staged_account_count integer;
@@ -1708,6 +1709,12 @@ declare
   current_user_id uuid := auth.uid();
   commit_timestamp timestamptz := now();
   selected_draft public.migration_drafts%rowtype;
+  expected_account_count integer;
+  expected_transaction_count integer;
+  staged_account_count integer;
+  staged_transaction_count integer;
+  missing_expense_source_count integer;
+  missing_transaction_link_count integer;
 begin
   if current_user_id is null then
     raise exception 'Sign in before committing a migration draft.';
@@ -1730,6 +1737,87 @@ begin
 
   if selected_draft.status <> 'validated' then
     raise exception 'Validate the migration draft before committing it.';
+  end if;
+
+  if selected_draft.upload_staged_at is null then
+    raise exception 'Stage the migration upload manifest before committing.';
+  end if;
+
+  if selected_draft.account_upload_staged_at is null then
+    raise exception 'Stage migration accounts before committing.';
+  end if;
+
+  if selected_draft.transaction_upload_staged_at is null then
+    raise exception 'Stage migration transactions before committing.';
+  end if;
+
+  expected_record_count :=
+    1 +
+    coalesce((selected_draft.backup_summary ->> 'accountCount')::integer, 0) +
+    coalesce((selected_draft.backup_summary ->> 'transactionCount')::integer, 0) +
+    coalesce((selected_draft.backup_summary ->> 'expenseAllocationCount')::integer, 0) +
+    coalesce((selected_draft.backup_summary ->> 'settlementCount')::integer, 0) +
+    coalesce((selected_draft.backup_summary ->> 'settlementApplicationCount')::integer, 0) +
+    coalesce((selected_draft.backup_summary ->> 'savingsGoalCount')::integer, 0) +
+    coalesce((selected_draft.backup_summary ->> 'savingsActivityCount')::integer, 0) +
+    coalesce((selected_draft.backup_summary ->> 'providerBillCount')::integer, 0);
+  expected_account_count :=
+    coalesce((selected_draft.backup_summary ->> 'accountCount')::integer, 0);
+  expected_transaction_count :=
+    coalesce((selected_draft.backup_summary ->> 'transactionCount')::integer, 0);
+
+  if selected_draft.upload_staged_record_count <> expected_record_count then
+    raise exception 'Migration upload manifest count does not match the checkpoint.';
+  end if;
+
+  if selected_draft.account_upload_staged_count <> expected_account_count then
+    raise exception 'Migration account staging count does not match the checkpoint.';
+  end if;
+
+  if selected_draft.transaction_upload_staged_count <> expected_transaction_count then
+    raise exception 'Migration transaction staging count does not match the checkpoint.';
+  end if;
+
+  select count(*)::integer
+  into staged_account_count
+  from public.accounts
+  where household_id = selected_draft.household_id
+    and local_record_id is not null;
+
+  select
+    count(*)::integer,
+    count(*) filter (
+      where lower(trim(type)) = 'expense'
+        and source_account_id is null
+    )::integer,
+    count(*) filter (
+      where source_account_id is null
+        and destination_account_id is null
+    )::integer
+  into
+    staged_transaction_count,
+    missing_expense_source_count,
+    missing_transaction_link_count
+  from public.transactions
+  where household_id = selected_draft.household_id
+    and local_record_id is not null;
+
+  if staged_account_count <> expected_account_count then
+    raise exception 'Remote account row count does not match the migration checkpoint.';
+  end if;
+
+  if staged_transaction_count <> expected_transaction_count then
+    raise exception 'Remote transaction row count does not match the migration checkpoint.';
+  end if;
+
+  if missing_expense_source_count > 0 then
+    raise exception '% staged expense(s) must have a source account before commit.',
+      missing_expense_source_count;
+  end if;
+
+  if missing_transaction_link_count > 0 then
+    raise exception '% staged transaction(s) must have a source or destination account before commit.',
+      missing_transaction_link_count;
   end if;
 
   update public.migration_drafts

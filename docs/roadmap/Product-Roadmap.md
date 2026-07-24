@@ -125,6 +125,8 @@ Sprint 96 hardens transaction staging so reruns backfill any staged expense
 rows still missing a Cash source account.
 Sprint 97 adds a visible commit-unlock checklist while keeping the actual
 Commit action locked.
+Sprint 98 unlocks the Commit action only after the checklist and pre-commit
+audit pass, with matching Supabase commit-time guards.
 
 ---
 
@@ -198,6 +200,7 @@ Commit action locked.
 | v0.95.0-alpha | Pre-commit remote staging audit |
 | v0.96.0-alpha | Expense source-account staging backfill |
 | v0.97.0-alpha | Commit-unlock checklist |
+| v0.98.0-alpha | Guarded migration commit unlock |
 
 ---
 

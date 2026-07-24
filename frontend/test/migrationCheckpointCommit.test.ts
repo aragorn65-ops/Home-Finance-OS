@@ -258,14 +258,88 @@ test(
 );
 
 test(
-  "blocks migration commit until upload staging is implemented",
+  "allows migration commit when upload staging and pre-commit audit are ready",
+  () => {
+    assert.doesNotThrow(() => {
+      requireMigrationCommitUploadStaged(
+        createValidatedDraft({
+          uploadStagedAt:
+            new Date(
+              "2026-07-22T04:00:00Z"
+            ),
+          uploadStagedRecordCount:
+            0,
+          accountUploadStagedAt:
+            new Date(
+              "2026-07-22T05:00:00Z"
+            ),
+          accountUploadStagedCount:
+            0,
+          transactionUploadStagedAt:
+            new Date(
+              "2026-07-22T06:00:00Z"
+            ),
+          transactionUploadStagedCount:
+            0,
+        }),
+        {
+          draftId:
+            "migration-1",
+          isReady:
+            true,
+          blockerCount:
+            0,
+          warningCount:
+            0,
+          blockers: [],
+          warnings: [],
+          accountCount:
+            0,
+          transactionCount:
+            0,
+          missingExpenseSourceAccountCount:
+            0,
+          missingTransactionAccountLinkCount:
+            0,
+          auditedAt:
+            new Date(
+              "2026-07-22T07:00:00Z"
+            ),
+        }
+      );
+    });
+  }
+);
+
+test(
+  "blocks migration commit until pre-commit audit is available",
   () => {
     assert.throws(
       () =>
         requireMigrationCommitUploadStaged(
-          createValidatedDraft()
+          createValidatedDraft({
+            uploadStagedAt:
+              new Date(
+                "2026-07-22T04:00:00Z"
+              ),
+            uploadStagedRecordCount:
+              0,
+            accountUploadStagedAt:
+              new Date(
+                "2026-07-22T05:00:00Z"
+              ),
+            accountUploadStagedCount:
+              0,
+            transactionUploadStagedAt:
+              new Date(
+                "2026-07-22T06:00:00Z"
+              ),
+            transactionUploadStagedCount:
+              0,
+          }),
+          undefined
         ),
-      /cannot be committed until full upload staging is implemented and verified\./
+      /Run the pre-commit audit before committing\./
     );
   }
 );

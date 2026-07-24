@@ -4,6 +4,7 @@ import type {
 import type {
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationPreCommitAudit,
 } from "../models";
 
 export function requireMigrationCommitDraft(
@@ -79,11 +80,83 @@ export function requireMigrationCommitLocalLink(
 }
 
 export function requireMigrationCommitUploadStaged(
-  draft: RemoteMigrationDraft
+  draft: RemoteMigrationDraft,
+  audit:
+    | RemoteMigrationPreCommitAudit
+    | undefined
 ): void {
-  throw new Error(
-    `Migration checkpoint ${draft.id} cannot be committed until full upload staging is implemented and verified.`
-  );
+  if (!draft.uploadStagedAt) {
+    throw new Error(
+      "Stage the migration upload manifest before committing."
+    );
+  }
+
+  if (!draft.accountUploadStagedAt) {
+    throw new Error(
+      "Stage migration accounts before committing."
+    );
+  }
+
+  if (!draft.transactionUploadStagedAt) {
+    throw new Error(
+      "Stage migration transactions before committing."
+    );
+  }
+
+  if (
+    draft.uploadStagedRecordCount !==
+    draft.remoteRecordCount
+  ) {
+    throw new Error(
+      "Migration upload manifest count does not match the checkpoint."
+    );
+  }
+
+  if (
+    draft.accountUploadStagedCount !==
+    (draft.backupSummary.accountCount ?? 0)
+  ) {
+    throw new Error(
+      "Migration account staging count does not match the checkpoint."
+    );
+  }
+
+  if (
+    draft.transactionUploadStagedCount !==
+    (draft.backupSummary.transactionCount ?? 0)
+  ) {
+    throw new Error(
+      "Migration transaction staging count does not match the checkpoint."
+    );
+  }
+
+  if (!audit) {
+    throw new Error(
+      "Run the pre-commit audit before committing."
+    );
+  }
+
+  if (!audit.isReady) {
+    throw new Error(
+      audit.blockers[0] ??
+        "Pre-commit audit has blockers."
+    );
+  }
+
+  if (
+    audit.accountCount !==
+      (draft.backupSummary.accountCount ?? 0) ||
+    audit.transactionCount !==
+      (draft.backupSummary.transactionCount ?? 0) ||
+    audit.missingExpenseSourceAccountCount !==
+      0 ||
+    audit.missingTransactionAccountLinkCount !==
+      0
+  ) {
+    throw new Error(
+      "Pre-commit audit no longer matches the migration checkpoint."
+    );
+  }
 }
 
 export function assertMigrationCommitResultMatchesDraft(
