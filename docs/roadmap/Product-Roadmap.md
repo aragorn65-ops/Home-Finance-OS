@@ -105,6 +105,8 @@ Sprint 87 adds the first cloud data schema target for authenticated household
 records while keeping remote CRUD and automatic sync disabled.
 Sprint 88 surfaces the configured Supabase cloud schema readiness inside Auth
 Diagnostics before any upload or sync paths are introduced.
+Sprint 89 adds a local migration upload dry-run contract so checkpoint
+validation can detect browser data drift before remote calls.
 
 ---
 
@@ -169,6 +171,7 @@ Diagnostics before any upload or sync paths are introduced.
 | v0.86.0-alpha | Production auth baseline |
 | v0.87.0-alpha | Cloud data schema groundwork |
 | v0.88.0-alpha | Cloud schema readiness diagnostics |
+| v0.89.0-alpha | Migration upload dry-run contract |
 
 ---
 

@@ -20,6 +20,9 @@ import {
   loadHousehold,
 } from "../../household/services/householdStorage";
 import {
+  getApplicationDataHealthSummary,
+} from "../../startup/services/applicationBackup";
+import {
   getAuthBackendAdapter,
 } from "../services/createAuthBackendAdapter";
 import {
@@ -36,6 +39,9 @@ import {
   requireMigrationAbortDraft,
   requireMigrationValidateDraft,
 } from "./migrationCheckpointActionGuards";
+import {
+  createMigrationUploadDryRunContract,
+} from "./migrationUploadDryRun";
 
 export interface MigrationCheckpointPanelProps {
   refreshToken?: number;
@@ -112,10 +118,25 @@ export default function MigrationCheckpointPanel({
             getAuthBackendAdapter();
 
           if (action === "validate") {
-            requireMigrationValidateDraft(
+            const draft =
+              requireMigrationValidateDraft(
               drafts,
               draftId
             );
+            const dryRunContract =
+              createMigrationUploadDryRunContract(
+                draft,
+                getApplicationDataHealthSummary()
+              );
+
+            if (
+              !dryRunContract.recordCountsMatch
+            ) {
+              throw new Error(
+                dryRunContract.blockers[0] ??
+                  "Migration upload dry-run counts do not match the checkpoint."
+              );
+            }
 
             const validation =
               await adapter
@@ -131,7 +152,7 @@ export default function MigrationCheckpointPanel({
             }
 
             setMessage(
-              "Migration checkpoint validated."
+              `Migration checkpoint validated. Dry-run matched ${dryRunContract.currentRecordCount} records.`
             );
           }
 
@@ -282,6 +303,11 @@ export default function MigrationCheckpointPanel({
             getMigrationCheckpointLifecycleEntries(
               draft
             );
+          const dryRunContract =
+            createMigrationUploadDryRunContract(
+              draft,
+              getApplicationDataHealthSummary()
+            );
 
           return (
             <article
@@ -335,6 +361,30 @@ export default function MigrationCheckpointPanel({
                   )
                 )}
               </dl>
+
+              <div className="migration-checkpoint-panel__dry-run">
+                <div>
+                  <strong>
+                    Dry-run upload contract
+                  </strong>
+                  <span
+                    data-status={
+                      dryRunContract
+                        .recordCountsMatch
+                        ? "pass"
+                        : "blocked"
+                    }
+                  >
+                    {dryRunContract
+                      .recordCountsMatch
+                      ? "Ready"
+                      : "Review"}
+                  </span>
+                </div>
+                <p>
+                  {dryRunContract.currentRecordCount} current records compared with {dryRunContract.checkpointRecordCount} checkpoint records.
+                </p>
+              </div>
 
               <div className="migration-checkpoint-panel__actions">
                 <button
