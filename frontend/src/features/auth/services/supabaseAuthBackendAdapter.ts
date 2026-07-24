@@ -287,6 +287,7 @@ interface SupabaseMigrationDraftRow {
   owner_user_id: string;
   owner_member_id: string;
   household_name: string;
+  backup_summary?: unknown;
   status: string;
   validated_at?: string | null;
   committed_at?: string | null;
@@ -875,6 +876,7 @@ export class SupabaseAuthBackendAdapter
             "owner_user_id",
             "owner_member_id",
             "household_name",
+            "backup_summary",
             "status",
             "validated_at",
             "committed_at",
@@ -1504,6 +1506,10 @@ function mapSupabaseMigrationDraft(
   if (!status) {
     return undefined;
   }
+  const backupSummary =
+    createMigrationBackupSummary(
+      row
+    );
 
   return {
     id:
@@ -1518,11 +1524,11 @@ function mapSupabaseMigrationDraft(
     requestedByUserId:
       row.owner_user_id,
     backupSummary:
-      createRedactedMigrationBackupSummary(
-        row
-      ),
+      backupSummary,
     remoteRecordCount:
-      0,
+      countRemoteMigrationRecords(
+        backupSummary
+      ),
     status,
     createdAt:
       mapSupabaseDate(
@@ -1566,11 +1572,17 @@ function normalizeMigrationStatus(
   return undefined;
 }
 
-function createRedactedMigrationBackupSummary(
+function createMigrationBackupSummary(
   row: SupabaseMigrationDraftRow
 ): RemoteMigrationDraft["backupSummary"] {
+  const storedSummary =
+    readMigrationBackupSummary(
+      row.backup_summary
+    );
+
   return {
     householdName:
+      storedSummary.householdName ??
       row.household_name,
     remoteHouseholdId:
       row.household_id ??
@@ -1580,25 +1592,118 @@ function createRedactedMigrationBackupSummary(
         ? "linked"
         : "unlinked",
     exportedAt:
+      storedSummary.exportedAt ??
       row.created_at ??
       new Date(0).toISOString(),
     accountCount:
-      0,
+      storedSummary.accountCount,
     transactionCount:
-      0,
+      storedSummary.transactionCount,
     expenseAllocationCount:
-      0,
+      storedSummary.expenseAllocationCount,
     settlementCount:
-      0,
+      storedSummary.settlementCount,
     settlementApplicationCount:
-      0,
+      storedSummary.settlementApplicationCount,
     savingsGoalCount:
-      0,
+      storedSummary.savingsGoalCount,
     savingsActivityCount:
-      0,
+      storedSummary.savingsActivityCount,
     providerBillCount:
-      0,
+      storedSummary.providerBillCount,
   };
+}
+
+interface StoredMigrationBackupSummary {
+  householdName?: string;
+  exportedAt?: string;
+  accountCount: number;
+  transactionCount: number;
+  expenseAllocationCount: number;
+  settlementCount: number;
+  settlementApplicationCount: number;
+  savingsGoalCount: number;
+  savingsActivityCount: number;
+  providerBillCount: number;
+}
+
+function readMigrationBackupSummary(
+  value: unknown
+): StoredMigrationBackupSummary {
+  const summary =
+    isObjectRecord(value)
+      ? value
+      : {};
+
+  return {
+    householdName:
+      readOptionalString(
+        summary.householdName
+      ),
+    exportedAt:
+      readOptionalString(
+        summary.exportedAt
+      ),
+    accountCount:
+      readOptionalNumber(
+        summary.accountCount
+      ),
+    transactionCount:
+      readOptionalNumber(
+        summary.transactionCount
+      ),
+    expenseAllocationCount:
+      readOptionalNumber(
+        summary.expenseAllocationCount
+      ),
+    settlementCount:
+      readOptionalNumber(
+        summary.settlementCount
+      ),
+    settlementApplicationCount:
+      readOptionalNumber(
+        summary.settlementApplicationCount
+      ),
+    savingsGoalCount:
+      readOptionalNumber(
+        summary.savingsGoalCount
+      ),
+    savingsActivityCount:
+      readOptionalNumber(
+        summary.savingsActivityCount
+      ),
+    providerBillCount:
+      readOptionalNumber(
+        summary.providerBillCount
+      ),
+  };
+}
+
+function readOptionalString(
+  value: unknown
+): string | undefined {
+  return typeof value === "string" &&
+    value.trim()
+    ? value
+    : undefined;
+}
+
+function readOptionalNumber(
+  value: unknown
+): number {
+  return typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0
+    ? value
+    : 0;
+}
+
+function isObjectRecord(
+  value: unknown
+): value is Record<string, unknown> {
+  return typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value);
 }
 
 function mapSupabaseClaimMembership(

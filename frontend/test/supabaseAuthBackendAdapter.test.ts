@@ -2141,6 +2141,28 @@ test(
                             "member-1",
                           household_name:
                             "Casa Test",
+                          backup_summary: {
+                            householdName:
+                              "Casa Test",
+                            exportedAt:
+                              "2026-07-22T01:30:00Z",
+                            accountCount:
+                              2,
+                            transactionCount:
+                              3,
+                            expenseAllocationCount:
+                              4,
+                            settlementCount:
+                              1,
+                            settlementApplicationCount:
+                              1,
+                            savingsGoalCount:
+                              1,
+                            savingsActivityCount:
+                              2,
+                            providerBillCount:
+                              1,
+                          },
                           status:
                             "uploaded",
                           validated_at:
@@ -2205,7 +2227,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,committed_at,aborted_at,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,backup_summary,status,validated_at,committed_at,aborted_at,created_at,updated_at",
           column:
             "owner_user_id",
           value:
@@ -2231,11 +2253,23 @@ test(
     );
     assert.equal(
       drafts[0]?.backupSummary.accountCount,
-      0
+      2
     );
     assert.equal(
       drafts[0]?.backupSummary.transactionCount,
-      0
+      3
+    );
+    assert.equal(
+      drafts[0]?.backupSummary.providerBillCount,
+      1
+    );
+    assert.equal(
+      drafts[0]?.backupSummary.exportedAt,
+      "2026-07-22T01:30:00Z"
+    );
+    assert.equal(
+      drafts[0]?.remoteRecordCount,
+      16
     );
     assert.equal(
       drafts[0]?.updatedAt.toISOString(),
