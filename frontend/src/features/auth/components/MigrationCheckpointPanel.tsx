@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   CloudUpload,
   ShieldCheck,
+  ClipboardCheck,
   XCircle,
 } from "lucide-react";
 
@@ -119,6 +120,7 @@ export default function MigrationCheckpointPanel({
           | "stage-upload"
           | "stage-accounts"
           | "stage-transactions"
+          | "audit-commit"
           | "commit"
           | "abort"
       ) => {
@@ -305,6 +307,39 @@ export default function MigrationCheckpointPanel({
             );
           }
 
+          if (action === "audit-commit") {
+            const draft =
+              requireMigrationUploadStagingDraft(
+                drafts,
+                draftId
+              );
+
+            if (
+              !draft.transactionUploadStagedAt
+            ) {
+              throw new Error(
+                "Stage migration transactions before auditing commit readiness."
+              );
+            }
+
+            const audit =
+              await adapter
+                .auditMigrationPreCommit(
+                  draftId
+                );
+
+            if (!audit.isReady) {
+              throw new Error(
+                audit.blockers[0] ??
+                  "Migration pre-commit audit found blockers."
+              );
+            }
+
+            setMessage(
+              `Pre-commit audit ready. ${audit.accountCount} accounts and ${audit.transactionCount} transactions checked.`
+            );
+          }
+
           if (action === "commit") {
             const draft =
               requireMigrationCommitDraft(
@@ -470,6 +505,11 @@ export default function MigrationCheckpointPanel({
             draft.backupSummary.transactionCount ===
               getApplicationDataHealthSummary()
                 .transactionCount;
+          const canAuditCommit =
+            canStageUpload &&
+            Boolean(
+              draft.transactionUploadStagedAt
+            );
           const canCommit =
             false;
           const canAbort =
@@ -642,6 +682,28 @@ export default function MigrationCheckpointPanel({
                   {isCurrentAction
                     ? "Working"
                     : "Stage transactions"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void runAction(
+                      draft.id,
+                      "audit-commit"
+                    );
+                  }}
+                  disabled={
+                    isLoading || !canAuditCommit
+                  }
+                  title="Run pre-commit remote staging audit"
+                >
+                  <ClipboardCheck
+                    size={16}
+                    aria-hidden="true"
+                  />
+                  {isCurrentAction
+                    ? "Working"
+                    : "Audit commit"}
                 </button>
 
                 <button

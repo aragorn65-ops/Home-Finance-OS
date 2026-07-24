@@ -74,6 +74,11 @@ test(
               "not expected"
             );
           },
+          async auditMigrationPreCommit() {
+            throw new Error(
+              "not expected"
+            );
+          },
           async commitMigrationDraft() {
             throw new Error(
               "not expected"

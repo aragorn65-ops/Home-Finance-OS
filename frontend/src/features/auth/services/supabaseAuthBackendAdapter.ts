@@ -14,6 +14,7 @@ import type {
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationPreCommitAudit,
   RemoteMigrationTransactionUploadPayload,
   RemoteMigrationTransactionUploadStagingResult,
   RemoteMigrationUploadManifest,
@@ -55,6 +56,7 @@ interface SupabaseAuthClient {
     | SupabaseMigrationUploadStagingRpcResult
     | SupabaseMigrationAccountUploadStagingRpcResult
     | SupabaseMigrationTransactionUploadStagingRpcResult
+    | SupabaseMigrationPreCommitAuditRpcResult
     | SupabaseMigrationAbortRpcResult
     | SupabaseMigrationCommitRpcResult
   >;
@@ -242,6 +244,16 @@ interface SupabaseMigrationTransactionUploadStagingRpcResult {
     | null;
 }
 
+interface SupabaseMigrationPreCommitAuditRpcResult {
+  data:
+    | SupabaseMigrationPreCommitAuditRpcRow
+    | SupabaseMigrationPreCommitAuditRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseMigrationCommitRpcResult {
   data:
     | SupabaseMigrationCommitRpcRow
@@ -384,6 +396,20 @@ interface SupabaseMigrationTransactionUploadStagingRpcRow {
   draft_id: string;
   staged_transaction_count: number;
   staged_at?: string | null;
+}
+
+interface SupabaseMigrationPreCommitAuditRpcRow {
+  draft_id: string;
+  is_ready: boolean;
+  blocker_count: number;
+  warning_count: number;
+  blockers: string[];
+  warnings: string[];
+  account_count: number;
+  transaction_count: number;
+  missing_expense_source_account_count: number;
+  missing_transaction_account_link_count: number;
+  audited_at?: string | null;
 }
 
 interface SupabaseMigrationCommitRpcRow {
@@ -1339,6 +1365,61 @@ export class SupabaseAuthBackendAdapter
             undefined
         ),
     };
+  }
+
+  async auditMigrationPreCommit(
+    draftId: string
+  ): Promise<RemoteMigrationPreCommitAudit> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `migration pre-commit audit for ${draftId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before auditing a migration commit."
+      );
+    }
+
+    const auditResult =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "audit_migration_precommit",
+          {
+            target_draft_id:
+              draftId,
+          }
+        ) as SupabaseMigrationPreCommitAuditRpcResult;
+
+    if (auditResult.error) {
+      throw new Error(
+        `Supabase migration pre-commit audit failed: ${auditResult.error.message}`
+      );
+    }
+
+    const row =
+      readSingleSupabaseRpcRow(
+        auditResult.data
+      );
+
+    if (
+      !row ||
+      row.draft_id !== draftId
+    ) {
+      throw new Error(
+        "Supabase migration pre-commit audit returned an invalid result."
+      );
+    }
+
+    return mapSupabasePreCommitAudit(row);
   }
 
   async commitMigrationDraft(
@@ -2337,6 +2418,37 @@ function createEmptyTransactionDiagnosticSummary():
       0,
     expenseMissingSourceAccountCount:
       0,
+  };
+}
+
+function mapSupabasePreCommitAudit(
+  row: SupabaseMigrationPreCommitAuditRpcRow
+): RemoteMigrationPreCommitAudit {
+  return {
+    draftId:
+      row.draft_id,
+    isReady:
+      row.is_ready,
+    blockerCount:
+      row.blocker_count,
+    warningCount:
+      row.warning_count,
+    blockers:
+      row.blockers ?? [],
+    warnings:
+      row.warnings ?? [],
+    accountCount:
+      row.account_count,
+    transactionCount:
+      row.transaction_count,
+    missingExpenseSourceAccountCount:
+      row.missing_expense_source_account_count,
+    missingTransactionAccountLinkCount:
+      row.missing_transaction_account_link_count,
+    auditedAt:
+      mapSupabaseDate(
+        row.audited_at ?? undefined
+      ),
   };
 }
 

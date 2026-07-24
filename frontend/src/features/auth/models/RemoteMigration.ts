@@ -122,3 +122,17 @@ export interface RemoteMigrationTransactionUploadStagingResult {
   stagedTransactionCount: number;
   stagedAt: Date;
 }
+
+export interface RemoteMigrationPreCommitAudit {
+  draftId: string;
+  isReady: boolean;
+  blockerCount: number;
+  warningCount: number;
+  blockers: string[];
+  warnings: string[];
+  accountCount: number;
+  transactionCount: number;
+  missingExpenseSourceAccountCount: number;
+  missingTransactionAccountLinkCount: number;
+  auditedAt: Date;
+}

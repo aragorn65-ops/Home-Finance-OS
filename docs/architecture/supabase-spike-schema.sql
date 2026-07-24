@@ -1410,6 +1410,188 @@ grant execute on function public.stage_migration_transactions(
   jsonb
 ) to authenticated;
 
+create or replace function public.audit_migration_precommit(
+  target_draft_id uuid
+)
+returns table (
+  draft_id uuid,
+  is_ready boolean,
+  blocker_count integer,
+  warning_count integer,
+  blockers text[],
+  warnings text[],
+  account_count integer,
+  transaction_count integer,
+  missing_expense_source_account_count integer,
+  missing_transaction_account_link_count integer,
+  audited_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  audit_timestamp timestamptz := now();
+  selected_draft public.migration_drafts%rowtype;
+  expected_account_count integer;
+  expected_transaction_count integer;
+  staged_account_count integer;
+  staged_transaction_count integer;
+  missing_expense_source_count integer;
+  missing_transaction_link_count integer;
+  audit_blockers text[] := array[]::text[];
+  audit_warnings text[] := array[]::text[];
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before auditing a migration commit.';
+  end if;
+
+  select *
+  into selected_draft
+  from public.migration_drafts
+  where id = target_draft_id
+    and owner_user_id = current_user_id;
+
+  if selected_draft.id is null then
+    raise exception 'Migration draft was not found for the current user.';
+  end if;
+
+  expected_account_count :=
+    coalesce((selected_draft.backup_summary ->> 'accountCount')::integer, 0);
+  expected_transaction_count :=
+    coalesce((selected_draft.backup_summary ->> 'transactionCount')::integer, 0);
+
+  select count(*)::integer
+  into staged_account_count
+  from public.accounts
+  where household_id = selected_draft.household_id
+    and local_record_id is not null;
+
+  select
+    count(*)::integer,
+    count(*) filter (
+      where type = 'expense'
+        and source_account_id is null
+    )::integer,
+    count(*) filter (
+      where source_account_id is null
+        and destination_account_id is null
+    )::integer
+  into
+    staged_transaction_count,
+    missing_expense_source_count,
+    missing_transaction_link_count
+  from public.transactions
+  where household_id = selected_draft.household_id
+    and local_record_id is not null;
+
+  if selected_draft.household_id is null then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Migration draft is missing a linked household.'
+    );
+  end if;
+
+  if selected_draft.owner_member_id is null then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Migration draft is missing an owner member.'
+    );
+  end if;
+
+  if selected_draft.status <> 'validated' then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Validate the migration draft before commit audit.'
+    );
+  end if;
+
+  if selected_draft.upload_staged_at is null then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Stage the migration upload manifest before commit audit.'
+    );
+  end if;
+
+  if selected_draft.account_upload_staged_at is null then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Stage migration accounts before commit audit.'
+    );
+  end if;
+
+  if selected_draft.transaction_upload_staged_at is null then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Stage migration transactions before commit audit.'
+    );
+  end if;
+
+  if selected_draft.account_upload_staged_count <> expected_account_count then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Staged account count does not match the migration checkpoint.'
+    );
+  end if;
+
+  if staged_account_count <> expected_account_count then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Remote account row count does not match the migration checkpoint.'
+    );
+  end if;
+
+  if selected_draft.transaction_upload_staged_count <> expected_transaction_count then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Staged transaction count does not match the migration checkpoint.'
+    );
+  end if;
+
+  if staged_transaction_count <> expected_transaction_count then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Remote transaction row count does not match the migration checkpoint.'
+    );
+  end if;
+
+  if missing_expense_source_count > 0 then
+    audit_blockers := array_append(
+      audit_blockers,
+      'Staged expenses must have a source account before commit.'
+    );
+  end if;
+
+  if missing_transaction_link_count > 0 then
+    audit_warnings := array_append(
+      audit_warnings,
+      'Some staged transactions have no source or destination account link.'
+    );
+  end if;
+
+  return query
+  select
+    selected_draft.id,
+    cardinality(audit_blockers) = 0,
+    cardinality(audit_blockers),
+    cardinality(audit_warnings),
+    audit_blockers,
+    audit_warnings,
+    staged_account_count,
+    staged_transaction_count,
+    missing_expense_source_count,
+    missing_transaction_link_count,
+    audit_timestamp;
+end;
+$$;
+
+revoke all on function public.audit_migration_precommit(uuid)
+from public;
+
+grant execute on function public.audit_migration_precommit(uuid)
+to authenticated;
+
 create or replace function public.abort_migration_draft(
   target_draft_id uuid
 )

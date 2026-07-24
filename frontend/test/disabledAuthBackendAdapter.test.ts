@@ -70,6 +70,14 @@ test(
 
     await assert.rejects(
       () =>
+        adapter.auditMigrationPreCommit(
+          "migration-1"
+        ),
+      /Remote migration pre-commit audit is disabled for migration-1\./
+    );
+
+    await assert.rejects(
+      () =>
         adapter.abortMigrationDraft(
           "migration-1"
         ),

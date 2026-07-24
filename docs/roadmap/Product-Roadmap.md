@@ -119,6 +119,8 @@ Sprint 93 adds read-only transaction account-link diagnostics before allocation
 staging decisions.
 Sprint 94 bakes a Cash account fallback into transaction staging for expenses
 with missing or unresolved local source-account links.
+Sprint 95 adds a read-only pre-commit audit for staged remote data while
+keeping Commit locked.
 
 ---
 
@@ -189,6 +191,7 @@ with missing or unresolved local source-account links.
 | v0.92.0-alpha | Transaction upload staging |
 | v0.93.0-alpha | Transaction link diagnostics |
 | v0.94.0-alpha | Cash fallback transaction staging |
+| v0.95.0-alpha | Pre-commit remote staging audit |
 
 ---
 

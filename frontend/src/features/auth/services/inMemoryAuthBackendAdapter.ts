@@ -23,6 +23,7 @@ import type {
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationPreCommitAudit,
   RemoteMigrationTransactionUploadPayload,
   RemoteMigrationTransactionUploadStagingResult,
   RemoteMigrationUploadManifest,
@@ -185,6 +186,68 @@ export class InMemoryAuthBackendAdapter
         draftId,
         payload
       );
+  }
+
+  async auditMigrationPreCommit(
+    draftId: string
+  ): Promise<RemoteMigrationPreCommitAudit> {
+    const selectedDraft =
+      (
+        await this.migrationRepository
+          .listDrafts()
+      ).find(
+        (migrationDraft) =>
+          migrationDraft.id === draftId
+      );
+    const blockers: string[] = [];
+
+    if (!selectedDraft) {
+      blockers.push(
+        "Migration draft was not found."
+      );
+    } else {
+      if (!selectedDraft.uploadStagedAt) {
+        blockers.push(
+          "Stage the migration upload manifest before commit audit."
+        );
+      }
+
+      if (!selectedDraft.accountUploadStagedAt) {
+        blockers.push(
+          "Stage migration accounts before commit audit."
+        );
+      }
+
+      if (!selectedDraft.transactionUploadStagedAt) {
+        blockers.push(
+          "Stage migration transactions before commit audit."
+        );
+      }
+    }
+
+    return {
+      draftId,
+      isReady:
+        blockers.length === 0,
+      blockerCount:
+        blockers.length,
+      warningCount:
+        0,
+      blockers,
+      warnings: [],
+      accountCount:
+        selectedDraft?.backupSummary
+          .accountCount ?? 0,
+      transactionCount:
+        selectedDraft?.backupSummary
+          .transactionCount ?? 0,
+      missingExpenseSourceAccountCount:
+        0,
+      missingTransactionAccountLinkCount:
+        0,
+      auditedAt:
+        new Date(),
+    };
   }
 
   async commitMigrationDraft(

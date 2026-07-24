@@ -49,6 +49,7 @@ export type {
   RemoteMigrationTransactionUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationPreCommitAudit,
   RemoteMigrationStatus,
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadManifestCount,

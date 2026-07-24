@@ -1345,6 +1345,14 @@ test(
 
     await assert.rejects(
       () =>
+        adapter.auditMigrationPreCommit(
+          "migration-1"
+        ),
+      /Sign in before auditing a migration commit\./
+    );
+
+    await assert.rejects(
+      () =>
         adapter.abortMigrationDraft(
           "migration-1"
         ),
@@ -1695,6 +1703,166 @@ test(
     assert.equal(
       staging.stagedAt.toISOString(),
       "2026-07-22T04:50:00.000Z"
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter audits migration pre-commit readiness through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                draft_id:
+                  "migration-1",
+                is_ready:
+                  true,
+                blocker_count:
+                  0,
+                warning_count:
+                  0,
+                blockers: [],
+                warnings: [],
+                account_count:
+                  7,
+                transaction_count:
+                  32,
+                missing_expense_source_account_count:
+                  0,
+                missing_transaction_account_link_count:
+                  0,
+                audited_at:
+                  "2026-07-22T04:55:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    const audit =
+      await adapter
+        .auditMigrationPreCommit(
+          "migration-1"
+        );
+
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "audit_migration_precommit",
+          parameters: {
+            target_draft_id:
+              "migration-1",
+          },
+        },
+      ]
+    );
+    assert.deepEqual(
+      audit,
+      {
+        draftId:
+          "migration-1",
+        isReady:
+          true,
+        blockerCount:
+          0,
+        warningCount:
+          0,
+        blockers: [],
+        warnings: [],
+        accountCount:
+          7,
+        transactionCount:
+          32,
+        missingExpenseSourceAccountCount:
+          0,
+        missingTransactionAccountLinkCount:
+          0,
+        auditedAt:
+          new Date(
+            "2026-07-22T04:55:00Z"
+          ),
+      }
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter rejects invalid migration pre-commit audit results",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc() {
+            return {
+              data: {
+                draft_id:
+                  "other-migration",
+                is_ready:
+                  true,
+                blocker_count:
+                  0,
+                warning_count:
+                  0,
+                blockers: [],
+                warnings: [],
+                account_count:
+                  7,
+                transaction_count:
+                  32,
+                missing_expense_source_account_count:
+                  0,
+                missing_transaction_account_link_count:
+                  0,
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.auditMigrationPreCommit(
+          "migration-1"
+        ),
+      /Supabase migration pre-commit audit returned an invalid result\./
     );
   }
 );
