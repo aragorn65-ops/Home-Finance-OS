@@ -99,6 +99,10 @@ backup timing, account recovery, and production sync.
 Sprint 85 adds a public beta launch checklist that keeps launch gated on
 Cloudflare production validation, safety notices, backup/restore, reset
 behavior, and optional Google Drive checks.
+Sprint 86 makes the production Supabase auth baseline visible in Auth
+Diagnostics before any sync behavior is enabled.
+Sprint 87 adds the first cloud data schema target for authenticated household
+records while keeping remote CRUD and automatic sync disabled.
 
 ---
 
@@ -160,6 +164,8 @@ behavior, and optional Google Drive checks.
 | v0.83.0-alpha | Google Drive Settings status clarity |
 | v0.84.0-alpha | Public beta safety notice |
 | v0.85.0-alpha | Public beta launch checklist |
+| v0.86.0-alpha | Production auth baseline |
+| v0.87.0-alpha | Cloud data schema groundwork |
 
 ---
 

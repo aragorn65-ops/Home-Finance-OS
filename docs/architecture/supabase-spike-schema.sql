@@ -58,36 +58,285 @@ add column if not exists removed_at timestamptz;
 create table if not exists public.accounts (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
+  local_record_id text,
   owner_member_id uuid references public.household_members(id),
   name text not null,
+  institution text,
   account_class text not null,
   account_type text not null,
   visibility text not null default 'household',
   currency text not null,
-  balance numeric(14, 2) not null default 0,
+  base_currency text,
+  exchange_rate numeric(18, 8),
+  exchange_rate_effective_date date,
+  exchange_rate_source text,
+  exchange_rate_provider text,
+  opening_balance numeric(14, 2) not null default 0,
+  current_balance numeric(14, 2) not null default 0,
+  opening_base_balance numeric(14, 2),
+  current_base_balance numeric(14, 2),
+  account_number text,
+  credit_limit numeric(14, 2),
+  statement_balance numeric(14, 2),
+  minimum_payment numeric(14, 2),
+  payment_due_date date,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   updated_by_user_id uuid references auth.users(id)
 );
 
+alter table public.accounts
+add column if not exists local_record_id text;
+
+alter table public.accounts
+add column if not exists institution text;
+
+alter table public.accounts
+add column if not exists base_currency text;
+
+alter table public.accounts
+add column if not exists exchange_rate numeric(18, 8);
+
+alter table public.accounts
+add column if not exists exchange_rate_effective_date date;
+
+alter table public.accounts
+add column if not exists exchange_rate_source text;
+
+alter table public.accounts
+add column if not exists exchange_rate_provider text;
+
+alter table public.accounts
+add column if not exists opening_balance numeric(14, 2) not null default 0;
+
+alter table public.accounts
+add column if not exists current_balance numeric(14, 2) not null default 0;
+
+alter table public.accounts
+add column if not exists opening_base_balance numeric(14, 2);
+
+alter table public.accounts
+add column if not exists current_base_balance numeric(14, 2);
+
+alter table public.accounts
+add column if not exists account_number text;
+
+alter table public.accounts
+add column if not exists credit_limit numeric(14, 2);
+
+alter table public.accounts
+add column if not exists statement_balance numeric(14, 2);
+
+alter table public.accounts
+add column if not exists minimum_payment numeric(14, 2);
+
+alter table public.accounts
+add column if not exists payment_due_date date;
+
 create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
+  local_record_id text,
   created_by_member_id uuid references public.household_members(id),
   paid_by_member_id uuid references public.household_members(id),
+  expense_split_method text,
   source_account_id uuid references public.accounts(id),
   destination_account_id uuid references public.accounts(id),
   type text not null,
   amount numeric(14, 2) not null,
+  entered_amount numeric(14, 2),
+  entered_currency text,
+  base_currency text,
+  base_amount numeric(14, 2),
+  exchange_rate numeric(18, 8),
+  exchange_rate_effective_date date,
+  exchange_rate_source text,
+  exchange_rate_provider text,
   category text not null,
   description text not null default '',
+  notes text not null default '',
+  attachments jsonb not null default '[]'::jsonb,
   visibility text not null default 'household',
   transaction_date date not null,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   updated_by_user_id uuid references auth.users(id)
+);
+
+alter table public.transactions
+add column if not exists local_record_id text;
+
+alter table public.transactions
+add column if not exists expense_split_method text;
+
+alter table public.transactions
+add column if not exists entered_amount numeric(14, 2);
+
+alter table public.transactions
+add column if not exists entered_currency text;
+
+alter table public.transactions
+add column if not exists base_currency text;
+
+alter table public.transactions
+add column if not exists base_amount numeric(14, 2);
+
+alter table public.transactions
+add column if not exists exchange_rate numeric(18, 8);
+
+alter table public.transactions
+add column if not exists exchange_rate_effective_date date;
+
+alter table public.transactions
+add column if not exists exchange_rate_source text;
+
+alter table public.transactions
+add column if not exists exchange_rate_provider text;
+
+alter table public.transactions
+add column if not exists notes text not null default '';
+
+alter table public.transactions
+add column if not exists attachments jsonb not null default '[]'::jsonb;
+
+create table if not exists public.expense_allocations (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  local_record_id text not null,
+  transaction_id uuid not null references public.transactions(id) on delete cascade,
+  paid_by_member_id uuid not null references public.household_members(id),
+  member_id uuid not null references public.household_members(id),
+  is_included boolean not null default true,
+  allocated_amount numeric(14, 2) not null default 0,
+  personal_amount numeric(14, 2),
+  personal_items jsonb not null default '[]'::jsonb,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by_user_id uuid references auth.users(id),
+  unique (household_id, local_record_id)
+);
+
+create table if not exists public.utility_provider_bills (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  local_record_id text not null,
+  utility_type text not null,
+  unit text not null,
+  provider_name text not null,
+  billing_date date not null,
+  due_date date not null,
+  total_bill_amount numeric(14, 2) not null default 0,
+  rate_per_unit numeric(18, 8) not null default 0,
+  status text not null default 'unpaid',
+  form_snapshot jsonb not null default '{}'::jsonb,
+  calculation_snapshot jsonb not null default '{}'::jsonb,
+  member_share_snapshot jsonb not null default '[]'::jsonb,
+  bill_attachments jsonb not null default '[]'::jsonb,
+  payment_attachments jsonb not null default '[]'::jsonb,
+  paid_by_member_id uuid references public.household_members(id),
+  source_account_id uuid references public.accounts(id),
+  paid_at timestamptz,
+  payment_reference_number text,
+  transaction_id uuid references public.transactions(id),
+  visibility text not null default 'household',
+  description text not null default '',
+  notes text not null default '',
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by_user_id uuid references auth.users(id),
+  unique (household_id, local_record_id)
+);
+
+create table if not exists public.settlements (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  local_record_id text not null,
+  from_member_id uuid not null references public.household_members(id),
+  to_member_id uuid not null references public.household_members(id),
+  amount numeric(14, 2) not null,
+  settlement_date date not null,
+  source_account_id uuid references public.accounts(id),
+  destination_account_id uuid references public.accounts(id),
+  application_method text not null,
+  reference_number text,
+  notes text,
+  attachments jsonb not null default '[]'::jsonb,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by_user_id uuid references auth.users(id),
+  unique (household_id, local_record_id)
+);
+
+create table if not exists public.settlement_applications (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  local_record_id text not null,
+  settlement_id uuid not null references public.settlements(id) on delete cascade,
+  expense_allocation_id uuid not null references public.expense_allocations(id),
+  applied_amount numeric(14, 2) not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by_user_id uuid references auth.users(id),
+  unique (household_id, local_record_id)
+);
+
+create table if not exists public.savings_goals (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  local_record_id text not null,
+  name text not null,
+  description text,
+  goal_type text not null,
+  target_amount numeric(14, 2) not null,
+  goal_currency text not null,
+  base_currency text not null,
+  target_base_amount numeric(14, 2) not null,
+  exchange_rate numeric(18, 8) not null,
+  exchange_rate_effective_date date not null,
+  exchange_rate_source text,
+  exchange_rate_provider text,
+  target_date date,
+  linked_account_id uuid references public.accounts(id),
+  priority text not null,
+  status text not null,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by_user_id uuid references auth.users(id),
+  unique (household_id, local_record_id)
+);
+
+create table if not exists public.savings_activities (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  local_record_id text not null,
+  savings_goal_id uuid not null references public.savings_goals(id) on delete cascade,
+  member_id uuid not null references public.household_members(id),
+  activity_type text not null,
+  amount numeric(14, 2) not null,
+  entered_amount numeric(14, 2) not null,
+  entered_currency text not null,
+  goal_currency_amount numeric(14, 2) not null,
+  goal_currency text not null,
+  base_currency text not null,
+  base_amount numeric(14, 2) not null,
+  exchange_rate numeric(18, 8) not null,
+  exchange_rate_effective_date date not null,
+  exchange_rate_source text,
+  exchange_rate_provider text,
+  activity_date date not null,
+  account_id uuid references public.accounts(id),
+  notes text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by_user_id uuid references auth.users(id),
+  unique (household_id, local_record_id)
 );
 
 create table if not exists public.migration_drafts (
@@ -115,11 +364,43 @@ add column if not exists committed_at timestamptz;
 alter table public.migration_drafts
 add column if not exists aborted_at timestamptz;
 
+create unique index if not exists accounts_household_local_record_id_key
+on public.accounts (household_id, local_record_id)
+where local_record_id is not null;
+
+create unique index if not exists transactions_household_local_record_id_key
+on public.transactions (household_id, local_record_id)
+where local_record_id is not null;
+
+create index if not exists expense_allocations_transaction_id_idx
+on public.expense_allocations (transaction_id);
+
+create index if not exists utility_provider_bills_transaction_id_idx
+on public.utility_provider_bills (transaction_id);
+
+create index if not exists settlements_household_id_idx
+on public.settlements (household_id);
+
+create index if not exists settlement_applications_settlement_id_idx
+on public.settlement_applications (settlement_id);
+
+create index if not exists savings_goals_household_id_idx
+on public.savings_goals (household_id);
+
+create index if not exists savings_activities_savings_goal_id_idx
+on public.savings_activities (savings_goal_id);
+
 alter table public.households enable row level security;
 alter table public.household_members enable row level security;
 alter table public.household_memberships enable row level security;
 alter table public.accounts enable row level security;
 alter table public.transactions enable row level security;
+alter table public.expense_allocations enable row level security;
+alter table public.utility_provider_bills enable row level security;
+alter table public.settlements enable row level security;
+alter table public.settlement_applications enable row level security;
+alter table public.savings_goals enable row level security;
+alter table public.savings_activities enable row level security;
 alter table public.migration_drafts enable row level security;
 
 create or replace function public.is_active_household_member(target_household_id uuid)
@@ -155,20 +436,32 @@ as $$
   );
 $$;
 
+drop policy if exists "active members can read households"
+on public.households;
+
 create policy "active members can read households"
 on public.households
 for select
 using (public.is_active_household_member(id));
+
+drop policy if exists "active members can read household members"
+on public.household_members;
 
 create policy "active members can read household members"
 on public.household_members
 for select
 using (public.is_active_household_member(household_id));
 
+drop policy if exists "active members can read memberships"
+on public.household_memberships;
+
 create policy "active members can read memberships"
 on public.household_memberships
 for select
 using (public.is_active_household_member(household_id));
+
+drop policy if exists "active members can read household accounts"
+on public.accounts;
 
 create policy "active members can read household accounts"
 on public.accounts
@@ -188,6 +481,9 @@ using (
   )
 );
 
+drop policy if exists "active members can read household transactions"
+on public.transactions;
+
 create policy "active members can read household transactions"
 on public.transactions
 for select
@@ -195,6 +491,69 @@ using (
   public.is_active_household_member(household_id)
   and visibility <> 'private'
 );
+
+drop policy if exists "active members can read household expense allocations"
+on public.expense_allocations;
+
+create policy "active members can read household expense allocations"
+on public.expense_allocations
+for select
+using (
+  public.is_active_household_member(household_id)
+  and exists (
+    select 1
+    from public.transactions remote_transaction
+    where remote_transaction.id = expense_allocations.transaction_id
+      and remote_transaction.household_id = expense_allocations.household_id
+      and remote_transaction.visibility <> 'private'
+  )
+);
+
+drop policy if exists "active members can read household utility provider bills"
+on public.utility_provider_bills;
+
+create policy "active members can read household utility provider bills"
+on public.utility_provider_bills
+for select
+using (
+  public.is_active_household_member(household_id)
+  and visibility <> 'private'
+);
+
+drop policy if exists "active members can read household settlements"
+on public.settlements;
+
+create policy "active members can read household settlements"
+on public.settlements
+for select
+using (public.is_active_household_member(household_id));
+
+drop policy if exists "active members can read household settlement applications"
+on public.settlement_applications;
+
+create policy "active members can read household settlement applications"
+on public.settlement_applications
+for select
+using (public.is_active_household_member(household_id));
+
+drop policy if exists "active members can read household savings goals"
+on public.savings_goals;
+
+create policy "active members can read household savings goals"
+on public.savings_goals
+for select
+using (public.is_active_household_member(household_id));
+
+drop policy if exists "active members can read household savings activities"
+on public.savings_activities;
+
+create policy "active members can read household savings activities"
+on public.savings_activities
+for select
+using (public.is_active_household_member(household_id));
+
+drop policy if exists "users can read own migration drafts"
+on public.migration_drafts;
 
 create policy "users can read own migration drafts"
 on public.migration_drafts
