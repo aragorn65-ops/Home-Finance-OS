@@ -533,8 +533,21 @@ create policy "active members can read household transactions"
 on public.transactions
 for select
 using (
-  public.is_active_household_member(household_id)
-  and visibility <> 'private'
+  public.is_active_household_member(transactions.household_id)
+  and (
+    transactions.visibility <> 'private'
+    or exists (
+      select 1
+      from public.household_members member
+      where member.household_id = transactions.household_id
+        and member.linked_user_id = auth.uid()
+        and member.status = 'active'
+        and member.id in (
+          transactions.created_by_member_id,
+          transactions.paid_by_member_id
+        )
+    )
+  )
 );
 
 drop policy if exists "active members can read household expense allocations"
