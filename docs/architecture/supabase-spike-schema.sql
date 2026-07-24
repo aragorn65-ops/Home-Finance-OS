@@ -955,6 +955,7 @@ declare
   staging_timestamp timestamptz := now();
   selected_draft public.migration_drafts%rowtype;
   expected_checkpoint_count integer;
+  fallback_cash_account_id uuid;
 begin
   if current_user_id is null then
     raise exception 'Sign in before staging migration accounts.';
@@ -1278,12 +1279,12 @@ begin
     transaction_record.id,
     selected_draft.owner_member_id,
     case
-      when transaction_record.type = 'expense' then selected_draft.owner_member_id
+      when lower(trim(transaction_record.type)) = 'expense' then selected_draft.owner_member_id
       else null
     end,
     nullif(transaction_record."expenseSplitMethod", ''),
     case
-      when transaction_record.type = 'expense' then
+      when lower(trim(transaction_record.type)) = 'expense' then
         coalesce(source_account.id, cash_account.id)
       else source_account.id
     end,
@@ -1383,6 +1384,38 @@ begin
     updated_at = excluded.updated_at,
     updated_by_user_id = excluded.updated_by_user_id;
 
+  select fallback_account.id
+  into fallback_cash_account_id
+  from public.accounts fallback_account
+  where fallback_account.household_id = selected_draft.household_id
+    and fallback_account.account_type = 'cash'
+    and fallback_account.account_class = 'asset'
+    and fallback_account.is_active = true
+  order by
+    case
+      when lower(fallback_account.name) = 'cash' then 0
+      else 1
+    end,
+    fallback_account.created_at,
+    fallback_account.id
+  limit 1;
+
+  if fallback_cash_account_id is not null then
+    update public.transactions remote_transaction
+    set
+      source_account_id = fallback_cash_account_id,
+      paid_by_member_id = coalesce(
+        remote_transaction.paid_by_member_id,
+        selected_draft.owner_member_id
+      ),
+      updated_at = staging_timestamp,
+      updated_by_user_id = current_user_id
+    where remote_transaction.household_id = selected_draft.household_id
+      and remote_transaction.local_record_id is not null
+      and lower(trim(remote_transaction.type)) = 'expense'
+      and remote_transaction.source_account_id is null;
+  end if;
+
   update public.migration_drafts
   set
     transaction_upload_staged_count = expected_transaction_count,
@@ -1471,7 +1504,7 @@ begin
   select
     count(*)::integer,
     count(*) filter (
-      where type = 'expense'
+      where lower(trim(type)) = 'expense'
         and source_account_id is null
     )::integer,
     count(*) filter (
@@ -1559,7 +1592,8 @@ begin
   if missing_expense_source_count > 0 then
     audit_blockers := array_append(
       audit_blockers,
-      'Staged expenses must have a source account before commit.'
+      missing_expense_source_count::text ||
+        ' staged expense(s) must have a source account before commit.'
     );
   end if;
 
