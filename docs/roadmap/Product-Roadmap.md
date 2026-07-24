@@ -117,6 +117,8 @@ allocations, settlements, provider bills, savings, remote CRUD, sync, and Commit
 disabled.
 Sprint 93 adds read-only transaction account-link diagnostics before allocation
 staging decisions.
+Sprint 94 bakes a Cash account fallback into transaction staging for expenses
+with missing or unresolved local source-account links.
 
 ---
 
@@ -186,6 +188,7 @@ staging decisions.
 | v0.91.0-alpha | Account upload staging |
 | v0.92.0-alpha | Transaction upload staging |
 | v0.93.0-alpha | Transaction link diagnostics |
+| v0.94.0-alpha | Cash fallback transaction staging |
 
 ---
 
@@ -240,6 +243,9 @@ only after account staging passes, while keeping Commit and automatic sync
 disabled.
 Sprint 93 keeps the path diagnostic-first by surfacing staged transaction
 account-link gaps before allocation staging or sync behavior is enabled.
+Sprint 94 keeps transaction staging repeatable by resolving missing expense
+source-account links to the staged Cash account while keeping Commit and
+automatic sync disabled.
 Sprint 42 keeps that work behind explicit Supabase spike configuration so the
 Cloudflare Pages beta remains local-first by default.
 Sprint 43 continues that constraint while testing magic-link request behavior

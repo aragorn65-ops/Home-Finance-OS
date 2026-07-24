@@ -1282,7 +1282,11 @@ begin
       else null
     end,
     nullif(transaction_record."expenseSplitMethod", ''),
-    source_account.id,
+    case
+      when transaction_record.type = 'expense' then
+        coalesce(source_account.id, cash_account.id)
+      else source_account.id
+    end,
     destination_account.id,
     transaction_record.type,
     transaction_record.amount,
@@ -1332,6 +1336,22 @@ begin
   left join public.accounts source_account
     on source_account.household_id = selected_draft.household_id
    and source_account.local_record_id = transaction_record."sourceAccountId"
+  left join lateral (
+    select fallback_account.id
+    from public.accounts fallback_account
+    where fallback_account.household_id = selected_draft.household_id
+      and fallback_account.account_type = 'cash'
+      and fallback_account.account_class = 'asset'
+      and fallback_account.is_active = true
+    order by
+      case
+        when lower(fallback_account.name) = 'cash' then 0
+        else 1
+      end,
+      fallback_account.created_at,
+      fallback_account.id
+    limit 1
+  ) cash_account on true
   left join public.accounts destination_account
     on destination_account.household_id = selected_draft.household_id
    and destination_account.local_record_id = transaction_record."destinationAccountId"
