@@ -4,6 +4,8 @@ import type {
 import type {
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationUploadManifest,
+  RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
   AuthSession,
   AuthUser,
@@ -67,6 +69,11 @@ export interface AuthBackendAdapter {
   validateMigrationDraft(
     draftId: string
   ): Promise<RemoteMigrationValidation>;
+
+  stageMigrationUploadManifest(
+    draftId: string,
+    manifest: RemoteMigrationUploadManifest
+  ): Promise<RemoteMigrationUploadStagingResult>;
 
   commitMigrationDraft(
     draftId: string

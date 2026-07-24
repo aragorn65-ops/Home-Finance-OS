@@ -12,6 +12,8 @@ import type {
   HouseholdMembership,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationUploadManifest,
+  RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
 } from "../models";
 
@@ -46,6 +48,7 @@ interface SupabaseAuthClient {
   ): Promise<
     | SupabaseHouseholdClaimRpcResult
     | SupabaseMigrationValidationRpcResult
+    | SupabaseMigrationUploadStagingRpcResult
     | SupabaseMigrationAbortRpcResult
     | SupabaseMigrationCommitRpcResult
   >;
@@ -203,6 +206,16 @@ interface SupabaseMigrationAbortRpcResult {
     | null;
 }
 
+interface SupabaseMigrationUploadStagingRpcResult {
+  data:
+    | SupabaseMigrationUploadStagingRpcRow
+    | SupabaseMigrationUploadStagingRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseMigrationCommitRpcResult {
   data:
     | SupabaseMigrationCommitRpcRow
@@ -290,6 +303,8 @@ interface SupabaseMigrationDraftRow {
   backup_summary?: unknown;
   status: string;
   validated_at?: string | null;
+  upload_staged_at?: string | null;
+  upload_staged_record_count?: number | null;
   committed_at?: string | null;
   aborted_at?: string | null;
   created_at?: string | null;
@@ -319,6 +334,12 @@ interface SupabaseMigrationAbortRpcRow {
   draft_id: string;
   status: string;
   aborted_at?: string | null;
+}
+
+interface SupabaseMigrationUploadStagingRpcRow {
+  draft_id: string;
+  staged_record_count: number;
+  staged_at?: string | null;
 }
 
 interface SupabaseMigrationCommitRpcRow {
@@ -879,6 +900,8 @@ export class SupabaseAuthBackendAdapter
             "backup_summary",
             "status",
             "validated_at",
+            "upload_staged_at",
+            "upload_staged_record_count",
             "committed_at",
             "aborted_at",
             "created_at",
@@ -945,6 +968,8 @@ export class SupabaseAuthBackendAdapter
             "household_name",
             "status",
             "validated_at",
+            "upload_staged_at",
+            "upload_staged_record_count",
             "committed_at",
             "aborted_at",
             "created_at",
@@ -1042,6 +1067,77 @@ export class SupabaseAuthBackendAdapter
         "Supabase migration validation is metadata-only in this spike.",
       ],
       blockers: [],
+    };
+  }
+
+  async stageMigrationUploadManifest(
+    draftId: string,
+    manifest: RemoteMigrationUploadManifest
+  ): Promise<RemoteMigrationUploadStagingResult> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `migration upload staging for ${draftId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before staging a migration upload manifest."
+      );
+    }
+
+    const stagingResult =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "stage_migration_upload_manifest",
+          {
+            target_draft_id:
+              draftId,
+            expected_record_count:
+              manifest.expectedRecordCount,
+            draft_upload_manifest:
+              manifest,
+          }
+        ) as SupabaseMigrationUploadStagingRpcResult;
+
+    if (stagingResult.error) {
+      throw new Error(
+        `Supabase migration upload staging failed: ${stagingResult.error.message}`
+      );
+    }
+
+    const row =
+      readSingleSupabaseRpcRow(
+        stagingResult.data
+      );
+
+    if (
+      !row ||
+      row.draft_id !== draftId ||
+      row.staged_record_count !==
+        manifest.expectedRecordCount
+    ) {
+      throw new Error(
+        "Supabase migration upload staging returned an invalid result."
+      );
+    }
+
+    return {
+      draftId,
+      stagedRecordCount:
+        row.staged_record_count,
+      stagedAt:
+        mapSupabaseDate(
+          row.staged_at ??
+            undefined
+        ),
     };
   }
 
@@ -1545,6 +1641,13 @@ function mapSupabaseMigrationDraft(
       mapOptionalSupabaseDate(
         row.validated_at
       ),
+    uploadStagedAt:
+      mapOptionalSupabaseDate(
+        row.upload_staged_at
+      ),
+    uploadStagedRecordCount:
+      row.upload_staged_record_count ??
+      undefined,
     committedAt:
       mapOptionalSupabaseDate(
         row.committed_at

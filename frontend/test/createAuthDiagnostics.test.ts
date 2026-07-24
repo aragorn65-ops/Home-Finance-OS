@@ -59,6 +59,11 @@ test(
               "not expected"
             );
           },
+          async stageMigrationUploadManifest() {
+            throw new Error(
+              "not expected"
+            );
+          },
           async commitMigrationDraft() {
             throw new Error(
               "not expected"
@@ -223,6 +228,52 @@ test(
 );
 
 test(
+  "finds staged migration drafts newer than validated drafts",
+  () => {
+    const stagedDraft = {
+      id:
+        "migration-staged",
+      status:
+        "validated",
+      updatedAt:
+        new Date(
+          "2026-07-22T03:00:00Z"
+        ),
+      validatedAt:
+        new Date(
+          "2026-07-22T04:00:00Z"
+        ),
+      uploadStagedAt:
+        new Date(
+          "2026-07-22T04:30:00Z"
+        ),
+    };
+    const validatedDraft = {
+      id:
+        "migration-validated",
+      status:
+        "validated",
+      updatedAt:
+        new Date(
+          "2026-07-22T04:15:00Z"
+        ),
+      validatedAt:
+        new Date(
+          "2026-07-22T04:15:00Z"
+        ),
+    };
+
+    assert.equal(
+      findLatestMigrationDraft([
+        validatedDraft,
+        stagedDraft,
+      ])?.id,
+      "migration-staged"
+    );
+  }
+);
+
+test(
   "migration diagnostic date prefers lifecycle dates over update date",
   () => {
     assert.equal(
@@ -234,6 +285,10 @@ test(
         validatedAt:
           new Date(
             "2026-07-22T04:00:00Z"
+          ),
+        uploadStagedAt:
+          new Date(
+            "2026-07-22T04:30:00Z"
           ),
         committedAt:
           new Date(

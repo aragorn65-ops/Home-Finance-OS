@@ -21,6 +21,8 @@ import type {
   HouseholdMembership,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationUploadManifest,
+  RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
 } from "../models";
 
@@ -146,6 +148,17 @@ export class InMemoryAuthBackendAdapter
   ): Promise<RemoteMigrationValidation> {
     return this.migrationRepository
       .validateDraft(draftId);
+  }
+
+  async stageMigrationUploadManifest(
+    draftId: string,
+    manifest: RemoteMigrationUploadManifest
+  ): Promise<RemoteMigrationUploadStagingResult> {
+    return this.migrationRepository
+      .stageUploadManifest(
+        draftId,
+        manifest
+      );
   }
 
   async commitMigrationDraft(

@@ -1,6 +1,8 @@
 import type {
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationUploadManifest,
+  RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
 } from "../models";
 import type {
@@ -31,6 +33,15 @@ export class DisabledRemoteMigrationRepository
   ): Promise<RemoteMigrationValidation> {
     throw new Error(
       `Remote migration validation is disabled for ${draftId}.`
+    );
+  }
+
+  async stageUploadManifest(
+    draftId: string,
+    _manifest: RemoteMigrationUploadManifest
+  ): Promise<RemoteMigrationUploadStagingResult> {
+    throw new Error(
+      `Remote migration upload staging is disabled for ${draftId}.`
     );
   }
 

@@ -349,6 +349,9 @@ create table if not exists public.migration_drafts (
   status text not null default 'uploaded',
   validation_summary jsonb,
   validated_at timestamptz,
+  upload_manifest jsonb,
+  upload_staged_record_count integer,
+  upload_staged_at timestamptz,
   committed_at timestamptz,
   aborted_at timestamptz,
   created_at timestamptz not null default now(),
@@ -359,10 +362,32 @@ alter table public.migration_drafts
 add column if not exists validated_at timestamptz;
 
 alter table public.migration_drafts
+add column if not exists upload_manifest jsonb;
+
+alter table public.migration_drafts
+add column if not exists upload_staged_record_count integer;
+
+alter table public.migration_drafts
+add column if not exists upload_staged_at timestamptz;
+
+alter table public.migration_drafts
 add column if not exists committed_at timestamptz;
 
 alter table public.migration_drafts
 add column if not exists aborted_at timestamptz;
+
+create table if not exists public.migration_upload_manifests (
+  id uuid primary key default gen_random_uuid(),
+  migration_draft_id uuid not null references public.migration_drafts(id) on delete cascade,
+  household_id uuid not null references public.households(id) on delete cascade,
+  owner_user_id uuid not null references auth.users(id),
+  expected_record_count integer not null,
+  manifest jsonb not null,
+  status text not null default 'staged',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (migration_draft_id)
+);
 
 create unique index if not exists accounts_household_local_record_id_key
 on public.accounts (household_id, local_record_id)
@@ -390,6 +415,9 @@ on public.savings_goals (household_id);
 create index if not exists savings_activities_savings_goal_id_idx
 on public.savings_activities (savings_goal_id);
 
+create index if not exists migration_upload_manifests_household_id_idx
+on public.migration_upload_manifests (household_id);
+
 alter table public.households enable row level security;
 alter table public.household_members enable row level security;
 alter table public.household_memberships enable row level security;
@@ -402,6 +430,7 @@ alter table public.settlement_applications enable row level security;
 alter table public.savings_goals enable row level security;
 alter table public.savings_activities enable row level security;
 alter table public.migration_drafts enable row level security;
+alter table public.migration_upload_manifests enable row level security;
 
 create or replace function public.is_active_household_member(target_household_id uuid)
 returns boolean
@@ -557,6 +586,14 @@ on public.migration_drafts;
 
 create policy "users can read own migration drafts"
 on public.migration_drafts
+for select
+using (owner_user_id = auth.uid());
+
+drop policy if exists "users can read own migration upload manifests"
+on public.migration_upload_manifests;
+
+create policy "users can read own migration upload manifests"
+on public.migration_upload_manifests
 for select
 using (owner_user_id = auth.uid());
 
@@ -781,6 +818,107 @@ from public;
 
 grant execute on function public.validate_migration_draft_metadata(uuid)
 to authenticated;
+
+create or replace function public.stage_migration_upload_manifest(
+  target_draft_id uuid,
+  expected_record_count integer,
+  draft_upload_manifest jsonb
+)
+returns table (
+  draft_id uuid,
+  staged_record_count integer,
+  staged_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  staging_timestamp timestamptz := now();
+  selected_draft public.migration_drafts%rowtype;
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before staging a migration upload manifest.';
+  end if;
+
+  if expected_record_count < 1 then
+    raise exception 'Upload manifest expected record count must be positive.';
+  end if;
+
+  select *
+  into selected_draft
+  from public.migration_drafts
+  where id = target_draft_id
+    and owner_user_id = current_user_id
+  for update;
+
+  if selected_draft.id is null then
+    raise exception 'Migration draft was not found for the current user.';
+  end if;
+
+  if selected_draft.household_id is null then
+    raise exception 'Migration draft is missing a linked household.';
+  end if;
+
+  if selected_draft.status <> 'validated' then
+    raise exception 'Validate the migration draft before staging upload.';
+  end if;
+
+  insert into public.migration_upload_manifests (
+    migration_draft_id,
+    household_id,
+    owner_user_id,
+    expected_record_count,
+    manifest,
+    status,
+    created_at,
+    updated_at
+  )
+  values (
+    selected_draft.id,
+    selected_draft.household_id,
+    current_user_id,
+    expected_record_count,
+    draft_upload_manifest,
+    'staged',
+    staging_timestamp,
+    staging_timestamp
+  )
+  on conflict (migration_draft_id)
+  do update set
+    expected_record_count = excluded.expected_record_count,
+    manifest = excluded.manifest,
+    status = 'staged',
+    updated_at = staging_timestamp;
+
+  update public.migration_drafts
+  set
+    upload_manifest = draft_upload_manifest,
+    upload_staged_record_count = expected_record_count,
+    upload_staged_at = staging_timestamp,
+    updated_at = staging_timestamp
+  where id = selected_draft.id;
+
+  return query
+  select
+    selected_draft.id,
+    expected_record_count,
+    staging_timestamp;
+end;
+$$;
+
+revoke all on function public.stage_migration_upload_manifest(
+  uuid,
+  integer,
+  jsonb
+) from public;
+
+grant execute on function public.stage_migration_upload_manifest(
+  uuid,
+  integer,
+  jsonb
+) to authenticated;
 
 create or replace function public.abort_migration_draft(
   target_draft_id uuid

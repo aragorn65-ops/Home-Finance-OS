@@ -10,6 +10,8 @@ import type {
   HouseholdMembership,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationUploadManifest,
+  RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
 } from "../models";
 
@@ -65,6 +67,15 @@ export class DisabledAuthBackendAdapter
   ): Promise<RemoteMigrationValidation> {
     throw new Error(
       `Remote migration validation is disabled for ${draftId}.`
+    );
+  }
+
+  async stageMigrationUploadManifest(
+    draftId: string,
+    _manifest: RemoteMigrationUploadManifest
+  ): Promise<RemoteMigrationUploadStagingResult> {
+    throw new Error(
+      `Remote migration upload staging is disabled for ${draftId}.`
     );
   }
 

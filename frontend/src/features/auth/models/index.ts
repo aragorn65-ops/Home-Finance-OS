@@ -44,6 +44,9 @@ export type {
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationStatus,
+  RemoteMigrationUploadManifest,
+  RemoteMigrationUploadManifestCount,
+  RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
 } from "./RemoteMigration";
 

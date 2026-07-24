@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  createMigrationUploadManifest,
   createMigrationUploadDryRunContract,
 } from "../src/features/auth/components/migrationUploadDryRun.ts";
 import type {
@@ -173,6 +174,80 @@ test(
       [
         "Checkpoint staged 15 records, but its backup summary contains 16.",
       ]
+    );
+  }
+);
+
+test(
+  "creates an upload manifest from the dry-run contract",
+  () => {
+    const contract =
+      createMigrationUploadDryRunContract(
+        createDraft(),
+        createHealthSummary()
+      );
+
+    assert.deepEqual(
+      createMigrationUploadManifest(
+        contract
+      ),
+      {
+        expectedRecordCount:
+          16,
+        counts: [
+          {
+            id: "household",
+            label: "Household",
+            count: 1,
+          },
+          {
+            id: "accounts",
+            label: "Accounts",
+            count: 2,
+          },
+          {
+            id: "transactions",
+            label: "Transactions",
+            count: 3,
+          },
+          {
+            id:
+              "expense-allocations",
+            label:
+              "Expense allocations",
+            count: 4,
+          },
+          {
+            id: "settlements",
+            label: "Settlements",
+            count: 1,
+          },
+          {
+            id:
+              "settlement-applications",
+            label:
+              "Settlement applications",
+            count: 1,
+          },
+          {
+            id: "savings-goals",
+            label: "Savings goals",
+            count: 1,
+          },
+          {
+            id:
+              "savings-activities",
+            label:
+              "Savings activities",
+            count: 2,
+          },
+          {
+            id: "provider-bills",
+            label: "Provider bills",
+            count: 1,
+          },
+        ],
+      }
     );
   }
 );

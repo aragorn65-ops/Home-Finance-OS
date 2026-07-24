@@ -1,6 +1,8 @@
 import type {
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationUploadManifest,
+  RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
 } from "../models";
 import type {
@@ -18,6 +20,11 @@ export interface RemoteMigrationRepository {
   validateDraft(
     draftId: string
   ): Promise<RemoteMigrationValidation>;
+
+  stageUploadManifest(
+    draftId: string,
+    manifest: RemoteMigrationUploadManifest
+  ): Promise<RemoteMigrationUploadStagingResult>;
 
   commitDraft(
     draftId: string

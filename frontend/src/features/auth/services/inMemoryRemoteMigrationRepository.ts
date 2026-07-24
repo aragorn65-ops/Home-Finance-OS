@@ -1,6 +1,8 @@
 import type {
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
+  RemoteMigrationUploadManifest,
+  RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
 } from "../models";
 import type {
@@ -104,6 +106,57 @@ export class InMemoryRemoteMigrationRepository
       recordCountsMatch: true,
       warnings: [],
       blockers: [],
+    };
+  }
+
+  async stageUploadManifest(
+    draftId: string,
+    manifest: RemoteMigrationUploadManifest
+  ): Promise<RemoteMigrationUploadStagingResult> {
+    const draft =
+      this.store.getMigration(
+        draftId
+      );
+
+    if (!draft) {
+      throw new Error(
+        "Migration draft was not found."
+      );
+    }
+
+    if (draft.status !== "validated") {
+      throw new Error(
+        "Validate the migration draft before staging upload."
+      );
+    }
+
+    if (
+      manifest.expectedRecordCount !==
+      draft.remoteRecordCount
+    ) {
+      throw new Error(
+        "Upload manifest count does not match the migration checkpoint."
+      );
+    }
+
+    const stagedAt =
+      new Date();
+
+    this.store.saveMigration({
+      ...draft,
+      uploadStagedAt:
+        stagedAt,
+      uploadStagedRecordCount:
+        manifest.expectedRecordCount,
+      updatedAt:
+        stagedAt,
+    });
+
+    return {
+      draftId,
+      stagedRecordCount:
+        manifest.expectedRecordCount,
+      stagedAt,
     };
   }
 

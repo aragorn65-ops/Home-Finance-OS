@@ -31,6 +31,19 @@ test(
 
     await assert.rejects(
       () =>
+        adapter.stageMigrationUploadManifest(
+          "migration-1",
+          {
+            expectedRecordCount:
+              1,
+            counts: [],
+          }
+        ),
+      /Remote migration upload staging is disabled for migration-1\./
+    );
+
+    await assert.rejects(
+      () =>
         adapter.abortMigrationDraft(
           "migration-1"
         ),

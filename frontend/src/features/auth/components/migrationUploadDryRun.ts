@@ -4,6 +4,7 @@ import type {
 } from "../../startup/services/applicationBackup";
 import type {
   RemoteMigrationDraft,
+  RemoteMigrationUploadManifest,
 } from "../models";
 
 export interface MigrationUploadDryRunCount {
@@ -144,6 +145,26 @@ export function createMigrationUploadDryRunContract(
     currentRecordCount,
     counts,
     blockers,
+  };
+}
+
+export function createMigrationUploadManifest(
+  contract: MigrationUploadDryRunContract
+): RemoteMigrationUploadManifest {
+  return {
+    expectedRecordCount:
+      contract.currentRecordCount,
+    counts:
+      contract.counts.map(
+        (count) => ({
+          id:
+            count.id,
+          label:
+            count.label,
+          count:
+            count.currentCount,
+        })
+      ),
   };
 }
 

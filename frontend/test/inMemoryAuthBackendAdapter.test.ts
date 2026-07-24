@@ -55,6 +55,22 @@ test(
     await adapter.validateMigrationDraft(
       claim.migrationDraft.id
     );
+    const staging =
+      await adapter.stageMigrationUploadManifest(
+        claim.migrationDraft.id,
+        {
+          expectedRecordCount:
+            claim.migrationDraft
+              .remoteRecordCount,
+          counts: [],
+        }
+      );
+
+    assert.equal(
+      staging.stagedRecordCount,
+      claim.migrationDraft.remoteRecordCount
+    );
+
     const commit =
       await adapter.commitMigrationDraft(
         claim.migrationDraft.id

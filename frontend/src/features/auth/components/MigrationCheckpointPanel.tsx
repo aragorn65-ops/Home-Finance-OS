@@ -38,9 +38,11 @@ import {
 } from "./migrationCheckpointCommit";
 import {
   requireMigrationAbortDraft,
+  requireMigrationUploadStagingDraft,
   requireMigrationValidateDraft,
 } from "./migrationCheckpointActionGuards";
 import {
+  createMigrationUploadManifest,
   createMigrationUploadDryRunContract,
 } from "./migrationUploadDryRun";
 
@@ -106,6 +108,7 @@ export default function MigrationCheckpointPanel({
         draftId: string,
         action:
           | "validate"
+          | "stage-upload"
           | "commit"
           | "abort"
       ) => {
@@ -154,6 +157,41 @@ export default function MigrationCheckpointPanel({
 
             setMessage(
               `Migration checkpoint validated. Dry-run matched ${dryRunContract.currentRecordCount} records.`
+            );
+          }
+
+          if (action === "stage-upload") {
+            const draft =
+              requireMigrationUploadStagingDraft(
+                drafts,
+                draftId
+              );
+            const dryRunContract =
+              createMigrationUploadDryRunContract(
+                draft,
+                getApplicationDataHealthSummary()
+              );
+
+            if (
+              !dryRunContract.recordCountsMatch
+            ) {
+              throw new Error(
+                dryRunContract.blockers[0] ??
+                  "Migration upload dry-run counts do not match the checkpoint."
+              );
+            }
+
+            const staging =
+              await adapter
+                .stageMigrationUploadManifest(
+                  draftId,
+                  createMigrationUploadManifest(
+                    dryRunContract
+                  )
+                );
+
+            setMessage(
+              `Upload manifest staged. ${staging.stagedRecordCount} records accounted for.`
             );
           }
 
@@ -296,8 +334,16 @@ export default function MigrationCheckpointPanel({
           const isCurrentAction =
             isLoading &&
             actionDraftId === draft.id;
+          const dryRunContract =
+            createMigrationUploadDryRunContract(
+              draft,
+              getApplicationDataHealthSummary()
+            );
           const canValidate =
             draft.status === "uploaded";
+          const canStageUpload =
+            draft.status === "validated" &&
+            dryRunContract.recordCountsMatch;
           const canCommit =
             false;
           const canAbort =
@@ -306,11 +352,6 @@ export default function MigrationCheckpointPanel({
           const lifecycleEntries =
             getMigrationCheckpointLifecycleEntries(
               draft
-            );
-          const dryRunContract =
-            createMigrationUploadDryRunContract(
-              draft,
-              getApplicationDataHealthSummary()
             );
 
           return (
@@ -416,13 +457,35 @@ export default function MigrationCheckpointPanel({
                   onClick={() => {
                     void runAction(
                       draft.id,
+                      "stage-upload"
+                    );
+                  }}
+                  disabled={
+                    isLoading || !canStageUpload
+                  }
+                  title="Stage the migration upload manifest"
+                >
+                  <CloudUpload
+                    size={16}
+                    aria-hidden="true"
+                  />
+                  {isCurrentAction
+                    ? "Working"
+                    : "Stage upload"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void runAction(
+                      draft.id,
                       "commit"
                     );
                   }}
                   disabled={
                     isLoading || !canCommit
                   }
-                  title="Commit requires full upload staging in a later sprint"
+                  title="Commit remains locked until full record upload staging is implemented"
                 >
                   <CheckCircle2
                     size={16}

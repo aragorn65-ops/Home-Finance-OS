@@ -157,6 +157,19 @@ test(
 
     await assert.rejects(
       () =>
+        adapter.stageMigrationUploadManifest(
+          "draft-1",
+          {
+            expectedRecordCount:
+              1,
+            counts: [],
+          }
+        ),
+      /Supabase auth spike is missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY\./
+    );
+
+    await assert.rejects(
+      () =>
         adapter.abortMigrationDraft(
           "draft-1"
         ),
@@ -892,6 +905,10 @@ test(
                                 "uploaded",
                               validated_at:
                                 null,
+                              upload_staged_at:
+                                null,
+                              upload_staged_record_count:
+                                null,
                               committed_at:
                                 null,
                               aborted_at:
@@ -948,7 +965,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,committed_at,aborted_at,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,upload_staged_at,upload_staged_record_count,committed_at,aborted_at,created_at,updated_at",
           column:
             "id",
           value:
@@ -958,7 +975,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,committed_at,aborted_at,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,status,validated_at,upload_staged_at,upload_staged_record_count,committed_at,aborted_at,created_at,updated_at",
           column:
             "owner_user_id",
           value:
@@ -1255,6 +1272,19 @@ test(
 
     await assert.rejects(
       () =>
+        adapter.stageMigrationUploadManifest(
+          "migration-1",
+          {
+            expectedRecordCount:
+              16,
+            counts: [],
+          }
+        ),
+      /Sign in before staging a migration upload manifest\./
+    );
+
+    await assert.rejects(
+      () =>
         adapter.abortMigrationDraft(
           "migration-1"
         ),
@@ -1264,6 +1294,103 @@ test(
     assert.deepEqual(
       rpcCalls,
       []
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter stages migration upload manifest through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+    const manifest = {
+      expectedRecordCount:
+        16,
+      counts: [
+        {
+          id: "household",
+          label: "Household",
+          count: 1,
+        },
+        {
+          id: "transactions",
+          label: "Transactions",
+          count: 15,
+        },
+      ],
+    };
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                draft_id:
+                  "migration-1",
+                staged_record_count:
+                  16,
+                staged_at:
+                  "2026-07-22T04:30:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    const staging =
+      await adapter
+        .stageMigrationUploadManifest(
+          "migration-1",
+          manifest
+        );
+
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "stage_migration_upload_manifest",
+          parameters: {
+            target_draft_id:
+              "migration-1",
+            expected_record_count:
+              16,
+            draft_upload_manifest:
+              manifest,
+          },
+        },
+      ]
+    );
+    assert.equal(
+      staging.draftId,
+      "migration-1"
+    );
+    assert.equal(
+      staging.stagedRecordCount,
+      16
+    );
+    assert.equal(
+      staging.stagedAt.toISOString(),
+      "2026-07-22T04:30:00.000Z"
     );
   }
 );
@@ -2167,6 +2294,10 @@ test(
                             "uploaded",
                           validated_at:
                             "2026-07-22T04:00:00Z",
+                          upload_staged_at:
+                            "2026-07-22T04:30:00Z",
+                          upload_staged_record_count:
+                            16,
                           committed_at:
                             "2026-07-22T05:00:00Z",
                           aborted_at:
@@ -2190,6 +2321,10 @@ test(
                           status:
                             "unknown",
                           validated_at:
+                            null,
+                          upload_staged_at:
+                            null,
+                          upload_staged_record_count:
                             null,
                           committed_at:
                             null,
@@ -2227,7 +2362,7 @@ test(
           tableName:
             "migration_drafts",
           columns:
-            "id,household_id,owner_user_id,owner_member_id,household_name,backup_summary,status,validated_at,committed_at,aborted_at,created_at,updated_at",
+            "id,household_id,owner_user_id,owner_member_id,household_name,backup_summary,status,validated_at,upload_staged_at,upload_staged_record_count,committed_at,aborted_at,created_at,updated_at",
           column:
             "owner_user_id",
           value:
@@ -2278,6 +2413,14 @@ test(
     assert.equal(
       drafts[0]?.validatedAt?.toISOString(),
       "2026-07-22T04:00:00.000Z"
+    );
+    assert.equal(
+      drafts[0]?.uploadStagedAt?.toISOString(),
+      "2026-07-22T04:30:00.000Z"
+    );
+    assert.equal(
+      drafts[0]?.uploadStagedRecordCount,
+      16
     );
     assert.equal(
       drafts[0]?.committedAt?.toISOString(),

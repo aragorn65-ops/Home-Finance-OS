@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   requireMigrationAbortDraft,
+  requireMigrationUploadStagingDraft,
   requireMigrationValidateDraft,
 } from "../src/features/auth/components/migrationCheckpointActionGuards.ts";
 import type {
@@ -112,6 +113,42 @@ test(
         "migration-1"
       ),
       draft
+    );
+  }
+);
+
+test(
+  "allows upload staging for validated local checkpoints",
+  () => {
+    const draft =
+      createDraft(
+        "validated"
+      );
+
+    assert.equal(
+      requireMigrationUploadStagingDraft(
+        [
+          draft,
+        ],
+        "migration-1"
+      ),
+      draft
+    );
+  }
+);
+
+test(
+  "blocks upload staging before validation",
+  () => {
+    assert.throws(
+      () =>
+        requireMigrationUploadStagingDraft(
+          [
+            createDraft(),
+          ],
+          "migration-1"
+        ),
+      /Validate the migration checkpoint before staging upload metadata\./
     );
   }
 );

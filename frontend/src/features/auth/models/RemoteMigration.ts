@@ -21,6 +21,8 @@ export interface RemoteMigrationDraft {
   createdAt: Date;
   updatedAt: Date;
   validatedAt?: Date;
+  uploadStagedAt?: Date;
+  uploadStagedRecordCount?: number;
   committedAt?: Date;
   abortedAt?: Date;
 }
@@ -37,4 +39,21 @@ export interface RemoteMigrationCommitResult {
   householdId: string;
   migrationId: string;
   committedAt: Date;
+}
+
+export interface RemoteMigrationUploadManifestCount {
+  id: string;
+  label: string;
+  count: number;
+}
+
+export interface RemoteMigrationUploadManifest {
+  expectedRecordCount: number;
+  counts: RemoteMigrationUploadManifestCount[];
+}
+
+export interface RemoteMigrationUploadStagingResult {
+  draftId: string;
+  stagedRecordCount: number;
+  stagedAt: Date;
 }

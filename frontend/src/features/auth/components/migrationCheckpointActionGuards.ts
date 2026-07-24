@@ -43,6 +43,25 @@ export function requireMigrationAbortDraft(
   return draft;
 }
 
+export function requireMigrationUploadStagingDraft(
+  drafts: RemoteMigrationDraft[],
+  draftId: string
+): RemoteMigrationDraft {
+  const draft =
+    requireMigrationActionDraft(
+      drafts,
+      draftId
+    );
+
+  if (draft.status !== "validated") {
+    throw new Error(
+      "Validate the migration checkpoint before staging upload metadata."
+    );
+  }
+
+  return draft;
+}
+
 function requireMigrationActionDraft(
   drafts: RemoteMigrationDraft[],
   draftId: string
