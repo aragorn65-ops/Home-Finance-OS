@@ -138,6 +138,8 @@ Sprint 102 resets the public beta target around authenticated admin access,
 limited member settlement-entry access, cloud-backed household persistence, and
 real-time synchronization, while leaving multi-device household access and
 conflict resolution out of scope.
+Sprint 103 turns that repo-side baseline into a live Cloudflare Pages and
+Supabase production validation pass before any public beta invitation.
 
 ---
 
@@ -216,6 +218,7 @@ conflict resolution out of scope.
 | v0.100.0-alpha | Post-commit remote readback |
 | v0.101.0-alpha | Cloud restore preview |
 | v0.102.0-alpha | Public beta cloud direction |
+| v0.103.0-alpha | Public beta production validation |
 
 ---
 
@@ -284,6 +287,11 @@ Sprint 102 supersedes that launch direction: public beta now requires
 authenticated admin access, limited member settlement-entry access,
 cloud-backed household persistence, and real-time synchronization before
 testers are invited.
+Sprint 103 keeps the next decision live-validation focused: Cloudflare Pages
+runtime configuration, production Supabase auth, admin and limited member smoke
+checks, cloud persistence, browser-refresh restore, realtime active-session
+sync, route smoke checks, and optional Google Drive checks must pass against
+the deployed production URL before testers are invited.
 Sprint 91 keeps migration staging incremental by uploading accounts only after
 manifest staging passes, while keeping Commit and automatic sync disabled.
 Sprint 92 keeps that incremental staging path going by uploading transactions
