@@ -147,3 +147,52 @@ for public beta.
   authenticated adapter contracts.
 * [x] Completed the active authenticated session realtime baseline for core
   snapshots, settlement records, and household metadata reloads.
+
+---
+
+## Sprint Closeout
+
+**Closed:** 2026-07-30
+
+**Result:** Completed as a public beta cloud baseline sprint.
+
+Sprint 102 moved HFOS from a local-first public beta checklist toward an
+authenticated public beta candidate. The repo now has contracts, Supabase RPC
+wiring, app integration, tests, and launch documentation for:
+
+* Authenticated admin access and signed-out route blocking.
+* Limited member settlement-entry access.
+* Admin review, edit, and delete of member-submitted settlement records.
+* Cloud-backed household metadata persistence.
+* Cloud-backed account/transaction core snapshots.
+* Cloud-backed settlement persistence.
+* Browser-refresh restore for linked household metadata and core snapshots.
+* Active-session realtime reloads for household metadata, core snapshots, and
+  settlement records.
+* Visible fail-closed cloud write errors for the core snapshot baseline.
+* Public beta scope control that keeps multi-device household access, broad
+  shared collaboration, conflict resolution, and full utility/savings cloud
+  persistence outside the one-month target unless explicitly expanded.
+
+Local backup export/import, Google Drive backup status, clear/reset safety
+rails, and public beta warning copy remain part of the launch guardrails.
+
+The public beta is **not launched** by this sprint. The repo-side baseline is
+ready for the next live Cloudflare Pages and Supabase validation pass tracked in
+`docs/qa/Public-Beta-Launch-Checklist.md` and
+`docs/qa/Public-Beta-Launch-Evidence.md`.
+
+### Final Verification
+
+* `npm.cmd test`
+* `npm.cmd run build`
+* `git diff --check`
+
+### Remaining Launch Gates
+
+* Cloudflare Pages production deployment must be green.
+* Cloudflare Pages must use `NODE_VERSION=22.13.0`.
+* Production Supabase auth environment variables must be configured.
+* Admin auth, member settlement entry, cloud persistence, browser refresh
+  restore, realtime active-session sync, route smoke checks, and optional Google
+  Drive checks must pass on `https://home-finance-os.pages.dev`.
