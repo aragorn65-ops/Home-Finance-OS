@@ -282,6 +282,10 @@ export default function TransactionsPage() {
     deleteError,
     setDeleteError,
   ] = useState("");
+  const [
+    isDeletingTransaction,
+    setIsDeletingTransaction,
+  ] = useState(false);
 
   const createTransactionInitialValues =
     useMemo(
@@ -348,7 +352,7 @@ export default function TransactionsPage() {
     setDialogMode("delete");
   };
 
-  const handleSubmitTransaction = (
+  const handleSubmitTransaction = async (
     form: TransactionFormData
   ) => {
     if (!household) {
@@ -364,11 +368,11 @@ export default function TransactionsPage() {
     const result =
       dialogMode === "edit" &&
       selectedTransaction
-        ? update(
+        ? await update(
             selectedTransaction.id,
             form
           )
-        : create(
+        : await create(
             form,
             household.id
           );
@@ -380,11 +384,17 @@ export default function TransactionsPage() {
     return result;
   };
 
-  const handleDeleteConfirm = (
+  const handleDeleteConfirm = async (
     transaction: Transaction
   ) => {
+    if (isDeletingTransaction) {
+      return;
+    }
+
+    setIsDeletingTransaction(true);
+
     const result =
-      remove(transaction.id);
+      await remove(transaction.id);
 
     if (!result.success) {
       const errors =
@@ -398,10 +408,12 @@ export default function TransactionsPage() {
           firstError ??
           "Unable to delete the transaction."
       );
+      setIsDeletingTransaction(false);
 
       return;
     }
 
+    setIsDeletingTransaction(false);
     closeDialog();
   };
 
@@ -590,6 +602,9 @@ export default function TransactionsPage() {
               }
               errorMessage={
                 deleteError
+              }
+              isDeleting={
+                isDeletingTransaction
               }
               currency={currency}
               onConfirm={

@@ -9,7 +9,9 @@ type TransactionDeleteConfirmationProps = {
   isDeleting?: boolean;
   errorMessage?: string;
   currency?: string;
-  onConfirm: (transaction: Transaction) => void;
+  onConfirm: (
+    transaction: Transaction
+  ) => void | Promise<void>;
   onCancel: () => void;
 };
 
@@ -111,7 +113,11 @@ export default function TransactionDeleteConfirmation({
 
         <button
           type="button"
-          onClick={() => onConfirm(transaction)}
+          onClick={() => {
+            void onConfirm(
+              transaction
+            );
+          }}
           disabled={isDeleting}
           className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >

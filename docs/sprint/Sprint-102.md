@@ -122,6 +122,9 @@ for public beta.
 * [x] Wired account create/update/delete flows to await linked-household core
   snapshot saves and keep account dialogs open with visible cloud errors when
   the snapshot save fails.
+* [x] Wired transaction create/update/delete flows to await linked-household
+  core snapshot saves and keep transaction dialogs open with visible cloud
+  errors when the snapshot save fails.
 * [ ] Add cloud-backed persistence for household and core finance records.
 * [ ] Add real-time synchronization for the active authenticated household
   session.

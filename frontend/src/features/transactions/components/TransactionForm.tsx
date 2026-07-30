@@ -59,7 +59,9 @@ type TransactionFormProps = {
 
   onSubmit: (
     form: TransactionFormData
-  ) => OperationResult<Transaction>;
+  ) =>
+    | OperationResult<Transaction>
+    | Promise<OperationResult<Transaction>>;
 
   onCancel?: () => void;
 };
@@ -882,6 +884,10 @@ export default function TransactionForm({
   const [
     isPreparingAttachments,
     setIsPreparingAttachments,
+  ] = useState(false);
+  const [
+    isSavingTransaction,
+    setIsSavingTransaction,
   ] = useState(false);
 
   const [
@@ -2156,8 +2162,14 @@ export default function TransactionForm({
       );
     }
 
+    setIsSavingTransaction(true);
+
     const result =
-      onSubmit(submissionForm);
+      await onSubmit(
+        submissionForm
+      );
+
+    setIsSavingTransaction(false);
 
     if (!result.success) {
       setErrors(
@@ -3554,10 +3566,14 @@ export default function TransactionForm({
       <div className="flex flex-wrap justify-end gap-3 border-t pt-5">
         {onCancel && (
           <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-md border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
-          >
+          type="button"
+          onClick={onCancel}
+          disabled={
+            isPreparingAttachments ||
+            isSavingTransaction
+          }
+          className="rounded-md border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+        >
             Cancel
           </button>
         )}
@@ -3565,12 +3581,15 @@ export default function TransactionForm({
         <button
           type="submit"
           disabled={
-            isPreparingAttachments
+            isPreparingAttachments ||
+            isSavingTransaction
           }
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-wait disabled:opacity-70"
         >
           {isPreparingAttachments
             ? "Preparing..."
+            : isSavingTransaction
+              ? "Saving..."
             : submitLabel}
         </button>
       </div>
