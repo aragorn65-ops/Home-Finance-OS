@@ -571,6 +571,16 @@ export class InMemoryAuthBackendAdapter
         input.settlement.referenceNumber,
       notes:
         input.settlement.notes,
+      attachments:
+        (
+          input.settlement.attachments ??
+          []
+        ).map((attachment) => ({
+          ...attachment,
+          createdAt: new Date(
+            attachment.createdAt
+          ),
+        })),
       isActive:
         input.settlement.isActive,
       createdAt: now,
@@ -668,6 +678,16 @@ export class InMemoryAuthBackendAdapter
         input.settlement.referenceNumber,
       notes:
         input.settlement.notes,
+      attachments:
+        (
+          input.settlement.attachments ??
+          []
+        ).map((attachment) => ({
+          ...attachment,
+          createdAt: new Date(
+            attachment.createdAt
+          ),
+        })),
       isActive:
         input.settlement.isActive,
       updatedAt: now,

@@ -78,7 +78,15 @@ function mapRemoteSettlement(
       settlement.referenceNumber,
     notes:
       settlement.notes,
-    attachments: [],
+    attachments:
+      settlement.attachments.map(
+        (attachment) => ({
+          ...attachment,
+          createdAt: new Date(
+            attachment.createdAt
+          ),
+        })
+      ),
     isActive:
       settlement.isActive,
     createdAt:
@@ -126,6 +134,15 @@ function createRemoteSettlementDraft(
     notes:
       form.notes.trim() ||
       undefined,
+    attachments:
+      form.attachments.map(
+        (attachment) => ({
+          ...attachment,
+          createdAt: new Date(
+            attachment.createdAt
+          ),
+        })
+      ),
     isActive:
       form.isActive,
   };

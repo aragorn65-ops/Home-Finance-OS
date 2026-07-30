@@ -2156,6 +2156,24 @@ test(
                   "SET-001",
                 notes:
                   null,
+                attachments: [
+                  {
+                    id:
+                      "attachment-1",
+                    category:
+                      "receipt",
+                    fileName:
+                      "receipt.pdf",
+                    mimeType:
+                      "application/pdf",
+                    sizeBytes:
+                      128,
+                    dataUrl:
+                      "data:application/pdf;base64,JVBERi0x",
+                    createdAt:
+                      "2026-07-30T01:00:00Z",
+                  },
+                ],
                 is_active:
                   true,
                 created_at:
@@ -2235,6 +2253,26 @@ test(
               "oldest-first",
             referenceNumber:
               "SET-001",
+            attachments: [
+              {
+                id:
+                  "attachment-1",
+                category:
+                  "receipt",
+                fileName:
+                  "receipt.pdf",
+                mimeType:
+                  "application/pdf",
+                sizeBytes:
+                  128,
+                dataUrl:
+                  "data:application/pdf;base64,JVBERi0x",
+                createdAt:
+                  new Date(
+                    "2026-07-30T01:00:00Z"
+                  ),
+              },
+            ],
             isActive: true,
           },
           applications: [
@@ -2278,6 +2316,24 @@ test(
               "SET-001",
             settlement_notes:
               null,
+            settlement_attachments: [
+              {
+                id:
+                  "attachment-1",
+                category:
+                  "receipt",
+                fileName:
+                  "receipt.pdf",
+                mimeType:
+                  "application/pdf",
+                sizeBytes:
+                  128,
+                dataUrl:
+                  "data:application/pdf;base64,JVBERi0x",
+                createdAt:
+                  "2026-07-30T01:00:00.000Z",
+              },
+            ],
             is_active:
               true,
             settlement_applications: [
@@ -2301,6 +2357,11 @@ test(
     assert.equal(
       result.settlement.updatedByUserId,
       "user-1"
+    );
+    assert.equal(
+      result.settlement.attachments[0]
+        ?.fileName,
+      "receipt.pdf"
     );
     assert.equal(
       result.applications.length,

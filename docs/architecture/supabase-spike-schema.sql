@@ -663,6 +663,22 @@ on public.savings_activities
 for select
 using (public.is_active_household_member(household_id));
 
+drop function if exists public.create_household_settlement(
+  uuid,
+  text,
+  uuid,
+  uuid,
+  numeric,
+  date,
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  boolean,
+  jsonb
+);
+
 create or replace function public.create_household_settlement(
   target_household_id uuid,
   local_record_id text,
@@ -675,6 +691,7 @@ create or replace function public.create_household_settlement(
   application_method text,
   reference_number text,
   settlement_notes text,
+  settlement_attachments jsonb,
   is_active boolean,
   settlement_applications jsonb
 )
@@ -737,7 +754,7 @@ begin
     application_method,
     reference_number,
     settlement_notes,
-    '[]'::jsonb,
+    coalesce(settlement_attachments, '[]'::jsonb),
     is_active,
     current_user_id
   )
@@ -792,6 +809,7 @@ revoke all on function public.create_household_settlement(
   text,
   text,
   text,
+  jsonb,
   boolean,
   jsonb
 ) from public;
@@ -808,9 +826,26 @@ grant execute on function public.create_household_settlement(
   text,
   text,
   text,
+  jsonb,
   boolean,
   jsonb
 ) to authenticated;
+
+drop function if exists public.update_household_settlement(
+  uuid,
+  text,
+  uuid,
+  uuid,
+  numeric,
+  date,
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  boolean,
+  jsonb
+);
 
 create or replace function public.update_household_settlement(
   target_settlement_id uuid,
@@ -824,6 +859,7 @@ create or replace function public.update_household_settlement(
   application_method text,
   reference_number text,
   settlement_notes text,
+  settlement_attachments jsonb,
   is_active boolean,
   settlement_applications jsonb
 )
@@ -873,7 +909,7 @@ begin
     application_method = update_household_settlement.application_method,
     reference_number = update_household_settlement.reference_number,
     notes = update_household_settlement.settlement_notes,
-    attachments = '[]'::jsonb,
+    attachments = coalesce(update_household_settlement.settlement_attachments, '[]'::jsonb),
     is_active = update_household_settlement.is_active,
     updated_at = now(),
     updated_by_user_id = current_user_id
@@ -933,6 +969,7 @@ revoke all on function public.update_household_settlement(
   text,
   text,
   text,
+  jsonb,
   boolean,
   jsonb
 ) from public;
@@ -949,6 +986,7 @@ grant execute on function public.update_household_settlement(
   text,
   text,
   text,
+  jsonb,
   boolean,
   jsonb
 ) to authenticated;

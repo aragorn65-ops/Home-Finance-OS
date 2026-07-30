@@ -16,6 +16,11 @@ import type {
 import CurrencyInput from "../../../shared/ui/CurrencyInput";
 import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
 import formatCurrency from "../../../shared/utils/formatCurrency";
+import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
+import type {
+  StoredAttachment,
+  StoredAttachmentCategory,
+} from "../../../shared/models/StoredAttachment";
 
 import type { Settlement } from "../models/Settlement";
 
@@ -67,8 +72,177 @@ const settlementFieldLabels:
       "Settlement Applications",
     referenceNumber: "Reference Number",
     notes: "Notes",
+    attachments: "Transfer Receipts",
     isActive: "Active settlement",
   };
+
+const acceptedAttachmentMimeTypes = [
+  "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+] as const;
+
+const acceptedAttachmentExtensions = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".pdf",
+] as const;
+
+const maximumAttachmentCount = 3;
+const maximumAttachmentSizeBytes =
+  1024 * 1024;
+
+function isAcceptedAttachmentMimeType(
+  mimeType: string
+): boolean {
+  return acceptedAttachmentMimeTypes.includes(
+    mimeType as
+      typeof acceptedAttachmentMimeTypes[number]
+  );
+}
+
+function isAcceptedAttachmentFile(
+  file: File
+): boolean {
+  if (
+    file.type &&
+    isAcceptedAttachmentMimeType(
+      file.type
+    )
+  ) {
+    return true;
+  }
+
+  const fileName =
+    file.name.toLowerCase();
+
+  return acceptedAttachmentExtensions.some(
+    (extension) =>
+      fileName.endsWith(extension)
+  );
+}
+
+function getAttachmentMimeType(
+  file: File
+): string {
+  if (
+    file.type &&
+    isAcceptedAttachmentMimeType(
+      file.type
+    )
+  ) {
+    return file.type === "image/jpg" ||
+      file.type === "image/pjpeg"
+      ? "image/jpeg"
+      : file.type;
+  }
+
+  const fileName =
+    file.name.toLowerCase();
+
+  if (
+    fileName.endsWith(".jpg") ||
+    fileName.endsWith(".jpeg")
+  ) {
+    return "image/jpeg";
+  }
+
+  if (fileName.endsWith(".png")) {
+    return "image/png";
+  }
+
+  if (fileName.endsWith(".webp")) {
+    return "image/webp";
+  }
+
+  if (fileName.endsWith(".pdf")) {
+    return "application/pdf";
+  }
+
+  return file.type;
+}
+
+function getDefaultAttachmentCategory(
+  fileName: string
+): StoredAttachmentCategory {
+  return fileName
+    .toLowerCase()
+    .includes("receipt")
+    ? "receipt"
+    : "other";
+}
+
+function formatFileSize(
+  sizeBytes: number
+): string {
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`;
+  }
+
+  return `${(
+    sizeBytes / 1024
+  ).toFixed(1)} KB`;
+}
+
+function readFileAsDataUrl(
+  file: File
+): Promise<string> {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+      const reader =
+        new FileReader();
+
+      reader.onload = () => {
+        if (
+          typeof reader.result ===
+          "string"
+        ) {
+          resolve(reader.result);
+          return;
+        }
+
+        reject(
+          new Error(
+            "The selected receipt could not be read."
+          )
+        );
+      };
+
+      reader.onerror = () => {
+        reject(
+          reader.error ??
+            new Error(
+              "The selected receipt could not be read."
+            )
+        );
+      };
+
+      reader.readAsDataURL(file);
+    }
+  );
+}
+
+function createAttachmentId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID ===
+      "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `settlement-attachment-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 9)}`;
+}
 
 function getTodayInputValue(): string {
   return new Date()
@@ -264,6 +438,16 @@ export default function SettlementForm({
     setIsValidationAlertOpen,
   ] = useState(false);
 
+  const [
+    isPreparingAttachments,
+    setIsPreparingAttachments,
+  ] = useState(false);
+
+  const [
+    attachmentStatus,
+    setAttachmentStatus,
+  ] = useState("");
+
   const showValidationAlert = (
     nextErrors:
       Record<string, string> | undefined,
@@ -456,6 +640,29 @@ export default function SettlementForm({
 
     setMessage("");
     setIsValidationAlertOpen(false);
+  };
+
+  const setAttachmentError = (
+    error: string
+  ) => {
+    setErrors((current) => ({
+      ...current,
+      attachments: error,
+    }));
+
+    setAttachmentStatus("");
+  };
+
+  const clearAttachmentError = () => {
+    setErrors((current) => {
+      const nextErrors = {
+        ...current,
+      };
+
+      delete nextErrors.attachments;
+
+      return nextErrors;
+    });
   };
 
   const updateField = <
@@ -724,13 +931,170 @@ export default function SettlementForm({
     ]);
   };
 
+  const addAttachmentFiles = async (
+    files: File[]
+  ) => {
+    if (files.length === 0) {
+      return;
+    }
+
+    if (
+      form.attachments.length +
+        files.length >
+      maximumAttachmentCount
+    ) {
+      setAttachmentError(
+        `Add no more than ${maximumAttachmentCount} transfer receipts.`
+      );
+      return;
+    }
+
+    const invalidFile =
+      files.find(
+        (file) =>
+          !isAcceptedAttachmentFile(file)
+      );
+
+    if (invalidFile) {
+      setAttachmentError(
+        "Transfer receipts must be JPG, PNG, WebP, or PDF files."
+      );
+      return;
+    }
+
+    const oversizedFile =
+      files.find(
+        (file) =>
+          file.size >
+          maximumAttachmentSizeBytes
+      );
+
+    if (oversizedFile) {
+      setAttachmentError(
+        `Transfer receipts must be ${formatFileSize(
+          maximumAttachmentSizeBytes
+        )} or smaller.`
+      );
+      return;
+    }
+
+    setIsPreparingAttachments(true);
+    clearAttachmentError();
+
+    try {
+      const attachments:
+        StoredAttachment[] = [];
+
+      for (const file of files) {
+        attachments.push({
+          id: createAttachmentId(),
+          category:
+            getDefaultAttachmentCategory(
+              file.name
+            ),
+          fileName: file.name,
+          mimeType:
+            getAttachmentMimeType(
+              file
+            ),
+          sizeBytes: file.size,
+          dataUrl:
+            await readFileAsDataUrl(
+              file
+            ),
+          createdAt: new Date(),
+        });
+      }
+
+      setForm((current) => ({
+        ...current,
+        attachments: [
+          ...current.attachments,
+          ...attachments,
+        ],
+      }));
+
+      setAttachmentStatus(
+        `${attachments.length} receipt${
+          attachments.length === 1
+            ? ""
+            : "s"
+        } added.`
+      );
+    } catch {
+      setAttachmentError(
+        "Transfer receipts could not be prepared."
+      );
+    } finally {
+      setIsPreparingAttachments(false);
+    }
+  };
+
+  const handleAttachmentInputChange = (
+    event:
+      ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = Array.from(
+      event.target.files ?? []
+    );
+
+    void addAttachmentFiles(files);
+
+    event.target.value = "";
+  };
+
+  const updateAttachmentCategory = (
+    attachmentId: string,
+    category:
+      StoredAttachmentCategory
+  ) => {
+    setForm((current) => ({
+      ...current,
+      attachments:
+        current.attachments.map(
+          (attachment) =>
+            attachment.id ===
+            attachmentId
+              ? {
+                  ...attachment,
+                  category,
+                }
+              : attachment
+        ),
+    }));
+
+    clearAttachmentError();
+  };
+
+  const removeAttachment = (
+    attachmentId: string
+  ) => {
+    setForm((current) => ({
+      ...current,
+      attachments:
+        current.attachments.filter(
+          (attachment) =>
+            attachment.id !==
+            attachmentId
+        ),
+    }));
+
+    clearAttachmentError();
+    setAttachmentStatus(
+      "Receipt removed."
+    );
+  };
+
   const handleSubmit = async (
     event:
       FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
-    if (isSubmitting) {
+    if (
+      isSubmitting ||
+      isPreparingAttachments
+    ) {
       return;
     }
 
@@ -741,8 +1105,6 @@ export default function SettlementForm({
         ...form,
 
         householdId,
-
-        attachments: [],
 
         applications:
           form.applicationMethod ===
@@ -1485,6 +1847,149 @@ export default function SettlementForm({
         </div>
       </div>
 
+      <div className="space-y-4 rounded-lg border p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="font-medium text-foreground">
+              Transfer Receipts
+            </h3>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Attach JPG, PNG, WebP, or PDF transfer receipts up
+              to 1 MB each.
+            </p>
+          </div>
+
+          <label
+            htmlFor="settlement-attachment-input"
+            className="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Choose Files
+          </label>
+        </div>
+
+        <input
+          id="settlement-attachment-input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
+          multiple
+          onChange={
+            handleAttachmentInputChange
+          }
+          disabled={
+            isSubmitting ||
+            isPreparingAttachments ||
+            form.attachments.length >=
+              maximumAttachmentCount
+          }
+          className="sr-only"
+        />
+
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p className="text-muted-foreground">
+            {form.attachments.length} of{" "}
+            {maximumAttachmentCount} receipts added.
+          </p>
+
+          {(isPreparingAttachments ||
+            attachmentStatus) && (
+            <p className="text-muted-foreground">
+              {isPreparingAttachments
+                ? "Preparing receipts..."
+                : attachmentStatus}
+            </p>
+          )}
+        </div>
+
+        {form.attachments.length ===
+        0 ? (
+          <div className="rounded-md border border-dashed px-4 py-5 text-center text-sm text-muted-foreground">
+            No transfer receipts attached.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {form.attachments.map(
+              (attachment) => (
+                <div
+                  key={attachment.id}
+                  className="flex flex-col gap-3 rounded-md border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {attachment.fileName}
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatFileSize(
+                        attachment.sizeBytes
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="sr-only">
+                      Receipt category
+                    </label>
+
+                    <select
+                      value={
+                        attachment.category
+                      }
+                      onChange={(event) =>
+                        updateAttachmentCategory(
+                          attachment.id,
+                          event.target
+                            .value as StoredAttachmentCategory
+                        )
+                      }
+                      className="rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+                    >
+                      <option value="receipt">
+                        Receipt
+                      </option>
+
+                      <option value="other">
+                        Other
+                      </option>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openAttachmentPreview(
+                          attachment
+                        )
+                      }
+                      className="rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                    >
+                      Open
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removeAttachment(
+                          attachment.id
+                        )
+                      }
+                      className="rounded-md border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        )}
+
+        {errors.attachments && (
+          <p className="text-sm text-destructive">
+            {errors.attachments}
+          </p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <label
           htmlFor="settlement-notes"
@@ -1522,10 +2027,15 @@ export default function SettlementForm({
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={
+            isSubmitting ||
+            isPreparingAttachments
+          }
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSubmitting
+          {isPreparingAttachments
+            ? "Preparing..."
+            : isSubmitting
             ? "Saving..."
             : submitLabel}
         </button>

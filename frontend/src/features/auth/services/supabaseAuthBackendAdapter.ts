@@ -32,6 +32,10 @@ import type {
   RemoteSettlementMutationResult,
   RemoteSettlementUpdateInput,
 } from "../models";
+import type {
+  StoredAttachment,
+  StoredAttachmentCategory,
+} from "../../../shared/models/StoredAttachment";
 
 interface SupabaseAuthClient {
   auth: {
@@ -504,6 +508,7 @@ interface SupabaseSettlementRow {
   application_method: string;
   reference_number?: string | null;
   notes?: string | null;
+  attachments?: unknown;
   is_active: boolean;
   created_at?: string | null;
   updated_at?: string | null;
@@ -1886,6 +1891,7 @@ export class SupabaseAuthBackendAdapter
             "application_method",
             "reference_number",
             "notes",
+            "attachments",
             "is_active",
             "created_at",
             "updated_at",
@@ -1969,6 +1975,11 @@ export class SupabaseAuthBackendAdapter
                 .referenceNumber ?? null,
             settlement_notes:
               input.settlement.notes ?? null,
+            settlement_attachments:
+              createSupabaseSettlementAttachmentPayload(
+                input.settlement
+                  .attachments ?? []
+              ),
             is_active:
               input.settlement.isActive,
             settlement_applications:
@@ -2041,6 +2052,11 @@ export class SupabaseAuthBackendAdapter
                 .referenceNumber ?? null,
             settlement_notes:
               input.settlement.notes ?? null,
+            settlement_attachments:
+              createSupabaseSettlementAttachmentPayload(
+                input.settlement
+                  .attachments ?? []
+              ),
             is_active:
               input.settlement.isActive,
             settlement_applications:
@@ -3250,6 +3266,99 @@ function isRecord(
   );
 }
 
+function isStoredAttachmentCategory(
+  value: unknown
+): value is StoredAttachmentCategory {
+  return (
+    value === "receipt" ||
+    value === "bill" ||
+    value === "other"
+  );
+}
+
+function createSupabaseSettlementAttachmentPayload(
+  attachments: StoredAttachment[]
+) {
+  return attachments.map(
+    (attachment) => ({
+      id: attachment.id,
+      category:
+        attachment.category,
+      fileName:
+        attachment.fileName,
+      mimeType:
+        attachment.mimeType,
+      sizeBytes:
+        attachment.sizeBytes,
+      dataUrl:
+        attachment.dataUrl,
+      createdAt:
+        attachment.createdAt.toISOString(),
+    })
+  );
+}
+
+function mapSupabaseSettlementAttachments(
+  value: unknown
+): StoredAttachment[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(isRecord)
+    .map((record) => {
+      if (
+        typeof record.id !==
+          "string" ||
+        typeof record.fileName !==
+          "string" ||
+        typeof record.mimeType !==
+          "string" ||
+        typeof record.sizeBytes !==
+          "number" ||
+        !Number.isFinite(
+          record.sizeBytes
+        ) ||
+        typeof record.dataUrl !==
+          "string"
+      ) {
+        return undefined;
+      }
+
+      return {
+        id: record.id,
+        category:
+          isStoredAttachmentCategory(
+            record.category
+          )
+            ? record.category
+            : "other",
+        fileName:
+          record.fileName,
+        mimeType:
+          record.mimeType,
+        sizeBytes:
+          record.sizeBytes,
+        dataUrl:
+          record.dataUrl,
+        createdAt:
+          mapSupabaseDate(
+            typeof record.createdAt ===
+              "string"
+              ? record.createdAt
+              : undefined
+          ),
+      };
+    })
+    .filter(
+      (
+        attachment
+      ): attachment is StoredAttachment =>
+        Boolean(attachment)
+    );
+}
+
 function createSupabaseSettlementApplicationPayload(
   applications: Array<{
     localRecordId?: string;
@@ -3320,6 +3429,10 @@ function mapSupabaseSettlement(
       undefined,
     notes:
       row.notes ?? undefined,
+    attachments:
+      mapSupabaseSettlementAttachments(
+        row.attachments
+      ),
     isActive:
       row.is_active,
     createdAt:

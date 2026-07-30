@@ -1,6 +1,9 @@
 import type {
   SettlementApplicationMethod,
 } from "../../settlements/models/Settlement";
+import type {
+  StoredAttachment,
+} from "../../../shared/models/StoredAttachment";
 
 export interface RemoteSettlement {
   id: string;
@@ -15,6 +18,7 @@ export interface RemoteSettlement {
   applicationMethod: SettlementApplicationMethod;
   referenceNumber?: string;
   notes?: string;
+  attachments: StoredAttachment[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -45,6 +49,7 @@ export interface RemoteSettlementDraft {
   applicationMethod: SettlementApplicationMethod;
   referenceNumber?: string;
   notes?: string;
+  attachments?: StoredAttachment[];
   isActive: boolean;
 }
 

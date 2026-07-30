@@ -52,3 +52,30 @@ test("Supabase household preference save RPC avoids duplicate argument and retur
     /create or replace function public\.save_household_preferences\(\s*target_household_id uuid,\s*household_name text/
   );
 });
+
+test("Supabase settlement RPCs persist settlement attachments", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /create or replace function public\.create_household_settlement\([\s\S]+settlement_attachments jsonb[\s\S]+coalesce\(settlement_attachments, '\[\]'::jsonb\)/
+  );
+  assert.match(
+    schemaSql,
+    /create or replace function public\.update_household_settlement\([\s\S]+settlement_attachments jsonb[\s\S]+attachments = coalesce\(update_household_settlement\.settlement_attachments, '\[\]'::jsonb\)/
+  );
+  assert.doesNotMatch(
+    schemaSql,
+    /settlement_notes,\s*'\[\]'::jsonb,/
+  );
+});
