@@ -26,6 +26,9 @@ import type { MemberSettlementObligation } from "../models/MemberSettlementOblig
 import SettlementService from "../services/SettlementService";
 
 import SettlementBalanceService from "../services/SettlementBalanceService";
+import {
+  createRemoteSettlementApplicationDrafts,
+} from "../services/settlementRemoteDrafts";
 
 import {
   OperationResults,
@@ -501,6 +504,14 @@ export default function useSettlements(
     }
 
     try {
+      const applications =
+        createRemoteSettlementApplicationDrafts(
+          SettlementService
+            .getApplications(
+              localSettlement.id
+            )
+        );
+
       await getAuthBackendAdapter()
         .createRemoteSettlement({
           settlement:
@@ -517,7 +528,7 @@ export default function useSettlements(
               localSettlement.id,
               householdId
             ),
-          applications: [],
+          applications,
         });
 
       refresh();
@@ -614,6 +625,13 @@ export default function useSettlements(
           "oldest-first",
         applications: [],
       };
+      const applications =
+        createRemoteSettlementApplicationDrafts(
+          SettlementService
+            .getApplications(
+              localSettlement.id
+            )
+        );
 
       if (remoteSettlement) {
         await adapter.updateRemoteSettlement({
@@ -625,7 +643,7 @@ export default function useSettlements(
               localSettlement.id,
               householdId
             ),
-          applications: [],
+          applications,
         });
       } else {
         await adapter.createRemoteSettlement({
@@ -635,7 +653,7 @@ export default function useSettlements(
               localSettlement.id,
               householdId
             ),
-          applications: [],
+          applications,
         });
       }
 

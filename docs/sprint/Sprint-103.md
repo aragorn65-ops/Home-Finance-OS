@@ -101,3 +101,6 @@ Initial production validation should focus on:
 * [x] Mapped remote settlement member UUIDs back to local household member IDs
   when Supabase returns `household_members.local_record_id`, keeping
   cloud-loaded settlement history readable after refresh or restore.
+* [x] Sent locally built settlement application rows with remote settlement
+  create/update RPC calls so future cloud settlement records preserve the
+  allocation-payment details needed for item-balance history.
