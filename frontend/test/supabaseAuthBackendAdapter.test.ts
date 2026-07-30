@@ -3299,6 +3299,119 @@ test(
 );
 
 test(
+  "Supabase auth adapter subscribes to settlement realtime changes",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    let callback:
+      | (() => void)
+      | undefined;
+    let channelTopic = "";
+    let channelFilter:
+      | Record<string, unknown>
+      | undefined;
+    let removeChannelCount = 0;
+    let changeCount = 0;
+
+    const channel = {
+      on(
+        type: string,
+        filter:
+          Record<string, unknown>,
+        onChange: () => void
+      ) {
+        assert.equal(
+          type,
+          "postgres_changes"
+        );
+        channelFilter =
+          filter;
+        callback =
+          onChange;
+
+        return channel;
+      },
+      subscribe() {
+        return channel;
+      },
+    };
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          channel(topic: string) {
+            channelTopic =
+              topic;
+
+            return channel;
+          },
+          async removeChannel(
+            selectedChannel: unknown
+          ) {
+            assert.equal(
+              selectedChannel,
+              channel
+            );
+            removeChannelCount += 1;
+          },
+        },
+      });
+
+    const subscription =
+      adapter.subscribeToSettlementChanges(
+        "household-1",
+        () => {
+          changeCount += 1;
+        }
+      );
+
+    await Promise.resolve();
+    callback?.();
+    assert.equal(
+      changeCount,
+      1
+    );
+    assert.equal(
+      channelTopic,
+      "hfos-settlements-household-1"
+    );
+    assert.deepEqual(
+      channelFilter,
+      {
+        event: "*",
+        schema: "public",
+        table:
+          "settlements",
+        filter:
+          "household_id=eq.household-1",
+      }
+    );
+
+    subscription.unsubscribe();
+    await Promise.resolve();
+    await Promise.resolve();
+    callback?.();
+
+    assert.equal(
+      removeChannelCount,
+      1
+    );
+    assert.equal(
+      changeCount,
+      1
+    );
+  }
+);
+
+test(
   "Supabase auth adapter reads memberships for the current user",
   async () => {
     const {

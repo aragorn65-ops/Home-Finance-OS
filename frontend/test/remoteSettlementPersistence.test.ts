@@ -248,3 +248,44 @@ test("remote settlement persistence blocks member update and delete", async () =
     /Current user cannot delete this settlement\./
   );
 });
+
+test("remote settlement persistence notifies subscribers", async () => {
+  const adapter =
+    createAdapter(adminUser);
+  let notificationCount = 0;
+
+  const subscription =
+    adapter.subscribeToSettlementChanges(
+      householdId,
+      () => {
+        notificationCount += 1;
+      }
+    );
+
+  const created =
+    await adapter.createRemoteSettlement({
+      settlement:
+        createSettlementDraft(),
+    });
+
+  await adapter.updateRemoteSettlement({
+    settlementId:
+      created.settlement.id,
+    settlement: {
+      ...createSettlementDraft(),
+      amount: 150,
+    },
+  });
+
+  subscription.unsubscribe();
+
+  await adapter.deleteRemoteSettlement(
+    householdId,
+    created.settlement.id
+  );
+
+  assert.equal(
+    notificationCount,
+    2
+  );
+});

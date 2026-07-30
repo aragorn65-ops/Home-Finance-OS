@@ -64,6 +64,12 @@ export class InMemoryAuthBackendAdapter
       Set<() => void>
     >();
 
+  private readonly settlementListeners =
+    new Map<
+      string,
+      Set<() => void>
+    >();
+
   constructor(
     seed: InMemoryAuthSeed = {}
   ) {
@@ -552,6 +558,9 @@ export class InMemoryAuthBackendAdapter
     this.store.saveSettlement(
       settlement
     );
+    this.notifySettlementListeners(
+      settlement.householdId
+    );
 
     const applications =
       this.createRemoteSettlementApplications(
@@ -645,6 +654,9 @@ export class InMemoryAuthBackendAdapter
     this.store.saveSettlement(
       settlement
     );
+    this.notifySettlementListeners(
+      settlement.householdId
+    );
 
     const applications =
       this.createRemoteSettlementApplications(
@@ -699,6 +711,40 @@ export class InMemoryAuthBackendAdapter
       householdId,
       settlementId
     );
+    this.notifySettlementListeners(
+      householdId
+    );
+  }
+
+  subscribeToSettlementChanges(
+    householdId: string,
+    onChange: () => void
+  ): AuthSessionSubscription {
+    if (!householdId) {
+      return createNoopSubscription();
+    }
+
+    const listeners =
+      this.settlementListeners
+        .get(householdId) ??
+      new Set<() => void>();
+
+    listeners.add(onChange);
+    this.settlementListeners.set(
+      householdId,
+      listeners
+    );
+
+    return {
+      unsubscribe: () => {
+        listeners.delete(onChange);
+
+        if (listeners.size === 0) {
+          this.settlementListeners
+            .delete(householdId);
+        }
+      },
+    };
   }
 
   private createAuthorizationContext(
@@ -782,6 +828,16 @@ export class InMemoryAuthBackendAdapter
     householdId: string
   ): void {
     this.coreSnapshotListeners
+      .get(householdId)
+      ?.forEach((listener) => {
+        listener();
+      });
+  }
+
+  private notifySettlementListeners(
+    householdId: string
+  ): void {
+    this.settlementListeners
       .get(householdId)
       ?.forEach((listener) => {
         listener();

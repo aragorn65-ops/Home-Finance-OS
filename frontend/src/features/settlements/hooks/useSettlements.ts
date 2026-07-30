@@ -9,6 +9,9 @@ import {
   getAuthBackendAdapter,
 } from "../../auth/services/createAuthBackendAdapter";
 import type {
+  AuthSettlementObserver,
+} from "../../auth/services";
+import type {
   RemoteSettlement,
   RemoteSettlementApplicationDraft,
   RemoteSettlementDraft,
@@ -298,6 +301,35 @@ export default function useSettlements(
     householdId,
     loadRemoteSettlements,
     refresh,
+    remoteEnabled,
+  ]);
+
+  useEffect(() => {
+    if (
+      !remoteEnabled ||
+      !householdId.trim()
+    ) {
+      return;
+    }
+
+    const adapter =
+      getAuthBackendAdapter() as
+        AuthSettlementObserver;
+    const subscription =
+      adapter
+        .subscribeToSettlementChanges?.(
+          householdId,
+          () => {
+            void loadRemoteSettlements();
+          }
+        );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [
+    householdId,
+    loadRemoteSettlements,
     remoteEnabled,
   ]);
 

@@ -1,6 +1,7 @@
 export type {
   AuthBackendAdapter,
   AuthCoreSnapshotObserver,
+  AuthSettlementObserver,
   AuthSignInRequest,
   AuthSessionObserver,
   AuthSessionSubscription,

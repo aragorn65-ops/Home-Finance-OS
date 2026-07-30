@@ -137,6 +137,8 @@ for public beta.
 * [x] Added linked-household preference restore on authenticated owner/admin
   app load so browser refresh reloads household metadata from the cloud before
   opening finance pages.
+* [x] Added active-session settlement realtime subscription plumbing so signed
+  cloud settlement pages reload when remote household settlement rows change.
 * [ ] Add cloud-backed persistence for household and core finance records.
 * [ ] Add real-time synchronization for the active authenticated household
   session.

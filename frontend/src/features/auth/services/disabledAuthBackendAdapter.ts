@@ -180,6 +180,14 @@ export class DisabledAuthBackendAdapter
     };
   }
 
+  subscribeToSettlementChanges() {
+    return {
+      unsubscribe() {
+        return undefined;
+      },
+    };
+  }
+
   async listRemoteSettlements(
     householdId: string
   ): Promise<RemoteSettlement[]> {
