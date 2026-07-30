@@ -25,6 +25,9 @@ import AccountService from "../../accounts/services/AccountService";
 import {
   useHouseholdMembership,
 } from "../../auth/hooks";
+import type {
+  HouseholdMembership,
+} from "../../auth/models";
 import {
   canAccessSettlementRecord,
   type AuthorizationContext,
@@ -145,7 +148,15 @@ function mapSettlementToForm(
     notes:
       settlement.notes ?? "",
 
-    attachments: [],
+    attachments:
+      settlement.attachments.map(
+        (attachment) => ({
+          ...attachment,
+          createdAt: new Date(
+            attachment.createdAt
+          ),
+        })
+      ),
 
     isActive:
       settlement.isActive,
@@ -329,6 +340,64 @@ function totalObligations(
       0
     )
   );
+}
+
+function resolveCloudMemberId(
+  memberId: string,
+  household:
+    | ReturnType<typeof loadHousehold>
+    | null,
+  membership:
+    | HouseholdMembership
+    | undefined
+): string {
+  const localOwnerMemberId =
+    household?.authenticatedLink
+      ?.ownerMemberId;
+
+  if (
+    localOwnerMemberId &&
+    memberId === localOwnerMemberId &&
+    membership?.memberId
+  ) {
+    return membership.memberId;
+  }
+
+  return memberId;
+}
+
+function createCloudSettlementForm(
+  form: SettlementFormData,
+  household:
+    | ReturnType<typeof loadHousehold>
+    | null,
+  membership:
+    | HouseholdMembership
+    | undefined,
+  cloudHouseholdId: string
+): SettlementFormData {
+  const fromMemberId =
+    resolveCloudMemberId(
+      form.fromMemberId,
+      household,
+      membership
+    );
+  const toMemberId =
+    resolveCloudMemberId(
+      form.toMemberId,
+      household,
+      membership
+    );
+
+  return {
+    ...form,
+    householdId:
+      cloudHouseholdId,
+    fromMemberId,
+    toMemberId,
+    sourceAccountId: "",
+    destinationAccountId: "",
+  };
 }
 
 function settlementBelongsToMonth(
@@ -606,18 +675,21 @@ export default function SettlementsPage() {
       );
     }
 
-    const submissionHouseholdId =
-      shouldEnforceSettlementAuth
-        ? cloudHouseholdId
-        : household.id;
-
     const submissionForm:
-      SettlementFormData = {
-        ...form,
+      SettlementFormData =
+        shouldEnforceSettlementAuth
+          ? createCloudSettlementForm(
+              form,
+              household,
+              membership,
+              cloudHouseholdId
+            )
+          : {
+              ...form,
 
-        householdId:
-          submissionHouseholdId,
-      };
+              householdId:
+                household.id,
+            };
 
     const settlementAction =
       dialogMode === "edit" &&
@@ -716,6 +788,26 @@ export default function SettlementsPage() {
   const getMemberName = (
     memberId: string
   ): string => {
+    if (
+      shouldEnforceSettlementAuth &&
+      memberId ===
+        membership?.memberId
+    ) {
+      const localOwnerMemberId =
+        household?.authenticatedLink
+          ?.ownerMemberId;
+      const localOwner =
+        members.find(
+          (member) =>
+            member.id ===
+            localOwnerMemberId
+        );
+
+      if (localOwner) {
+        return localOwner.displayName;
+      }
+    }
+
     return (
       members.find(
         (member) =>
@@ -1003,6 +1095,7 @@ export default function SettlementsPage() {
       <Dialog
         open={isFormDialogOpen}
         onClose={closeDialog}
+        className="hfos-dialog--large"
       >
         <DialogHeader
           title={
