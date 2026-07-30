@@ -73,8 +73,25 @@ interface SupabaseAuthClient {
     | SupabaseRemoteHouseholdRpcResult
     | SupabaseCoreSnapshotRpcResult
     | SupabaseSettlementMutationRpcResult
-    | SupabaseSettlementDeleteRpcResult
+      | SupabaseSettlementDeleteRpcResult
   >;
+  channel?(
+    topic: string
+  ): SupabaseRealtimeChannel;
+  removeChannel?(
+    channel: SupabaseRealtimeChannel
+  ): Promise<unknown>;
+}
+
+interface SupabaseRealtimeChannel {
+  on(
+    type: string,
+    filter:
+      Record<string, unknown>,
+    callback: () => void
+  ): SupabaseRealtimeChannel;
+  subscribe(): SupabaseRealtimeChannel;
+  unsubscribe?(): Promise<unknown> | unknown;
 }
 
 interface SupabaseQueryBuilder {
@@ -2160,6 +2177,75 @@ export class SupabaseAuthBackendAdapter
     );
   }
 
+  subscribeToCoreSnapshotChanges(
+    householdId: string,
+    onChange: () => void
+  ): AuthSessionSubscription {
+    if (
+      !this.isConfigured() ||
+      !householdId
+    ) {
+      return createNoopSubscription();
+    }
+
+    let isDisposed = false;
+    const getClient =
+      () => this.getClient();
+    const channelPromise =
+      getClient()
+        .then((client) => {
+          if (!client.channel) {
+            return undefined;
+          }
+
+          return client
+            .channel(
+              `hfos-core-snapshot-${householdId}`
+            )
+            .on(
+              "postgres_changes",
+              {
+                event: "*",
+                schema: "public",
+                table:
+                  "household_core_snapshots",
+                filter:
+                  `household_id=eq.${householdId}`,
+              },
+              () => {
+                if (!isDisposed) {
+                  onChange();
+                }
+              }
+            )
+            .subscribe();
+        });
+
+    return {
+      unsubscribe() {
+        isDisposed = true;
+        void channelPromise
+          .then(async (channel) => {
+            if (!channel) {
+              return;
+            }
+
+            const client =
+              await getClient();
+
+            if (client.removeChannel) {
+              await client.removeChannel(
+                channel
+              );
+              return;
+            }
+
+            await channel.unsubscribe?.();
+          });
+      },
+    };
+  }
+
   private async createRemoteSettlementMutationResult(
     result:
       SupabaseSettlementMutationRpcResult,
@@ -3481,5 +3567,14 @@ function createSupabaseAdapterConfig():
       viteEnv?.VITE_SUPABASE_URL,
     anonKey:
       viteEnv?.VITE_SUPABASE_ANON_KEY,
+  };
+}
+
+function createNoopSubscription():
+  AuthSessionSubscription {
+  return {
+    unsubscribe() {
+      return undefined;
+    },
   };
 }

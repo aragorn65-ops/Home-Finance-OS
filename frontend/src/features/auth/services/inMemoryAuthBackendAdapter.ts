@@ -1,5 +1,6 @@
 import type {
   AuthBackendAdapter,
+  AuthSessionSubscription,
   HouseholdClaimDraft,
   HouseholdClaimResult,
   RemoteHouseholdPreferencesInput,
@@ -56,6 +57,12 @@ export class InMemoryAuthBackendAdapter
 
   private readonly store:
     InMemoryAuthStore;
+
+  private readonly coreSnapshotListeners =
+    new Map<
+      string,
+      Set<() => void>
+    >();
 
   constructor(
     seed: InMemoryAuthSeed = {}
@@ -403,7 +410,8 @@ export class InMemoryAuthBackendAdapter
       );
     }
 
-    return this.store.saveCoreSnapshot({
+    const snapshot =
+      this.store.saveCoreSnapshot({
       householdId:
         input.householdId,
       accounts:
@@ -413,6 +421,43 @@ export class InMemoryAuthBackendAdapter
       savedAt:
         new Date(),
     });
+
+    this.notifyCoreSnapshotListeners(
+      input.householdId
+    );
+
+    return snapshot;
+  }
+
+  subscribeToCoreSnapshotChanges(
+    householdId: string,
+    onChange: () => void
+  ): AuthSessionSubscription {
+    if (!householdId) {
+      return createNoopSubscription();
+    }
+
+    const listeners =
+      this.coreSnapshotListeners
+        .get(householdId) ??
+      new Set<() => void>();
+
+    listeners.add(onChange);
+    this.coreSnapshotListeners.set(
+      householdId,
+      listeners
+    );
+
+    return {
+      unsubscribe: () => {
+        listeners.delete(onChange);
+
+        if (listeners.size === 0) {
+          this.coreSnapshotListeners
+            .delete(householdId);
+        }
+      },
+    };
   }
 
   async listRemoteSettlements(
@@ -732,4 +777,23 @@ export class InMemoryAuthBackendAdapter
       })
     );
   }
+
+  private notifyCoreSnapshotListeners(
+    householdId: string
+  ): void {
+    this.coreSnapshotListeners
+      .get(householdId)
+      ?.forEach((listener) => {
+        listener();
+      });
+  }
+}
+
+function createNoopSubscription():
+  AuthSessionSubscription {
+  return {
+    unsubscribe() {
+      return undefined;
+    },
+  };
 }

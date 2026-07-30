@@ -12,6 +12,7 @@ import type {
   AuthSessionStatus,
 } from "../models";
 import type {
+  AuthCoreSnapshotObserver,
   LinkedCoreSnapshotHousehold,
 } from "../services";
 import {
@@ -51,6 +52,10 @@ export function useLinkedCoreSnapshotRestore({
     useState(false);
   const [error, setError] =
     useState("");
+  const [
+    restoreTrigger,
+    setRestoreTrigger,
+  ] = useState(0);
 
   const shouldRestore =
     isAuthFeatureEnabled() &&
@@ -98,6 +103,16 @@ export function useLinkedCoreSnapshotRestore({
 
     if (
       restoredKeys.current.has(
+        restoreKey
+      ) &&
+      restoreTrigger === 0
+    ) {
+      return;
+    }
+
+    if (
+      restoreTrigger > 0 &&
+      !restoredKeys.current.has(
         restoreKey
       )
     ) {
@@ -179,8 +194,40 @@ export function useLinkedCoreSnapshotRestore({
     localHouseholdId,
     ownerMemberId,
     remoteHouseholdId,
+    restoreTrigger,
     role,
     sessionStatus,
+    shouldRestore,
+  ]);
+
+  useEffect(() => {
+    if (
+      !shouldRestore ||
+      !remoteHouseholdId
+    ) {
+      return;
+    }
+
+    const adapter =
+      getAuthBackendAdapter() as
+        AuthCoreSnapshotObserver;
+    const subscription =
+      adapter
+        .subscribeToCoreSnapshotChanges?.(
+          remoteHouseholdId,
+          () => {
+            setRestoreTrigger(
+              (current) =>
+                current + 1
+            );
+          }
+        );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [
+    remoteHouseholdId,
     shouldRestore,
   ]);
 

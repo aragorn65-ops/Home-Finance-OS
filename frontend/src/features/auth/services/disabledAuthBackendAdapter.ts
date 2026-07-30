@@ -172,6 +172,14 @@ export class DisabledAuthBackendAdapter
     );
   }
 
+  subscribeToCoreSnapshotChanges() {
+    return {
+      unsubscribe() {
+        return undefined;
+      },
+    };
+  }
+
   async listRemoteSettlements(
     householdId: string
   ): Promise<RemoteSettlement[]> {

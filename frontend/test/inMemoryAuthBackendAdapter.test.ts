@@ -117,3 +117,65 @@ test(
     );
   }
 );
+
+test(
+  "in-memory auth adapter notifies core snapshot subscribers",
+  async () => {
+    const {
+      InMemoryAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/inMemoryAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new InMemoryAuthBackendAdapter();
+    await adapter.signIn();
+    const claim =
+      await adapter.createHouseholdClaimDraft({
+        householdName:
+          "Realtime Household",
+        ownerMemberId:
+          "member-owner-1",
+        backupSummary: {
+          householdName:
+            "Realtime Household",
+          exportedAt:
+            "2026-07-30T00:00:00.000Z",
+          accountCount: 0,
+          transactionCount: 0,
+          settlementCount: 0,
+          savingsGoalCount: 0,
+        },
+      });
+    let notificationCount = 0;
+
+    const subscription =
+      adapter.subscribeToCoreSnapshotChanges(
+        claim.householdId,
+        () => {
+          notificationCount += 1;
+        }
+      );
+
+    await adapter.saveRemoteCoreSnapshot({
+      householdId:
+        claim.householdId,
+      accounts: [],
+      transactions: [],
+    });
+
+    subscription.unsubscribe();
+
+    await adapter.saveRemoteCoreSnapshot({
+      householdId:
+        claim.householdId,
+      accounts: [],
+      transactions: [],
+    });
+
+    assert.equal(
+      notificationCount,
+      1
+    );
+  }
+);

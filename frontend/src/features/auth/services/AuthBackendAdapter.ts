@@ -61,6 +61,13 @@ export interface AuthSessionObserver {
   ): AuthSessionSubscription;
 }
 
+export interface AuthCoreSnapshotObserver {
+  subscribeToCoreSnapshotChanges?(
+    householdId: string,
+    onChange: () => void
+  ): AuthSessionSubscription;
+}
+
 export interface AuthBackendAdapter {
   getSession(): Promise<AuthSession>;
 

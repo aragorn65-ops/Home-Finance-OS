@@ -24,6 +24,7 @@ export type {
 
 export type {
   AuthBackendAdapter,
+  AuthCoreSnapshotObserver,
   AuthorizationContext,
   CreateRemoteHouseholdInput,
   FinancialRecordAction,
