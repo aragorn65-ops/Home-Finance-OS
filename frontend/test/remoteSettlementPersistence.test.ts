@@ -199,6 +199,74 @@ test("remote settlement persistence allows involved member creation only", async
   );
 });
 
+test("remote settlement persistence lets admin revise member-submitted records", async () => {
+  const memberAdapter =
+    createAdapter(memberUser);
+  const submitted =
+    await memberAdapter
+      .createRemoteSettlement({
+        settlement:
+          createSettlementDraft(),
+      });
+  const adminAdapter =
+    new InMemoryAuthBackendAdapter({
+      user: adminUser,
+      memberships: [
+        createMembership({
+          householdId,
+          userId:
+            adminUser.id,
+          memberId:
+            "member-admin",
+          role: "admin",
+        }),
+      ],
+      settlements: [
+        submitted.settlement,
+      ],
+      settlementApplications:
+        submitted.applications,
+    });
+
+  const updated =
+    await adminAdapter
+      .updateRemoteSettlement({
+        settlementId:
+          submitted.settlement.id,
+        settlement: {
+          ...createSettlementDraft(),
+          amount: 175,
+          notes:
+            "Admin reviewed.",
+        },
+      });
+
+  assert.equal(
+    updated.settlement.amount,
+    175
+  );
+  assert.equal(
+    updated.settlement.notes,
+    "Admin reviewed."
+  );
+
+  await adminAdapter
+    .deleteRemoteSettlement(
+      householdId,
+      submitted.settlement.id
+    );
+
+  assert.equal(
+    (
+      await adminAdapter
+        .listRemoteSettlements(
+          householdId
+        )
+    ).length,
+    0
+  );
+});
+
 test("remote settlement persistence blocks member update and delete", async () => {
   const adminAdapter =
     createAdapter(adminUser);
