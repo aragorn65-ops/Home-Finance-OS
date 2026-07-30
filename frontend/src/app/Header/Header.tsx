@@ -6,6 +6,9 @@ import {
   Menu,
   Search,
 } from "lucide-react";
+import {
+  useNavigate,
+} from "react-router-dom";
 
 import {
   AuthSessionButton,
@@ -26,6 +29,7 @@ export default function Header({
   onMenuToggle,
   onLock,
 }: HeaderProps) {
+  const navigate = useNavigate();
   const authSession =
     useAuthSession();
   const showAuthSession =
@@ -103,7 +107,9 @@ export default function Header({
             }
             error={authSession.error}
             onSignIn={
-              authSession.signIn
+              () => {
+                navigate("/app/settings");
+              }
             }
             onSignOut={
               authSession.signOut

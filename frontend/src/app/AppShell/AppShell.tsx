@@ -9,6 +9,7 @@ import {
   Navigate,
   Outlet,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 
 import Header from "../Header/Header";
@@ -38,6 +39,7 @@ import {
 export default function AppShell() {
   const household = loadHousehold();
   const location = useLocation();
+  const navigate = useNavigate();
   const householdId =
     household?.id ?? "";
   const isProductionAuthEnabled =
@@ -441,8 +443,9 @@ export default function AppShell() {
                   authRouteAccess.status ===
                   "signed-out"
                 }
+                signInLabel="Go to Settings"
                 onSignIn={() => {
-                  void signIn();
+                  navigate("/app/settings");
                 }}
                 onRefresh={() => {
                   void refreshSession();

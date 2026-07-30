@@ -14,6 +14,7 @@ interface AuthRouteGatePanelProps {
   roleLabel?: string;
   error?: string;
   isSignInAvailable?: boolean;
+  signInLabel?: string;
   onSignIn?: () => void;
   onRefresh?: () => void;
 }
@@ -24,6 +25,7 @@ export default function AuthRouteGatePanel({
   roleLabel,
   error,
   isSignInAvailable = false,
+  signInLabel = "Sign in",
   onSignIn,
   onRefresh,
 }: AuthRouteGatePanelProps) {
@@ -86,7 +88,7 @@ export default function AuthRouteGatePanel({
                 size={17}
                 aria-hidden="true"
               />
-              Sign in
+              {signInLabel}
             </button>
           )}
 

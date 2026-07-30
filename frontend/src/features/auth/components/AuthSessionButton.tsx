@@ -67,7 +67,7 @@ export default function AuthSessionButton({
       className="app-header__auth-button"
       title={
         error ||
-        "Future account sign in"
+        "Open Settings sign in"
       }
       aria-label="Sign in"
       onClick={onSignIn}
