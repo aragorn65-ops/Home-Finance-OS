@@ -87,10 +87,10 @@ export function evaluateAuthRouteAccess({
       isAllowed: false,
       title: membershipLoadFailed
         ? "Membership Unavailable"
-        : "Checking Household Access",
+        : "Household Access Required",
       message: membershipLoadFailed
         ? "Household membership could not be loaded for this signed-in session."
-        : "HFOS is confirming your household role before loading this page.",
+        : "Open Settings to refresh Auth Diagnostics and claim or link this household before loading finance pages.",
     };
   }
 

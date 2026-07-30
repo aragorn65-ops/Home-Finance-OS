@@ -42,6 +42,10 @@ export default function AppShell() {
   const navigate = useNavigate();
   const householdId =
     household?.id ?? "";
+  const authHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId ??
+    householdId;
   const isProductionAuthEnabled =
     isAuthFeatureEnabled();
   const {
@@ -54,7 +58,7 @@ export default function AppShell() {
     refreshSession,
     signIn,
   } = useHouseholdMembership(
-    householdId
+    authHouseholdId
   );
 
   const [
@@ -441,7 +445,9 @@ export default function AppShell() {
                 error={authError}
                 isSignInAvailable={
                   authRouteAccess.status ===
-                  "signed-out"
+                    "signed-out" ||
+                  authRouteAccess.status ===
+                    "membership-required"
                 }
                 signInLabel="Go to Settings"
                 onSignIn={() => {

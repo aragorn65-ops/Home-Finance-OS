@@ -70,6 +70,29 @@ test("auth route access allows admin routes", () => {
   );
 });
 
+test("auth route access sends signed-in users without a role to household setup", () => {
+  const result =
+    evaluateAuthRouteAccess({
+      authEnabled: true,
+      pathname: "/app/accounts",
+      sessionStatus:
+        "signed-in",
+    });
+
+  assert.equal(
+    result.isAllowed,
+    false
+  );
+  assert.equal(
+    result.status,
+    "membership-required"
+  );
+  assert.equal(
+    result.title,
+    "Household Access Required"
+  );
+});
+
 test("auth route access limits member routes to settlements", () => {
   const settlements =
     evaluateAuthRouteAccess({

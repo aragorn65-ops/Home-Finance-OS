@@ -363,6 +363,10 @@ export default function SettlementsPage() {
 
   const householdId =
     household?.id ?? "";
+  const cloudHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId ??
+    householdId;
 
   const currency =
     household?.currency ?? "PHP";
@@ -373,7 +377,7 @@ export default function SettlementsPage() {
     error:
       membershipError,
   } = useHouseholdMembership(
-    householdId
+    cloudHouseholdId
   );
 
   const shouldEnforceSettlementAuth =
@@ -405,7 +409,9 @@ export default function SettlementsPage() {
     error:
       settlementError,
   } = useSettlements(
-    householdId,
+    shouldEnforceSettlementAuth
+      ? cloudHouseholdId
+      : householdId,
     {
       remoteEnabled:
         shouldEnforceSettlementAuth,
