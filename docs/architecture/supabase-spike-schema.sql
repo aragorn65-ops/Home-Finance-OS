@@ -1184,7 +1184,7 @@ begin
     raise exception 'Sign in before loading household preferences.';
   end if;
 
-  if not public.is_household_member(target_household_id) then
+  if not public.is_active_household_member(target_household_id) then
     raise exception 'Active household membership is required to load household preferences.';
   end if;
 
