@@ -31,7 +31,9 @@ https://home-finance-os.pages.dev
 
 * [ ] Cloudflare Pages production deployment is green.
 * [ ] `NODE_VERSION=22.13.0` is configured in Cloudflare Pages.
-* [ ] Production auth environment is configured for the deployed beta.
+* [ ] Production auth environment is configured for the deployed beta:
+  `VITE_HFOS_AUTH_ENABLED=true`, `VITE_HFOS_AUTH_PROVIDER=supabase`,
+  `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`.
 * [ ] Admin sign-in, sign-out, session refresh, and expired-session recovery
   pass on the production deployment.
 * [ ] Limited member sign-in works for settlement entry only.

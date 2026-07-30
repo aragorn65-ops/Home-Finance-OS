@@ -25,6 +25,8 @@ Build command: npm run build
 Build output directory: dist
 Production branch: main
 Environment variable: NODE_VERSION=22.13.0
+Environment variable: VITE_HFOS_AUTH_ENABLED=true
+Environment variable: VITE_HFOS_AUTH_PROVIDER=supabase
 Environment variable: VITE_SUPABASE_URL=<production Supabase URL>
 Environment variable: VITE_SUPABASE_ANON_KEY=<production Supabase anon key>
 Optional environment variable: VITE_GOOGLE_CLIENT_ID=<Google OAuth client id>
@@ -33,6 +35,11 @@ Optional environment variable: VITE_GOOGLE_CLIENT_ID=<Google OAuth client id>
 The frontend dependency tree expects Node 22.13.0 or newer for the Vite and
 Supabase packages used by the beta build. Keep the Cloudflare Pages
 `NODE_VERSION` value aligned with `frontend/package.json`.
+
+The sign-in UI is hidden unless `VITE_HFOS_AUTH_ENABLED=true` and
+`VITE_HFOS_AUTH_PROVIDER=supabase` are present at build time. After adding or
+changing those auth variables, redeploy the Pages project so Vite embeds the
+public beta auth configuration.
 
 If the Cloudflare preset list does not include `Vite`, leave the framework
 preset as `None` and enter the build command, output directory, and root
