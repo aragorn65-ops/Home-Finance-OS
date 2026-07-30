@@ -555,10 +555,10 @@ export function createPostCommitSmokeChecks({
     },
     {
       id: "sync-boundary",
-      label: "Sync boundary",
+      label: "Public beta boundary",
       status: "pass",
       detail:
-        "Readback checks are read-only; remote CRUD and automatic sync remain disabled.",
+        "Readback checks are read-only; cloud persistence and active-session realtime are validated separately.",
     },
   ];
 }
@@ -641,14 +641,14 @@ export function createProductionAuthReadinessChecks({
       detail:
         warningCount === 0
           ? "Auth diagnostics completed without remote read warnings."
-          : "Resolve auth diagnostic warnings before enabling migration or sync.",
+          : "Resolve auth diagnostic warnings before production public beta testing.",
     },
     {
       id: "sync-boundary",
-      label: "Sync boundary",
+      label: "Public beta boundary",
       status: "pass",
       detail:
-        "Remote CRUD and automatic multi-device sync remain disabled for this sprint.",
+        "Cloud household persistence and active-session realtime are in scope; multi-device collaboration and conflict resolution remain out of scope.",
     },
   ];
 }

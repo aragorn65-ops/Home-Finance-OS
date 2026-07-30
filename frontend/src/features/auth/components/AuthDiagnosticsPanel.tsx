@@ -137,7 +137,7 @@ export default function AuthDiagnosticsPanel() {
           </h2>
 
           <p>
-            Feature-flagged prototype auth status for this browser session.
+            Production auth, cloud schema, and household sync status for this browser session.
           </p>
         </div>
 
@@ -333,7 +333,7 @@ export default function AuthDiagnosticsPanel() {
                 Production Auth Baseline
               </h3>
               <p>
-                Sprint 86 checks before migration or sync is enabled.
+                Sprint 103 checks for Supabase auth, session, membership, and remote diagnostics.
               </p>
             </div>
 
@@ -374,7 +374,7 @@ export default function AuthDiagnosticsPanel() {
                   Cloud Schema Readiness
                 </h3>
                 <p>
-                  Sprint 88 checks before upload or sync paths are enabled.
+                  Sprint 103 checks for public beta tables and required RPCs.
                 </p>
               </div>
 
@@ -416,7 +416,7 @@ export default function AuthDiagnosticsPanel() {
                   Post-Commit Remote Readback
                 </h3>
                 <p>
-                  Sprint 100 read-only checks before restore or sync paths are enabled.
+                  Read-only confirmation that committed cloud data is visible for production restore testing.
                 </p>
               </div>
 
@@ -457,7 +457,7 @@ export default function AuthDiagnosticsPanel() {
                   Cloud Restore Preview
                 </h3>
                 <p>
-                  Sprint 101 read-only preview before browser restore or sync paths are enabled.
+                  Production restore preview for the linked household cloud snapshot.
                 </p>
               </div>
 
