@@ -5,6 +5,9 @@ import type {
   Transaction,
 } from "../../transactions/models/Transaction";
 import type {
+  StoredAttachment,
+} from "../../../shared/models/StoredAttachment";
+import type {
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadRecord,
   RemoteMigrationTransactionUploadPayload,
@@ -155,7 +158,9 @@ function createTransactionUploadRecord(
     notes:
       transaction.notes,
     attachments:
-      transaction.attachments,
+      createAttachmentMetadataUploadRecords(
+        transaction.attachments ?? []
+      ),
     transactionDate:
       transaction.transactionDate
         .toISOString()
@@ -167,4 +172,19 @@ function createTransactionUploadRecord(
     updatedAt:
       transaction.updatedAt.toISOString(),
   };
+}
+
+function createAttachmentMetadataUploadRecords(
+  attachments: StoredAttachment[]
+): StoredAttachment[] {
+  return attachments.map(
+    (attachment) => ({
+      ...attachment,
+      dataUrl: "",
+      createdAt:
+        new Date(
+          attachment.createdAt
+        ),
+    })
+  );
 }

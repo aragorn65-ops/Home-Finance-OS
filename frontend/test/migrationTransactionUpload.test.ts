@@ -55,7 +55,26 @@ test(
       notes:
         "Fresh produce",
       attachments:
-        [],
+        [
+          {
+            id:
+              "attachment-1",
+            category:
+              "receipt",
+            fileName:
+              "receipt.jpg",
+            mimeType:
+              "image/jpeg",
+            sizeBytes:
+              2048,
+            dataUrl:
+              "data:image/jpeg;base64,large-image-body",
+            createdAt:
+              new Date(
+                "2026-07-21T13:30:00Z"
+              ),
+          },
+        ],
       transactionDate:
         new Date(
           "2026-07-21T12:00:00Z"
@@ -132,7 +151,26 @@ test(
           notes:
             "Fresh produce",
           attachments:
-            [],
+            [
+              {
+                id:
+                  "attachment-1",
+                category:
+                  "receipt",
+                fileName:
+                  "receipt.jpg",
+                mimeType:
+                  "image/jpeg",
+                sizeBytes:
+                  2048,
+                dataUrl:
+                  "",
+                createdAt:
+                  new Date(
+                    "2026-07-21T13:30:00Z"
+                  ),
+              },
+            ],
           transactionDate:
             "2026-07-21",
           isActive:
