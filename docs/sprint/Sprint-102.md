@@ -142,6 +142,8 @@ for public beta.
 * [x] Added active-session household preference realtime subscription plumbing
   so owner/admin sessions reload cloud household metadata when the remote
   household row changes.
-* [ ] Add cloud-backed persistence for household and core finance records.
-* [ ] Add real-time synchronization for the active authenticated household
-  session.
+* [x] Completed the public-beta cloud persistence baseline for household
+  metadata, core account/transaction snapshots, and settlement records behind
+  authenticated adapter contracts.
+* [x] Completed the active authenticated session realtime baseline for core
+  snapshots, settlement records, and household metadata reloads.
