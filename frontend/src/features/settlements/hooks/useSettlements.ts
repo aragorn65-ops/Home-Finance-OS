@@ -523,11 +523,19 @@ export default function useSettlements(
   ): Promise<
     OperationResult<Settlement>
   > => {
-    const localResult =
-      SettlementService.update(
-        id,
-        form
+    const existingLocalSettlement =
+      SettlementService.getSettlementById(
+        id
       );
+    const localResult =
+      existingLocalSettlement
+        ? SettlementService.update(
+            id,
+            form
+          )
+        : SettlementService.create(
+            form
+          );
 
     if (!localResult.success) {
       return localResult;
@@ -562,6 +570,8 @@ export default function useSettlements(
           (settlement) =>
             settlement.localRecordId ===
               id ||
+            settlement.localRecordId ===
+              localSettlement.id ||
             settlement.id === id
         );
 
@@ -582,7 +592,7 @@ export default function useSettlements(
           settlement:
             createRemoteSettlementDraft(
               remoteForm,
-              id,
+              localSettlement.id,
               householdId
             ),
           applications: [],
@@ -592,7 +602,7 @@ export default function useSettlements(
           settlement:
             createRemoteSettlementDraft(
               remoteForm,
-              id,
+              localSettlement.id,
               householdId
             ),
           applications: [],
@@ -627,10 +637,18 @@ export default function useSettlements(
     OperationResult<boolean>
   > => {
     try {
-      const localResult =
-        SettlementService.delete(
+      const existingLocalSettlement =
+        SettlementService.getSettlementById(
           id
         );
+      const localResult =
+        existingLocalSettlement
+          ? SettlementService.delete(
+              id
+            )
+          : OperationResults.success(
+              true
+            );
 
       if (!localResult.success) {
         return localResult;
