@@ -8,9 +8,10 @@ https://home-finance-os.pages.dev
 
 ## Purpose
 
-Use this checklist after Cloudflare Pages deployments to confirm the local-first
-beta app shell, client-side routing, and browser-storage backup workflow are
-usable on the deployed site.
+Use this checklist after Cloudflare Pages deployments to confirm the public beta
+app shell, client-side routing, authenticated admin access, cloud-backed
+household persistence, limited member settlement-entry access, real-time
+synchronization, and backup workflow are usable on the deployed site.
 
 Use sample or low-risk data only.
 
@@ -59,6 +60,51 @@ member expense contribution summary appears again in Analytics.
 
 ---
 
+## Authenticated Cloud Persistence Check
+
+1. Sign in with the invited admin account.
+2. Create or claim one test household.
+3. Add at least one account, one transaction, one utility bill, one settlement,
+   and one savings goal.
+4. Refresh the browser.
+5. Confirm the household and records reload from the cloud-backed store.
+6. Sign out.
+7. Confirm signed-out access cannot read or mutate cloud-backed household data.
+
+Expected result: authenticated admin data survives refresh, signed-out access is
+blocked, and failed cloud writes are visible instead of silently succeeding.
+
+---
+
+## Member Settlement Access Check
+
+1. Sign in with a limited member account.
+2. Add a settlement record where the member is the payer or receiver.
+3. Confirm the settlement persists to the cloud-backed store.
+4. Confirm the member cannot access account, transaction, utility, savings,
+   settings, backup, household configuration, or migration write paths.
+5. Sign in as admin and review, edit, then delete the member-submitted
+   settlement.
+
+Expected result: limited member access can submit settlement records only, and
+admin retains control over settlement review and correction.
+
+---
+
+## Real-Time Synchronization Check
+
+1. Sign in with the invited admin account.
+2. Open the deployed app in a second browser tab for the same admin session.
+3. Change a small test record in one tab.
+4. Confirm the other active tab reflects the cloud-backed change without manual
+   refresh.
+
+Expected result: real-time updates reach the active admin session. Multi-device
+household collaboration and conflict resolution are not part of this smoke
+check.
+
+---
+
 ## Google Drive Backup Status
 
 Google Drive backup is optional and configuration-dependent. If
@@ -70,19 +116,19 @@ allows `https://home-finance-os.pages.dev`, redeploy Cloudflare Pages, then
 verify Save to Google Drive and Restore from Google Drive are enabled in
 Settings.
 
-For the deployed local-first beta, local Export Backup and Import Backup remain
-the required smoke-check path.
+For the deployed public beta, local Export Backup and Import Backup remain the
+required manual backup smoke-check path.
 
 ---
 
-## Supabase Spike Status
+## Supabase Cloud Status
 
-Supabase auth/cloud validation is disposable-project-only. Do not enable
-Supabase production credentials on the Cloudflare Pages beta until the
-architecture decision criteria and disposable-project validation notes pass.
+Public beta requires production auth configuration, cloud-backed household
+persistence, limited member settlement-entry access, and real-time
+synchronization on the Cloudflare Pages deployment.
 
-The deployed local-first smoke check does not require Supabase auth, remote
-migration, sync, or production cloud storage.
+Do not expose multi-device household access, shared collaboration, or conflict
+resolution as supported public beta behavior.
 
 ---
 

@@ -4,6 +4,8 @@ import type {
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteSettlement,
+  RemoteSettlementApplication,
   RemoteHousehold,
   RemoteMigrationDraft,
   RemoteMigrationStatus,
@@ -15,6 +17,9 @@ interface InMemoryAuthState {
   memberships: HouseholdMembership[];
   invitations: HouseholdInvitation[];
   migrations: RemoteMigrationDraft[];
+  settlements: RemoteSettlement[];
+  settlementApplications:
+    RemoteSettlementApplication[];
 }
 
 export interface InMemoryAuthSeed {
@@ -23,6 +28,9 @@ export interface InMemoryAuthSeed {
   memberships?: HouseholdMembership[];
   invitations?: HouseholdInvitation[];
   migrations?: RemoteMigrationDraft[];
+  settlements?: RemoteSettlement[];
+  settlementApplications?:
+    RemoteSettlementApplication[];
 }
 
 export class InMemoryAuthStore {
@@ -43,6 +51,11 @@ export class InMemoryAuthStore {
         seed.invitations ?? [],
       migrations:
         seed.migrations ?? [],
+      settlements:
+        seed.settlements ?? [],
+      settlementApplications:
+        seed.settlementApplications ??
+        [],
     };
   }
 
@@ -229,6 +242,108 @@ export class InMemoryAuthStore {
       updatedAt:
         new Date(),
     });
+  }
+
+  listSettlements(
+    householdId: string
+  ): RemoteSettlement[] {
+    return this.state.settlements.filter(
+      (settlement) =>
+        settlement.householdId ===
+        householdId
+    );
+  }
+
+  getSettlement(
+    settlementId: string
+  ): RemoteSettlement | undefined {
+    return this.state.settlements.find(
+      (settlement) =>
+        settlement.id === settlementId
+    );
+  }
+
+  saveSettlement(
+    settlement: RemoteSettlement
+  ): RemoteSettlement {
+    const index =
+      this.state.settlements.findIndex(
+        (existing) =>
+          existing.id ===
+          settlement.id
+      );
+
+    if (index >= 0) {
+      this.state.settlements[
+        index
+      ] = settlement;
+
+      return settlement;
+    }
+
+    this.state.settlements.push(
+      settlement
+    );
+
+    return settlement;
+  }
+
+  deleteSettlement(
+    householdId: string,
+    settlementId: string
+  ): void {
+    this.state.settlements =
+      this.state.settlements.filter(
+        (settlement) =>
+          settlement.householdId !==
+            householdId ||
+          settlement.id !==
+            settlementId
+      );
+
+    this.state.settlementApplications =
+      this.state
+        .settlementApplications
+        .filter(
+          (application) =>
+            application.householdId !==
+              householdId ||
+            application.settlementId !==
+              settlementId
+        );
+  }
+
+  listSettlementApplications(
+    settlementId: string
+  ): RemoteSettlementApplication[] {
+    return this.state
+      .settlementApplications
+      .filter(
+        (application) =>
+          application.settlementId ===
+          settlementId
+      );
+  }
+
+  replaceSettlementApplications(
+    settlementId: string,
+    applications:
+      RemoteSettlementApplication[]
+  ): RemoteSettlementApplication[] {
+    this.state.settlementApplications =
+      this.state
+        .settlementApplications
+        .filter(
+          (application) =>
+            application.settlementId !==
+            settlementId
+        );
+
+    this.state
+      .settlementApplications
+      .push(...applications);
+
+    return applications;
   }
 }
 

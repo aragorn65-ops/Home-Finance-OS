@@ -20,6 +20,11 @@ import type {
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
+  RemoteSettlement,
+  RemoteSettlementApplication,
+  RemoteSettlementCreateInput,
+  RemoteSettlementMutationResult,
+  RemoteSettlementUpdateInput,
 } from "../models";
 
 interface SupabaseAuthClient {
@@ -59,6 +64,8 @@ interface SupabaseAuthClient {
     | SupabaseMigrationPreCommitAuditRpcResult
     | SupabaseMigrationAbortRpcResult
     | SupabaseMigrationCommitRpcResult
+    | SupabaseSettlementMutationRpcResult
+    | SupabaseSettlementDeleteRpcResult
   >;
 }
 
@@ -75,6 +82,8 @@ interface SupabaseFilterBuilder {
   ): Promise<
     | SupabaseMembershipRowsResult
     | SupabaseMigrationDraftRowsResult
+    | SupabaseSettlementRowsResult
+    | SupabaseSettlementApplicationRowsResult
   > | SupabaseChainedFilterBuilder;
   in(
     column: string,
@@ -167,6 +176,24 @@ interface SupabaseTransactionRowsResult {
 interface SupabaseMigrationDraftRowsResult {
   data:
     | SupabaseMigrationDraftRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseSettlementRowsResult {
+  data:
+    | SupabaseSettlementRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseSettlementApplicationRowsResult {
+  data:
+    | SupabaseSettlementApplicationRow[]
     | null;
   error:
     | SupabaseAuthError
@@ -334,6 +361,26 @@ interface SupabaseTransactionRow {
   destination_account_id?: string | null;
 }
 
+interface SupabaseSettlementMutationRpcResult {
+  data:
+    | SupabaseSettlementRow
+    | SupabaseSettlementRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseSettlementDeleteRpcResult {
+  data:
+    | SupabaseSettlementDeleteRpcRow
+    | SupabaseSettlementDeleteRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseMigrationDraftRow {
   id: string;
   household_id?: string | null;
@@ -378,6 +425,42 @@ interface SupabaseMigrationAbortRpcRow {
   draft_id: string;
   status: string;
   aborted_at?: string | null;
+}
+
+interface SupabaseSettlementRow {
+  id: string;
+  household_id: string;
+  local_record_id?: string | null;
+  from_member_id: string;
+  to_member_id: string;
+  amount: number;
+  settlement_date: string;
+  source_account_id?: string | null;
+  destination_account_id?: string | null;
+  application_method: string;
+  reference_number?: string | null;
+  notes?: string | null;
+  is_active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+  updated_by_user_id?: string | null;
+}
+
+interface SupabaseSettlementApplicationRow {
+  id: string;
+  household_id: string;
+  local_record_id?: string | null;
+  settlement_id: string;
+  expense_allocation_id: string;
+  applied_amount: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+  updated_by_user_id?: string | null;
+}
+
+interface SupabaseSettlementDeleteRpcRow {
+  settlement_id: string;
+  deleted_at?: string | null;
 }
 
 interface SupabaseMigrationUploadStagingRpcRow {
@@ -1549,6 +1632,260 @@ export class SupabaseAuthBackendAdapter
     }
   }
 
+  async listRemoteSettlements(
+    householdId: string
+  ): Promise<RemoteSettlement[]> {
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    const settlementResult =
+      await (
+      await this.getClient()
+      )
+        .from("settlements")
+        .select(
+          [
+            "id",
+            "household_id",
+            "local_record_id",
+            "from_member_id",
+            "to_member_id",
+            "amount",
+            "settlement_date",
+            "source_account_id",
+            "destination_account_id",
+            "application_method",
+            "reference_number",
+            "notes",
+            "is_active",
+            "created_at",
+            "updated_at",
+            "updated_by_user_id",
+          ].join(",")
+        )
+        .eq(
+          "household_id",
+          householdId
+        ) as SupabaseSettlementRowsResult;
+
+    if (settlementResult.error) {
+      throw new Error(
+        `Supabase settlement lookup failed: ${settlementResult.error.message}`
+      );
+    }
+
+    return (settlementResult.data ?? [])
+      .map(mapSupabaseSettlement)
+      .filter(
+        (
+          settlement
+        ): settlement is RemoteSettlement =>
+          Boolean(settlement)
+      );
+  }
+
+  async createRemoteSettlement(
+    input: RemoteSettlementCreateInput
+  ): Promise<RemoteSettlementMutationResult> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `settlement creation for ${input.settlement.householdId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before creating a settlement."
+      );
+    }
+
+    const result =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "create_household_settlement",
+          {
+            target_household_id:
+              input.settlement.householdId,
+            local_record_id:
+              input.settlement.localRecordId ??
+              null,
+            from_member_id:
+              input.settlement.fromMemberId,
+            to_member_id:
+              input.settlement.toMemberId,
+            settlement_amount:
+              input.settlement.amount,
+            settlement_date:
+              input.settlement
+                .settlementDate,
+            source_account_id:
+              input.settlement.sourceAccountId ??
+              null,
+            destination_account_id:
+              input.settlement
+                .destinationAccountId ??
+              null,
+            application_method:
+              input.settlement
+                .applicationMethod,
+            reference_number:
+              input.settlement
+                .referenceNumber ?? null,
+            settlement_notes:
+              input.settlement.notes ?? null,
+            is_active:
+              input.settlement.isActive,
+            settlement_applications:
+              createSupabaseSettlementApplicationPayload(
+                input.applications ?? []
+              ),
+          }
+        ) as SupabaseSettlementMutationRpcResult;
+
+    return this
+      .createRemoteSettlementMutationResult(
+        result,
+        "creation"
+      );
+  }
+
+  async updateRemoteSettlement(
+    input: RemoteSettlementUpdateInput
+  ): Promise<RemoteSettlementMutationResult> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `settlement update for ${input.settlementId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before updating a settlement."
+      );
+    }
+
+    const result =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "update_household_settlement",
+          {
+            target_settlement_id:
+              input.settlementId,
+            local_record_id:
+              input.settlement.localRecordId ??
+              null,
+            from_member_id:
+              input.settlement.fromMemberId,
+            to_member_id:
+              input.settlement.toMemberId,
+            settlement_amount:
+              input.settlement.amount,
+            settlement_date:
+              input.settlement
+                .settlementDate,
+            source_account_id:
+              input.settlement.sourceAccountId ??
+              null,
+            destination_account_id:
+              input.settlement
+                .destinationAccountId ??
+              null,
+            application_method:
+              input.settlement
+                .applicationMethod,
+            reference_number:
+              input.settlement
+                .referenceNumber ?? null,
+            settlement_notes:
+              input.settlement.notes ?? null,
+            is_active:
+              input.settlement.isActive,
+            settlement_applications:
+              createSupabaseSettlementApplicationPayload(
+                input.applications ?? []
+              ),
+          }
+        ) as SupabaseSettlementMutationRpcResult;
+
+    return this
+      .createRemoteSettlementMutationResult(
+        result,
+        "update"
+      );
+  }
+
+  async deleteRemoteSettlement(
+    householdId: string,
+    settlementId: string
+  ): Promise<void> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `settlement deletion for ${settlementId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before deleting a settlement."
+      );
+    }
+
+    const result =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "delete_household_settlement",
+          {
+            target_household_id:
+              householdId,
+            target_settlement_id:
+              settlementId,
+          }
+        ) as SupabaseSettlementDeleteRpcResult;
+
+    if (result.error) {
+      throw new Error(
+        `Supabase settlement deletion failed: ${result.error.message}`
+      );
+    }
+
+    const row =
+      readSingleSupabaseRpcRow(
+        result.data
+      );
+
+    if (
+      !row ||
+      row.settlement_id !==
+        settlementId
+    ) {
+      throw new Error(
+        "Supabase settlement deletion returned an invalid result."
+      );
+    }
+  }
+
   subscribeToSessionChanges(
     onChange: () => void
   ): AuthSessionSubscription {
@@ -1610,6 +1947,75 @@ export class SupabaseAuthBackendAdapter
       "Run the disposable-project spike before " +
       "enabling production beta auth."
     );
+  }
+
+  private async createRemoteSettlementMutationResult(
+    result:
+      SupabaseSettlementMutationRpcResult,
+    action: string
+  ): Promise<RemoteSettlementMutationResult> {
+    const settlement =
+      createRemoteSettlementMutationSettlement(
+        result,
+        action
+      );
+
+    const applications =
+      await this
+        .listRemoteSettlementApplications(
+          settlement.id
+        );
+
+    return {
+      settlement,
+      applications,
+    };
+  }
+
+  private async listRemoteSettlementApplications(
+    settlementId: string
+  ): Promise<RemoteSettlementApplication[]> {
+    const applicationResult =
+      await (
+      await this.getClient()
+      )
+        .from("settlement_applications")
+        .select(
+          [
+            "id",
+            "household_id",
+            "local_record_id",
+            "settlement_id",
+            "expense_allocation_id",
+            "applied_amount",
+            "created_at",
+            "updated_at",
+            "updated_by_user_id",
+          ].join(",")
+        )
+        .eq(
+          "settlement_id",
+          settlementId
+        ) as SupabaseSettlementApplicationRowsResult;
+
+    if (applicationResult.error) {
+      throw new Error(
+        `Supabase settlement application lookup failed: ${applicationResult.error.message}`
+      );
+    }
+
+    return (
+      applicationResult.data ?? []
+    )
+      .map(
+        mapSupabaseSettlementApplication
+      )
+      .filter(
+        (
+          application
+        ): application is RemoteSettlementApplication =>
+          Boolean(application)
+      );
   }
 
   private async createSchemaReadinessCheck(
@@ -2206,6 +2612,178 @@ function mapSupabaseClaimMigrationDraft(
           undefined
       ),
   };
+}
+
+function createRemoteSettlementMutationSettlement(
+  result:
+    SupabaseSettlementMutationRpcResult,
+  action: string
+): RemoteSettlement {
+  if (result.error) {
+    throw new Error(
+      `Supabase settlement ${action} failed: ${result.error.message}`
+    );
+  }
+
+  const row =
+    readSingleSupabaseRpcRow(
+      result.data
+    );
+  const settlement =
+    row
+      ? mapSupabaseSettlement(row)
+      : undefined;
+
+  if (!settlement) {
+    throw new Error(
+      `Supabase settlement ${action} returned an invalid result.`
+    );
+  }
+
+  return settlement;
+}
+
+function createSupabaseSettlementApplicationPayload(
+  applications: Array<{
+    localRecordId?: string;
+    expenseAllocationId: string;
+    appliedAmount: number;
+  }>
+) {
+  return applications.map(
+    (application) => ({
+      local_record_id:
+        application.localRecordId ??
+        crypto.randomUUID(),
+      expense_allocation_id:
+        application.expenseAllocationId,
+      applied_amount:
+        application.appliedAmount,
+    })
+  );
+}
+
+function mapSupabaseSettlement(
+  row: SupabaseSettlementRow
+): RemoteSettlement | undefined {
+  const applicationMethod =
+    normalizeSettlementApplicationMethod(
+      row.application_method
+    );
+
+  if (
+    !row.id ||
+    !row.household_id ||
+    !row.from_member_id ||
+    !row.to_member_id ||
+    !Number.isFinite(row.amount) ||
+    !row.settlement_date ||
+    !applicationMethod
+  ) {
+    return undefined;
+  }
+
+  return {
+    id:
+      row.id,
+    householdId:
+      row.household_id,
+    localRecordId:
+      row.local_record_id ?? undefined,
+    fromMemberId:
+      row.from_member_id,
+    toMemberId:
+      row.to_member_id,
+    amount:
+      row.amount,
+    settlementDate:
+      new Date(
+        `${row.settlement_date}T00:00:00`
+      ),
+    sourceAccountId:
+      row.source_account_id ??
+      undefined,
+    destinationAccountId:
+      row.destination_account_id ??
+      undefined,
+    applicationMethod:
+      applicationMethod,
+    referenceNumber:
+      row.reference_number ??
+      undefined,
+    notes:
+      row.notes ?? undefined,
+    isActive:
+      row.is_active,
+    createdAt:
+      mapSupabaseDate(
+        row.created_at ?? undefined
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        row.updated_at ??
+          row.created_at ??
+          undefined
+      ),
+    updatedByUserId:
+      row.updated_by_user_id ??
+      undefined,
+  };
+}
+
+function mapSupabaseSettlementApplication(
+  row: SupabaseSettlementApplicationRow
+): RemoteSettlementApplication | undefined {
+  if (
+    !row.id ||
+    !row.household_id ||
+    !row.settlement_id ||
+    !row.expense_allocation_id ||
+    !Number.isFinite(row.applied_amount)
+  ) {
+    return undefined;
+  }
+
+  return {
+    id:
+      row.id,
+    householdId:
+      row.household_id,
+    localRecordId:
+      row.local_record_id ?? undefined,
+    settlementId:
+      row.settlement_id,
+    expenseAllocationId:
+      row.expense_allocation_id,
+    appliedAmount:
+      row.applied_amount,
+    createdAt:
+      mapSupabaseDate(
+        row.created_at ?? undefined
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        row.updated_at ??
+          row.created_at ??
+          undefined
+      ),
+    updatedByUserId:
+      row.updated_by_user_id ??
+      undefined,
+  };
+}
+
+function normalizeSettlementApplicationMethod(
+  value: string
+): RemoteSettlement["applicationMethod"] | undefined {
+  if (
+    value === "oldest-first" ||
+    value === "manual"
+  ) {
+    return value;
+  }
+
+  return undefined;
 }
 
 function createBlockedMigrationValidation(

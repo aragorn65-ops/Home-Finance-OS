@@ -18,6 +18,10 @@ import type {
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
+  RemoteSettlement,
+  RemoteSettlementCreateInput,
+  RemoteSettlementMutationResult,
+  RemoteSettlementUpdateInput,
 } from "../models";
 
 export class DisabledAuthBackendAdapter
@@ -77,8 +81,9 @@ export class DisabledAuthBackendAdapter
 
   async stageMigrationUploadManifest(
     draftId: string,
-    _manifest: RemoteMigrationUploadManifest
+    manifest: RemoteMigrationUploadManifest
   ): Promise<RemoteMigrationUploadStagingResult> {
+    void manifest;
     throw new Error(
       `Remote migration upload staging is disabled for ${draftId}.`
     );
@@ -86,8 +91,9 @@ export class DisabledAuthBackendAdapter
 
   async stageMigrationAccounts(
     draftId: string,
-    _payload: RemoteMigrationAccountUploadPayload
+    payload: RemoteMigrationAccountUploadPayload
   ): Promise<RemoteMigrationAccountUploadStagingResult> {
+    void payload;
     throw new Error(
       `Remote migration account staging is disabled for ${draftId}.`
     );
@@ -95,8 +101,9 @@ export class DisabledAuthBackendAdapter
 
   async stageMigrationTransactions(
     draftId: string,
-    _payload: RemoteMigrationTransactionUploadPayload
+    payload: RemoteMigrationTransactionUploadPayload
   ): Promise<RemoteMigrationTransactionUploadStagingResult> {
+    void payload;
     throw new Error(
       `Remote migration transaction staging is disabled for ${draftId}.`
     );
@@ -124,6 +131,39 @@ export class DisabledAuthBackendAdapter
     Promise<void> {
     throw new Error(
       `Remote migration abort is disabled for ${draftId}.`
+    );
+  }
+
+  async listRemoteSettlements(
+    householdId: string
+  ): Promise<RemoteSettlement[]> {
+    void householdId;
+    return [];
+  }
+
+  async createRemoteSettlement(
+    input: RemoteSettlementCreateInput
+  ): Promise<RemoteSettlementMutationResult> {
+    throw new Error(
+      `Remote settlement creation is disabled for ${input.settlement.householdId}.`
+    );
+  }
+
+  async updateRemoteSettlement(
+    input: RemoteSettlementUpdateInput
+  ): Promise<RemoteSettlementMutationResult> {
+    throw new Error(
+      `Remote settlement update is disabled for ${input.settlementId}.`
+    );
+  }
+
+  async deleteRemoteSettlement(
+    householdId: string,
+    settlementId: string
+  ): Promise<void> {
+    void householdId;
+    throw new Error(
+      `Remote settlement deletion is disabled for ${settlementId}.`
     );
   }
 }

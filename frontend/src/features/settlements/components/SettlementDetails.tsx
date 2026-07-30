@@ -1,6 +1,5 @@
 import type { Settlement } from "../models/Settlement";
 import formatCurrency from "../../../shared/utils/formatCurrency";
-import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
 
 import type { SettlementApplicationDetails } from "../models/SettlementApplicationDetails";
 
@@ -422,58 +421,6 @@ export default function SettlementDetails({
                   </article>
                 );
               }
-            )}
-          </div>
-        )}
-      </section>
-
-      <section className="border-t pt-5">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          Transfer Receipts
-        </h3>
-
-        {settlement.attachments.length === 0 ? (
-          <p className="mt-2 text-sm text-foreground">
-            No transfer receipt attached.
-          </p>
-        ) : (
-          <div className="mt-3 space-y-2">
-            {settlement.attachments.map(
-              (attachment) => (
-                <div
-                  key={attachment.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {attachment.fileName}
-                    </p>
-
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {attachment.category}
-                      {" | "}
-                      {new Intl.NumberFormat(
-                        "en-US"
-                      ).format(
-                        attachment.sizeBytes
-                      )}{" "}
-                      bytes
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openAttachmentPreview(
-                        attachment
-                      )
-                    }
-                    className="rounded-md border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-                  >
-                    View
-                  </button>
-                </div>
-              )
             )}
           </div>
         )}

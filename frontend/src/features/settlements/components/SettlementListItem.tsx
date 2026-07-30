@@ -137,14 +137,6 @@ export default function SettlementListItem({
           </p>
         )}
 
-        {settlement.attachments.length >
-          0 && (
-          <p className="settlement-history-card__text text-xs">
-            Transfer receipts:{" "}
-            {settlement.attachments.length}
-          </p>
-        )}
-
         <p className="settlement-history-card__label mb-1 mt-2 text-xs font-semibold uppercase leading-tight">
           SETTLED ITEMS
         </p>

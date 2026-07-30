@@ -61,9 +61,13 @@ any restore, reset, attachment, currency, or mobile layout issue immediately.
 
 ## Final Gate
 
-The current gate is public beta safety review.
+The current gate is public beta cloud readiness.
 
-HFOS should not be opened to public beta testers until the public beta launch
-checklist passes against the current Cloudflare Pages production deployment.
-Production auth and sync remain explicitly out of scope unless a later release
-implements them deliberately.
+HFOS should not be opened to public beta testers until authenticated admin
+access, limited member settlement-entry access, cloud-backed household
+persistence, and real-time synchronization pass the public beta launch checklist
+against the current Cloudflare Pages production deployment.
+
+Multi-device household access, broad shared household collaboration, general
+invite onboarding, offline merge, and conflict resolution remain explicitly out
+of scope for public beta.

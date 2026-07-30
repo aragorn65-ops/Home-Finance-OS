@@ -1575,6 +1575,543 @@ test(
 );
 
 test(
+  "Supabase auth adapter requires sign-in before settlement write actions",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+    const settlement = {
+      householdId:
+        "household-1",
+      fromMemberId:
+        "member-1",
+      toMemberId:
+        "member-2",
+      amount: 100,
+      settlementDate:
+        "2026-07-30",
+      applicationMethod:
+        "oldest-first" as const,
+      isActive: true,
+    };
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: null,
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.createRemoteSettlement({
+          settlement,
+        }),
+      /Sign in before creating a settlement\./
+    );
+
+    await assert.rejects(
+      () =>
+        adapter.updateRemoteSettlement({
+          settlementId:
+            "settlement-1",
+          settlement,
+        }),
+      /Sign in before updating a settlement\./
+    );
+
+    await assert.rejects(
+      () =>
+        adapter.deleteRemoteSettlement(
+          "household-1",
+          "settlement-1"
+        ),
+      /Sign in before deleting a settlement\./
+    );
+
+    assert.deepEqual(
+      rpcCalls,
+      []
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter creates settlements through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+    const queries: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                id:
+                  "settlement-1",
+                household_id:
+                  "household-1",
+                local_record_id:
+                  "local-settlement-1",
+                from_member_id:
+                  "member-1",
+                to_member_id:
+                  "member-2",
+                amount:
+                  100,
+                settlement_date:
+                  "2026-07-30",
+                source_account_id:
+                  null,
+                destination_account_id:
+                  null,
+                application_method:
+                  "oldest-first",
+                reference_number:
+                  "SET-001",
+                notes:
+                  null,
+                is_active:
+                  true,
+                created_at:
+                  "2026-07-30T01:00:00Z",
+                updated_at:
+                  "2026-07-30T01:00:00Z",
+                updated_by_user_id:
+                  "user-1",
+              },
+              error: null,
+            };
+          },
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  async eq(
+                    column: string,
+                    value: string
+                  ) {
+                    queries.push({
+                      tableName,
+                      columns,
+                      column,
+                      value,
+                    });
+
+                    return {
+                      data: [
+                        {
+                          id:
+                            "application-1",
+                          household_id:
+                            "household-1",
+                          local_record_id:
+                            "local-application-1",
+                          settlement_id:
+                            "settlement-1",
+                          expense_allocation_id:
+                            "allocation-1",
+                          applied_amount:
+                            100,
+                          created_at:
+                            "2026-07-30T01:00:00Z",
+                          updated_at:
+                            "2026-07-30T01:00:00Z",
+                          updated_by_user_id:
+                            "user-1",
+                        },
+                      ],
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const result =
+      await adapter
+        .createRemoteSettlement({
+          settlement: {
+            householdId:
+              "household-1",
+            localRecordId:
+              "local-settlement-1",
+            fromMemberId:
+              "member-1",
+            toMemberId:
+              "member-2",
+            amount: 100,
+            settlementDate:
+              "2026-07-30",
+            applicationMethod:
+              "oldest-first",
+            referenceNumber:
+              "SET-001",
+            isActive: true,
+          },
+          applications: [
+            {
+              localRecordId:
+                "local-application-1",
+              expenseAllocationId:
+                "allocation-1",
+              appliedAmount:
+                100,
+            },
+          ],
+        });
+
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "create_household_settlement",
+          parameters: {
+            target_household_id:
+              "household-1",
+            local_record_id:
+              "local-settlement-1",
+            from_member_id:
+              "member-1",
+            to_member_id:
+              "member-2",
+            settlement_amount:
+              100,
+            settlement_date:
+              "2026-07-30",
+            source_account_id:
+              null,
+            destination_account_id:
+              null,
+            application_method:
+              "oldest-first",
+            reference_number:
+              "SET-001",
+            settlement_notes:
+              null,
+            is_active:
+              true,
+            settlement_applications: [
+              {
+                local_record_id:
+                  "local-application-1",
+                expense_allocation_id:
+                  "allocation-1",
+                applied_amount:
+                  100,
+              },
+            ],
+          },
+        },
+      ]
+    );
+    assert.equal(
+      result.settlement.id,
+      "settlement-1"
+    );
+    assert.equal(
+      result.settlement.updatedByUserId,
+      "user-1"
+    );
+    assert.equal(
+      result.applications.length,
+      1
+    );
+    assert.equal(
+      result.applications[0]
+        ?.expenseAllocationId,
+      "allocation-1"
+    );
+    assert.deepEqual(
+      queries.map(
+        (query) =>
+          (
+            query as {
+              tableName: string;
+            }
+          ).tableName
+      ),
+      [
+        "settlement_applications",
+      ]
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter updates and deletes settlements through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+    const queries: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            if (
+              functionName ===
+              "delete_household_settlement"
+            ) {
+              return {
+                data: {
+                  settlement_id:
+                    "settlement-1",
+                  deleted_at:
+                    "2026-07-30T02:00:00Z",
+                },
+                error: null,
+              };
+            }
+
+            return {
+              data: {
+                id:
+                  "settlement-1",
+                household_id:
+                  "household-1",
+                local_record_id:
+                  "local-settlement-1",
+                from_member_id:
+                  "member-1",
+                to_member_id:
+                  "member-2",
+                amount:
+                  125,
+                settlement_date:
+                  "2026-07-30",
+                source_account_id:
+                  null,
+                destination_account_id:
+                  null,
+                application_method:
+                  "oldest-first",
+                reference_number:
+                  null,
+                notes:
+                  "Updated",
+                is_active:
+                  true,
+                created_at:
+                  "2026-07-30T01:00:00Z",
+                updated_at:
+                  "2026-07-30T02:00:00Z",
+                updated_by_user_id:
+                  "user-1",
+              },
+              error: null,
+            };
+          },
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  async eq(
+                    column: string,
+                    value: string
+                  ) {
+                    queries.push({
+                      tableName,
+                      columns,
+                      column,
+                      value,
+                    });
+
+                    return {
+                      data: [
+                        {
+                          id:
+                            "application-2",
+                          household_id:
+                            "household-1",
+                          local_record_id:
+                            "local-application-2",
+                          settlement_id:
+                            "settlement-1",
+                          expense_allocation_id:
+                            "allocation-2",
+                          applied_amount:
+                            125,
+                          created_at:
+                            "2026-07-30T02:00:00Z",
+                          updated_at:
+                            "2026-07-30T02:00:00Z",
+                          updated_by_user_id:
+                            "user-1",
+                        },
+                      ],
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const updated =
+      await adapter
+        .updateRemoteSettlement({
+          settlementId:
+            "settlement-1",
+          settlement: {
+            householdId:
+              "household-1",
+            localRecordId:
+              "local-settlement-1",
+            fromMemberId:
+              "member-1",
+            toMemberId:
+              "member-2",
+            amount: 125,
+            settlementDate:
+              "2026-07-30",
+            applicationMethod:
+              "oldest-first",
+            notes:
+              "Updated",
+            isActive: true,
+          },
+          applications: [
+            {
+              localRecordId:
+                "local-application-2",
+              expenseAllocationId:
+                "allocation-2",
+              appliedAmount:
+                125,
+            },
+          ],
+        });
+
+    await adapter.deleteRemoteSettlement(
+      "household-1",
+      "settlement-1"
+    );
+
+    assert.equal(
+      updated.settlement.amount,
+      125
+    );
+    assert.equal(
+      updated.applications[0]
+        ?.appliedAmount,
+      125
+    );
+    assert.deepEqual(
+      rpcCalls.map(
+        (call) =>
+          (
+            call as {
+              functionName: string;
+            }
+          ).functionName
+      ),
+      [
+        "update_household_settlement",
+        "delete_household_settlement",
+      ]
+    );
+    assert.deepEqual(
+      (
+        rpcCalls[0] as {
+          parameters: {
+            settlement_applications:
+              unknown;
+          };
+        }
+      ).parameters
+        .settlement_applications,
+      [
+        {
+          local_record_id:
+            "local-application-2",
+          expense_allocation_id:
+            "allocation-2",
+          applied_amount:
+            125,
+        },
+      ]
+    );
+    assert.deepEqual(
+      queries.map(
+        (query) =>
+          (
+            query as {
+              tableName: string;
+            }
+          ).tableName
+      ),
+      [
+        "settlement_applications",
+      ]
+    );
+  }
+);
+
+test(
   "Supabase auth adapter stages migration transactions through RPC",
   async () => {
     const {

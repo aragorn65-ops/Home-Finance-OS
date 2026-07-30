@@ -32,6 +32,16 @@ export type FinancialRecordAction =
   | "update"
   | "delete";
 
+export type SettlementRecordAction =
+  | FinancialRecordAction
+  | "review";
+
+export interface SettlementAccessRecord {
+  householdId: string;
+  fromMemberId: string;
+  toMemberId: string;
+}
+
 const householdActionRoles:
   Record<
     HouseholdAction,
@@ -110,6 +120,53 @@ export function canAccessAccount(
         account.updatedAt,
     },
     action
+  );
+}
+
+export function canAccessSettlementRecord(
+  context: AuthorizationContext,
+  settlement: SettlementAccessRecord,
+  action: SettlementRecordAction
+): boolean {
+  const membership =
+    context.membership;
+
+  if (
+    !membership ||
+    membership.status !== "active" ||
+    membership.householdId !==
+      settlement.householdId
+  ) {
+    return false;
+  }
+
+  if (
+    membership.role === "owner" ||
+    membership.role === "admin"
+  ) {
+    return true;
+  }
+
+  if (
+    membership.role !== "member" ||
+    !context.memberId
+  ) {
+    return false;
+  }
+
+  const memberIsParticipant =
+    settlement.fromMemberId ===
+      context.memberId ||
+    settlement.toMemberId ===
+      context.memberId;
+
+  if (!memberIsParticipant) {
+    return false;
+  }
+
+  return (
+    action === "create" ||
+    action === "view"
   );
 }
 

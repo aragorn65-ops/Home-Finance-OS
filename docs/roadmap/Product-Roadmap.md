@@ -134,6 +134,10 @@ household, accounts, transactions, and transaction account links before restore
 or sync paths are enabled.
 Sprint 101 adds a read-only cloud restore preview that summarizes committed
 remote household data before any browser restore or sync path is enabled.
+Sprint 102 resets the public beta target around authenticated admin access,
+limited member settlement-entry access, cloud-backed household persistence, and
+real-time synchronization, while leaving multi-device household access and
+conflict resolution out of scope.
 
 ---
 
@@ -211,18 +215,39 @@ remote household data before any browser restore or sync path is enabled.
 | v0.99.0-alpha | Commit owner-link resolution |
 | v0.100.0-alpha | Post-commit remote readback |
 | v0.101.0-alpha | Cloud restore preview |
+| v0.102.0-alpha | Public beta cloud direction |
 
 ---
 
 ## Beta Target
 
-The near-term beta target is a safety-gated public local-first beta.
+The near-term beta target is a safety-gated public beta with authenticated admin
+access, limited member settlement-entry access, cloud-backed household
+persistence, and real-time synchronization.
 
-Production cloud sync, multi-device shared households, and production auth provider integration remain post-hardening decisions unless they become necessary for beta safety.
+HFOS public beta requires a production-ready admin sign-in path, a durable
+remote household store, and live propagation of changes between the active
+browser session and the cloud source of truth. Local backup and restore remain
+required safety rails, but browser localStorage is no longer sufficient as the
+primary persistence layer for public beta.
+
+Public beta also allows a narrow member role for settlement entry. A member may
+sign in and add a settlement only when they are the payer or receiver. Admins
+retain review, edit, and delete control over those records. Member access does
+not include accounts, transactions, utilities, savings, analytics, settings,
+backups, household configuration, migration state, or broad collaboration.
+
+Multi-device household access, shared household collaboration, invitations,
+general membership onboarding, offline merge, and conflict resolution remain
+out of scope for public beta. The public beta sync model should be
+admin-owned and fail-closed: when authentication, authorization, or cloud
+persistence is not available, HFOS should block cloud-backed writes and clearly
+tell the tester what is unavailable.
 
 The current gate is the public beta launch checklist. HFOS should keep the
-deployed local-first beta stable while choosing production auth, remote storage,
-and migration boundaries deliberately.
+deployed beta stable while promoting production auth, remote storage, and
+real-time synchronization from diagnostics into the minimum public beta product
+surface.
 Sprint 68 keeps the migration lifecycle actions fail-closed when remote auth is
 disabled or misconfigured.
 Sprint 69 keeps signed-out migration write actions from reaching remote RPCs.
@@ -253,11 +278,12 @@ Sprint 82 makes deployed Google Drive backup enablement explicit through
 Cloudflare Pages environment variables and OAuth origin configuration.
 Sprint 83 surfaces that same Google Drive configuration status inside Settings
 so disabled Drive buttons explain the missing build variable.
-Sprint 84 keeps public beta testers reminded that data is local-first, recovery
-depends on backups, and production sync is not available.
-Sprint 85 keeps public beta launch blocked until the Cloudflare production
-deployment, route refreshes, backup/restore, reset behavior, safety notices, and
-optional Google Drive checks are verified.
+Sprint 84 recorded the earlier local-first public beta safety warning.
+Sprint 85 recorded the earlier local-first public beta launch checklist.
+Sprint 102 supersedes that launch direction: public beta now requires
+authenticated admin access, limited member settlement-entry access,
+cloud-backed household persistence, and real-time synchronization before
+testers are invited.
 Sprint 91 keeps migration staging incremental by uploading accounts only after
 manifest staging passes, while keeping Commit and automatic sync disabled.
 Sprint 92 keeps that incremental staging path going by uploading transactions
@@ -341,8 +367,8 @@ docs/architecture/SUPABASE_SPIKE_PLAN.md
 
 ## Later Candidates
 
-* Production auth provider selection.
-* Remote storage adapter implementation.
-* Multi-device sync and conflict handling.
+* Multi-device household access.
+* Broad shared household collaboration and invite onboarding.
+* Offline merge and conflict resolution.
 * Additional finance modules after beta stabilization.
-* Public beta or production release planning.
+* Production release planning.

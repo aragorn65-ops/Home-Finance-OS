@@ -70,6 +70,7 @@ export {
 export {
   canAccessAccount,
   canAccessHousehold,
+  canAccessSettlementRecord,
   canAccessTenantRecord,
   canManageMemberRole,
 } from "./authorization";
@@ -78,6 +79,8 @@ export type {
   AuthorizationContext,
   FinancialRecordAction,
   HouseholdAction,
+  SettlementAccessRecord,
+  SettlementRecordAction,
 } from "./authorization";
 
 export {

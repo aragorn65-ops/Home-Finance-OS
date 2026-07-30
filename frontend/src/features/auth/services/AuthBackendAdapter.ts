@@ -12,6 +12,10 @@ import type {
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
+  RemoteSettlement,
+  RemoteSettlementCreateInput,
+  RemoteSettlementMutationResult,
+  RemoteSettlementUpdateInput,
   AuthSession,
   AuthUser,
   HouseholdInvitation,
@@ -100,5 +104,22 @@ export interface AuthBackendAdapter {
 
   abortMigrationDraft(
     draftId: string
+  ): Promise<void>;
+
+  listRemoteSettlements(
+    householdId: string
+  ): Promise<RemoteSettlement[]>;
+
+  createRemoteSettlement(
+    input: RemoteSettlementCreateInput
+  ): Promise<RemoteSettlementMutationResult>;
+
+  updateRemoteSettlement(
+    input: RemoteSettlementUpdateInput
+  ): Promise<RemoteSettlementMutationResult>;
+
+  deleteRemoteSettlement(
+    householdId: string,
+    settlementId: string
   ): Promise<void>;
 }

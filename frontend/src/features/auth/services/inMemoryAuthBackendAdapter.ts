@@ -5,9 +5,13 @@ import type {
 } from "./AuthBackendAdapter";
 import {
   createMembership,
+  createId,
   InMemoryAuthStore,
   type InMemoryAuthSeed,
 } from "./inMemoryAuthStore";
+import {
+  canAccessSettlementRecord,
+} from "./authorization";
 import {
   InMemoryRemoteMigrationRepository,
 } from "./inMemoryRemoteMigrationRepository";
@@ -29,6 +33,11 @@ import type {
   RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
+  RemoteSettlement,
+  RemoteSettlementApplication,
+  RemoteSettlementCreateInput,
+  RemoteSettlementMutationResult,
+  RemoteSettlementUpdateInput,
 } from "../models";
 
 export class InMemoryAuthBackendAdapter
@@ -262,5 +271,323 @@ export class InMemoryAuthBackendAdapter
   ): Promise<void> {
     return this.migrationRepository
       .abortDraft(draftId);
+  }
+
+  async listRemoteSettlements(
+    householdId: string
+  ): Promise<RemoteSettlement[]> {
+    const membership =
+      this.getActiveMembership(
+        householdId
+      );
+
+    if (!membership) {
+      return [];
+    }
+
+    const context =
+      this.createAuthorizationContext(
+        householdId
+      );
+
+    return this.store
+      .listSettlements(householdId)
+      .filter((settlement) =>
+        canAccessSettlementRecord(
+          context,
+          settlement,
+          "view"
+        )
+      );
+  }
+
+  async createRemoteSettlement(
+    input: RemoteSettlementCreateInput
+  ): Promise<RemoteSettlementMutationResult> {
+    const context =
+      this.createAuthorizationContext(
+        input.settlement.householdId
+      );
+
+    if (
+      !canAccessSettlementRecord(
+        context,
+        input.settlement,
+        "create"
+      )
+    ) {
+      throw new Error(
+        "Current user cannot create this settlement."
+      );
+    }
+
+    const now = new Date();
+    const user =
+      this.store.getCurrentUser();
+    const settlement:
+      RemoteSettlement = {
+      id:
+        createId("settlement"),
+      householdId:
+        input.settlement.householdId,
+      localRecordId:
+        input.settlement.localRecordId,
+      fromMemberId:
+        input.settlement.fromMemberId,
+      toMemberId:
+        input.settlement.toMemberId,
+      amount:
+        input.settlement.amount,
+      settlementDate:
+        new Date(
+          `${input.settlement.settlementDate}T00:00:00`
+        ),
+      sourceAccountId:
+        input.settlement.sourceAccountId,
+      destinationAccountId:
+        input.settlement
+          .destinationAccountId,
+      applicationMethod:
+        input.settlement
+          .applicationMethod,
+      referenceNumber:
+        input.settlement.referenceNumber,
+      notes:
+        input.settlement.notes,
+      isActive:
+        input.settlement.isActive,
+      createdAt: now,
+      updatedAt: now,
+      updatedByUserId:
+        user?.id,
+    };
+
+    this.store.saveSettlement(
+      settlement
+    );
+
+    const applications =
+      this.createRemoteSettlementApplications(
+        settlement,
+        input.applications ?? [],
+        now,
+        user?.id
+      );
+
+    return {
+      settlement,
+      applications:
+        this.store
+          .replaceSettlementApplications(
+            settlement.id,
+            applications
+          ),
+    };
+  }
+
+  async updateRemoteSettlement(
+    input: RemoteSettlementUpdateInput
+  ): Promise<RemoteSettlementMutationResult> {
+    const existing =
+      this.store.getSettlement(
+        input.settlementId
+      );
+
+    if (!existing) {
+      throw new Error(
+        "Remote settlement was not found."
+      );
+    }
+
+    const context =
+      this.createAuthorizationContext(
+        existing.householdId
+      );
+
+    if (
+      !canAccessSettlementRecord(
+        context,
+        existing,
+        "update"
+      )
+    ) {
+      throw new Error(
+        "Current user cannot update this settlement."
+      );
+    }
+
+    const now = new Date();
+    const user =
+      this.store.getCurrentUser();
+    const settlement:
+      RemoteSettlement = {
+      ...existing,
+      householdId:
+        existing.householdId,
+      localRecordId:
+        input.settlement.localRecordId,
+      fromMemberId:
+        input.settlement.fromMemberId,
+      toMemberId:
+        input.settlement.toMemberId,
+      amount:
+        input.settlement.amount,
+      settlementDate:
+        new Date(
+          `${input.settlement.settlementDate}T00:00:00`
+        ),
+      sourceAccountId:
+        input.settlement.sourceAccountId,
+      destinationAccountId:
+        input.settlement
+          .destinationAccountId,
+      applicationMethod:
+        input.settlement
+          .applicationMethod,
+      referenceNumber:
+        input.settlement.referenceNumber,
+      notes:
+        input.settlement.notes,
+      isActive:
+        input.settlement.isActive,
+      updatedAt: now,
+      updatedByUserId:
+        user?.id,
+    };
+
+    this.store.saveSettlement(
+      settlement
+    );
+
+    const applications =
+      this.createRemoteSettlementApplications(
+        settlement,
+        input.applications ?? [],
+        now,
+        user?.id
+      );
+
+    return {
+      settlement,
+      applications:
+        this.store
+          .replaceSettlementApplications(
+            settlement.id,
+            applications
+          ),
+    };
+  }
+
+  async deleteRemoteSettlement(
+    householdId: string,
+    settlementId: string
+  ): Promise<void> {
+    const existing =
+      this.store.getSettlement(
+        settlementId
+      );
+
+    if (!existing) {
+      return;
+    }
+
+    const context =
+      this.createAuthorizationContext(
+        householdId
+      );
+
+    if (
+      !canAccessSettlementRecord(
+        context,
+        existing,
+        "delete"
+      )
+    ) {
+      throw new Error(
+        "Current user cannot delete this settlement."
+      );
+    }
+
+    this.store.deleteSettlement(
+      householdId,
+      settlementId
+    );
+  }
+
+  private createAuthorizationContext(
+    householdId: string
+  ) {
+    const user =
+      this.store.getCurrentUser();
+    const membership =
+      user
+        ? this.getActiveMembership(
+            householdId
+          )
+        : undefined;
+
+    return {
+      userId:
+        user?.id,
+      memberId:
+        membership?.memberId,
+      membership,
+    };
+  }
+
+  private getActiveMembership(
+    householdId: string
+  ) {
+    const user =
+      this.store.getCurrentUser();
+
+    if (!user) {
+      return undefined;
+    }
+
+    return this.store
+      .listMemberships(householdId)
+      .find(
+        (membership) =>
+          membership.userId ===
+            user.id &&
+          membership.status ===
+            "active"
+      );
+  }
+
+  private createRemoteSettlementApplications(
+    settlement: RemoteSettlement,
+    applications: Array<{
+      localRecordId?: string;
+      expenseAllocationId: string;
+      appliedAmount: number;
+    }>,
+    now: Date,
+    userId?: string
+  ): RemoteSettlementApplication[] {
+    return applications.map(
+      (application) => ({
+        id:
+          createId(
+            "settlement-application"
+          ),
+        householdId:
+          settlement.householdId,
+        localRecordId:
+          application.localRecordId,
+        settlementId:
+          settlement.id,
+        expenseAllocationId:
+          application
+            .expenseAllocationId,
+        appliedAmount:
+          application.appliedAmount,
+        createdAt: now,
+        updatedAt: now,
+        updatedByUserId:
+          userId,
+      })
+    );
   }
 }

@@ -481,6 +481,39 @@ as $$
   );
 $$;
 
+create or replace function public.is_household_admin(target_household_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.household_memberships membership
+    where membership.household_id = target_household_id
+      and membership.user_id = auth.uid()
+      and membership.role in ('owner', 'admin')
+      and membership.status = 'active'
+  );
+$$;
+
+create or replace function public.current_household_member_id(target_household_id uuid)
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select membership.member_id
+  from public.household_memberships membership
+  where membership.household_id = target_household_id
+    and membership.user_id = auth.uid()
+    and membership.status = 'active'
+  order by membership.created_at
+  limit 1;
+$$;
+
 drop policy if exists "active members can read households"
 on public.households;
 
@@ -584,7 +617,13 @@ on public.settlements;
 create policy "active members can read household settlements"
 on public.settlements
 for select
-using (public.is_active_household_member(household_id));
+using (
+  public.is_household_admin(household_id)
+  or public.current_household_member_id(household_id) in (
+    from_member_id,
+    to_member_id
+  )
+);
 
 drop policy if exists "active members can read household settlement applications"
 on public.settlement_applications;
@@ -592,7 +631,21 @@ on public.settlement_applications;
 create policy "active members can read household settlement applications"
 on public.settlement_applications
 for select
-using (public.is_active_household_member(household_id));
+using (
+  exists (
+    select 1
+    from public.settlements settlement
+    where settlement.id = settlement_applications.settlement_id
+      and settlement.household_id = settlement_applications.household_id
+      and (
+        public.is_household_admin(settlement.household_id)
+        or public.current_household_member_id(settlement.household_id) in (
+          settlement.from_member_id,
+          settlement.to_member_id
+        )
+      )
+  )
+);
 
 drop policy if exists "active members can read household savings goals"
 on public.savings_goals;
@@ -609,6 +662,340 @@ create policy "active members can read household savings activities"
 on public.savings_activities
 for select
 using (public.is_active_household_member(household_id));
+
+create or replace function public.create_household_settlement(
+  target_household_id uuid,
+  local_record_id text,
+  from_member_id uuid,
+  to_member_id uuid,
+  settlement_amount numeric,
+  settlement_date date,
+  source_account_id uuid,
+  destination_account_id uuid,
+  application_method text,
+  reference_number text,
+  settlement_notes text,
+  is_active boolean,
+  settlement_applications jsonb
+)
+returns setof public.settlements
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  current_member_id uuid;
+  created_settlement public.settlements%rowtype;
+  application_row jsonb;
+  application_allocation_id uuid;
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before creating a settlement.';
+  end if;
+
+  current_member_id := public.current_household_member_id(target_household_id);
+
+  if current_member_id is null then
+    raise exception 'Active household membership is required to create a settlement.';
+  end if;
+
+  if not public.is_household_admin(target_household_id)
+    and current_member_id not in (from_member_id, to_member_id) then
+    raise exception 'Members can create only settlement records where they are the payer or receiver.';
+  end if;
+
+  if application_method not in ('oldest-first', 'manual') then
+    raise exception 'Invalid settlement application method.';
+  end if;
+
+  insert into public.settlements (
+    household_id,
+    local_record_id,
+    from_member_id,
+    to_member_id,
+    amount,
+    settlement_date,
+    source_account_id,
+    destination_account_id,
+    application_method,
+    reference_number,
+    notes,
+    attachments,
+    is_active,
+    updated_by_user_id
+  )
+  values (
+    target_household_id,
+    coalesce(local_record_id, gen_random_uuid()::text),
+    from_member_id,
+    to_member_id,
+    settlement_amount,
+    settlement_date,
+    source_account_id,
+    destination_account_id,
+    application_method,
+    reference_number,
+    settlement_notes,
+    '[]'::jsonb,
+    is_active,
+    current_user_id
+  )
+  returning * into created_settlement;
+
+  for application_row in
+    select value
+    from jsonb_array_elements(coalesce(settlement_applications, '[]'::jsonb))
+  loop
+    application_allocation_id := (application_row ->> 'expense_allocation_id')::uuid;
+
+    if not exists (
+      select 1
+      from public.expense_allocations allocation
+      where allocation.id = application_allocation_id
+        and allocation.household_id = target_household_id
+    ) then
+      raise exception 'Settlement application allocation does not belong to this household.';
+    end if;
+
+    insert into public.settlement_applications (
+      household_id,
+      local_record_id,
+      settlement_id,
+      expense_allocation_id,
+      applied_amount,
+      updated_by_user_id
+    )
+    values (
+      target_household_id,
+      coalesce(application_row ->> 'local_record_id', gen_random_uuid()::text),
+      created_settlement.id,
+      application_allocation_id,
+      (application_row ->> 'applied_amount')::numeric,
+      current_user_id
+    );
+  end loop;
+
+  return next created_settlement;
+end;
+$$;
+
+revoke all on function public.create_household_settlement(
+  uuid,
+  text,
+  uuid,
+  uuid,
+  numeric,
+  date,
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  boolean,
+  jsonb
+) from public;
+
+grant execute on function public.create_household_settlement(
+  uuid,
+  text,
+  uuid,
+  uuid,
+  numeric,
+  date,
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  boolean,
+  jsonb
+) to authenticated;
+
+create or replace function public.update_household_settlement(
+  target_settlement_id uuid,
+  local_record_id text,
+  from_member_id uuid,
+  to_member_id uuid,
+  settlement_amount numeric,
+  settlement_date date,
+  source_account_id uuid,
+  destination_account_id uuid,
+  application_method text,
+  reference_number text,
+  settlement_notes text,
+  is_active boolean,
+  settlement_applications jsonb
+)
+returns setof public.settlements
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  existing_settlement public.settlements%rowtype;
+  updated_settlement public.settlements%rowtype;
+  application_row jsonb;
+  application_allocation_id uuid;
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before updating a settlement.';
+  end if;
+
+  select *
+  into existing_settlement
+  from public.settlements
+  where id = target_settlement_id
+  for update;
+
+  if existing_settlement.id is null then
+    raise exception 'Settlement was not found.';
+  end if;
+
+  if not public.is_household_admin(existing_settlement.household_id) then
+    raise exception 'Only a household admin can update settlement records.';
+  end if;
+
+  if application_method not in ('oldest-first', 'manual') then
+    raise exception 'Invalid settlement application method.';
+  end if;
+
+  update public.settlements
+  set
+    local_record_id = coalesce(update_household_settlement.local_record_id, existing_settlement.local_record_id),
+    from_member_id = update_household_settlement.from_member_id,
+    to_member_id = update_household_settlement.to_member_id,
+    amount = settlement_amount,
+    settlement_date = update_household_settlement.settlement_date,
+    source_account_id = update_household_settlement.source_account_id,
+    destination_account_id = update_household_settlement.destination_account_id,
+    application_method = update_household_settlement.application_method,
+    reference_number = update_household_settlement.reference_number,
+    notes = update_household_settlement.settlement_notes,
+    attachments = '[]'::jsonb,
+    is_active = update_household_settlement.is_active,
+    updated_at = now(),
+    updated_by_user_id = current_user_id
+  where id = target_settlement_id
+  returning * into updated_settlement;
+
+  delete from public.settlement_applications
+  where settlement_id = target_settlement_id
+    and household_id = existing_settlement.household_id;
+
+  for application_row in
+    select value
+    from jsonb_array_elements(coalesce(settlement_applications, '[]'::jsonb))
+  loop
+    application_allocation_id := (application_row ->> 'expense_allocation_id')::uuid;
+
+    if not exists (
+      select 1
+      from public.expense_allocations allocation
+      where allocation.id = application_allocation_id
+        and allocation.household_id = existing_settlement.household_id
+    ) then
+      raise exception 'Settlement application allocation does not belong to this household.';
+    end if;
+
+    insert into public.settlement_applications (
+      household_id,
+      local_record_id,
+      settlement_id,
+      expense_allocation_id,
+      applied_amount,
+      updated_by_user_id
+    )
+    values (
+      existing_settlement.household_id,
+      coalesce(application_row ->> 'local_record_id', gen_random_uuid()::text),
+      updated_settlement.id,
+      application_allocation_id,
+      (application_row ->> 'applied_amount')::numeric,
+      current_user_id
+    );
+  end loop;
+
+  return next updated_settlement;
+end;
+$$;
+
+revoke all on function public.update_household_settlement(
+  uuid,
+  text,
+  uuid,
+  uuid,
+  numeric,
+  date,
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  boolean,
+  jsonb
+) from public;
+
+grant execute on function public.update_household_settlement(
+  uuid,
+  text,
+  uuid,
+  uuid,
+  numeric,
+  date,
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  boolean,
+  jsonb
+) to authenticated;
+
+create or replace function public.delete_household_settlement(
+  target_household_id uuid,
+  target_settlement_id uuid
+)
+returns table (
+  settlement_id uuid,
+  deleted_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before deleting a settlement.';
+  end if;
+
+  if not public.is_household_admin(target_household_id) then
+    raise exception 'Only a household admin can delete settlement records.';
+  end if;
+
+  delete from public.settlements
+  where id = target_settlement_id
+    and household_id = target_household_id;
+
+  if not found then
+    raise exception 'Settlement was not found.';
+  end if;
+
+  return query
+  select
+    target_settlement_id,
+    now();
+end;
+$$;
+
+revoke all on function public.delete_household_settlement(uuid, uuid)
+from public;
+
+grant execute on function public.delete_household_settlement(uuid, uuid)
+to authenticated;
 
 drop policy if exists "users can read own migration drafts"
 on public.migration_drafts;

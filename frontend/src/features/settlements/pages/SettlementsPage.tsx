@@ -23,6 +23,14 @@ import {
 import AccountService from "../../accounts/services/AccountService";
 
 import {
+  useHouseholdMembership,
+} from "../../auth/hooks";
+import {
+  canAccessSettlementRecord,
+  type AuthorizationContext,
+} from "../../auth/services";
+
+import {
   loadHousehold,
 } from "../../household/services/householdStorage";
 
@@ -137,17 +145,7 @@ function mapSettlementToForm(
     notes:
       settlement.notes ?? "",
 
-    attachments:
-      settlement.attachments.map(
-        (attachment) => ({
-          ...attachment,
-
-          createdAt:
-            new Date(
-              attachment.createdAt
-            ),
-        })
-      ),
+    attachments: [],
 
     isActive:
       settlement.isActive,
@@ -370,13 +368,48 @@ export default function SettlementsPage() {
     household?.currency ?? "PHP";
 
   const {
+    session,
+    membership,
+    error:
+      membershipError,
+  } = useHouseholdMembership(
+    householdId
+  );
+
+  const shouldEnforceSettlementAuth =
+    session.status ===
+    "signed-in";
+
+  const authorizationContext:
+    AuthorizationContext =
+    useMemo(
+      () => ({
+        userId:
+          session.user?.id,
+        memberId:
+          membership?.memberId,
+        membership,
+      }),
+      [
+        session.user?.id,
+        membership,
+      ]
+    );
+
+  const {
     settlements,
 
     create,
     update,
     remove,
+    error:
+      settlementError,
   } = useSettlements(
-    householdId
+    householdId,
+    {
+      remoteEnabled:
+        shouldEnforceSettlementAuth,
+    }
   );
 
   const {
@@ -446,52 +479,113 @@ export default function SettlementsPage() {
     setDeleteError,
   ] = useState("");
 
+  const [
+    isDeletingSettlement,
+    setIsDeletingSettlement,
+  ] = useState(false);
+
+  const [
+    authorizationError,
+    setAuthorizationError,
+  ] = useState("");
+
   const closeDialog = () => {
     setDialogMode(null);
     setSelectedSettlement(null);
     setDeleteError("");
+    setIsDeletingSettlement(false);
+    setAuthorizationError("");
   };
 
   const handleAddSettlement = () => {
     setSelectedSettlement(null);
     setDeleteError("");
+    setAuthorizationError("");
     setDialogMode("create");
   };
 
   const handleViewSettlement = (
     settlement: Settlement
   ) => {
+    if (
+      shouldEnforceSettlementAuth &&
+      !canAccessSettlementRecord(
+        authorizationContext,
+        settlement,
+        "view"
+      )
+    ) {
+      setAuthorizationError(
+        "You can only view settlement records where you are the payer or receiver."
+      );
+
+      return;
+    }
+
     setSelectedSettlement(
       settlement
     );
 
     setDeleteError("");
+    setAuthorizationError("");
     setDialogMode("view");
   };
 
   const handleEditSettlement = (
     settlement: Settlement
   ) => {
+    if (
+      shouldEnforceSettlementAuth &&
+      !canAccessSettlementRecord(
+        authorizationContext,
+        settlement,
+        "update"
+      )
+    ) {
+      setAuthorizationError(
+        "Only a household admin can edit settlement records."
+      );
+
+      return;
+    }
+
     setSelectedSettlement(
       settlement
     );
 
     setDeleteError("");
+    setAuthorizationError("");
     setDialogMode("edit");
   };
 
   const handleDeleteRequest = (
     settlement: Settlement
   ) => {
+    if (
+      shouldEnforceSettlementAuth &&
+      !canAccessSettlementRecord(
+        authorizationContext,
+        settlement,
+        "delete"
+      )
+    ) {
+      setAuthorizationError(
+        "Only a household admin can delete settlement records."
+      );
+
+      return;
+    }
+
     setSelectedSettlement(
       settlement
     );
 
     setDeleteError("");
+    setAuthorizationError("");
     setDialogMode("delete");
   };
 
-  const handleSubmitSettlement = (
+  const handleSubmitSettlement = async (
     form: SettlementFormData
   ) => {
     if (!household) {
@@ -514,14 +608,42 @@ export default function SettlementsPage() {
           household.id,
       };
 
+    const settlementAction =
+      dialogMode === "edit" &&
+      selectedSettlement
+        ? "update"
+        : "create";
+
+    if (
+      shouldEnforceSettlementAuth &&
+      !canAccessSettlementRecord(
+        authorizationContext,
+        submissionForm,
+        settlementAction
+      )
+    ) {
+      return OperationResults.failure<
+        Settlement
+      >(
+        {
+          general:
+            settlementAction ===
+            "create"
+              ? "You can only record settlements where you are the payer or receiver."
+              : "Only a household admin can update settlement records.",
+        },
+        "Settlement was not saved."
+      );
+    }
+
     const result =
       dialogMode === "edit" &&
       selectedSettlement
-        ? update(
+        ? await update(
             selectedSettlement.id,
             submissionForm
           )
-        : create(
+        : await create(
             submissionForm
           );
 
@@ -532,11 +654,29 @@ export default function SettlementsPage() {
     return result;
   };
 
-  const handleDeleteConfirm = (
+  const handleDeleteConfirm = async (
     settlement: Settlement
   ) => {
+    setIsDeletingSettlement(true);
+
     const result =
-      remove(
+      shouldEnforceSettlementAuth &&
+      !canAccessSettlementRecord(
+        authorizationContext,
+        settlement,
+        "delete"
+      )
+        ? OperationResults.failure<
+            boolean
+          >(
+            {
+              general:
+                "Only a household admin can delete settlement records.",
+            },
+            "Settlement was not deleted."
+          )
+        :
+      await remove(
         settlement.id
       );
 
@@ -554,6 +694,7 @@ export default function SettlementsPage() {
           firstError ??
           "Unable to delete the settlement."
       );
+      setIsDeletingSettlement(false);
 
       return;
     }
@@ -732,6 +873,16 @@ export default function SettlementsPage() {
       />
 
       <div className="space-y-6">
+        {(membershipError ||
+          settlementError ||
+          authorizationError) && (
+          <section className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+            {authorizationError ||
+              settlementError ||
+              membershipError}
+          </section>
+        )}
+
         <section className="rounded-lg border bg-white p-5">
           <p className="text-sm font-medium text-muted-foreground">
             Total Outstanding for {selectedMonthLabel}
@@ -980,6 +1131,9 @@ export default function SettlementsPage() {
               }
               errorMessage={
                 deleteError
+              }
+              isDeleting={
+                isDeletingSettlement
               }
               currency={currency}
               onConfirm={

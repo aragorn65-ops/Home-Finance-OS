@@ -65,3 +65,13 @@ export type {
   RemoteRecordVisibility,
   RemoteTenantRecord,
 } from "./RemoteRecord";
+
+export type {
+  RemoteSettlement,
+  RemoteSettlementApplication,
+  RemoteSettlementApplicationDraft,
+  RemoteSettlementCreateInput,
+  RemoteSettlementDraft,
+  RemoteSettlementMutationResult,
+  RemoteSettlementUpdateInput,
+} from "./RemoteSettlement";
