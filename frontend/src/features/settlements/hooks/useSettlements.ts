@@ -169,6 +169,33 @@ function createRemoteSettlementDraft(
   };
 }
 
+function mergeSettlements(
+  localSettlements: Settlement[],
+  remoteSettlements: Settlement[]
+): Settlement[] {
+  const settlementById =
+    new Map<string, Settlement>();
+
+  for (const settlement of [
+    ...remoteSettlements,
+    ...localSettlements,
+  ]) {
+    settlementById.set(
+      settlement.id,
+      settlement
+    );
+  }
+
+  return sortSettlements(
+    [
+      ...settlementById.values(),
+    ].filter(
+      (settlement) =>
+        settlement.isActive
+    )
+  );
+}
+
 export default function useSettlements(
   householdId: string,
   options: UseSettlementsOptions = {}
@@ -279,27 +306,29 @@ export default function useSettlements(
             .listRemoteSettlements(
               householdId
             );
+        const localSettlements =
+          loadSettlements();
+        const mappedRemoteSettlements =
+          remoteSettlements.map(
+            (settlement) =>
+              mapRemoteSettlement(
+                settlement,
+                localHouseholdId
+              )
+          );
 
         setSettlements(
-          sortSettlements(
-            remoteSettlements
-              .map(
-                (settlement) =>
-                  mapRemoteSettlement(
-                    settlement,
-                    localHouseholdId
-                  )
-              )
-              .filter(
-                (settlement) =>
-                  settlement.isActive
-              )
+          mergeSettlements(
+            localSettlements,
+            mappedRemoteSettlements
           )
         );
 
         setError("");
       } catch {
-        setSettlements([]);
+        setSettlements(
+          loadSettlements()
+        );
         setError(
           "Cloud settlements could not be loaded."
         );
@@ -307,6 +336,7 @@ export default function useSettlements(
     }, [
       householdId,
       localHouseholdId,
+      loadSettlements,
       remoteEnabled,
     ]);
 

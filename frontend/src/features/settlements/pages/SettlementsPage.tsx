@@ -405,6 +405,35 @@ function createCloudSettlementForm(
   };
 }
 
+function createCloudSettlementAccessRecord(
+  settlement: Settlement,
+  household:
+    | ReturnType<typeof loadHousehold>
+    | null,
+  membership:
+    | HouseholdMembership
+    | undefined,
+  cloudHouseholdId: string
+): Settlement {
+  return {
+    ...settlement,
+    householdId:
+      cloudHouseholdId,
+    fromMemberId:
+      resolveCloudMemberId(
+        settlement.fromMemberId,
+        household,
+        membership
+      ),
+    toMemberId:
+      resolveCloudMemberId(
+        settlement.toMemberId,
+        household,
+        membership
+      ),
+  };
+}
+
 function settlementBelongsToMonth(
   settlement: Settlement,
   selectedMonth: Date
@@ -589,11 +618,21 @@ export default function SettlementsPage() {
   const handleViewSettlement = (
     settlement: Settlement
   ) => {
+    const authorizationSettlement =
+      shouldEnforceSettlementAuth
+        ? createCloudSettlementAccessRecord(
+            settlement,
+            household,
+            membership,
+            cloudHouseholdId
+          )
+        : settlement;
+
     if (
       shouldEnforceSettlementAuth &&
       !canAccessSettlementRecord(
         authorizationContext,
-        settlement,
+        authorizationSettlement,
         "view"
       )
     ) {
@@ -616,11 +655,21 @@ export default function SettlementsPage() {
   const handleEditSettlement = (
     settlement: Settlement
   ) => {
+    const authorizationSettlement =
+      shouldEnforceSettlementAuth
+        ? createCloudSettlementAccessRecord(
+            settlement,
+            household,
+            membership,
+            cloudHouseholdId
+          )
+        : settlement;
+
     if (
       shouldEnforceSettlementAuth &&
       !canAccessSettlementRecord(
         authorizationContext,
-        settlement,
+        authorizationSettlement,
         "update"
       )
     ) {
@@ -643,11 +692,21 @@ export default function SettlementsPage() {
   const handleDeleteRequest = (
     settlement: Settlement
   ) => {
+    const authorizationSettlement =
+      shouldEnforceSettlementAuth
+        ? createCloudSettlementAccessRecord(
+            settlement,
+            household,
+            membership,
+            cloudHouseholdId
+          )
+        : settlement;
+
     if (
       shouldEnforceSettlementAuth &&
       !canAccessSettlementRecord(
         authorizationContext,
-        settlement,
+        authorizationSettlement,
         "delete"
       )
     ) {
@@ -752,11 +811,21 @@ export default function SettlementsPage() {
   ) => {
     setIsDeletingSettlement(true);
 
+    const authorizationSettlement =
+      shouldEnforceSettlementAuth
+        ? createCloudSettlementAccessRecord(
+            settlement,
+            household,
+            membership,
+            cloudHouseholdId
+          )
+        : settlement;
+
     const result =
       shouldEnforceSettlementAuth &&
       !canAccessSettlementRecord(
         authorizationContext,
-        settlement,
+        authorizationSettlement,
         "delete"
       )
         ? OperationResults.failure<
