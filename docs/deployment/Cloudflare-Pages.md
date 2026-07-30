@@ -36,6 +36,12 @@ The frontend dependency tree expects Node 22.13.0 or newer for the Vite and
 Supabase packages used by the beta build. Keep the Cloudflare Pages
 `NODE_VERSION` value aligned with `frontend/package.json`.
 
+The production build exposes a read-only build marker in Settings Auth
+Diagnostics. Cloudflare Pages supplies the commit and branch through
+`CF_PAGES_COMMIT_SHA` and `CF_PAGES_BRANCH`; Vite embeds them during the build.
+Use the displayed short commit to confirm the deployed app includes the
+intended `main` checkpoint before running the public beta smoke pass.
+
 The sign-in UI is hidden unless `VITE_HFOS_AUTH_ENABLED=true` and
 `VITE_HFOS_AUTH_PROVIDER=supabase` are present at build time. After adding or
 changing those auth variables, redeploy the Pages project so Vite embeds the

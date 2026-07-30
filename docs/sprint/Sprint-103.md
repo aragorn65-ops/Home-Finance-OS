@@ -22,6 +22,8 @@ synchronization before inviting public beta testers.
 ## Planned Scope
 
 * [ ] Verify Cloudflare Pages production deployment health.
+* [ ] Confirm Settings Auth Diagnostics reports the expected deployed commit
+  and branch for the latest `main` checkpoint.
 * [ ] Verify Cloudflare Pages uses `NODE_VERSION=22.13.0`.
 * [ ] Verify production Supabase auth environment variables are configured.
 * [ ] Run production admin sign-in, sign-out, session refresh, and expired

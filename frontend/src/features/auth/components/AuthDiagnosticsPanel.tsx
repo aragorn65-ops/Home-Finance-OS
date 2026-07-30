@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 
 import {
+  buildInfo,
+} from "../../../config/buildInfo";
+import {
   useAuthDiagnostics,
   useAuthSession,
 } from "../hooks";
@@ -220,6 +223,31 @@ export default function AuthDiagnosticsPanel() {
               <dt>Adapter</dt>
               <dd>
                 {diagnostics.adapterType}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Build</dt>
+              <dd
+                title={
+                  buildInfo.commit
+                }
+              >
+                {buildInfo.shortCommit}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Branch</dt>
+              <dd>
+                {buildInfo.branch}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Built</dt>
+              <dd>
+                {buildInfo.builtAt}
               </dd>
             </div>
 
