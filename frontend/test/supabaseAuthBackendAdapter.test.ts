@@ -2389,6 +2389,148 @@ test(
 );
 
 test(
+  "Supabase auth adapter retries legacy settlement creation RPC without attachments",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: Array<{
+      functionName: string;
+      parameters: Record<
+        string,
+        unknown
+      >;
+    }> = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            if (rpcCalls.length === 1) {
+              return {
+                data: null,
+                error: {
+                  message:
+                    "Could not find the function public.create_household_settlement(settlement_attachments) in the schema cache",
+                },
+              };
+            }
+
+            return {
+              data: {
+                id:
+                  "settlement-1",
+                household_id:
+                  "household-1",
+                local_record_id:
+                  "local-settlement-1",
+                from_member_id:
+                  "member-1",
+                to_member_id:
+                  "member-2",
+                amount:
+                  100,
+                settlement_date:
+                  "2026-07-30",
+                source_account_id:
+                  null,
+                destination_account_id:
+                  null,
+                application_method:
+                  "oldest-first",
+                reference_number:
+                  "SET-001",
+                notes:
+                  null,
+                is_active:
+                  true,
+                created_at:
+                  "2026-07-30T01:00:00Z",
+                updated_at:
+                  "2026-07-30T01:00:00Z",
+                updated_by_user_id:
+                  "user-1",
+              },
+              error: null,
+            };
+          },
+          from() {
+            return {
+              select() {
+                return {
+                  async eq() {
+                    return {
+                      data: [],
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const result =
+      await adapter
+        .createRemoteSettlement({
+          settlement: {
+            householdId:
+              "household-1",
+            localRecordId:
+              "local-settlement-1",
+            fromMemberId:
+              "member-1",
+            toMemberId:
+              "member-2",
+            amount: 100,
+            settlementDate:
+              "2026-07-30",
+            applicationMethod:
+              "oldest-first",
+            referenceNumber:
+              "SET-001",
+            isActive: true,
+          },
+        });
+
+    assert.equal(
+      result.settlement.id,
+      "settlement-1"
+    );
+    assert.equal(
+      rpcCalls.length,
+      2
+    );
+    assert.equal(
+      "settlement_attachments" in
+        rpcCalls[0].parameters,
+      true
+    );
+    assert.equal(
+      "settlement_attachments" in
+        rpcCalls[1].parameters,
+      false
+    );
+  }
+);
+
+test(
   "Supabase auth adapter updates and deletes settlements through RPC",
   async () => {
     const {

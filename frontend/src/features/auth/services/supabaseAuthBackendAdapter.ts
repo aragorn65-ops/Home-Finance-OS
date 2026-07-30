@@ -1939,55 +1939,37 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
-    const result =
-      await (
-      await this.getClient()
+    const client =
+      await this.getClient();
+    const parameters =
+      {
+        target_household_id:
+          input.settlement.householdId,
+        ...createSupabaseSettlementMutationParameters(
+          input
+        ),
+      };
+
+    let result =
+      await client.rpc(
+        "create_household_settlement",
+        parameters
+      ) as SupabaseSettlementMutationRpcResult;
+
+    if (
+      shouldRetryLegacySettlementRpc(
+        result,
+        input.settlement.attachments
       )
-        .rpc(
+    ) {
+      result =
+        await client.rpc(
           "create_household_settlement",
-          {
-            target_household_id:
-              input.settlement.householdId,
-            local_record_id:
-              input.settlement.localRecordId ??
-              null,
-            from_member_id:
-              input.settlement.fromMemberId,
-            to_member_id:
-              input.settlement.toMemberId,
-            settlement_amount:
-              input.settlement.amount,
-            settlement_date:
-              input.settlement
-                .settlementDate,
-            source_account_id:
-              input.settlement.sourceAccountId ??
-              null,
-            destination_account_id:
-              input.settlement
-                .destinationAccountId ??
-              null,
-            application_method:
-              input.settlement
-                .applicationMethod,
-            reference_number:
-              input.settlement
-                .referenceNumber ?? null,
-            settlement_notes:
-              input.settlement.notes ?? null,
-            settlement_attachments:
-              createSupabaseSettlementAttachmentPayload(
-                input.settlement
-                  .attachments ?? []
-              ),
-            is_active:
-              input.settlement.isActive,
-            settlement_applications:
-              createSupabaseSettlementApplicationPayload(
-                input.applications ?? []
-              ),
-          }
+          createLegacySupabaseSettlementMutationParameters(
+            parameters
+          )
         ) as SupabaseSettlementMutationRpcResult;
+    }
 
     return this
       .createRemoteSettlementMutationResult(
@@ -2016,55 +1998,41 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
-    const result =
-      await (
-      await this.getClient()
+    const client =
+      await this.getClient();
+    const parameters =
+      createSupabaseSettlementMutationParameters(
+        input
+      );
+
+    let result =
+      await client.rpc(
+        "update_household_settlement",
+        {
+          target_settlement_id:
+            input.settlementId,
+          ...parameters,
+        }
+      ) as SupabaseSettlementMutationRpcResult;
+
+    if (
+      shouldRetryLegacySettlementRpc(
+        result,
+        input.settlement.attachments
       )
-        .rpc(
+    ) {
+      result =
+        await client.rpc(
           "update_household_settlement",
           {
             target_settlement_id:
               input.settlementId,
-            local_record_id:
-              input.settlement.localRecordId ??
-              null,
-            from_member_id:
-              input.settlement.fromMemberId,
-            to_member_id:
-              input.settlement.toMemberId,
-            settlement_amount:
-              input.settlement.amount,
-            settlement_date:
-              input.settlement
-                .settlementDate,
-            source_account_id:
-              input.settlement.sourceAccountId ??
-              null,
-            destination_account_id:
-              input.settlement
-                .destinationAccountId ??
-              null,
-            application_method:
-              input.settlement
-                .applicationMethod,
-            reference_number:
-              input.settlement
-                .referenceNumber ?? null,
-            settlement_notes:
-              input.settlement.notes ?? null,
-            settlement_attachments:
-              createSupabaseSettlementAttachmentPayload(
-                input.settlement
-                  .attachments ?? []
-              ),
-            is_active:
-              input.settlement.isActive,
-            settlement_applications:
-              createSupabaseSettlementApplicationPayload(
-                input.applications ?? []
-              ),
+            ...createLegacySupabaseSettlementMutationParameters(
+              parameters
+            ),
           }
         ) as SupabaseSettlementMutationRpcResult;
+    }
 
     return this
       .createRemoteSettlementMutationResult(
@@ -3072,7 +3040,10 @@ function createRemoteSettlementMutationSettlement(
 ): RemoteSettlement {
   if (result.error) {
     throw new Error(
-      `Supabase settlement ${action} failed: ${result.error.message}`
+      `Supabase settlement ${action} failed: ${createSupabaseRpcErrorMessage(
+        result.error.message,
+        `settlement ${action}`
+      )}`
     );
   }
 
@@ -3273,6 +3244,81 @@ function isStoredAttachmentCategory(
     value === "receipt" ||
     value === "bill" ||
     value === "other"
+  );
+}
+
+function createSupabaseSettlementMutationParameters(
+  input:
+    | RemoteSettlementCreateInput
+    | RemoteSettlementUpdateInput
+): Record<string, unknown> {
+  return {
+    local_record_id:
+      input.settlement.localRecordId ??
+      null,
+    from_member_id:
+      input.settlement.fromMemberId,
+    to_member_id:
+      input.settlement.toMemberId,
+    settlement_amount:
+      input.settlement.amount,
+    settlement_date:
+      input.settlement.settlementDate,
+    source_account_id:
+      input.settlement.sourceAccountId ??
+      null,
+    destination_account_id:
+      input.settlement
+        .destinationAccountId ?? null,
+    application_method:
+      input.settlement.applicationMethod,
+    reference_number:
+      input.settlement.referenceNumber ??
+      null,
+    settlement_notes:
+      input.settlement.notes ?? null,
+    settlement_attachments:
+      createSupabaseSettlementAttachmentPayload(
+        input.settlement.attachments ??
+          []
+      ),
+    is_active:
+      input.settlement.isActive,
+    settlement_applications:
+      createSupabaseSettlementApplicationPayload(
+        input.applications ?? []
+      ),
+  };
+}
+
+function createLegacySupabaseSettlementMutationParameters(
+  parameters: Record<string, unknown>
+): Record<string, unknown> {
+  const {
+    settlement_attachments:
+      _settlementAttachments,
+    ...legacyParameters
+  } = parameters;
+
+  return legacyParameters;
+}
+
+function shouldRetryLegacySettlementRpc(
+  result:
+    SupabaseSettlementMutationRpcResult,
+  attachments:
+    StoredAttachment[] | undefined
+): boolean {
+  return Boolean(
+    result.error &&
+      (attachments?.length ?? 0) ===
+        0 &&
+      result.error.message.includes(
+        "Could not find the function"
+      ) &&
+      result.error.message.includes(
+        "schema cache"
+      )
   );
 }
 
