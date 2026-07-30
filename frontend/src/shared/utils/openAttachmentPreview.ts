@@ -8,6 +8,10 @@ export default function openAttachmentPreview(
     "dataUrl" | "fileName" | "mimeType"
   >
 ): void {
+  if (!hasAttachmentPreviewData(attachment)) {
+    return;
+  }
+
   const previewWindow =
     window.open("", "_blank");
 
@@ -111,4 +115,13 @@ export default function openAttachmentPreview(
     header,
     main
   );
+}
+
+export function hasAttachmentPreviewData(
+  attachment: Pick<
+    StoredAttachment,
+    "dataUrl"
+  >
+): boolean {
+  return attachment.dataUrl.trim().length > 0;
 }

@@ -284,6 +284,7 @@ export default class TransactionValidator {
         `data:${attachment.mimeType};base64,`;
 
       if (
+        attachment.dataUrl &&
         !attachment.dataUrl.startsWith(
           expectedPrefix
         )

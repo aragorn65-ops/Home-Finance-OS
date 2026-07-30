@@ -4,7 +4,9 @@ import HouseholdMemberService from "../../household/services/HouseholdMemberServ
 
 import TransactionService from "../services/TransactionService";
 import formatCurrency from "../../../shared/utils/formatCurrency";
-import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
+import openAttachmentPreview, {
+  hasAttachmentPreviewData,
+} from "../../../shared/utils/openAttachmentPreview";
 import {
   normalizeTransactionCategory,
 } from "../models/TransactionCategory";
@@ -361,13 +363,20 @@ export default function TransactionDetails({
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {transaction.attachments?.map(
-              (attachment) => (
+              (attachment) => {
+                const hasPreview =
+                  hasAttachmentPreviewData(
+                    attachment
+                  );
+
+                return (
                 <article
                   key={attachment.id}
                   className="overflow-hidden rounded-lg border"
                 >
                   <div className="flex h-44 items-center justify-center bg-muted/30">
-                    {attachment.mimeType.startsWith(
+                    {hasPreview &&
+                    attachment.mimeType.startsWith(
                       "image/"
                     ) ? (
                       <img
@@ -380,8 +389,10 @@ export default function TransactionDetails({
                         className="h-full w-full object-contain"
                       />
                     ) : (
-                      <span className="text-lg font-semibold text-muted-foreground">
-                        PDF
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        {hasPreview
+                          ? "PDF"
+                          : "Stored metadata only"}
                       </span>
                     )}
                   </div>
@@ -405,20 +416,27 @@ export default function TransactionDetails({
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openAttachmentPreview(
-                          attachment
-                        )
-                      }
-                      className="inline-flex rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                    >
-                      Open Attachment
-                    </button>
+                    {hasPreview ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openAttachmentPreview(
+                            attachment
+                          )
+                        }
+                        className="inline-flex rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                      >
+                        Open Attachment
+                      </button>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Preview unavailable in cloud beta.
+                      </p>
+                    )}
                   </div>
                 </article>
-              )
+                );
+              }
             )}
           </div>
         )}

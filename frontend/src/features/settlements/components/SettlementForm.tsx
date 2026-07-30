@@ -16,7 +16,9 @@ import type {
 import CurrencyInput from "../../../shared/ui/CurrencyInput";
 import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
 import formatCurrency from "../../../shared/utils/formatCurrency";
-import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
+import openAttachmentPreview, {
+  hasAttachmentPreviewData,
+} from "../../../shared/utils/openAttachmentPreview";
 import type {
   StoredAttachment,
   StoredAttachmentCategory,
@@ -1973,76 +1975,89 @@ export default function SettlementForm({
         ) : (
           <div className="space-y-3">
             {form.attachments.map(
-              (attachment) => (
-                <div
-                  key={attachment.id}
-                  className="flex flex-col gap-3 rounded-md border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {attachment.fileName}
-                    </p>
+              (attachment) => {
+                const hasPreview =
+                  hasAttachmentPreviewData(
+                    attachment
+                  );
 
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {formatFileSize(
-                        attachment.sizeBytes
+                return (
+                  <div
+                    key={attachment.id}
+                    className="flex flex-col gap-3 rounded-md border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {attachment.fileName}
+                      </p>
+
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatFileSize(
+                          attachment.sizeBytes
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="sr-only">
+                        Receipt category
+                      </label>
+
+                      <select
+                        value={
+                          attachment.category
+                        }
+                        onChange={(event) =>
+                          updateAttachmentCategory(
+                            attachment.id,
+                            event.target
+                              .value as StoredAttachmentCategory
+                          )
+                        }
+                        className="rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+                      >
+                        <option value="receipt">
+                          Receipt
+                        </option>
+
+                        <option value="other">
+                          Other
+                        </option>
+                      </select>
+
+                      {hasPreview ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openAttachmentPreview(
+                              attachment
+                            )
+                          }
+                          className="rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                        >
+                          Open
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Preview unavailable in cloud beta.
+                        </span>
                       )}
-                    </p>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeAttachment(
+                            attachment.id
+                          )
+                        }
+                        className="rounded-md border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="sr-only">
-                      Receipt category
-                    </label>
-
-                    <select
-                      value={
-                        attachment.category
-                      }
-                      onChange={(event) =>
-                        updateAttachmentCategory(
-                          attachment.id,
-                          event.target
-                            .value as StoredAttachmentCategory
-                        )
-                      }
-                      className="rounded-md border bg-background px-3 py-2 text-sm text-foreground"
-                    >
-                      <option value="receipt">
-                        Receipt
-                      </option>
-
-                      <option value="other">
-                        Other
-                      </option>
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openAttachmentPreview(
-                          attachment
-                        )
-                      }
-                      className="rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                    >
-                      Open
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeAttachment(
-                          attachment.id
-                        )
-                      }
-                      className="rounded-md border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              )
+                );
+              }
             )}
           </div>
         )}

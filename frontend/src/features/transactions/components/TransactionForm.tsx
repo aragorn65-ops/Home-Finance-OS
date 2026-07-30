@@ -20,7 +20,9 @@ import CurrencyInput from "../../../shared/ui/CurrencyInput";
 import CurrencyRateLookupButton from "../../../shared/ui/CurrencyRateLookupButton";
 import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
 import formatCurrency from "../../../shared/utils/formatCurrency";
-import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
+import openAttachmentPreview, {
+  hasAttachmentPreviewData,
+} from "../../../shared/utils/openAttachmentPreview";
 
 import type {
   StoredAttachment,
@@ -3438,7 +3440,13 @@ export default function TransactionForm({
         ) : (
           <div className="space-y-3">
             {(form.attachments ?? []).map(
-              (attachment) => (
+              (attachment) => {
+                const hasPreview =
+                  hasAttachmentPreviewData(
+                    attachment
+                  );
+
+                return (
                 <article
                   key={
                     attachment.id
@@ -3508,17 +3516,23 @@ export default function TransactionForm({
                   </div>
 
                   <div className="flex gap-2 md:flex-col">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openAttachmentPreview(
-                          attachment
-                        )
-                      }
-                      className="rounded-md border px-3 py-2 text-center text-sm font-medium text-foreground hover:bg-muted"
-                    >
-                      Open
-                    </button>
+                    {hasPreview ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openAttachmentPreview(
+                            attachment
+                          )
+                        }
+                        className="rounded-md border px-3 py-2 text-center text-sm font-medium text-foreground hover:bg-muted"
+                      >
+                        Open
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Preview unavailable in cloud beta.
+                      </span>
+                    )}
 
                     <button
                       type="button"
@@ -3533,7 +3547,8 @@ export default function TransactionForm({
                     </button>
                   </div>
                 </article>
-              )
+                );
+              }
             )}
           </div>
         )}

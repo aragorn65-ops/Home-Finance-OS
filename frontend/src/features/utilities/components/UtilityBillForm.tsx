@@ -12,7 +12,9 @@ import type {
 } from "../../../shared/models/StoredAttachment";
 import CurrencyInput from "../../../shared/ui/CurrencyInput";
 import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
-import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
+import openAttachmentPreview, {
+  hasAttachmentPreviewData,
+} from "../../../shared/utils/openAttachmentPreview";
 
 import type {
   UtilityApplianceUsageForm,
@@ -1605,7 +1607,13 @@ export default function UtilityBillForm({
         ) : (
           <div className="mt-4 space-y-3">
             {form.attachments.map(
-              (attachment) => (
+              (attachment) => {
+                const hasPreview =
+                  hasAttachmentPreviewData(
+                    attachment
+                  );
+
+                return (
                 <article
                   key={
                     attachment.id
@@ -1613,7 +1621,8 @@ export default function UtilityBillForm({
                   className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 md:grid-cols-[6rem_minmax(0,1fr)_auto]"
                 >
                   <div className="flex h-24 items-center justify-center overflow-hidden rounded-lg bg-white">
-                    {attachment.mimeType.startsWith(
+                    {hasPreview &&
+                    attachment.mimeType.startsWith(
                       "image/"
                     ) ? (
                       <img
@@ -1627,7 +1636,9 @@ export default function UtilityBillForm({
                       />
                     ) : (
                       <span className="text-sm font-semibold text-slate-500">
-                        PDF
+                        {hasPreview
+                          ? "PDF"
+                          : "Stored metadata only"}
                       </span>
                     )}
                   </div>
@@ -1677,17 +1688,23 @@ export default function UtilityBillForm({
                   </div>
 
                   <div className="flex gap-2 md:flex-col">
-                    <button
-                      className={secondaryButtonClassName}
-                      type="button"
-                      onClick={() =>
-                        openAttachmentPreview(
-                          attachment
-                        )
-                      }
-                    >
-                      Open
-                    </button>
+                    {hasPreview ? (
+                      <button
+                        className={secondaryButtonClassName}
+                        type="button"
+                        onClick={() =>
+                          openAttachmentPreview(
+                            attachment
+                          )
+                        }
+                      >
+                        Open
+                      </button>
+                    ) : (
+                      <span className="text-xs font-semibold text-slate-500">
+                        Preview unavailable in cloud beta
+                      </span>
+                    )}
 
                     <button
                       className={dangerButtonClassName}
@@ -1702,7 +1719,8 @@ export default function UtilityBillForm({
                     </button>
                   </div>
                 </article>
-              )
+                );
+              }
             )}
           </div>
         )}
