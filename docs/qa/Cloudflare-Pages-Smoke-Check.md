@@ -134,6 +134,18 @@ Public beta requires production auth configuration, cloud-backed household
 persistence, limited member settlement-entry access, and real-time
 synchronization on the Cloudflare Pages deployment.
 
+Before running the production auth and cloud smoke checks, apply the latest
+`docs/architecture/supabase-spike-schema.sql` in the Supabase SQL editor. Then
+reload the PostgREST schema cache:
+
+```sql
+notify pgrst, 'reload schema';
+```
+
+If the deployed app reports that `public.load_household_preferences` or another
+RPC cannot be found in the schema cache, rerun the schema SQL, run the cache
+reload statement above, wait a few seconds, then refresh the deployed app.
+
 For the one-month public beta scope, cloud persistence means household metadata,
 account/transaction core snapshots, and settlement records. Utilities and
 savings routes still smoke-pass, but full utility and savings cloud persistence

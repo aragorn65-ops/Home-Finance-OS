@@ -1767,6 +1767,45 @@ test(
 );
 
 test(
+  "Supabase auth adapter explains missing household preference RPC schema cache",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc() {
+            return {
+              data: null,
+              error: {
+                message:
+                  "Could not find the function public.load_household_preferences(target_household_id) in the schema cache",
+              },
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.loadRemoteHousehold(
+          "household-1"
+        ),
+      /Run the latest Supabase schema SQL, then reload the PostgREST schema cache\./
+    );
+  }
+);
+
+test(
   "Supabase auth adapter requires sign-in before core snapshot actions",
   async () => {
     const {

@@ -3127,8 +3127,14 @@ function createRemoteHouseholdResult(
   action: string
 ): RemoteHousehold {
   if (result.error) {
+    const message =
+      createSupabaseRpcErrorMessage(
+        result.error.message,
+        "household preferences"
+      );
+
     throw new Error(
-      `Supabase household preferences ${action} failed: ${result.error.message}`
+      `Supabase household preferences ${action} failed: ${message}`
     );
   }
 
@@ -3180,6 +3186,27 @@ function createRemoteHouseholdResult(
           undefined
       ),
   };
+}
+
+function createSupabaseRpcErrorMessage(
+  message: string,
+  area: string
+): string {
+  if (
+    message.includes(
+      "Could not find the function"
+    ) &&
+    message.includes(
+      "schema cache"
+    )
+  ) {
+    return (
+      `Supabase ${area} RPC is missing from the production schema cache. ` +
+      "Run the latest Supabase schema SQL, then reload the PostgREST schema cache."
+    );
+  }
+
+  return message;
 }
 
 function isRemoteAccountUploadRecordArray(

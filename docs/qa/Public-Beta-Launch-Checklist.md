@@ -34,6 +34,8 @@ https://home-finance-os.pages.dev
 * [ ] Production auth environment is configured for the deployed beta:
   `VITE_HFOS_AUTH_ENABLED=true`, `VITE_HFOS_AUTH_PROVIDER=supabase`,
   `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`.
+* [ ] Latest Supabase schema SQL has been applied and the PostgREST schema
+  cache has been reloaded.
 * [ ] Admin sign-in, sign-out, session refresh, and expired-session recovery
   pass on the production deployment.
 * [ ] Limited member sign-in works for settlement entry only.
