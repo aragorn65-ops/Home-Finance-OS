@@ -66,7 +66,7 @@ https://home-finance-os.pages.dev
   restores Dashboard, Transactions, Settlements, and Analytics data.
 * [x] Clear Test Data keeps household setup and removes financial test records.
 * [x] Reset All Application Data returns the app to first-time setup.
-* [ ] Google Drive backup status in Settings is understood:
+* [x] Google Drive backup status in Settings is understood:
   `VITE_GOOGLE_CLIENT_ID` configured means Drive actions are enabled after
   Google permission; missing config means Drive actions stay disabled and local
   backup remains the required manual backup path.

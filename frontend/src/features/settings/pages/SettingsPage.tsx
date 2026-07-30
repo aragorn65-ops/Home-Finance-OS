@@ -61,6 +61,9 @@ import {
   isAppLockEnabled,
   updateAppLockIdleTimeout,
 } from "../../security/services/appLockService";
+import {
+  createGoogleDriveBackupStatus,
+} from "../services/googleDriveBackupStatus";
 
 const customPreferenceValue =
   "__custom__";
@@ -374,18 +377,6 @@ export default function SettingsPage() {
   const isGoogleDriveConfigured =
     isGoogleDriveBackupConfigured();
 
-  const googleDriveStatusMessage =
-    isGoogleDriveConfigured
-      ? [
-          "Google Drive backup is configured for this build.",
-          "Save and restore actions are available after Google permission is granted.",
-        ].join(" ")
-      : [
-          "Google Drive backup is not configured for this build.",
-          "Add VITE_GOOGLE_CLIENT_ID to Cloudflare Pages, redeploy, then return here.",
-          "Local Export Backup and Import Backup still work.",
-        ].join(" ");
-
   const hasPreferenceChanges =
     Boolean(household) &&
     (householdName !==
@@ -408,6 +399,19 @@ export default function SettingsPage() {
     (backupPassword.length >= 8 &&
       backupPassword ===
         backupPasswordConfirmation);
+
+  const googleDriveBackupStatus =
+    createGoogleDriveBackupStatus({
+      isConfigured:
+        isGoogleDriveConfigured,
+      isDataExportable:
+        dataHealthSummary
+          .isExportable,
+      isBackupPasswordReady,
+      isSavingCloudBackup,
+      isLoadingDriveBackups,
+      isDownloadingDriveBackup,
+    });
 
   useEffect(() => {
     storeThemePreference(
@@ -1853,11 +1857,8 @@ export default function SettingsPage() {
                   void handleSaveBackupToGoogleDrive();
                 }}
                 disabled={
-                  !dataHealthSummary
-                    .isExportable ||
-                  !isBackupPasswordReady ||
-                  !isGoogleDriveConfigured ||
-                  isSavingCloudBackup
+                  googleDriveBackupStatus
+                    .isSaveDisabled
                 }
                 className="settings-secondary-button"
               >
@@ -1872,9 +1873,8 @@ export default function SettingsPage() {
                   void handleLoadDriveBackups();
                 }}
                 disabled={
-                  !isGoogleDriveConfigured ||
-                  isLoadingDriveBackups ||
-                  isDownloadingDriveBackup
+                  googleDriveBackupStatus
+                    .isRestoreDisabled
                 }
                 className="settings-secondary-button"
               >
@@ -1992,7 +1992,10 @@ export default function SettingsPage() {
             )}
 
             <div className="settings-cloud-note">
-              {googleDriveStatusMessage}
+              {
+                googleDriveBackupStatus
+                  .message
+              }
             </div>
 
             {driveBackups.length > 0 && (
