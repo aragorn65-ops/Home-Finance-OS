@@ -69,6 +69,10 @@ test("Supabase core snapshot save RPC avoids ambiguous household return name", (
     schemaSql.indexOf(
       "create or replace function public.save_household_core_snapshot"
     );
+  const dropStart =
+    schemaSql.indexOf(
+      "drop function if exists public.save_household_core_snapshot"
+    );
   const functionEnd =
     schemaSql.indexOf(
       "revoke all on function public.save_household_core_snapshot",
@@ -80,6 +84,13 @@ test("Supabase core snapshot save RPC avoids ambiguous household return name", (
       functionEnd
     );
 
+  assert.notEqual(
+    dropStart,
+    -1
+  );
+  assert.ok(
+    dropStart < functionStart
+  );
   assert.match(
     functionSql,
     /create or replace function public\.save_household_core_snapshot\([\s\S]+returns table \(\s*saved_household_id uuid,/

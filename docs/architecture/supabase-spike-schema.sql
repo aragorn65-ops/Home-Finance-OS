@@ -2281,6 +2281,12 @@ grant execute on function public.stage_migration_transactions(
   jsonb
 ) to authenticated;
 
+drop function if exists public.save_household_core_snapshot(
+  uuid,
+  jsonb,
+  jsonb
+);
+
 create or replace function public.save_household_core_snapshot(
   target_household_id uuid,
   core_accounts jsonb,
