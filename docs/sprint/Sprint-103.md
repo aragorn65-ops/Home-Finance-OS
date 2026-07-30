@@ -81,3 +81,23 @@ Initial production validation should focus on:
   actions.
 * Recording any production-only Supabase schema or cache issue before widening
   the beta invite list.
+
+---
+
+## Completed Checkpoints
+
+* [x] Added deployed build metadata to Auth Diagnostics so live testers can
+  confirm the Cloudflare Pages commit, branch, and build time before running
+  public beta smoke checks.
+* [x] Added production validation ledger/checklist updates for public beta
+  route smoke, attachment-save evidence, metadata-only previews, and required
+  Supabase RPC visibility.
+* [x] Added automated coverage for Cloudflare build metadata formatting and
+  local fallback display.
+* [x] Added Auth Diagnostics Supabase RPC visibility probes for household
+  preferences, core snapshots, and settlement record mutations.
+* [x] Refreshed Auth Diagnostics wording from early spike language to the
+  current public beta scope boundary.
+* [x] Mapped remote settlement member UUIDs back to local household member IDs
+  when Supabase returns `household_members.local_record_id`, keeping
+  cloud-loaded settlement history readable after refresh or restore.

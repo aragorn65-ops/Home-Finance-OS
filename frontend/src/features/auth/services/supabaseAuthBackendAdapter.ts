@@ -502,6 +502,14 @@ interface SupabaseSettlementRow {
   local_record_id?: string | null;
   from_member_id: string;
   to_member_id: string;
+  from_member?:
+    | SupabaseSettlementMemberReference
+    | SupabaseSettlementMemberReference[]
+    | null;
+  to_member?:
+    | SupabaseSettlementMemberReference
+    | SupabaseSettlementMemberReference[]
+    | null;
   amount: number;
   settlement_date: string;
   source_account_id?: string | null;
@@ -514,6 +522,10 @@ interface SupabaseSettlementRow {
   created_at?: string | null;
   updated_at?: string | null;
   updated_by_user_id?: string | null;
+}
+
+interface SupabaseSettlementMemberReference {
+  local_record_id?: string | null;
 }
 
 interface SupabaseSettlementApplicationRow {
@@ -1893,6 +1905,8 @@ export class SupabaseAuthBackendAdapter
             "local_record_id",
             "from_member_id",
             "to_member_id",
+            "from_member:household_members!settlements_from_member_id_fkey(local_record_id)",
+            "to_member:household_members!settlements_to_member_id_fkey(local_record_id)",
             "amount",
             "settlement_date",
             "source_account_id",
@@ -3657,9 +3671,13 @@ function mapSupabaseSettlement(
     localRecordId:
       row.local_record_id ?? undefined,
     fromMemberId:
-      row.from_member_id,
+      getSupabaseSettlementLocalMemberId(
+        row.from_member
+      ) ?? row.from_member_id,
     toMemberId:
-      row.to_member_id,
+      getSupabaseSettlementLocalMemberId(
+        row.to_member
+      ) ?? row.to_member_id,
     amount:
       row.amount,
     settlementDate:
@@ -3699,6 +3717,25 @@ function mapSupabaseSettlement(
       row.updated_by_user_id ??
       undefined,
   };
+}
+
+function getSupabaseSettlementLocalMemberId(
+  value:
+    | SupabaseSettlementMemberReference
+    | SupabaseSettlementMemberReference[]
+    | null
+    | undefined
+): string | undefined {
+  const memberReference =
+    Array.isArray(value)
+      ? value[0]
+      : value;
+
+  const localRecordId =
+    memberReference?.local_record_id
+      ?.trim();
+
+  return localRecordId || undefined;
 }
 
 function mapSupabaseSettlementApplication(

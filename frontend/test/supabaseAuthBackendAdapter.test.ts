@@ -2109,6 +2109,128 @@ test(
 );
 
 test(
+  "Supabase auth adapter maps remote settlement members to local ids",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const queries: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          from(tableName: string) {
+            return {
+              select(columns: string) {
+                return {
+                  async eq(
+                    column: string,
+                    value: string
+                  ) {
+                    queries.push({
+                      tableName,
+                      columns,
+                      column,
+                      value,
+                    });
+
+                    return {
+                      data: [
+                        {
+                          id:
+                            "remote-settlement-1",
+                          household_id:
+                            "remote-household-1",
+                          local_record_id:
+                            "local-settlement-1",
+                          from_member_id:
+                            "remote-member-1",
+                          to_member_id:
+                            "remote-member-2",
+                          from_member: {
+                            local_record_id:
+                              "member-local-1",
+                          },
+                          to_member: {
+                            local_record_id:
+                              "member-local-2",
+                          },
+                          amount:
+                            125,
+                          settlement_date:
+                            "2026-07-30",
+                          source_account_id:
+                            null,
+                          destination_account_id:
+                            null,
+                          application_method:
+                            "oldest-first",
+                          reference_number:
+                            null,
+                          notes:
+                            null,
+                          attachments: [],
+                          is_active:
+                            true,
+                          created_at:
+                            "2026-07-30T01:00:00Z",
+                          updated_at:
+                            "2026-07-30T01:05:00Z",
+                          updated_by_user_id:
+                            "user-1",
+                        },
+                      ],
+                      error: null,
+                    };
+                  },
+                };
+              },
+            };
+          },
+        },
+      });
+
+    const settlements =
+      await adapter
+        .listRemoteSettlements(
+          "remote-household-1"
+        );
+
+    assert.equal(
+      settlements[0]?.fromMemberId,
+      "member-local-1"
+    );
+    assert.equal(
+      settlements[0]?.toMemberId,
+      "member-local-2"
+    );
+    assert.match(
+      (
+        queries[0] as {
+          columns: string;
+        }
+      ).columns,
+      /from_member:household_members!settlements_from_member_id_fkey\(local_record_id\)/
+    );
+    assert.match(
+      (
+        queries[0] as {
+          columns: string;
+        }
+      ).columns,
+      /to_member:household_members!settlements_to_member_id_fkey\(local_record_id\)/
+    );
+  }
+);
+
+test(
   "Supabase auth adapter creates settlements through RPC",
   async () => {
     const {
