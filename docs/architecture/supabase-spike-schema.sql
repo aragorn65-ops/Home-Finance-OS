@@ -1224,10 +1224,10 @@ grant execute on function public.load_household_preferences(
 
 create or replace function public.save_household_preferences(
   target_household_id uuid,
-  household_name text,
-  household_country text,
-  household_currency text,
-  household_timezone text
+  input_household_name text,
+  input_household_country text,
+  input_household_currency text,
+  input_household_timezone text
 )
 returns table (
   household_id uuid,
@@ -1245,10 +1245,10 @@ security definer
 set search_path = public
 as $$
 declare
-  normalized_name text := btrim(household_name);
-  normalized_country text := upper(btrim(household_country));
-  normalized_currency text := upper(btrim(household_currency));
-  normalized_timezone text := btrim(household_timezone);
+  normalized_name text := btrim(input_household_name);
+  normalized_country text := upper(btrim(input_household_country));
+  normalized_currency text := upper(btrim(input_household_currency));
+  normalized_timezone text := btrim(input_household_timezone);
 begin
   if auth.uid() is null then
     raise exception 'Sign in before saving household preferences.';

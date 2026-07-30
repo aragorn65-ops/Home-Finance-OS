@@ -1727,13 +1727,13 @@ test(
           parameters: {
             target_household_id:
               "household-1",
-            household_name:
+            input_household_name:
               "Casa Updated",
-            household_country:
+            input_household_country:
               "PH",
-            household_currency:
+            input_household_currency:
               "PHP",
-            household_timezone:
+            input_household_timezone:
               "Asia/Manila",
           },
         },

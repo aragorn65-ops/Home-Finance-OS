@@ -1162,13 +1162,13 @@ export class SupabaseAuthBackendAdapter
           {
             target_household_id:
               input.householdId,
-            household_name:
+            input_household_name:
               input.name,
-            household_country:
+            input_household_country:
               input.country,
-            household_currency:
+            input_household_currency:
               input.currency,
-            household_timezone:
+            input_household_timezone:
               input.timezone,
           }
         ) as SupabaseRemoteHouseholdRpcResult;
