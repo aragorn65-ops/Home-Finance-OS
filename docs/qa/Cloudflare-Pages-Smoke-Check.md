@@ -175,6 +175,10 @@ If the deployed app reports that `public.load_household_preferences` or another
 RPC cannot be found in the schema cache, rerun the schema SQL, run the cache
 reload statement above, wait a few seconds, then refresh the deployed app.
 
+Settings Auth Diagnostics includes Cloud Schema Readiness checks for the public
+beta tables and required RPCs. Before running record-save smoke tests, confirm
+the household preferences, core snapshot, and settlement RPC checks pass.
+
 For the one-month public beta scope, cloud persistence means household metadata,
 account/transaction core snapshots, and settlement records. Utilities and
 savings routes still smoke-pass, but full utility and savings cloud persistence

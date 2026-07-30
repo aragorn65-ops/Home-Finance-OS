@@ -50,6 +50,9 @@ Supabase validation before inviting public beta testers.
   `frontend/test/coreSnapshotSync.test.ts`
 * Supabase RPC wiring and realtime subscription contracts:
   `frontend/test/supabaseAuthBackendAdapter.test.ts`
+* Settings Cloud Schema Readiness probes the public beta tables plus household
+  preferences, core snapshot, and settlement RPC visibility:
+  `frontend/test/supabaseAuthBackendAdapter.test.ts`
 * Production auth readiness diagnostics:
   `frontend/test/createAuthDiagnostics.test.ts`
 * Metadata-only attachment payload and edit validation coverage:

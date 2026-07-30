@@ -1001,6 +1001,14 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
+    for (const rpc of schemaReadinessRpcs) {
+      checks.push(
+        await this.createRpcReadinessCheck(
+          rpc
+        )
+      );
+    }
+
     return checks;
   }
 
@@ -2475,6 +2483,51 @@ export class SupabaseAuthBackendAdapter
     };
   }
 
+  private async createRpcReadinessCheck(
+    rpc: SupabaseSchemaReadinessRpc
+  ): Promise<SupabaseSchemaReadinessCheck> {
+    const rpcResult =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          rpc.functionName,
+          rpc.parameters
+        );
+
+    const error =
+      "error" in rpcResult
+        ? rpcResult.error
+        : null;
+
+    if (
+      error &&
+      isMissingSchemaCacheFunctionError(
+        error.message
+      )
+    ) {
+      return {
+        id:
+          rpc.id,
+        label:
+          rpc.label,
+        ready: false,
+        detail:
+          `${rpc.functionName} is missing from the PostgREST schema cache. Run the latest Supabase schema SQL, then notify pgrst, 'reload schema'.`,
+      };
+    }
+
+    return {
+      id:
+        rpc.id,
+      label:
+        rpc.label,
+      ready: true,
+      detail:
+        `${rpc.functionName} is visible to PostgREST.`,
+    };
+  }
+
   private async getClient():
     Promise<SupabaseAuthClient> {
     if (this.config.client) {
@@ -2515,6 +2568,13 @@ interface SupabaseSchemaReadinessTable {
   id: string;
   label: string;
   tableName: string;
+}
+
+interface SupabaseSchemaReadinessRpc {
+  id: string;
+  label: string;
+  functionName: string;
+  parameters: Record<string, unknown>;
 }
 
 const schemaReadinessTables:
@@ -2558,6 +2618,136 @@ const schemaReadinessTables:
       id: "savings-activities",
       label: "Savings activities",
       tableName: "savings_activities",
+    },
+  ];
+
+const schemaReadinessRpcs:
+  SupabaseSchemaReadinessRpc[] = [
+    {
+      id: "rpc-load-household-preferences",
+      label:
+        "Load household preferences RPC",
+      functionName:
+        "load_household_preferences",
+      parameters: {
+        target_household_id:
+          schemaReadinessProbeId,
+      },
+    },
+    {
+      id: "rpc-save-household-preferences",
+      label:
+        "Save household preferences RPC",
+      functionName:
+        "save_household_preferences",
+      parameters: {
+        target_household_id:
+          schemaReadinessProbeId,
+        input_household_name:
+          "Schema Readiness Probe",
+        input_household_country: "PH",
+        input_household_currency:
+          "PHP",
+        input_household_timezone:
+          "Asia/Manila",
+      },
+    },
+    {
+      id: "rpc-load-household-core-snapshot",
+      label:
+        "Load core snapshot RPC",
+      functionName:
+        "load_household_core_snapshot",
+      parameters: {
+        target_household_id:
+          schemaReadinessProbeId,
+      },
+    },
+    {
+      id: "rpc-save-household-core-snapshot",
+      label:
+        "Save core snapshot RPC",
+      functionName:
+        "save_household_core_snapshot",
+      parameters: {
+        target_household_id:
+          schemaReadinessProbeId,
+        core_accounts: [],
+        core_transactions: [],
+      },
+    },
+    {
+      id: "rpc-create-household-settlement",
+      label:
+        "Create settlement RPC",
+      functionName:
+        "create_household_settlement",
+      parameters: {
+        target_household_id:
+          schemaReadinessProbeId,
+        local_record_id:
+          "schema-readiness-probe",
+        from_member_id:
+          "schema-readiness-from-member",
+        to_member_id:
+          "schema-readiness-to-member",
+        settlement_amount: 1,
+        settlement_date:
+          "2026-07-30",
+        source_account_id: null,
+        destination_account_id: null,
+        application_method:
+          "oldest-first",
+        reference_number: "",
+        settlement_notes: "",
+        settlement_attachments: [],
+        settlement_applications: [],
+        is_active: true,
+      },
+    },
+    {
+      id: "rpc-update-household-settlement",
+      label:
+        "Update settlement RPC",
+      functionName:
+        "update_household_settlement",
+      parameters: {
+        target_household_id:
+          schemaReadinessProbeId,
+        target_settlement_id:
+          schemaReadinessProbeId,
+        local_record_id:
+          "schema-readiness-probe",
+        from_member_id:
+          "schema-readiness-from-member",
+        to_member_id:
+          "schema-readiness-to-member",
+        settlement_amount: 1,
+        settlement_date:
+          "2026-07-30",
+        source_account_id: null,
+        destination_account_id: null,
+        application_method:
+          "oldest-first",
+        reference_number: "",
+        settlement_notes: "",
+        settlement_attachments: [],
+        settlement_applications: [],
+        is_active: true,
+      },
+    },
+    {
+      id: "rpc-delete-household-settlement",
+      label:
+        "Delete settlement RPC",
+      functionName:
+        "delete_household_settlement",
+      parameters: {
+        target_household_id:
+          schemaReadinessProbeId,
+        target_settlement_id:
+          schemaReadinessProbeId,
+      },
     },
   ];
 
@@ -3184,11 +3374,8 @@ function createSupabaseRpcErrorMessage(
   area: string
 ): string {
   if (
-    message.includes(
-      "Could not find the function"
-    ) &&
-    message.includes(
-      "schema cache"
+    isMissingSchemaCacheFunctionError(
+      message
     )
   ) {
     return (
@@ -3198,6 +3385,19 @@ function createSupabaseRpcErrorMessage(
   }
 
   return message;
+}
+
+function isMissingSchemaCacheFunctionError(
+  message: string
+): boolean {
+  return (
+    message.includes(
+      "Could not find the function"
+    ) &&
+    message.includes(
+      "schema cache"
+    )
+  );
 }
 
 function isRemoteAccountUploadRecordArray(

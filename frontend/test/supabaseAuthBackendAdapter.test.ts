@@ -65,6 +65,12 @@ function createSignedOutClient(
         },
       };
     },
+    async rpc() {
+      return {
+        data: [],
+        error: null,
+      };
+    },
   };
 }
 
@@ -4491,6 +4497,7 @@ test(
       "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
     );
     const probes: unknown[] = [];
+    const rpcProbes: unknown[] = [];
 
     const adapter =
       new SupabaseAuthBackendAdapter({
@@ -4531,6 +4538,28 @@ test(
               },
             };
           },
+          async rpc(
+            functionName: string,
+            parameters:
+              Record<string, unknown>
+          ) {
+            rpcProbes.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: [],
+              error:
+                functionName ===
+                "create_household_settlement"
+                  ? {
+                      message:
+                        "Could not find the function public.create_household_settlement(settlement_attachments) in the schema cache",
+                    }
+                  : null,
+            };
+          },
         },
       });
 
@@ -4558,7 +4587,24 @@ test(
     );
     assert.equal(
       checks.length,
-      8
+      15
+    );
+    assert.deepEqual(
+      rpcProbes.map(
+        (probe) =>
+          (probe as {
+            functionName: string;
+          }).functionName
+      ),
+      [
+        "load_household_preferences",
+        "save_household_preferences",
+        "load_household_core_snapshot",
+        "save_household_core_snapshot",
+        "create_household_settlement",
+        "update_household_settlement",
+        "delete_household_settlement",
+      ]
     );
     assert.equal(
       checks.find(
@@ -4573,6 +4619,30 @@ test(
         (check) =>
           check.id ===
           "accounts"
+      )?.ready,
+      true
+    );
+    assert.equal(
+      checks.find(
+        (check) =>
+          check.id ===
+          "rpc-create-household-settlement"
+      )?.ready,
+      false
+    );
+    assert.match(
+      checks.find(
+        (check) =>
+          check.id ===
+          "rpc-create-household-settlement"
+      )?.detail ?? "",
+      /notify pgrst, 'reload schema'/
+    );
+    assert.equal(
+      checks.find(
+        (check) =>
+          check.id ===
+          "rpc-load-household-preferences"
       )?.ready,
       true
     );
