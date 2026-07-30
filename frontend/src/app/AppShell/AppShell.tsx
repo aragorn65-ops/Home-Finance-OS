@@ -310,7 +310,7 @@ export default function AppShell() {
           </strong>
 
           <span>
-            Authenticated cloud mode is in progress. Export a backup before and after meaningful testing.
+            Use low-risk data, sign in as the household admin for cloud-backed workflows, and export backups during public beta.
           </span>
         </section>
 

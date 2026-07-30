@@ -1805,9 +1805,10 @@ export default function SettingsPage() {
               </strong>
 
               <p>
-                Use sample or low-risk data only. HFOS saves beta data in this
-                browser and does not have account recovery or production sync.
-                Export a backup before and after meaningful testing.
+                Use sample or low-risk data only. Sign in as the household
+                admin for cloud-backed workflows, keep local backups during
+                public beta, and export a backup before and after meaningful
+                testing.
               </p>
             </div>
 

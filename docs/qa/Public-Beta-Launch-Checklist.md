@@ -57,9 +57,9 @@ https://home-finance-os.pages.dev
 * [ ] Route smoke checks pass for `/`, `/app`, `/app/household-members`,
   `/app/accounts`, `/app/transactions`, `/app/utilities`, `/app/settlements`,
   `/app/savings`, `/app/analytics`, `/app/help-center`, and `/app/settings`.
-* [ ] App banner says to use low-risk data, sign in as the household admin, and
+* [x] App banner says to use low-risk data, sign in as the household admin, and
   keep backups during public beta.
-* [ ] Settings Data & Backup safety note repeats the public beta cloud and
+* [x] Settings Data & Backup safety note repeats the public beta cloud and
   backup warning.
 * [ ] Local Export Backup creates a valid `.hfos-backup.json` file.
 * [ ] Local Import Backup validates the file, shows a restore preview, and
