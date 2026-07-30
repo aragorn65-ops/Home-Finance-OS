@@ -114,3 +114,26 @@ test("Supabase settlement RPCs resolve local household member ids", () => {
     /insert into public\.household_members \([\s\S]+local_record_id[\s\S]+returning id into resolved_to_member_id;/
   );
 });
+
+test("Supabase settlement applications resolve local allocation ids", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /allocation\.local_record_id = nullif\(application_row ->> 'expense_allocation_id', ''\)/
+  );
+  assert.doesNotMatch(
+    schemaSql,
+    /application_allocation_id := \(application_row ->> 'expense_allocation_id'\)::uuid;/
+  );
+});

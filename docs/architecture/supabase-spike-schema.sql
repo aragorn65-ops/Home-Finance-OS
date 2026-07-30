@@ -894,14 +894,17 @@ begin
     select value
     from jsonb_array_elements(coalesce(settlement_applications, '[]'::jsonb))
   loop
-    application_allocation_id := (application_row ->> 'expense_allocation_id')::uuid;
+    select allocation.id
+    into application_allocation_id
+    from public.expense_allocations allocation
+    where allocation.household_id = target_household_id
+      and (
+        allocation.id::text = nullif(application_row ->> 'expense_allocation_id', '')
+        or allocation.local_record_id = nullif(application_row ->> 'expense_allocation_id', '')
+      )
+    limit 1;
 
-    if not exists (
-      select 1
-      from public.expense_allocations allocation
-      where allocation.id = application_allocation_id
-        and allocation.household_id = target_household_id
-    ) then
+    if application_allocation_id is null then
       raise exception 'Settlement application allocation does not belong to this household.';
     end if;
 
@@ -1176,14 +1179,17 @@ begin
     select value
     from jsonb_array_elements(coalesce(settlement_applications, '[]'::jsonb))
   loop
-    application_allocation_id := (application_row ->> 'expense_allocation_id')::uuid;
+    select allocation.id
+    into application_allocation_id
+    from public.expense_allocations allocation
+    where allocation.household_id = existing_settlement.household_id
+      and (
+        allocation.id::text = nullif(application_row ->> 'expense_allocation_id', '')
+        or allocation.local_record_id = nullif(application_row ->> 'expense_allocation_id', '')
+      )
+    limit 1;
 
-    if not exists (
-      select 1
-      from public.expense_allocations allocation
-      where allocation.id = application_allocation_id
-        and allocation.household_id = existing_settlement.household_id
-    ) then
+    if application_allocation_id is null then
       raise exception 'Settlement application allocation does not belong to this household.';
     end if;
 
