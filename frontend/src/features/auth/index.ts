@@ -49,11 +49,13 @@ export {
   useAuthSession,
   useAuthDiagnostics,
   useHouseholdMembership,
+  useLinkedHouseholdPreferencesRestore,
   useLinkedCoreSnapshotRestore,
 } from "./hooks";
 
 export {
   coreSnapshotRestoredEvent,
+  householdPreferencesRestoredEvent,
 } from "./hooks";
 
 export {
@@ -75,6 +77,7 @@ export {
   InMemoryRemoteMigrationRepository,
   InMemoryRemoteTenantRepository,
   loadRemoteCoreSnapshotForHousehold,
+  restoreLinkedRemoteHouseholdPreferences,
   saveCurrentBrowserCoreSnapshotForHousehold,
   saveLinkedRemoteCoreSnapshot,
   saveRemoteCoreSnapshotForHousehold,
@@ -93,6 +96,9 @@ export type {
   LinkedCoreSnapshotHousehold,
   LinkedCoreSnapshotSaveOptions,
   LinkedCoreSnapshotSaveResult,
+  LinkedHouseholdPreferencesHousehold,
+  LinkedHouseholdPreferencesRestoreOptions,
+  LinkedHouseholdPreferencesRestoreResult,
   LocalCoreSnapshotCounts,
   LocalCoreSnapshotSource,
 } from "./services";

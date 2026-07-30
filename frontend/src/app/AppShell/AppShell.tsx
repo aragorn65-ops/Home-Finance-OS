@@ -20,6 +20,7 @@ import {
 import {
   AuthRouteGatePanel,
   useHouseholdMembership,
+  useLinkedHouseholdPreferencesRestore,
   useLinkedCoreSnapshotRestore,
 } from "../../features/auth";
 import {
@@ -231,6 +232,20 @@ export default function AppShell() {
           location.pathname
         ),
     });
+  const householdPreferencesRestore =
+    useLinkedHouseholdPreferencesRestore({
+      household,
+      sessionStatus:
+        session.status,
+      role:
+        membership?.role,
+      isRouteAllowed:
+        authRouteAccess.isAllowed,
+      isSettingsRoute:
+        isSettingsPath(
+          location.pathname
+        ),
+    });
 
   if (!household) {
     return (
@@ -301,7 +316,63 @@ export default function AppShell() {
 
         <main className="app-content">
           <div className="page-container">
-            {coreSnapshotRestore.isRestoring ? (
+            {householdPreferencesRestore
+              .isRestoring ? (
+              <AuthRouteGatePanel
+                access={{
+                  status: "loading",
+                  isAllowed: false,
+                  title:
+                    "Loading Household",
+                  message:
+                    "HFOS is loading the authenticated household preferences before opening this page.",
+                }}
+                sessionLabel={
+                  session.status
+                }
+                roleLabel={
+                  membership?.role
+                }
+                error=""
+                isSignInAvailable={false}
+                onSignIn={() => {
+                  void signIn();
+                }}
+                onRefresh={() => {
+                  void refreshSession();
+                }}
+              />
+            ) : householdPreferencesRestore
+                .error ? (
+              <AuthRouteGatePanel
+                access={{
+                  status:
+                    "membership-required",
+                  isAllowed: false,
+                  title:
+                    "Cloud Household Unavailable",
+                  message:
+                    "HFOS could not load the authenticated household preferences.",
+                }}
+                sessionLabel={
+                  session.status
+                }
+                roleLabel={
+                  membership?.role
+                }
+                error={
+                  householdPreferencesRestore
+                    .error
+                }
+                isSignInAvailable={false}
+                onSignIn={() => {
+                  void signIn();
+                }}
+                onRefresh={() => {
+                  void refreshSession();
+                }}
+              />
+            ) : coreSnapshotRestore.isRestoring ? (
               <AuthRouteGatePanel
                 access={{
                   status: "loading",

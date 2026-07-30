@@ -14,3 +14,8 @@ export {
   coreSnapshotRestoredEvent,
   useLinkedCoreSnapshotRestore,
 } from "./useLinkedCoreSnapshotRestore";
+
+export {
+  householdPreferencesRestoredEvent,
+  useLinkedHouseholdPreferencesRestore,
+} from "./useLinkedHouseholdPreferencesRestore";

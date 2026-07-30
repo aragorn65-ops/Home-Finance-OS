@@ -103,6 +103,10 @@ export {
   saveRemoteCoreSnapshotForHousehold,
 } from "./coreSnapshotSync";
 
+export {
+  restoreLinkedRemoteHouseholdPreferences,
+} from "./householdPreferencesSync";
+
 export type {
   ApplyRemoteCoreSnapshotOptions,
   CoreSnapshotRecordSource,
@@ -117,6 +121,14 @@ export type {
   LocalCoreSnapshotCounts,
   LocalCoreSnapshotSource,
 } from "./coreSnapshotSync";
+
+export type {
+  HouseholdPreferencesAdapter,
+  HouseholdPreferencesLocalWriter,
+  LinkedHouseholdPreferencesHousehold,
+  LinkedHouseholdPreferencesRestoreOptions,
+  LinkedHouseholdPreferencesRestoreResult,
+} from "./householdPreferencesSync";
 
 export type {
   AuthorizationContext,

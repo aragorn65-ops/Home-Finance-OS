@@ -134,6 +134,9 @@ for public beta.
 * [x] Added active-session real-time core snapshot subscription plumbing so
   owner/admin sessions reload the latest cloud snapshot when the remote
   household core snapshot changes.
+* [x] Added linked-household preference restore on authenticated owner/admin
+  app load so browser refresh reloads household metadata from the cloud before
+  opening finance pages.
 * [ ] Add cloud-backed persistence for household and core finance records.
 * [ ] Add real-time synchronization for the active authenticated household
   session.
