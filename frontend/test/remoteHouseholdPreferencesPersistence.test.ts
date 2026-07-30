@@ -146,3 +146,43 @@ test("remote household preferences block member save", async () => {
     /Only a household admin can save household preferences\./
   );
 });
+
+test("remote household preferences notify subscribers", async () => {
+  const adapter =
+    createAdapter(adminUser);
+  let notificationCount = 0;
+
+  const subscription =
+    adapter
+      .subscribeToHouseholdPreferenceChanges(
+        householdId,
+        () => {
+          notificationCount += 1;
+        }
+      );
+
+  await adapter
+    .saveRemoteHouseholdPreferences({
+      householdId,
+      name: "Realtime Home",
+      country: "PH",
+      currency: "PHP",
+      timezone: "Asia/Manila",
+    });
+
+  subscription.unsubscribe();
+
+  await adapter
+    .saveRemoteHouseholdPreferences({
+      householdId,
+      name: "Quiet Home",
+      country: "PH",
+      currency: "PHP",
+      timezone: "Asia/Manila",
+    });
+
+  assert.equal(
+    notificationCount,
+    1
+  );
+});

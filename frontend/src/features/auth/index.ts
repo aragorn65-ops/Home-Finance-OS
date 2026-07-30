@@ -25,6 +25,7 @@ export type {
 export type {
   AuthBackendAdapter,
   AuthCoreSnapshotObserver,
+  AuthHouseholdPreferencesObserver,
   AuthSettlementObserver,
   AuthorizationContext,
   CreateRemoteHouseholdInput,

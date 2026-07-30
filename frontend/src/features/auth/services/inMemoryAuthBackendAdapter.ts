@@ -70,6 +70,12 @@ export class InMemoryAuthBackendAdapter
       Set<() => void>
     >();
 
+  private readonly householdPreferenceListeners =
+    new Map<
+      string,
+      Set<() => void>
+    >();
+
   constructor(
     seed: InMemoryAuthSeed = {}
   ) {
@@ -342,19 +348,37 @@ export class InMemoryAuthBackendAdapter
       );
     }
 
-    return this.store.saveHousehold({
-      ...household,
-      name:
-        input.name,
-      country:
-        input.country,
-      currency:
-        input.currency,
-      timezone:
-        input.timezone,
-      updatedAt:
-        new Date(),
-    });
+    const savedHousehold =
+      this.store.saveHousehold({
+        ...household,
+        name:
+          input.name,
+        country:
+          input.country,
+        currency:
+          input.currency,
+        timezone:
+          input.timezone,
+        updatedAt:
+          new Date(),
+      });
+
+    this.notifyHouseholdPreferenceListeners(
+      input.householdId
+    );
+
+    return savedHousehold;
+  }
+
+  subscribeToHouseholdPreferenceChanges(
+    householdId: string,
+    onChange: () => void
+  ): AuthSessionSubscription {
+    return this.subscribeToHouseholdChange(
+      this.householdPreferenceListeners,
+      householdId,
+      onChange
+    );
   }
 
   async commitMigrationDraft(
@@ -720,31 +744,11 @@ export class InMemoryAuthBackendAdapter
     householdId: string,
     onChange: () => void
   ): AuthSessionSubscription {
-    if (!householdId) {
-      return createNoopSubscription();
-    }
-
-    const listeners =
-      this.settlementListeners
-        .get(householdId) ??
-      new Set<() => void>();
-
-    listeners.add(onChange);
-    this.settlementListeners.set(
+    return this.subscribeToHouseholdChange(
+      this.settlementListeners,
       householdId,
-      listeners
+      onChange
     );
-
-    return {
-      unsubscribe: () => {
-        listeners.delete(onChange);
-
-        if (listeners.size === 0) {
-          this.settlementListeners
-            .delete(householdId);
-        }
-      },
-    };
   }
 
   private createAuthorizationContext(
@@ -837,7 +841,64 @@ export class InMemoryAuthBackendAdapter
   private notifySettlementListeners(
     householdId: string
   ): void {
-    this.settlementListeners
+    this.notifyHouseholdChangeListeners(
+      this.settlementListeners,
+      householdId
+    );
+  }
+
+  private notifyHouseholdPreferenceListeners(
+    householdId: string
+  ): void {
+    this.notifyHouseholdChangeListeners(
+      this.householdPreferenceListeners,
+      householdId
+    );
+  }
+
+  private subscribeToHouseholdChange(
+    listenersByHouseholdId: Map<
+      string,
+      Set<() => void>
+    >,
+    householdId: string,
+    onChange: () => void
+  ): AuthSessionSubscription {
+    if (!householdId) {
+      return createNoopSubscription();
+    }
+
+    const listeners =
+      listenersByHouseholdId
+        .get(householdId) ??
+      new Set<() => void>();
+
+    listeners.add(onChange);
+    listenersByHouseholdId.set(
+      householdId,
+      listeners
+    );
+
+    return {
+      unsubscribe: () => {
+        listeners.delete(onChange);
+
+        if (listeners.size === 0) {
+          listenersByHouseholdId
+            .delete(householdId);
+        }
+      },
+    };
+  }
+
+  private notifyHouseholdChangeListeners(
+    listenersByHouseholdId: Map<
+      string,
+      Set<() => void>
+    >,
+    householdId: string
+  ): void {
+    listenersByHouseholdId
       .get(householdId)
       ?.forEach((listener) => {
         listener();

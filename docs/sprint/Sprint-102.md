@@ -139,6 +139,9 @@ for public beta.
   opening finance pages.
 * [x] Added active-session settlement realtime subscription plumbing so signed
   cloud settlement pages reload when remote household settlement rows change.
+* [x] Added active-session household preference realtime subscription plumbing
+  so owner/admin sessions reload cloud household metadata when the remote
+  household row changes.
 * [ ] Add cloud-backed persistence for household and core finance records.
 * [ ] Add real-time synchronization for the active authenticated household
   session.

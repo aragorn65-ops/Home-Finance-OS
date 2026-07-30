@@ -75,6 +75,13 @@ export interface AuthSettlementObserver {
   ): AuthSessionSubscription;
 }
 
+export interface AuthHouseholdPreferencesObserver {
+  subscribeToHouseholdPreferenceChanges?(
+    householdId: string,
+    onChange: () => void
+  ): AuthSessionSubscription;
+}
+
 export interface AuthBackendAdapter {
   getSession(): Promise<AuthSession>;
 

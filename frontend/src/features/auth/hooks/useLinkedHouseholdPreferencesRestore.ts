@@ -12,6 +12,7 @@ import type {
   AuthSessionStatus,
 } from "../models";
 import type {
+  AuthHouseholdPreferencesObserver,
   LinkedHouseholdPreferencesHousehold,
 } from "../services";
 import {
@@ -53,6 +54,10 @@ export function useLinkedHouseholdPreferencesRestore({
     useState("");
   const [restoreVersion, setRestoreVersion] =
     useState(0);
+  const [
+    restoreTrigger,
+    setRestoreTrigger,
+  ] = useState(0);
 
   const remoteHouseholdId =
     household?.authenticatedLink
@@ -94,6 +99,16 @@ export function useLinkedHouseholdPreferencesRestore({
 
     if (
       restoredKeys.current.has(
+        restoreKey
+      ) &&
+      restoreTrigger === 0
+    ) {
+      return;
+    }
+
+    if (
+      restoreTrigger > 0 &&
+      !restoredKeys.current.has(
         restoreKey
       )
     ) {
@@ -169,8 +184,40 @@ export function useLinkedHouseholdPreferencesRestore({
     isSettingsRoute,
     localHouseholdId,
     remoteHouseholdId,
+    restoreTrigger,
     role,
     sessionStatus,
+    shouldRestore,
+  ]);
+
+  useEffect(() => {
+    if (
+      !shouldRestore ||
+      !remoteHouseholdId
+    ) {
+      return;
+    }
+
+    const adapter =
+      getAuthBackendAdapter() as
+        AuthHouseholdPreferencesObserver;
+    const subscription =
+      adapter
+        .subscribeToHouseholdPreferenceChanges?.(
+          remoteHouseholdId,
+          () => {
+            setRestoreTrigger(
+              (current) =>
+                current + 1
+            );
+          }
+        );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [
+    remoteHouseholdId,
     shouldRestore,
   ]);
 

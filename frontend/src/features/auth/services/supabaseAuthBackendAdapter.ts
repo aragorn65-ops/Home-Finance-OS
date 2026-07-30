@@ -2315,6 +2315,75 @@ export class SupabaseAuthBackendAdapter
     };
   }
 
+  subscribeToHouseholdPreferenceChanges(
+    householdId: string,
+    onChange: () => void
+  ): AuthSessionSubscription {
+    if (
+      !this.isConfigured() ||
+      !householdId
+    ) {
+      return createNoopSubscription();
+    }
+
+    let isDisposed = false;
+    const getClient =
+      () => this.getClient();
+    const channelPromise =
+      getClient()
+        .then((client) => {
+          if (!client.channel) {
+            return undefined;
+          }
+
+          return client
+            .channel(
+              `hfos-household-preferences-${householdId}`
+            )
+            .on(
+              "postgres_changes",
+              {
+                event: "*",
+                schema: "public",
+                table:
+                  "households",
+                filter:
+                  `id=eq.${householdId}`,
+              },
+              () => {
+                if (!isDisposed) {
+                  onChange();
+                }
+              }
+            )
+            .subscribe();
+        });
+
+    return {
+      unsubscribe() {
+        isDisposed = true;
+        void channelPromise
+          .then(async (channel) => {
+            if (!channel) {
+              return;
+            }
+
+            const client =
+              await getClient();
+
+            if (client.removeChannel) {
+              await client.removeChannel(
+                channel
+              );
+              return;
+            }
+
+            await channel.unsubscribe?.();
+          });
+      },
+    };
+  }
+
   private async createRemoteSettlementMutationResult(
     result:
       SupabaseSettlementMutationRpcResult,
