@@ -5,41 +5,51 @@ export interface BuildInfo {
   builtAt: string;
 }
 
+export type BuildInfoEnvironment =
+  Record<string, string | undefined>;
+
 function getEnvValue(
+  env: BuildInfoEnvironment,
   key: string,
   fallback: string
 ): string {
-  const env =
-    import.meta.env as Record<
-      string,
-      string | undefined
-    >;
-
   const value =
     env[key]?.trim();
 
   return value || fallback;
 }
 
-const commit =
-  getEnvValue(
-    "VITE_HFOS_BUILD_COMMIT",
-    "local"
-  );
-
-export const buildInfo:
-  BuildInfo = {
-  commit,
-  shortCommit:
-    commit.slice(0, 7),
-  branch:
+export function createBuildInfo(
+  env: BuildInfoEnvironment
+): BuildInfo {
+  const commit =
     getEnvValue(
-      "VITE_HFOS_BUILD_BRANCH",
+      env,
+      "VITE_HFOS_BUILD_COMMIT",
       "local"
-    ),
-  builtAt:
-    getEnvValue(
-      "VITE_HFOS_BUILD_TIME",
-      "unknown"
-    ),
-};
+    );
+
+  return {
+    commit,
+    shortCommit:
+      commit.slice(0, 7),
+    branch:
+      getEnvValue(
+        env,
+        "VITE_HFOS_BUILD_BRANCH",
+        "local"
+      ),
+    builtAt:
+      getEnvValue(
+        env,
+        "VITE_HFOS_BUILD_TIME",
+        "unknown"
+      ),
+  };
+}
+
+export const buildInfo =
+  createBuildInfo(
+    import.meta.env ??
+      {}
+  );
