@@ -34,6 +34,8 @@ Supabase validation before inviting public beta testers.
 * Account and transaction cloud snapshot contract:
   `frontend/test/remoteCoreSnapshotPersistence.test.ts` and
   `frontend/test/coreSnapshotSync.test.ts`
+* Cloud core snapshot write failures surface instead of being reported as saved:
+  `frontend/test/coreSnapshotSync.test.ts`
 * Supabase RPC wiring and realtime subscription contracts:
   `frontend/test/supabaseAuthBackendAdapter.test.ts`
 * Production auth readiness diagnostics:

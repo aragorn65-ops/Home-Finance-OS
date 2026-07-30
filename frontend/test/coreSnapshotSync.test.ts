@@ -544,6 +544,45 @@ test("saves linked core snapshot to the authenticated household", async () => {
   );
 });
 
+test("linked core snapshot save surfaces cloud write failures", async () => {
+  await assert.rejects(
+    () =>
+      saveLinkedRemoteCoreSnapshot({
+        authEnabled: true,
+        household: {
+          id: householdId,
+          authenticatedLink: {
+            remoteHouseholdId:
+              "remote-household-failing-1",
+          },
+        },
+        adapter: {
+          async loadRemoteCoreSnapshot() {
+            throw new Error("unused");
+          },
+          async saveRemoteCoreSnapshot() {
+            throw new Error(
+              "Supabase write failed."
+            );
+          },
+        },
+        recordSource: {
+          getAccounts() {
+            return [
+              account,
+            ];
+          },
+          getTransactions() {
+            return [
+              transaction,
+            ];
+          },
+        },
+      }),
+    /Supabase write failed\./
+  );
+});
+
 test("loads a remote core snapshot through the adapter", async () => {
   let loadedHouseholdId:
     | string
