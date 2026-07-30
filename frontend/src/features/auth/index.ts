@@ -48,6 +48,11 @@ export {
   useAuthSession,
   useAuthDiagnostics,
   useHouseholdMembership,
+  useLinkedCoreSnapshotRestore,
+} from "./hooks";
+
+export {
+  coreSnapshotRestoredEvent,
 } from "./hooks";
 
 export {

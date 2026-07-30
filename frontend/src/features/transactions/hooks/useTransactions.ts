@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -13,6 +14,7 @@ import {
   OperationResults,
 } from "../../../shared/types";
 import {
+  coreSnapshotRestoredEvent,
   getAuthBackendAdapter,
   saveLinkedRemoteCoreSnapshot,
 } from "../../auth";
@@ -55,6 +57,20 @@ export default function useTransactions() {
       TransactionService.getActiveTransactions()
     );
   };
+
+  useEffect(() => {
+    window.addEventListener(
+      coreSnapshotRestoredEvent,
+      refresh
+    );
+
+    return () => {
+      window.removeEventListener(
+        coreSnapshotRestoredEvent,
+        refresh
+      );
+    };
+  }, []);
 
   /**
    * Creates a transaction and refreshes local state

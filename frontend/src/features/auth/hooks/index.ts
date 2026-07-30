@@ -9,3 +9,8 @@ export {
 export {
   useHouseholdMembership,
 } from "./useHouseholdMembership";
+
+export {
+  coreSnapshotRestoredEvent,
+  useLinkedCoreSnapshotRestore,
+} from "./useLinkedCoreSnapshotRestore";

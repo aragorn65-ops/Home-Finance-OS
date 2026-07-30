@@ -95,16 +95,22 @@ export {
   createRemoteCoreSnapshotInput,
   getLocalCoreSnapshotCounts,
   loadRemoteCoreSnapshotForHousehold,
+  applyRemoteCoreSnapshotToLocalHousehold,
+  restoreLinkedRemoteCoreSnapshot,
   saveCurrentBrowserCoreSnapshotForHousehold,
   saveLinkedRemoteCoreSnapshot,
   saveRemoteCoreSnapshotForHousehold,
 } from "./coreSnapshotSync";
 
 export type {
+  ApplyRemoteCoreSnapshotOptions,
   CoreSnapshotRecordSource,
   CoreSnapshotAdapter,
+  CoreSnapshotLocalWriter,
   CurrentBrowserCoreSnapshotOptions,
   LinkedCoreSnapshotHousehold,
+  LinkedCoreSnapshotRestoreOptions,
+  LinkedCoreSnapshotRestoreResult,
   LinkedCoreSnapshotSaveOptions,
   LinkedCoreSnapshotSaveResult,
   LocalCoreSnapshotCounts,

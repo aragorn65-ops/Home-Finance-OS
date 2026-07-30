@@ -20,6 +20,7 @@ import {
 import {
   AuthRouteGatePanel,
   useHouseholdMembership,
+  useLinkedCoreSnapshotRestore,
 } from "../../features/auth";
 import {
   evaluateAuthRouteAccess,
@@ -201,15 +202,6 @@ export default function AppShell() {
     };
   }, [isSidebarOpen]);
 
-  if (!household) {
-    return (
-      <Navigate
-        to="/household"
-        replace
-      />
-    );
-  }
-
   const authRouteAccess =
     evaluateAuthRouteAccess({
       authEnabled:
@@ -224,6 +216,30 @@ export default function AppShell() {
         Boolean(authError) &&
         !isMembershipLoading,
     });
+
+  const coreSnapshotRestore =
+    useLinkedCoreSnapshotRestore({
+      household,
+      sessionStatus:
+        session.status,
+      role:
+        membership?.role,
+      isRouteAllowed:
+        authRouteAccess.isAllowed,
+      isSettingsRoute:
+        isSettingsPath(
+          location.pathname
+        ),
+    });
+
+  if (!household) {
+    return (
+      <Navigate
+        to="/household"
+        replace
+      />
+    );
+  }
 
   if (
     isLockEnabled &&
@@ -285,7 +301,60 @@ export default function AppShell() {
 
         <main className="app-content">
           <div className="page-container">
-            {authRouteAccess.isAllowed ? (
+            {coreSnapshotRestore.isRestoring ? (
+              <AuthRouteGatePanel
+                access={{
+                  status: "loading",
+                  isAllowed: false,
+                  title:
+                    "Loading Cloud Records",
+                  message:
+                    "HFOS is loading the authenticated household accounts and transactions before opening this page.",
+                }}
+                sessionLabel={
+                  session.status
+                }
+                roleLabel={
+                  membership?.role
+                }
+                error=""
+                isSignInAvailable={false}
+                onSignIn={() => {
+                  void signIn();
+                }}
+                onRefresh={() => {
+                  void refreshSession();
+                }}
+              />
+            ) : coreSnapshotRestore.error ? (
+              <AuthRouteGatePanel
+                access={{
+                  status:
+                    "membership-required",
+                  isAllowed: false,
+                  title:
+                    "Cloud Records Unavailable",
+                  message:
+                    "HFOS could not load the authenticated household accounts and transactions.",
+                }}
+                sessionLabel={
+                  session.status
+                }
+                roleLabel={
+                  membership?.role
+                }
+                error={
+                  coreSnapshotRestore.error
+                }
+                isSignInAvailable={false}
+                onSignIn={() => {
+                  void signIn();
+                }}
+                onRefresh={() => {
+                  void refreshSession();
+                }}
+              />
+            ) : authRouteAccess.isAllowed ? (
               <Outlet />
             ) : (
               <AuthRouteGatePanel
@@ -313,5 +382,16 @@ export default function AppShell() {
         </main>
       </div>
     </div>
+  );
+}
+
+function isSettingsPath(
+  pathname: string
+): boolean {
+  return (
+    pathname === "/app/settings" ||
+    pathname.startsWith(
+      "/app/settings/"
+    )
   );
 }

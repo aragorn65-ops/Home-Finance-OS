@@ -128,6 +128,9 @@ for public beta.
 * [x] Wired paid utility provider bill transaction creation through
   linked-household core snapshot saves so generated provider payment
   transactions surface cloud snapshot failures.
+* [x] Added linked-household core snapshot restore on authenticated owner/admin
+  app load so browser refresh reloads account and transaction records from the
+  cloud snapshot before opening finance pages.
 * [ ] Add cloud-backed persistence for household and core finance records.
 * [ ] Add real-time synchronization for the active authenticated household
   session.

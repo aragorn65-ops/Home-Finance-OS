@@ -9,9 +9,11 @@ import type {
   RemoteHouseholdCoreSnapshotInput,
 } from "../src/features/auth/models/index.ts";
 import {
+  applyRemoteCoreSnapshotToLocalHousehold,
   createRemoteCoreSnapshotInput,
   getLocalCoreSnapshotCounts,
   loadRemoteCoreSnapshotForHousehold,
+  restoreLinkedRemoteCoreSnapshot,
   saveCurrentBrowserCoreSnapshotForHousehold,
   saveLinkedRemoteCoreSnapshot,
   saveRemoteCoreSnapshotForHousehold,
@@ -581,5 +583,229 @@ test("loads a remote core snapshot through the adapter", async () => {
   assert.equal(
     loadedHouseholdId,
     householdId
+  );
+});
+
+test("applies a remote core snapshot to the local household", () => {
+  const remoteHouseholdId =
+    "remote-household-core-restore-1";
+  let replacedAccounts:
+    Account[] = [];
+  let replacedTransactions:
+    Transaction[] = [];
+  const snapshot:
+    RemoteHouseholdCoreSnapshot = {
+    householdId:
+      remoteHouseholdId,
+    accounts: [
+      {
+        id: "account-remote-1",
+        visibility: "household",
+        name: "Restored Cash",
+        accountClass: "asset",
+        type: "cash",
+        currency: "PHP",
+        openingBalance: 500,
+        currentBalance: 450,
+        isActive: true,
+        createdAt:
+          "2026-07-29T01:00:00.000Z",
+        updatedAt:
+          "2026-07-29T02:00:00.000Z",
+      },
+    ],
+    transactions: [
+      {
+        id: "transaction-remote-1",
+        visibility: "household",
+        type: "expense",
+        amount: 50,
+        sourceAccountId:
+          "account-remote-1",
+        destinationAccountId:
+          null,
+        category: "Food",
+        description: "Lunch",
+        notes: "",
+        transactionDate:
+          "2026-07-29",
+        isActive: true,
+        createdAt:
+          "2026-07-29T03:00:00.000Z",
+        updatedAt:
+          "2026-07-29T04:00:00.000Z",
+      },
+    ],
+  };
+
+  const result =
+    applyRemoteCoreSnapshotToLocalHousehold({
+      snapshot,
+      localHouseholdId:
+        householdId,
+      ownerMemberId:
+        "member-owner-1",
+      writer: {
+        replaceAccounts(
+          targetHouseholdId,
+          accounts
+        ) {
+          assert.equal(
+            targetHouseholdId,
+            householdId
+          );
+          replacedAccounts =
+            accounts;
+
+          return true;
+        },
+        replaceTransactions(
+          targetHouseholdId,
+          transactions
+        ) {
+          assert.equal(
+            targetHouseholdId,
+            householdId
+          );
+          replacedTransactions =
+            transactions;
+
+          return true;
+        },
+      },
+    });
+
+  assert.deepEqual(
+    result,
+    {
+      accountCount: 1,
+      transactionCount: 1,
+    }
+  );
+  assert.equal(
+    replacedAccounts[0]?.householdId,
+    householdId
+  );
+  assert.equal(
+    replacedAccounts[0]?.ownerMemberId,
+    "member-owner-1"
+  );
+  assert.equal(
+    replacedTransactions[0]?.householdId,
+    householdId
+  );
+  assert.equal(
+    replacedTransactions[0]?.transactionDate
+      .toISOString()
+      .slice(0, 10),
+    "2026-07-29"
+  );
+});
+
+test("restores a linked remote core snapshot", async () => {
+  const remoteHouseholdId =
+    "remote-household-linked-restore-1";
+  let loadedHouseholdId:
+    | string
+    | undefined;
+  let replacedAccountCount = 0;
+  let replacedTransactionCount = 0;
+  const snapshot:
+    RemoteHouseholdCoreSnapshot = {
+    householdId:
+      remoteHouseholdId,
+    accounts: [
+      {
+        id: "account-remote-2",
+        visibility: "household",
+        name: "Restored Savings",
+        accountClass: "asset",
+        type: "savings",
+        currency: "PHP",
+        openingBalance: 1200,
+        currentBalance: 1400,
+        isActive: true,
+        createdAt:
+          "2026-07-30T01:00:00.000Z",
+        updatedAt:
+          "2026-07-30T02:00:00.000Z",
+      },
+    ],
+    transactions: [],
+  };
+
+  const result =
+    await restoreLinkedRemoteCoreSnapshot({
+      authEnabled: true,
+      household: {
+        id: householdId,
+        authenticatedLink: {
+          remoteHouseholdId,
+          ownerMemberId:
+            "member-owner-2",
+        },
+      },
+      adapter: {
+        async loadRemoteCoreSnapshot(
+          targetHouseholdId: string
+        ) {
+          loadedHouseholdId =
+            targetHouseholdId;
+
+          return snapshot;
+        },
+        async saveRemoteCoreSnapshot() {
+          throw new Error("unused");
+        },
+      },
+      writer: {
+        replaceAccounts(
+          targetHouseholdId,
+          accounts
+        ) {
+          assert.equal(
+            targetHouseholdId,
+            householdId
+          );
+          assert.equal(
+            accounts[0]?.ownerMemberId,
+            "member-owner-2"
+          );
+          replacedAccountCount =
+            accounts.length;
+
+          return true;
+        },
+        replaceTransactions(
+          targetHouseholdId,
+          transactions
+        ) {
+          assert.equal(
+            targetHouseholdId,
+            householdId
+          );
+          replacedTransactionCount =
+            transactions.length;
+
+          return true;
+        },
+      },
+    });
+
+  assert.equal(
+    result.status,
+    "restored"
+  );
+  assert.equal(
+    loadedHouseholdId,
+    remoteHouseholdId
+  );
+  assert.equal(
+    replacedAccountCount,
+    1
+  );
+  assert.equal(
+    replacedTransactionCount,
+    0
   );
 });

@@ -306,6 +306,49 @@ export default class TransactionRepository {
   }
 
   /**
+   * Replaces the active household transaction collection.
+   *
+   * Used by authenticated cloud snapshot restore on
+   * browser refresh.
+   */
+  static replaceForHousehold(
+    householdId: string,
+    transactions: Transaction[]
+  ): boolean {
+    if (
+      !householdId ||
+      transactions.some(
+        (transaction) =>
+          transaction.householdId !==
+          householdId
+      )
+    ) {
+      return false;
+    }
+
+    const nextTransactions =
+      transactions.map(
+        (transaction) =>
+          this.clone(transaction)
+      );
+
+    if (
+      !this.persistTransactions(
+        nextTransactions
+      )
+    ) {
+      return false;
+    }
+
+    this.transactions =
+      nextTransactions;
+    this.initializedHouseholdId =
+      householdId;
+
+    return true;
+  }
+
+  /**
    * Hydrates transactions for the single active household.
    *
    * Demo records are created only when no transaction

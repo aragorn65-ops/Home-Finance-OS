@@ -255,6 +255,49 @@ export default class AccountRepository {
   }
 
   /**
+   * Replaces the active household account collection.
+   *
+   * Used by authenticated cloud snapshot restore on
+   * browser refresh.
+   */
+  static replaceForHousehold(
+    householdId: string,
+    accounts: Account[]
+  ): boolean {
+    if (
+      !householdId ||
+      accounts.some(
+        (account) =>
+          account.householdId !==
+          householdId
+      )
+    ) {
+      return false;
+    }
+
+    const nextAccounts =
+      accounts.map(
+        (account) =>
+          this.clone(account)
+      );
+
+    if (
+      !this.persistAccounts(
+        nextAccounts
+      )
+    ) {
+      return false;
+    }
+
+    this.accounts =
+      nextAccounts;
+    this.initializedHouseholdId =
+      householdId;
+
+    return true;
+  }
+
+  /**
    * Hydrates accounts for the single active household.
    *
    * Demo accounts are created only when no account

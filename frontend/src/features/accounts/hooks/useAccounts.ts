@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -13,6 +14,7 @@ import {
   OperationResults,
 } from "../../../shared/types";
 import {
+  coreSnapshotRestoredEvent,
   getAuthBackendAdapter,
   saveLinkedRemoteCoreSnapshot,
 } from "../../auth";
@@ -61,6 +63,20 @@ export default function useAccounts() {
       AccountService.getAccounts()
     );
   };
+
+  useEffect(() => {
+    window.addEventListener(
+      coreSnapshotRestoredEvent,
+      refresh
+    );
+
+    return () => {
+      window.removeEventListener(
+        coreSnapshotRestoredEvent,
+        refresh
+      );
+    };
+  }, []);
 
   /**
    * Creates an account and refreshes local state
