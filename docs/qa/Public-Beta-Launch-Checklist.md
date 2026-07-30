@@ -45,8 +45,8 @@ https://home-finance-os.pages.dev
   state.
 * [ ] A signed-in admin can review, edit, and delete member-submitted settlement
   records.
-* [ ] Accounts, transactions, utilities, settlements, savings, and settings
-  persist to the cloud-backed household store.
+* [ ] Household metadata, account/transaction core snapshots, and settlement
+  records persist to the cloud-backed household store.
 * [ ] Refreshing the browser reloads household data from the cloud store without
   relying on localStorage as the primary source.
 * [ ] Real-time synchronization propagates cloud-backed changes into the active
@@ -77,6 +77,18 @@ https://home-finance-os.pages.dev
 
 ---
 
+## Public Beta Scope Boundary
+
+For the one-month public beta target, cloud-backed persistence is required for
+household metadata, account/transaction core snapshots, and settlement records.
+Utilities and savings routes remain part of the smoke pass, but full cloud
+persistence for utility provider bills, savings goals, and savings activities
+is not a public beta launch blocker unless the scope is explicitly expanded.
+Local export/import backup remains the required safety rail for those local
+modules.
+
+---
+
 ## Optional Google Drive Gate
 
 Run this only when Cloudflare Pages has `VITE_GOOGLE_CLIENT_ID` configured:
@@ -101,7 +113,8 @@ Run this only when Cloudflare Pages has `VITE_GOOGLE_CLIENT_ID` configured:
 * Keep backup passwords outside HFOS; forgotten backup passwords cannot be
   recovered.
 * Public beta supports authenticated admin access, limited member settlement
-  entry, cloud-backed persistence, and real-time sync for the active household.
+  entry, cloud-backed household metadata, account/transaction snapshots,
+  settlement persistence, and real-time sync for the active household.
 * Multi-device household access, broad shared collaboration, and conflict
   resolution are not part of public beta.
 * App lock protects only this browser session; it is separate from account

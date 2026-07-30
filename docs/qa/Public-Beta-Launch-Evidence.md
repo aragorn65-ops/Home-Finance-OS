@@ -42,6 +42,10 @@ Supabase validation before inviting public beta testers.
 * Account and transaction cloud snapshot contract:
   `frontend/test/remoteCoreSnapshotPersistence.test.ts` and
   `frontend/test/coreSnapshotSync.test.ts`
+* Public beta cloud persistence scope is limited to household metadata,
+  account/transaction core snapshots, and settlement records:
+  `docs/sprint/Sprint-102.md` and
+  `docs/qa/Public-Beta-Launch-Checklist.md`
 * Cloud core snapshot write failures surface instead of being reported as saved:
   `frontend/test/coreSnapshotSync.test.ts`
 * Supabase RPC wiring and realtime subscription contracts:
@@ -65,9 +69,13 @@ https://home-finance-os.pages.dev
   Pages.
 * Admin magic-link sign-in, sign-out, session refresh, and expired-session
   recovery pass on the deployed site.
-* Admin household claim/create, cloud persistence, browser refresh restore, and
-  realtime active-session sync pass on the deployed site.
+* Admin household claim/create, household metadata persistence,
+  account/transaction snapshot persistence, settlement persistence, browser
+  refresh restore, and realtime active-session sync pass on the deployed site.
 * Limited member settlement-entry flow passes on the deployed site.
+* Utilities and savings routes smoke-pass on the deployed site; full utility
+  and savings cloud persistence remains outside the one-month public beta scope
+  unless the launch scope is explicitly expanded.
 * Route smoke checks pass by opening and refreshing every public beta smoke
   route on the deployed site.
 * Optional Google Drive upload/list/download checks pass when
