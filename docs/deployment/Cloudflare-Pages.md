@@ -3,11 +3,14 @@
 ## Purpose
 
 HFOS can be deployed to Cloudflare Pages as a static Vite application for the
-guided private local-first beta.
+public beta candidate.
 
-The current beta stores household data in the browser. Cloudflare Pages hosts
-the app shell only; it does not provide production auth, cloud sync, or shared
-household collaboration.
+The current public beta target requires production auth configuration,
+cloud-backed household metadata, account/transaction core snapshots, settlement
+records, limited member settlement-entry access, and real-time synchronization
+for the active household session. Utilities and savings remain smoke-tested
+routes, but full cloud persistence for those local modules is not a launch
+blocker unless the public beta scope is explicitly expanded.
 
 ---
 
@@ -22,6 +25,8 @@ Build command: npm run build
 Build output directory: dist
 Production branch: main
 Environment variable: NODE_VERSION=22.13.0
+Environment variable: VITE_SUPABASE_URL=<production Supabase URL>
+Environment variable: VITE_SUPABASE_ANON_KEY=<production Supabase anon key>
 Optional environment variable: VITE_GOOGLE_CLIENT_ID=<Google OAuth client id>
 ```
 
@@ -92,13 +97,17 @@ After a Cloudflare Pages deployment, verify:
   `/app/utilities`, `/app/settlements`, `/app/savings`, `/app/analytics`,
   `/app/help-center`, and `/app/settings` open and refresh without a
   Cloudflare 404.
-* First-time household setup opens.
-* Household members can be added.
-* Accounts can be added.
-* An income transaction can be saved.
-* A shared expense creates outstanding settlement balances.
-* Manual settlement Apply Full fills a zero settlement amount from the selected
-  outstanding allocation.
+* Admin sign-in, sign-out, session refresh, and expired-session recovery work.
+* A signed-in admin can create or claim one household.
+* Household metadata, accounts, transactions, and settlements survive refresh
+  from the cloud-backed store.
+* A limited member can add settlement records only when they are the payer or
+  receiver.
+* Member access cannot create, edit, or delete accounts, transactions,
+  utilities, savings, settings, backups, household configuration, or migration
+  state.
+* Active signed-in admin browser sessions receive cloud-backed household,
+  account/transaction snapshot, and settlement changes without manual refresh.
 * Backup export creates an `.hfos-backup.json` file.
 * Restore preview appears before restore confirmation.
 * Clear Test Data keeps household setup.

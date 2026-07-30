@@ -69,15 +69,16 @@ member expense contribution summary appears again in Analytics.
 
 1. Sign in with the invited admin account.
 2. Create or claim one test household.
-3. Add at least one account, one transaction, one utility bill, one settlement,
-   and one savings goal.
+3. Add at least one account, one transaction, and one settlement.
 4. Refresh the browser.
-5. Confirm the household and records reload from the cloud-backed store.
+5. Confirm the household metadata, account, transaction, and settlement records
+   reload from the cloud-backed store.
 6. Sign out.
 7. Confirm signed-out access cannot read or mutate cloud-backed household data.
 
-Expected result: authenticated admin data survives refresh, signed-out access is
-blocked, and failed cloud writes are visible instead of silently succeeding.
+Expected result: authenticated admin household metadata, account/transaction
+snapshots, and settlement records survive refresh; signed-out access is blocked;
+and failed cloud writes are visible instead of silently succeeding.
 
 ---
 
@@ -100,13 +101,14 @@ admin retains control over settlement review and correction.
 
 1. Sign in with the invited admin account.
 2. Open the deployed app in a second browser tab for the same admin session.
-3. Change a small test record in one tab.
+3. Change household metadata, an account/transaction snapshot, or a settlement
+   record in one tab.
 4. Confirm the other active tab reflects the cloud-backed change without manual
    refresh.
 
-Expected result: real-time updates reach the active admin session. Multi-device
-household collaboration and conflict resolution are not part of this smoke
-check.
+Expected result: real-time updates reach the active admin browser session for
+the public beta cloud-backed baseline. Multi-device household collaboration and
+conflict resolution are not part of this smoke check.
 
 ---
 
@@ -131,6 +133,11 @@ required manual backup smoke-check path.
 Public beta requires production auth configuration, cloud-backed household
 persistence, limited member settlement-entry access, and real-time
 synchronization on the Cloudflare Pages deployment.
+
+For the one-month public beta scope, cloud persistence means household metadata,
+account/transaction core snapshots, and settlement records. Utilities and
+savings routes still smoke-pass, but full utility and savings cloud persistence
+is not a launch blocker unless scope is explicitly expanded.
 
 Do not expose multi-device household access, shared collaboration, or conflict
 resolution as supported public beta behavior.
