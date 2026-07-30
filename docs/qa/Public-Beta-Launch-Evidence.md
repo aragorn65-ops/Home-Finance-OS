@@ -29,6 +29,9 @@ Supabase validation before inviting public beta testers.
 * Member route access remains settlement-only across the public beta smoke
   route manifest:
   `frontend/test/publicBetaSmokeRoutes.test.ts`
+* Single-household authenticated-link conflicts are blocked before local link
+  state can be overwritten:
+  `frontend/test/householdStorage.test.ts`
 * Settlement role authorization:
   `frontend/test/authorization.test.ts` and
   `frontend/test/remoteSettlementPersistence.test.ts`
