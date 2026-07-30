@@ -3,6 +3,7 @@
 ## Public Beta Production Validation
 
 **Branch:** main
+**Started:** 2026-07-30
 
 ---
 
@@ -60,3 +61,21 @@ synchronization before inviting public beta testers.
 * `git diff --check`
 * `docs/qa/Cloudflare-Pages-Smoke-Check.md`
 * `docs/qa/Public-Beta-Launch-Checklist.md`
+
+---
+
+## Sprint Start Notes
+
+Sprint 103 starts after the Sprint 102 live-test hardening checkpoints through
+`6b17f87`.
+
+Initial production validation should focus on:
+
+* Confirming the latest Cloudflare Pages deployment includes `6b17f87`.
+* Re-running admin sign-in and linked-household restore after a hard refresh.
+* Re-testing expense, utility provider bill, and settlement saves with
+  attached files.
+* Confirming metadata-only attachments remain visible without broken preview
+  actions.
+* Recording any production-only Supabase schema or cache issue before widening
+  the beta invite list.

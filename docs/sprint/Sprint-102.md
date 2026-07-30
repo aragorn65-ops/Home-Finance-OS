@@ -170,6 +170,10 @@ wiring, app integration, tests, and launch documentation for:
 * Active-session realtime reloads for household metadata, core snapshots, and
   settlement records.
 * Visible fail-closed cloud write errors for the core snapshot baseline.
+* Live-test hardening for Supabase schema-cache drift, settlement history/edit
+  visibility, settlement allocation id bridging, and attachment payload limits.
+* Metadata-only receipt/bill handling for cloud beta snapshots and provider
+  bill records, with broken preview actions replaced by visible beta copy.
 * Public beta scope control that keeps multi-device household access, broad
   shared collaboration, conflict resolution, and full utility/savings cloud
   persistence outside the one-month target unless explicitly expanded.
@@ -187,6 +191,17 @@ ready for the next live Cloudflare Pages and Supabase validation pass tracked in
 * `npm.cmd test`
 * `npm.cmd run build`
 * `git diff --check`
+
+### Final Checkpoints
+
+* `44e4c05` - Fixed core snapshot household return ambiguity.
+* `9b4982a` - Added the Supabase drop/recreate guard for the core snapshot RPC
+  return rename.
+* `bc1a9c1` - Kept settlement history visible in beta mode after reload.
+* `1caf15a` - Stripped transaction receipt bodies from cloud snapshots.
+* `fa25bbe` - Stripped utility provider bill attachment bodies.
+* `6b17f87` - Handled metadata-only attachment previews across transaction,
+  utility, and settlement screens.
 
 ### Remaining Launch Gates
 

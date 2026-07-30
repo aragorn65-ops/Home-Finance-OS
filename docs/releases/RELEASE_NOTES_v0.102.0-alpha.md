@@ -19,6 +19,14 @@ household persistence, and real-time synchronization.
 * Added limited member settlement-entry behavior while keeping member access out
   of accounts, transactions, utilities, savings, settings, backups, household
   configuration, and migration state.
+* Hardened production-discovered settlement save/edit/history paths, including
+  settlement allocation id bridging and cloud-only settlement editing.
+* Hardened cloud beta attachment handling by stripping receipt/bill file bodies
+  from remote snapshot/provider-bill payloads while preserving attachment
+  metadata.
+* Replaced broken attachment preview actions with visible metadata-only beta
+  messaging when a file body is unavailable after cloud restore or sanitized
+  persistence.
 * Updated launch, deployment, smoke-test, README, user guide, and in-app help
   wording to match the one-month public beta scope.
 
@@ -29,6 +37,8 @@ household persistence, and real-time synchronization.
 * Public beta is not launched by this release note.
 * Local export/import backup remains a required safety rail.
 * Cloud write failures must stay visible and fail closed.
+* Receipt/bill image bodies are not yet cloud-synced across devices; public beta
+  stores metadata only until a storage-bucket receipt sync slice is added.
 * Multi-device household access, broad shared collaboration, conflict
   resolution, and full utility/savings cloud persistence remain out of scope
   unless explicitly expanded.
