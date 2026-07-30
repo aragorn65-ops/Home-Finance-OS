@@ -30,6 +30,8 @@ https://home-finance-os.pages.dev
 ## Required Gates
 
 * [ ] Cloudflare Pages production deployment is green.
+* [ ] Settings Auth Diagnostics shows the expected deployed build commit and
+  branch for the current `main` checkpoint.
 * [ ] `NODE_VERSION=22.13.0` is configured in Cloudflare Pages.
 * [ ] Production auth environment is configured for the deployed beta:
   `VITE_HFOS_AUTH_ENABLED=true`, `VITE_HFOS_AUTH_PROVIDER=supabase`,
@@ -51,6 +53,10 @@ https://home-finance-os.pages.dev
   records.
 * [ ] Household metadata, account/transaction core snapshots, and settlement
   records persist to the cloud-backed household store.
+* [ ] Expense, utility provider bill, and settlement records save successfully
+  when a receipt or bill file is attached.
+* [ ] Metadata-only attachments remain visible after refresh without exposing a
+  broken preview action.
 * [ ] Refreshing the browser reloads household data from the cloud store without
   relying on localStorage as the primary source.
 * [ ] Real-time synchronization propagates cloud-backed changes into the active

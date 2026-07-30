@@ -49,6 +49,18 @@ chunk-load error, or blank app shell.
 
 ---
 
+## Deployed Build Check
+
+1. Open `/app/settings`.
+2. Open Auth Diagnostics.
+3. Confirm the Build value matches the intended short commit from `main`.
+4. Confirm the Branch value is `main`.
+
+Expected result: the production site is running the intended checkpoint before
+the rest of the smoke pass starts.
+
+---
+
 ## Backup And Restore Check
 
 1. Create or restore a small test household.
@@ -79,6 +91,23 @@ member expense contribution summary appears again in Analytics.
 Expected result: authenticated admin household metadata, account/transaction
 snapshots, and settlement records survive refresh; signed-out access is blocked;
 and failed cloud writes are visible instead of silently succeeding.
+
+---
+
+## Attachment Save Check
+
+1. Sign in with the invited admin account.
+2. Add an expense transaction with a small JPG, PNG, WebP, or PDF receipt.
+3. Add an unpaid utility provider bill with a bill or receipt file attached.
+4. Add a settlement record with a transfer receipt attached.
+5. Refresh the browser.
+6. Confirm all three records remain visible.
+7. Confirm attachments remain listed by filename. If the deployed record has
+   metadata only, confirm the UI shows preview-unavailable beta copy instead of
+   a blank preview or broken Open button.
+
+Expected result: attached-file saves do not block record persistence, and
+metadata-only attachments remain understandable after refresh.
 
 ---
 

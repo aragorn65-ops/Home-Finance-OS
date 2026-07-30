@@ -52,6 +52,9 @@ Supabase validation before inviting public beta testers.
   `frontend/test/supabaseAuthBackendAdapter.test.ts`
 * Production auth readiness diagnostics:
   `frontend/test/createAuthDiagnostics.test.ts`
+* Metadata-only attachment payload and edit validation coverage:
+  `frontend/test/attachmentMetadataRecords.test.ts` and
+  `frontend/test/transactionValidator.test.ts`
 
 ---
 
@@ -64,6 +67,8 @@ https://home-finance-os.pages.dev
 ```
 
 * Cloudflare Pages production deployment is green.
+* Settings Auth Diagnostics reports the expected deployed build commit and
+  branch for the current `main` checkpoint.
 * `NODE_VERSION=22.13.0` is configured in Cloudflare Pages.
 * Production Supabase auth environment variables are present in Cloudflare
   Pages.
@@ -72,6 +77,10 @@ https://home-finance-os.pages.dev
 * Admin household claim/create, household metadata persistence,
   account/transaction snapshot persistence, settlement persistence, browser
   refresh restore, and realtime active-session sync pass on the deployed site.
+* Expense, utility provider bill, and settlement saves with attached files pass
+  on the deployed site.
+* Metadata-only attachments remain visible after refresh without broken preview
+  actions.
 * Limited member settlement-entry flow passes on the deployed site.
 * Utilities and savings routes smoke-pass on the deployed site; full utility
   and savings cloud persistence remains outside the one-month public beta scope
@@ -91,4 +100,39 @@ Run before any production smoke pass:
 cd frontend
 npm.cmd test
 npm.cmd run build
+```
+
+---
+
+## Sprint 103 Production Evidence Log
+
+Record the live smoke result here before checking launch gates:
+
+```text
+Date:
+Tester:
+Browser:
+Production URL: https://home-finance-os.pages.dev
+Expected build commit:
+Settings Auth Diagnostics build:
+Settings Auth Diagnostics branch:
+Cloudflare deployment status:
+NODE_VERSION observed/configured:
+Supabase schema SQL applied:
+PostgREST schema cache reloaded:
+Admin auth result:
+Household persistence result:
+Account/transaction snapshot result:
+Settlement persistence result:
+Expense attachment save result:
+Utility provider bill attachment save result:
+Settlement attachment save result:
+Metadata-only attachment preview result:
+Browser refresh restore result:
+Realtime active-session result:
+Limited member settlement-entry result:
+Route smoke result:
+Google Drive result, if configured:
+Blockers:
+Decision:
 ```
