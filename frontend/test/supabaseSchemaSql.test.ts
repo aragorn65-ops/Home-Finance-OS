@@ -79,3 +79,38 @@ test("Supabase settlement RPCs persist settlement attachments", () => {
     /settlement_notes,\s*'\[\]'::jsonb,/
   );
 });
+
+test("Supabase settlement RPCs resolve local household member ids", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /alter table public\.household_members\s+add column if not exists local_record_id text;/
+  );
+  assert.match(
+    schemaSql,
+    /create unique index if not exists household_members_household_local_record_id_key/
+  );
+  assert.match(
+    schemaSql,
+    /create or replace function public\.create_household_settlement\(\s*target_household_id uuid,\s*local_record_id text,\s*from_member_id text,\s*to_member_id text/
+  );
+  assert.match(
+    schemaSql,
+    /member\.local_record_id = nullif\(from_member_id, ''\)/
+  );
+  assert.match(
+    schemaSql,
+    /insert into public\.household_members \([\s\S]+local_record_id[\s\S]+returning id into resolved_to_member_id;/
+  );
+});

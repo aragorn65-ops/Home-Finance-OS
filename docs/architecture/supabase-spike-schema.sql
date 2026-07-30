@@ -19,6 +19,7 @@ create table if not exists public.households (
 create table if not exists public.household_members (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
+  local_record_id text,
   display_name text not null,
   role text not null,
   status text not null default 'active',
@@ -26,6 +27,9 @@ create table if not exists public.household_members (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.household_members
+add column if not exists local_record_id text;
 
 create table if not exists public.household_memberships (
   id uuid primary key default gen_random_uuid(),
@@ -425,6 +429,10 @@ on public.settlements (household_id);
 create index if not exists settlement_applications_settlement_id_idx
 on public.settlement_applications (settlement_id);
 
+create unique index if not exists household_members_household_local_record_id_key
+on public.household_members (household_id, local_record_id)
+where local_record_id is not null;
+
 create index if not exists savings_goals_household_id_idx
 on public.savings_goals (household_id);
 
@@ -679,15 +687,49 @@ drop function if exists public.create_household_settlement(
   jsonb
 );
 
+drop function if exists public.create_household_settlement(
+  uuid,
+  text,
+  uuid,
+  uuid,
+  numeric,
+  date,
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  jsonb,
+  boolean,
+  jsonb
+);
+
+drop function if exists public.create_household_settlement(
+  uuid,
+  text,
+  text,
+  text,
+  numeric,
+  date,
+  text,
+  text,
+  text,
+  text,
+  text,
+  jsonb,
+  boolean,
+  jsonb
+);
+
 create or replace function public.create_household_settlement(
   target_household_id uuid,
   local_record_id text,
-  from_member_id uuid,
-  to_member_id uuid,
+  from_member_id text,
+  to_member_id text,
   settlement_amount numeric,
   settlement_date date,
-  source_account_id uuid,
-  destination_account_id uuid,
+  source_account_id text,
+  destination_account_id text,
   application_method text,
   reference_number text,
   settlement_notes text,
@@ -703,6 +745,10 @@ as $$
 declare
   current_user_id uuid := auth.uid();
   current_member_id uuid;
+  resolved_from_member_id uuid;
+  resolved_to_member_id uuid;
+  resolved_source_account_id uuid;
+  resolved_destination_account_id uuid;
   created_settlement public.settlements%rowtype;
   application_row jsonb;
   application_allocation_id uuid;
@@ -717,13 +763,97 @@ begin
     raise exception 'Active household membership is required to create a settlement.';
   end if;
 
-  if not public.is_household_admin(target_household_id)
-    and current_member_id not in (from_member_id, to_member_id) then
-    raise exception 'Members can create only settlement records where they are the payer or receiver.';
-  end if;
-
   if application_method not in ('oldest-first', 'manual') then
     raise exception 'Invalid settlement application method.';
+  end if;
+
+  select member.id
+  into resolved_from_member_id
+  from public.household_members member
+  where member.household_id = target_household_id
+    and (
+      member.id::text = nullif(from_member_id, '')
+      or member.local_record_id = nullif(from_member_id, '')
+    )
+  limit 1;
+
+  if resolved_from_member_id is null then
+    insert into public.household_members (
+      household_id,
+      local_record_id,
+      display_name,
+      role,
+      status,
+      created_at,
+      updated_at
+    )
+    values (
+      target_household_id,
+      nullif(from_member_id, ''),
+      coalesce(nullif(from_member_id, ''), 'Settlement payer'),
+      'member',
+      'active',
+      now(),
+      now()
+    )
+    returning id into resolved_from_member_id;
+  end if;
+
+  select member.id
+  into resolved_to_member_id
+  from public.household_members member
+  where member.household_id = target_household_id
+    and (
+      member.id::text = nullif(to_member_id, '')
+      or member.local_record_id = nullif(to_member_id, '')
+    )
+  limit 1;
+
+  if resolved_to_member_id is null then
+    insert into public.household_members (
+      household_id,
+      local_record_id,
+      display_name,
+      role,
+      status,
+      created_at,
+      updated_at
+    )
+    values (
+      target_household_id,
+      nullif(to_member_id, ''),
+      coalesce(nullif(to_member_id, ''), 'Settlement receiver'),
+      'member',
+      'active',
+      now(),
+      now()
+    )
+    returning id into resolved_to_member_id;
+  end if;
+
+  select account.id
+  into resolved_source_account_id
+  from public.accounts account
+  where account.household_id = target_household_id
+    and (
+      account.id::text = nullif(source_account_id, '')
+      or account.local_record_id = nullif(source_account_id, '')
+    )
+  limit 1;
+
+  select account.id
+  into resolved_destination_account_id
+  from public.accounts account
+  where account.household_id = target_household_id
+    and (
+      account.id::text = nullif(destination_account_id, '')
+      or account.local_record_id = nullif(destination_account_id, '')
+    )
+  limit 1;
+
+  if not public.is_household_admin(target_household_id)
+    and current_member_id not in (resolved_from_member_id, resolved_to_member_id) then
+    raise exception 'Members can create only settlement records where they are the payer or receiver.';
   end if;
 
   insert into public.settlements (
@@ -745,12 +875,12 @@ begin
   values (
     target_household_id,
     coalesce(local_record_id, gen_random_uuid()::text),
-    from_member_id,
-    to_member_id,
+    resolved_from_member_id,
+    resolved_to_member_id,
     settlement_amount,
     settlement_date,
-    source_account_id,
-    destination_account_id,
+    resolved_source_account_id,
+    resolved_destination_account_id,
     application_method,
     reference_number,
     settlement_notes,
@@ -800,12 +930,12 @@ $$;
 revoke all on function public.create_household_settlement(
   uuid,
   text,
-  uuid,
-  uuid,
+  text,
+  text,
   numeric,
   date,
-  uuid,
-  uuid,
+  text,
+  text,
   text,
   text,
   text,
@@ -817,12 +947,12 @@ revoke all on function public.create_household_settlement(
 grant execute on function public.create_household_settlement(
   uuid,
   text,
-  uuid,
-  uuid,
+  text,
+  text,
   numeric,
   date,
-  uuid,
-  uuid,
+  text,
+  text,
   text,
   text,
   text,
@@ -847,15 +977,49 @@ drop function if exists public.update_household_settlement(
   jsonb
 );
 
+drop function if exists public.update_household_settlement(
+  uuid,
+  text,
+  uuid,
+  uuid,
+  numeric,
+  date,
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  jsonb,
+  boolean,
+  jsonb
+);
+
+drop function if exists public.update_household_settlement(
+  uuid,
+  text,
+  text,
+  text,
+  numeric,
+  date,
+  text,
+  text,
+  text,
+  text,
+  text,
+  jsonb,
+  boolean,
+  jsonb
+);
+
 create or replace function public.update_household_settlement(
   target_settlement_id uuid,
   local_record_id text,
-  from_member_id uuid,
-  to_member_id uuid,
+  from_member_id text,
+  to_member_id text,
   settlement_amount numeric,
   settlement_date date,
-  source_account_id uuid,
-  destination_account_id uuid,
+  source_account_id text,
+  destination_account_id text,
   application_method text,
   reference_number text,
   settlement_notes text,
@@ -871,6 +1035,10 @@ as $$
 declare
   current_user_id uuid := auth.uid();
   existing_settlement public.settlements%rowtype;
+  resolved_from_member_id uuid;
+  resolved_to_member_id uuid;
+  resolved_source_account_id uuid;
+  resolved_destination_account_id uuid;
   updated_settlement public.settlements%rowtype;
   application_row jsonb;
   application_allocation_id uuid;
@@ -897,15 +1065,99 @@ begin
     raise exception 'Invalid settlement application method.';
   end if;
 
+  select member.id
+  into resolved_from_member_id
+  from public.household_members member
+  where member.household_id = existing_settlement.household_id
+    and (
+      member.id::text = nullif(from_member_id, '')
+      or member.local_record_id = nullif(from_member_id, '')
+    )
+  limit 1;
+
+  if resolved_from_member_id is null then
+    insert into public.household_members (
+      household_id,
+      local_record_id,
+      display_name,
+      role,
+      status,
+      created_at,
+      updated_at
+    )
+    values (
+      existing_settlement.household_id,
+      nullif(from_member_id, ''),
+      coalesce(nullif(from_member_id, ''), 'Settlement payer'),
+      'member',
+      'active',
+      now(),
+      now()
+    )
+    returning id into resolved_from_member_id;
+  end if;
+
+  select member.id
+  into resolved_to_member_id
+  from public.household_members member
+  where member.household_id = existing_settlement.household_id
+    and (
+      member.id::text = nullif(to_member_id, '')
+      or member.local_record_id = nullif(to_member_id, '')
+    )
+  limit 1;
+
+  if resolved_to_member_id is null then
+    insert into public.household_members (
+      household_id,
+      local_record_id,
+      display_name,
+      role,
+      status,
+      created_at,
+      updated_at
+    )
+    values (
+      existing_settlement.household_id,
+      nullif(to_member_id, ''),
+      coalesce(nullif(to_member_id, ''), 'Settlement receiver'),
+      'member',
+      'active',
+      now(),
+      now()
+    )
+    returning id into resolved_to_member_id;
+  end if;
+
+  select account.id
+  into resolved_source_account_id
+  from public.accounts account
+  where account.household_id = existing_settlement.household_id
+    and (
+      account.id::text = nullif(source_account_id, '')
+      or account.local_record_id = nullif(source_account_id, '')
+    )
+  limit 1;
+
+  select account.id
+  into resolved_destination_account_id
+  from public.accounts account
+  where account.household_id = existing_settlement.household_id
+    and (
+      account.id::text = nullif(destination_account_id, '')
+      or account.local_record_id = nullif(destination_account_id, '')
+    )
+  limit 1;
+
   update public.settlements
   set
     local_record_id = coalesce(update_household_settlement.local_record_id, existing_settlement.local_record_id),
-    from_member_id = update_household_settlement.from_member_id,
-    to_member_id = update_household_settlement.to_member_id,
+    from_member_id = resolved_from_member_id,
+    to_member_id = resolved_to_member_id,
     amount = settlement_amount,
     settlement_date = update_household_settlement.settlement_date,
-    source_account_id = update_household_settlement.source_account_id,
-    destination_account_id = update_household_settlement.destination_account_id,
+    source_account_id = resolved_source_account_id,
+    destination_account_id = resolved_destination_account_id,
     application_method = update_household_settlement.application_method,
     reference_number = update_household_settlement.reference_number,
     notes = update_household_settlement.settlement_notes,
@@ -960,12 +1212,12 @@ $$;
 revoke all on function public.update_household_settlement(
   uuid,
   text,
-  uuid,
-  uuid,
+  text,
+  text,
   numeric,
   date,
-  uuid,
-  uuid,
+  text,
+  text,
   text,
   text,
   text,
@@ -977,12 +1229,12 @@ revoke all on function public.update_household_settlement(
 grant execute on function public.update_household_settlement(
   uuid,
   text,
-  uuid,
-  uuid,
+  text,
+  text,
   numeric,
   date,
-  uuid,
-  uuid,
+  text,
+  text,
   text,
   text,
   text,
