@@ -198,12 +198,19 @@ export default class SettlementService {
           .trim() ||
         undefined,
 
-      notes:
-        form.notes.trim() ||
-        undefined,
+        notes:
+          form.notes.trim() ||
+          undefined,
 
-      attachments:
-        [],
+        attachments:
+          form.attachments.map(
+            (attachment) => ({
+              ...attachment,
+              createdAt: new Date(
+                attachment.createdAt
+              ),
+            })
+          ),
 
       isActive:
         form.isActive,
@@ -458,12 +465,19 @@ export default class SettlementService {
             .trim() ||
           undefined,
 
-        notes:
-          form.notes.trim() ||
-          undefined,
+      notes:
+        form.notes.trim() ||
+        undefined,
 
-        attachments:
-          [],
+      attachments:
+        form.attachments.map(
+          (attachment) => ({
+            ...attachment,
+            createdAt: new Date(
+              attachment.createdAt
+            ),
+          })
+        ),
 
         isActive:
           form.isActive,

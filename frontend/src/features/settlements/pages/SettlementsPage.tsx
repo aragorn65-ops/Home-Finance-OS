@@ -489,6 +489,8 @@ export default function SettlementsPage() {
     {
       remoteEnabled:
         shouldEnforceSettlementAuth,
+      localHouseholdId:
+        householdId,
     }
   );
 
@@ -680,7 +682,15 @@ export default function SettlementsPage() {
       );
     }
 
-    const submissionForm:
+    const localSubmissionForm:
+      SettlementFormData = {
+        ...form,
+
+        householdId:
+          household.id,
+      };
+
+    const authorizationForm:
       SettlementFormData =
         shouldEnforceSettlementAuth
           ? createCloudSettlementForm(
@@ -689,12 +699,7 @@ export default function SettlementsPage() {
               membership,
               cloudHouseholdId
             )
-          : {
-              ...form,
-
-              householdId:
-                household.id,
-            };
+          : localSubmissionForm;
 
     const settlementAction =
       dialogMode === "edit" &&
@@ -706,7 +711,7 @@ export default function SettlementsPage() {
       shouldEnforceSettlementAuth &&
       !canAccessSettlementRecord(
         authorizationContext,
-        submissionForm,
+        authorizationForm,
         settlementAction
       )
     ) {
@@ -729,10 +734,10 @@ export default function SettlementsPage() {
       selectedSettlement
         ? await update(
             selectedSettlement.id,
-            submissionForm
+            localSubmissionForm
           )
         : await create(
-            submissionForm
+            localSubmissionForm
           );
 
     if (result.success) {

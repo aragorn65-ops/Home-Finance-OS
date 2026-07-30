@@ -13,7 +13,6 @@ import type {
 } from "../../auth/services";
 import type {
   RemoteSettlement,
-  RemoteSettlementApplicationDraft,
   RemoteSettlementDraft,
 } from "../../auth/models";
 
@@ -27,7 +26,6 @@ import type { MemberSettlementObligation } from "../models/MemberSettlementOblig
 import SettlementService from "../services/SettlementService";
 
 import SettlementBalanceService from "../services/SettlementBalanceService";
-import SettlementValidator from "../validators/SettlementValidator";
 
 import {
   OperationResults,
@@ -36,6 +34,7 @@ import {
 
 interface UseSettlementsOptions {
   remoteEnabled?: boolean;
+  localHouseholdId?: string;
 }
 
 function sortSettlements(
@@ -51,8 +50,28 @@ function sortSettlements(
 }
 
 function mapRemoteSettlement(
-  settlement: RemoteSettlement
+  settlement: RemoteSettlement,
+  localHouseholdId?: string
 ): Settlement {
+  const localSettlement =
+    settlement.localRecordId
+      ? SettlementService
+          .getSettlementById(
+            settlement.localRecordId
+          )
+      : undefined;
+
+  if (
+    localSettlement &&
+    (
+      !localHouseholdId ||
+      localSettlement.householdId ===
+        localHouseholdId
+    )
+  ) {
+    return localSettlement;
+  }
+
   return {
     id:
       settlement.id,
@@ -102,10 +121,12 @@ function mapRemoteSettlement(
 
 function createRemoteSettlementDraft(
   form: SettlementForm,
-  localRecordId?: string
+  localRecordId?: string,
+  householdIdOverride?: string
 ): RemoteSettlementDraft {
   return {
     householdId:
+      householdIdOverride ??
       form.householdId.trim(),
     localRecordId:
       localRecordId ??
@@ -148,74 +169,51 @@ function createRemoteSettlementDraft(
   };
 }
 
-function createRemoteApplicationDrafts(
-  form: SettlementForm
-): RemoteSettlementApplicationDraft[] {
-  if (
-    form.applicationMethod !==
-    "manual"
-  ) {
-    return [];
-  }
-
-  return form.applications
-    .filter(
-      (application) =>
-        application.isSelected &&
-        application.appliedAmount > 0
-    )
-    .map((application) => ({
-      localRecordId:
-        crypto.randomUUID(),
-      expenseAllocationId:
-        application.expenseAllocationId,
-      appliedAmount:
-        application.appliedAmount,
-    }));
-}
-
 export default function useSettlements(
   householdId: string,
   options: UseSettlementsOptions = {}
 ) {
   const remoteEnabled =
     options.remoteEnabled === true;
+  const localHouseholdId =
+    options.localHouseholdId
+      ?.trim() || householdId;
 
   const loadSettlements =
     useCallback((): Settlement[] => {
-    if (!householdId.trim()) {
-      return [];
-    }
+      if (!localHouseholdId.trim()) {
+        return [];
+      }
 
-    return SettlementService
-      .getActiveSettlementsByHouseholdId(
-          householdId
-      );
-  }, [householdId]);
+      return SettlementService
+        .getActiveSettlementsByHouseholdId(
+          localHouseholdId
+        );
+    }, [localHouseholdId]);
 
   const loadMemberBalances =
     useCallback((): MemberSettlementBalance[] => {
-      if (!householdId.trim()) {
+      if (!localHouseholdId.trim()) {
         return [];
       }
 
       return SettlementBalanceService
         .getMemberBalances(
-          householdId
+          localHouseholdId
         );
-    }, [householdId]);
+    }, [localHouseholdId]);
 
   const loadObligations =
     useCallback((): MemberSettlementObligation[] => {
-      if (!householdId.trim()) {
+      if (!localHouseholdId.trim()) {
         return [];
       }
 
       return SettlementBalanceService
         .getWhoOwesWhom(
-          householdId
+          localHouseholdId
         );
-    }, [householdId]);
+    }, [localHouseholdId]);
 
   const [settlements, setSettlements] =
     useState<Settlement[]>(
@@ -286,7 +284,11 @@ export default function useSettlements(
           sortSettlements(
             remoteSettlements
               .map(
-                mapRemoteSettlement
+                (settlement) =>
+                  mapRemoteSettlement(
+                    settlement,
+                    localHouseholdId
+                  )
               )
               .filter(
                 (settlement) =>
@@ -304,6 +306,7 @@ export default function useSettlements(
       }
     }, [
       householdId,
+      localHouseholdId,
       remoteEnabled,
     ]);
 
@@ -441,59 +444,65 @@ export default function useSettlements(
   ): Promise<
     OperationResult<Settlement>
   > => {
-    const validation =
-      SettlementValidator.validate(
+    const localResult =
+      SettlementService.create(
         form
       );
 
-    if (!validation.isValid) {
+    if (!localResult.success) {
+      return localResult;
+    }
+
+    const localSettlement =
+      localResult.data;
+
+    if (!localSettlement) {
+      refresh();
+
       return OperationResults.failure<
         Settlement
       >(
-        validation.errors,
-        "Please correct the settlement validation errors."
+        {
+          general:
+            "Local settlement was not returned after save.",
+        },
+        "Settlement was not saved."
       );
     }
 
     try {
-      const result =
-        await getAuthBackendAdapter()
-          .createRemoteSettlement({
-            settlement:
-              createRemoteSettlementDraft(
-                form
-              ),
-            applications:
-              createRemoteApplicationDrafts(
-                form
-              ),
-          });
+      await getAuthBackendAdapter()
+        .createRemoteSettlement({
+          settlement:
+            createRemoteSettlementDraft(
+              {
+                ...form,
+                householdId,
+                sourceAccountId: "",
+                destinationAccountId: "",
+                applicationMethod:
+                  "oldest-first",
+                applications: [],
+              },
+              localSettlement.id,
+              householdId
+            ),
+          applications: [],
+        });
 
-      const settlement =
-        mapRemoteSettlement(
-          result.settlement
-        );
-
-      setSettlements((current) =>
-        sortSettlements([
-          settlement,
-          ...current.filter(
-            (item) =>
-              item.id !==
-              settlement.id
-          ),
-        ]).filter(
-          (item) => item.isActive
-        )
-      );
-
+      refresh();
       setError("");
 
       return OperationResults.success(
-        settlement,
+        localSettlement,
         "Settlement created successfully."
       );
     } catch (error) {
+      SettlementService.delete(
+        localSettlement.id
+      );
+      refresh();
+
       return OperationResults.failure<
         Settlement
       >(
@@ -514,58 +523,87 @@ export default function useSettlements(
   ): Promise<
     OperationResult<Settlement>
   > => {
-    const validation =
-      SettlementValidator.validate(
+    const localResult =
+      SettlementService.update(
+        id,
         form
       );
 
-    if (!validation.isValid) {
+    if (!localResult.success) {
+      return localResult;
+    }
+
+    const localSettlement =
+      localResult.data;
+
+    if (!localSettlement) {
+      refresh();
+
       return OperationResults.failure<
         Settlement
       >(
-        validation.errors,
-        "Please correct the settlement validation errors."
+        {
+          general:
+            "Local settlement was not returned after update.",
+        },
+        "Settlement was not saved."
       );
     }
 
     try {
-      const result =
-        await getAuthBackendAdapter()
-          .updateRemoteSettlement({
-            settlementId:
-              id,
-            settlement:
-              createRemoteSettlementDraft(
-                form,
-                id
-              ),
-            applications:
-              createRemoteApplicationDrafts(
-                form
-              ),
-          });
-
-      const settlement =
-        mapRemoteSettlement(
-          result.settlement
+      const adapter =
+        getAuthBackendAdapter();
+      const remoteSettlements =
+        await adapter.listRemoteSettlements(
+          householdId
+        );
+      const remoteSettlement =
+        remoteSettlements.find(
+          (settlement) =>
+            settlement.localRecordId ===
+              id ||
+            settlement.id === id
         );
 
-      setSettlements((current) =>
-        sortSettlements(
-          current.map((item) =>
-            item.id === id
-              ? settlement
-              : item
-          )
-        ).filter(
-          (item) => item.isActive
-        )
-      );
+      const remoteForm: SettlementForm = {
+        ...form,
+        householdId,
+        sourceAccountId: "",
+        destinationAccountId: "",
+        applicationMethod:
+          "oldest-first",
+        applications: [],
+      };
 
+      if (remoteSettlement) {
+        await adapter.updateRemoteSettlement({
+          settlementId:
+            remoteSettlement.id,
+          settlement:
+            createRemoteSettlementDraft(
+              remoteForm,
+              id,
+              householdId
+            ),
+          applications: [],
+        });
+      } else {
+        await adapter.createRemoteSettlement({
+          settlement:
+            createRemoteSettlementDraft(
+              remoteForm,
+              id,
+              householdId
+            ),
+          applications: [],
+        });
+      }
+
+      refresh();
       setError("");
 
       return OperationResults.success(
-        settlement,
+        localSettlement,
         "Settlement updated successfully."
       );
     } catch (error) {
@@ -589,18 +627,37 @@ export default function useSettlements(
     OperationResult<boolean>
   > => {
     try {
-      await getAuthBackendAdapter()
-        .deleteRemoteSettlement(
-          householdId,
+      const localResult =
+        SettlementService.delete(
           id
         );
 
-      setSettlements((current) =>
-        current.filter(
+      if (!localResult.success) {
+        return localResult;
+      }
+
+      const adapter =
+        getAuthBackendAdapter();
+      const remoteSettlements =
+        await adapter.listRemoteSettlements(
+          householdId
+        );
+      const remoteSettlement =
+        remoteSettlements.find(
           (settlement) =>
-            settlement.id !== id
-        )
-      );
+            settlement.localRecordId ===
+              id ||
+            settlement.id === id
+        );
+
+      if (remoteSettlement) {
+        await adapter.deleteRemoteSettlement(
+          householdId,
+          remoteSettlement.id
+        );
+      }
+
+      refresh();
 
       setError("");
 
