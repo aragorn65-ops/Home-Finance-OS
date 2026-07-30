@@ -119,6 +119,9 @@ for public beta.
 * [x] Added a linked-household core snapshot save helper that decides when a
   cloud snapshot is required and saves local records to the authenticated
   remote household id.
+* [x] Wired account create/update/delete flows to await linked-household core
+  snapshot saves and keep account dialogs open with visible cloud errors when
+  the snapshot save fails.
 * [ ] Add cloud-backed persistence for household and core finance records.
 * [ ] Add real-time synchronization for the active authenticated household
   session.

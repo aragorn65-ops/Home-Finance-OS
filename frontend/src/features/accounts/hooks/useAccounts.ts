@@ -3,10 +3,42 @@ import {
   useState,
 } from "react";
 
+import {
+  isAuthFeatureEnabled,
+} from "../../../config/auth";
+import type {
+  OperationResult,
+} from "../../../shared/types";
+import {
+  OperationResults,
+} from "../../../shared/types";
+import {
+  getAuthBackendAdapter,
+  saveLinkedRemoteCoreSnapshot,
+} from "../../auth";
+import {
+  browserCoreSnapshotRecordSource,
+} from "../../auth/services/browserCoreSnapshotRecordSource";
+import {
+  loadHousehold,
+} from "../../household/services/householdStorage";
 import type { Account } from "../models/Account";
 import type { AccountForm } from "../models/AccountForm";
 
 import AccountService from "../services/AccountService";
+
+function getErrorMessage(
+  error: unknown
+): string {
+  if (
+    error instanceof Error &&
+    error.message.trim()
+  ) {
+    return error.message;
+  }
+
+  return "Core account snapshot could not be saved.";
+}
 
 export default function useAccounts() {
   /**
@@ -37,7 +69,7 @@ export default function useAccounts() {
   const create = (
     form: AccountForm,
     householdId: string
-  ) => {
+  ): Promise<OperationResult<Account>> => {
     const result =
       AccountService.create(
         form,
@@ -48,7 +80,9 @@ export default function useAccounts() {
       refresh();
     }
 
-    return result;
+    return persistLinkedCoreSnapshot(
+      result
+    );
   };
 
   /**
@@ -60,7 +94,7 @@ export default function useAccounts() {
   const update = (
     id: string,
     form: AccountForm
-  ) => {
+  ): Promise<OperationResult<Account>> => {
     const result =
       AccountService.update(
         id,
@@ -71,7 +105,9 @@ export default function useAccounts() {
       refresh();
     }
 
-    return result;
+    return persistLinkedCoreSnapshot(
+      result
+    );
   };
 
   /**
@@ -80,7 +116,7 @@ export default function useAccounts() {
    */
   const remove = (
     id: string
-  ) => {
+  ): Promise<OperationResult<boolean>> => {
     const result =
       AccountService.delete(id);
 
@@ -88,8 +124,42 @@ export default function useAccounts() {
       refresh();
     }
 
-    return result;
+    return persistLinkedCoreSnapshot(
+      result
+    );
   };
+
+  const persistLinkedCoreSnapshot =
+    async <T,>(
+      result: OperationResult<T>
+    ): Promise<OperationResult<T>> => {
+      if (!result.success) {
+        return result;
+      }
+
+      try {
+        await saveLinkedRemoteCoreSnapshot({
+          authEnabled:
+            isAuthFeatureEnabled(),
+          household:
+            loadHousehold(),
+          adapter:
+            getAuthBackendAdapter(),
+          recordSource:
+            browserCoreSnapshotRecordSource,
+        });
+
+        return result;
+      } catch (error) {
+        return OperationResults.failure<T>(
+          {
+            cloud:
+              getErrorMessage(error),
+          },
+          "Cloud account snapshot was not saved."
+        );
+      }
+    };
 
   /**
    * Calculates the balance summary from active accounts

@@ -16,8 +16,9 @@ export interface ConfirmDialogProps {
 
   variant?: "primary" | "danger";
 
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onCancel: () => void;
+  isConfirming?: boolean;
 }
 
 export default function ConfirmDialog({
@@ -29,6 +30,7 @@ export default function ConfirmDialog({
   variant = "primary",
   onConfirm,
   onCancel,
+  isConfirming = false,
 }: ConfirmDialogProps) {
   return (
     <Dialog
@@ -56,13 +58,17 @@ export default function ConfirmDialog({
         <Button
           variant="secondary"
           onClick={onCancel}
+          disabled={isConfirming}
         >
           {cancelLabel}
         </Button>
 
         <Button
           variant={variant}
-          onClick={onConfirm}
+          onClick={() => {
+            void onConfirm();
+          }}
+          disabled={isConfirming}
         >
           {confirmLabel}
         </Button>

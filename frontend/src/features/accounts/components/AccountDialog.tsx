@@ -16,8 +16,9 @@ export interface AccountDialogProps {
   title: string;
   children: ReactNode;
   onClose: () => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
   saveLabel?: string;
+  isSaving?: boolean;
 }
 
 export default function AccountDialog({
@@ -27,6 +28,7 @@ export default function AccountDialog({
   onClose,
   onSave,
   saveLabel = "Save",
+  isSaving = false,
 }: AccountDialogProps) {
   return (
     <Dialog
@@ -43,15 +45,21 @@ export default function AccountDialog({
         <Button
           variant="secondary"
           onClick={onClose}
+          disabled={isSaving}
         >
           Cancel
         </Button>
 
         <Button
           variant="primary"
-          onClick={onSave}
+          onClick={() => {
+            void onSave();
+          }}
+          disabled={isSaving}
         >
-          {saveLabel}
+          {isSaving
+            ? "Saving..."
+            : saveLabel}
         </Button>
       </DialogFooter>
     </Dialog>

@@ -229,6 +229,12 @@ export default function AccountsPage() {
 
   const [deleteError, setDeleteError] =
     useState("");
+  const [isSavingAccount, setIsSavingAccount] =
+    useState(false);
+  const [
+    isDeletingAccount,
+    setIsDeletingAccount,
+  ] = useState(false);
 
   const showValidationAlert = (
     nextErrors:
@@ -314,14 +320,21 @@ export default function AccountsPage() {
     setDeletingAccount(null);
   };
 
-  const handleDeleteConfirm = () => {
-    if (!deletingAccount) {
+  const handleDeleteConfirm =
+    async () => {
+    if (
+      !deletingAccount ||
+      isDeletingAccount
+    ) {
       return;
     }
 
-    const result = remove(
-      deletingAccount.id
-    );
+    setIsDeletingAccount(true);
+
+    const result =
+      await remove(
+        deletingAccount.id
+      );
 
     if (!result.success) {
       setDeleteError(
@@ -331,15 +344,22 @@ export default function AccountsPage() {
           ) ??
           "Unable to delete the account."
       );
+      setIsDeletingAccount(false);
 
       return;
     }
 
     setDeleteError("");
     setDeletingAccount(null);
+    setIsDeletingAccount(false);
   };
 
-  const handleSaveAccount = () => {
+  const handleSaveAccount =
+    async () => {
+    if (isSavingAccount) {
+      return;
+    }
+
     setSaveError("");
 
     if (!household) {
@@ -372,15 +392,18 @@ export default function AccountsPage() {
       return;
     }
 
-    const result = editingAccount
-      ? update(
-          editingAccount.id,
-          form
-        )
-      : create(
-          form,
-          household.id
-        );
+    setIsSavingAccount(true);
+
+    const result =
+      editingAccount
+        ? await update(
+            editingAccount.id,
+            form
+          )
+        : await create(
+            form,
+            household.id
+          );
 
     if (!result.success) {
       const nextSaveError =
@@ -395,10 +418,12 @@ export default function AccountsPage() {
         result.errors,
         nextSaveError
       );
+      setIsSavingAccount(false);
 
       return;
     }
 
+    setIsSavingAccount(false);
     resetDialog();
   };
 
@@ -446,6 +471,7 @@ export default function AccountsPage() {
         }
         onClose={resetDialog}
         onSave={handleSaveAccount}
+        isSaving={isSavingAccount}
       >
         <div className="space-y-4">
           <FormValidationAlert
@@ -513,6 +539,9 @@ export default function AccountsPage() {
         variant="danger"
         onConfirm={
           handleDeleteConfirm
+        }
+        isConfirming={
+          isDeletingAccount
         }
         onCancel={
           handleDeleteCancel
