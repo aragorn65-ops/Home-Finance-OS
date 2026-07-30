@@ -39,6 +39,11 @@ startup route:
 /app/settings
 ```
 
+The route list is mirrored in
+`frontend/src/app/router/publicBetaSmokeRoutes.ts` and covered by
+`frontend/test/publicBetaSmokeRoutes.test.ts` so local route-smoke scope stays
+aligned with the app sidebar before a production deployment check.
+
 Expected result: each route loads without a Cloudflare 404, browser console
 chunk-load error, or blank app shell.
 
