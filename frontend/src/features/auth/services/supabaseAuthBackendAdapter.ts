@@ -4,17 +4,23 @@ import type {
   AuthSessionSubscription,
   HouseholdClaimDraft,
   HouseholdClaimResult,
+  RemoteHouseholdPreferencesInput,
 } from "./AuthBackendAdapter";
 import type {
   AuthSession,
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteHousehold,
+  RemoteHouseholdCoreSnapshot,
+  RemoteHouseholdCoreSnapshotInput,
+  RemoteMigrationAccountUploadRecord,
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationPreCommitAudit,
+  RemoteMigrationTransactionUploadRecord,
   RemoteMigrationTransactionUploadPayload,
   RemoteMigrationTransactionUploadStagingResult,
   RemoteMigrationUploadManifest,
@@ -64,6 +70,8 @@ interface SupabaseAuthClient {
     | SupabaseMigrationPreCommitAuditRpcResult
     | SupabaseMigrationAbortRpcResult
     | SupabaseMigrationCommitRpcResult
+    | SupabaseRemoteHouseholdRpcResult
+    | SupabaseCoreSnapshotRpcResult
     | SupabaseSettlementMutationRpcResult
     | SupabaseSettlementDeleteRpcResult
   >;
@@ -291,6 +299,26 @@ interface SupabaseMigrationCommitRpcResult {
     | null;
 }
 
+interface SupabaseCoreSnapshotRpcResult {
+  data:
+    | SupabaseCoreSnapshotRpcRow
+    | SupabaseCoreSnapshotRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
+interface SupabaseRemoteHouseholdRpcResult {
+  data:
+    | SupabaseRemoteHouseholdRpcRow
+    | SupabaseRemoteHouseholdRpcRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
+}
+
 interface SupabaseSession {
   expires_at?: number;
   user: SupabaseUser;
@@ -359,6 +387,25 @@ interface SupabaseTransactionRow {
   is_active: boolean;
   source_account_id?: string | null;
   destination_account_id?: string | null;
+}
+
+interface SupabaseCoreSnapshotRpcRow {
+  household_id: string;
+  accounts?: unknown;
+  transactions?: unknown;
+  saved_at?: string | null;
+}
+
+interface SupabaseRemoteHouseholdRpcRow {
+  household_id: string;
+  household_name: string;
+  country: string;
+  currency: string;
+  timezone: string;
+  status: string;
+  owner_member_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 interface SupabaseSettlementMutationRpcResult {
@@ -1031,6 +1078,90 @@ export class SupabaseAuthBackendAdapter
     };
   }
 
+  async loadRemoteHousehold(
+    householdId: string
+  ): Promise<RemoteHousehold> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `household preferences for ${householdId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before loading household preferences."
+      );
+    }
+
+    const result =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "load_household_preferences",
+          {
+            target_household_id:
+              householdId,
+          }
+        ) as SupabaseRemoteHouseholdRpcResult;
+
+    return createRemoteHouseholdResult(
+      result,
+      "load"
+    );
+  }
+
+  async saveRemoteHouseholdPreferences(
+    input: RemoteHouseholdPreferencesInput
+  ): Promise<RemoteHousehold> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `household preferences for ${input.householdId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before saving household preferences."
+      );
+    }
+
+    const result =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "save_household_preferences",
+          {
+            target_household_id:
+              input.householdId,
+            household_name:
+              input.name,
+            household_country:
+              input.country,
+            household_currency:
+              input.currency,
+            household_timezone:
+              input.timezone,
+          }
+        ) as SupabaseRemoteHouseholdRpcResult;
+
+    return createRemoteHouseholdResult(
+      result,
+      "save"
+    );
+  }
+
   async listMigrationDrafts():
     Promise<RemoteMigrationDraft[]> {
     if (!this.isConfigured()) {
@@ -1630,6 +1761,86 @@ export class SupabaseAuthBackendAdapter
         "Supabase migration abort returned an invalid result."
       );
     }
+  }
+
+  async loadRemoteCoreSnapshot(
+    householdId: string
+  ): Promise<RemoteHouseholdCoreSnapshot> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `core household snapshot load for ${householdId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before loading core finance records."
+      );
+    }
+
+    const result =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "load_household_core_snapshot",
+          {
+            target_household_id:
+              householdId,
+          }
+        ) as SupabaseCoreSnapshotRpcResult;
+
+    return createRemoteCoreSnapshotResult(
+      result,
+      "load"
+    );
+  }
+
+  async saveRemoteCoreSnapshot(
+    input: RemoteHouseholdCoreSnapshotInput
+  ): Promise<RemoteHouseholdCoreSnapshot> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        this.createUnavailableMessage(
+          `core household snapshot save for ${input.householdId}`
+        )
+      );
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before saving core finance records."
+      );
+    }
+
+    const result =
+      await (
+      await this.getClient()
+      )
+        .rpc(
+          "save_household_core_snapshot",
+          {
+            target_household_id:
+              input.householdId,
+            core_accounts:
+              input.accounts,
+            core_transactions:
+              input.transactions,
+          }
+        ) as SupabaseCoreSnapshotRpcResult;
+
+    return createRemoteCoreSnapshotResult(
+      result,
+      "save"
+    );
   }
 
   async listRemoteSettlements(
@@ -2641,6 +2852,151 @@ function createRemoteSettlementMutationSettlement(
   }
 
   return settlement;
+}
+
+function createRemoteCoreSnapshotResult(
+  result: SupabaseCoreSnapshotRpcResult,
+  action: string
+): RemoteHouseholdCoreSnapshot {
+  if (result.error) {
+    throw new Error(
+      `Supabase core household snapshot ${action} failed: ${result.error.message}`
+    );
+  }
+
+  const row =
+    readSingleSupabaseRpcRow(
+      result.data
+    );
+
+  if (
+    !row ||
+    !row.household_id ||
+    !isRemoteAccountUploadRecordArray(
+      row.accounts
+    ) ||
+    !isRemoteTransactionUploadRecordArray(
+      row.transactions
+    )
+  ) {
+    throw new Error(
+      `Supabase core household snapshot ${action} returned an invalid result.`
+    );
+  }
+
+  return {
+    householdId:
+      row.household_id,
+    accounts:
+      row.accounts,
+    transactions:
+      row.transactions,
+    savedAt:
+      mapSupabaseDate(
+        row.saved_at ?? undefined
+      ),
+  };
+}
+
+function createRemoteHouseholdResult(
+  result: SupabaseRemoteHouseholdRpcResult,
+  action: string
+): RemoteHousehold {
+  if (result.error) {
+    throw new Error(
+      `Supabase household preferences ${action} failed: ${result.error.message}`
+    );
+  }
+
+  const row =
+    readSingleSupabaseRpcRow(
+      result.data
+    );
+
+  if (
+    !row ||
+    !row.household_id ||
+    !row.household_name ||
+    !row.country ||
+    !row.currency ||
+    !row.timezone ||
+    !row.status
+  ) {
+    throw new Error(
+      `Supabase household preferences ${action} returned an invalid result.`
+    );
+  }
+
+  return {
+    id:
+      row.household_id,
+    name:
+      row.household_name,
+    country:
+      row.country,
+    currency:
+      row.currency,
+    timezone:
+      row.timezone,
+    ownerMemberId:
+      row.owner_member_id ?? "",
+    status:
+      row.status === "deleted" ||
+      row.status === "archived"
+        ? row.status
+        : "active",
+    createdAt:
+      mapSupabaseDate(
+        row.created_at ?? undefined
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        row.updated_at ??
+          row.created_at ??
+          undefined
+      ),
+  };
+}
+
+function isRemoteAccountUploadRecordArray(
+  value: unknown
+): value is RemoteMigrationAccountUploadRecord[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (record) =>
+        isRecord(record) &&
+        typeof record.id ===
+          "string" &&
+        typeof record.name ===
+          "string"
+    )
+  );
+}
+
+function isRemoteTransactionUploadRecordArray(
+  value: unknown
+): value is RemoteMigrationTransactionUploadRecord[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (record) =>
+        isRecord(record) &&
+        typeof record.id ===
+          "string" &&
+        typeof record.type ===
+          "string"
+    )
+  );
+}
+
+function isRecord(
+  value: unknown
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null
+  );
 }
 
 function createSupabaseSettlementApplicationPayload(

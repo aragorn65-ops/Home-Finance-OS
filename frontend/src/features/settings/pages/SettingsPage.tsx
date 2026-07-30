@@ -27,7 +27,11 @@ import {
 } from "../../household/services/householdStorage";
 import {
   AuthDiagnosticsPanel,
+  getAuthBackendAdapter,
 } from "../../auth";
+import {
+  isAuthFeatureEnabled,
+} from "../../../config/auth";
 
 import {
   reloadAfterApplicationReset,
@@ -145,6 +149,10 @@ export default function SettingsPage() {
     preferencesError,
     setPreferencesError,
   ] = useState("");
+  const [
+    isSavingPreferences,
+    setIsSavingPreferences,
+  ] = useState(false);
 
   const [
     isConfirmingReset,
@@ -875,8 +883,49 @@ export default function SettingsPage() {
     setPreferencesError("");
   };
 
-  const savePreferences = (): void => {
+  const savePreferences =
+    async (): Promise<void> => {
     clearPreferenceFeedback();
+
+    if (!household) {
+      setPreferencesError(
+        "Unable to update household preferences."
+      );
+
+      return;
+    }
+
+    setIsSavingPreferences(true);
+
+    try {
+      if (
+        isAuthFeatureEnabled() &&
+        household.authenticatedLink
+      ) {
+        await getAuthBackendAdapter()
+          .saveRemoteHouseholdPreferences({
+            householdId:
+              household
+                .authenticatedLink
+                .remoteHouseholdId,
+            name:
+              householdName,
+            country:
+              country,
+            currency:
+              baseCurrency,
+            timezone:
+              timezone,
+          });
+      }
+    } catch (error) {
+      setPreferencesError(
+        `Cloud household preferences were not saved: ${getErrorMessage(error)}`
+      );
+      setIsSavingPreferences(false);
+
+      return;
+    }
 
     const result =
       saveHouseholdPreferences({
@@ -894,9 +943,12 @@ export default function SettingsPage() {
       setPreferencesError(
         "Unable to update household preferences."
       );
+      setIsSavingPreferences(false);
 
       return;
     }
+
+    setIsSavingPreferences(false);
 
     setPreferencesMessage(
       "Household preferences updated. Historical financial records were not changed."
@@ -1380,10 +1432,13 @@ export default function SettingsPage() {
                 <Button
                   onClick={savePreferences}
                   disabled={
-                    !hasPreferenceChanges
+                    !hasPreferenceChanges ||
+                    isSavingPreferences
                   }
                 >
-                  Save Preferences
+                  {isSavingPreferences
+                    ? "Saving..."
+                    : "Save Preferences"}
                 </Button>
 
                 {hasPreferenceChanges && (
@@ -2489,6 +2544,19 @@ function normalizePinInput(
   return value
     .replace(/\D/g, "")
     .slice(0, 8);
+}
+
+function getErrorMessage(
+  error: unknown
+): string {
+  if (
+    error instanceof Error &&
+    error.message.trim()
+  ) {
+    return error.message;
+  }
+
+  return "Unknown error";
 }
 
 function formatBackupDate(

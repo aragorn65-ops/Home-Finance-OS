@@ -62,6 +62,11 @@ export type {
 } from "./RemoteMigration";
 
 export type {
+  RemoteHouseholdCoreSnapshot,
+  RemoteHouseholdCoreSnapshotInput,
+} from "./RemoteCoreSnapshot";
+
+export type {
   RemoteRecordVisibility,
   RemoteTenantRecord,
 } from "./RemoteRecord";

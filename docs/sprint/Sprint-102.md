@@ -93,7 +93,32 @@ for public beta.
 * [x] Added remote settlement application-row persistence to the Supabase
   settlement create/update RPC path, including household allocation validation
   and mutation results that read back saved application rows.
-* [ ] Add production admin/member auth smoke UI and route guards.
+* [x] Added production auth smoke route guards at the app shell boundary:
+  signed-out cloud mode blocks household finance routes, Settings remains
+  available for diagnostics/sign-in, admin/owner access can use the app, and
+  member access is limited to settlement entry.
+* [x] Added an adapter-level core household snapshot contract for cloud-backed
+  accounts and transactions, with in-memory admin-only save/load coverage and
+  disabled/Supabase fail-closed placeholders.
+* [x] Wired the core household snapshot contract into Supabase RPC hooks and
+  schema SQL for admin-only account/transaction snapshot save/load.
+* [x] Added reusable core snapshot sync helpers that convert local
+  account/transaction records into the remote snapshot contract and call the
+  adapter save/load methods.
+* [x] Added a Settings auth diagnostics core snapshot smoke panel for
+  owner/admin cloud save/load checks, including local-vs-remote household id
+  handling and remote count feedback.
+* [x] Added an adapter-level remote household preferences contract with
+  in-memory owner/admin save, active-member load, disabled fail-closed behavior,
+  and Supabase RPC/schema support.
+* [x] Wired Settings household preference saves to the remote household
+  preferences contract when an authenticated household link exists; cloud
+  failure now stops the local preference save.
+* [x] Centralized current-browser core snapshot collection behind a reusable
+  sync service and rewired the Settings smoke panel to use it.
+* [x] Added a linked-household core snapshot save helper that decides when a
+  cloud snapshot is required and saves local records to the authenticated
+  remote household id.
 * [ ] Add cloud-backed persistence for household and core finance records.
 * [ ] Add real-time synchronization for the active authenticated household
   session.

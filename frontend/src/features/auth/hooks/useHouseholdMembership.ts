@@ -35,6 +35,8 @@ export function useHouseholdMembership(
 
   const [error, setError] =
     useState("");
+  const [isLoading, setIsLoading] =
+    useState(false);
 
   useEffect(() => {
     let isActive = true;
@@ -46,12 +48,14 @@ export function useHouseholdMembership(
     ) {
       setMemberships([]);
       setError("");
+      setIsLoading(false);
       return () => {
         isActive = false;
       };
     }
 
     setError("");
+    setIsLoading(true);
 
     void getAuthBackendAdapter()
       .listMemberships()
@@ -69,6 +73,7 @@ export function useHouseholdMembership(
                 "active"
           )
         );
+        setIsLoading(false);
       })
       .catch(() => {
         if (!isActive) {
@@ -76,6 +81,7 @@ export function useHouseholdMembership(
         }
 
         setMemberships([]);
+        setIsLoading(false);
         setError(
           "Household membership could not be loaded."
         );
@@ -102,6 +108,7 @@ export function useHouseholdMembership(
     memberships,
     error:
       sessionError || error,
+    isLoading,
     refreshSession,
     signIn,
     signOut,

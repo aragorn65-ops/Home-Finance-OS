@@ -5,6 +5,7 @@ export type {
   AuthSessionSubscription,
   HouseholdClaimDraft,
   HouseholdClaimResult,
+  RemoteHouseholdPreferencesInput,
 } from "./AuthBackendAdapter";
 
 export type {
@@ -74,6 +75,41 @@ export {
   canAccessTenantRecord,
   canManageMemberRole,
 } from "./authorization";
+
+export {
+  evaluateAuthRouteAccess,
+} from "./authRouteAccess";
+
+export type {
+  AuthRouteAccessInput,
+  AuthRouteAccessResult,
+  AuthRouteAccessStatus,
+} from "./authRouteAccess";
+
+export {
+  createMigrationAccountUploadPayload,
+  createMigrationTransactionUploadPayload,
+} from "./remoteMigrationUploadPayloads";
+
+export {
+  createRemoteCoreSnapshotInput,
+  getLocalCoreSnapshotCounts,
+  loadRemoteCoreSnapshotForHousehold,
+  saveCurrentBrowserCoreSnapshotForHousehold,
+  saveLinkedRemoteCoreSnapshot,
+  saveRemoteCoreSnapshotForHousehold,
+} from "./coreSnapshotSync";
+
+export type {
+  CoreSnapshotRecordSource,
+  CoreSnapshotAdapter,
+  CurrentBrowserCoreSnapshotOptions,
+  LinkedCoreSnapshotHousehold,
+  LinkedCoreSnapshotSaveOptions,
+  LinkedCoreSnapshotSaveResult,
+  LocalCoreSnapshotCounts,
+  LocalCoreSnapshotSource,
+} from "./coreSnapshotSync";
 
 export type {
   AuthorizationContext,

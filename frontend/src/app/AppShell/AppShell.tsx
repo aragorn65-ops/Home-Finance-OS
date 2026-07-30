@@ -15,6 +15,16 @@ import Header from "../Header/Header";
 import Sidebar from "../Sidebar/Sidebar";
 
 import {
+  isAuthFeatureEnabled,
+} from "../../config/auth";
+import {
+  AuthRouteGatePanel,
+  useHouseholdMembership,
+} from "../../features/auth";
+import {
+  evaluateAuthRouteAccess,
+} from "../../features/auth/services";
+import {
   loadHousehold,
 } from "../../features/household/services/householdStorage";
 import AppUnlockScreen from "../../features/security/components/AppUnlockScreen";
@@ -26,6 +36,22 @@ import {
 export default function AppShell() {
   const household = loadHousehold();
   const location = useLocation();
+  const householdId =
+    household?.id ?? "";
+  const isProductionAuthEnabled =
+    isAuthFeatureEnabled();
+  const {
+    session,
+    membership,
+    error:
+      authError,
+    isLoading:
+      isMembershipLoading,
+    refreshSession,
+    signIn,
+  } = useHouseholdMembership(
+    householdId
+  );
 
   const [
     isLockEnabled,
@@ -184,6 +210,21 @@ export default function AppShell() {
     );
   }
 
+  const authRouteAccess =
+    evaluateAuthRouteAccess({
+      authEnabled:
+        isProductionAuthEnabled,
+      pathname:
+        location.pathname,
+      sessionStatus:
+        session.status,
+      role:
+        membership?.role,
+      membershipLoadFailed:
+        Boolean(authError) &&
+        !isMembershipLoading,
+    });
+
   if (
     isLockEnabled &&
     isLocked
@@ -231,20 +272,43 @@ export default function AppShell() {
 
         <section
           className="app-beta-notice"
-          aria-label="Local-first beta notice"
+          aria-label="Public beta notice"
         >
           <strong>
-            Local-first beta
+            Public beta
           </strong>
 
           <span>
-            Use low-risk data. This build has no account recovery or production sync; export a backup before and after meaningful testing.
+            Authenticated cloud mode is in progress. Export a backup before and after meaningful testing.
           </span>
         </section>
 
         <main className="app-content">
           <div className="page-container">
-            <Outlet />
+            {authRouteAccess.isAllowed ? (
+              <Outlet />
+            ) : (
+              <AuthRouteGatePanel
+                access={authRouteAccess}
+                sessionLabel={
+                  session.status
+                }
+                roleLabel={
+                  membership?.role
+                }
+                error={authError}
+                isSignInAvailable={
+                  authRouteAccess.status ===
+                  "signed-out"
+                }
+                onSignIn={() => {
+                  void signIn();
+                }}
+                onRefresh={() => {
+                  void refreshSession();
+                }}
+              />
+            )}
           </div>
         </main>
       </div>

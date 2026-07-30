@@ -4,6 +4,7 @@ import type {
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteHouseholdCoreSnapshot,
   RemoteSettlement,
   RemoteSettlementApplication,
   RemoteHousehold,
@@ -17,6 +18,8 @@ interface InMemoryAuthState {
   memberships: HouseholdMembership[];
   invitations: HouseholdInvitation[];
   migrations: RemoteMigrationDraft[];
+  coreSnapshots:
+    RemoteHouseholdCoreSnapshot[];
   settlements: RemoteSettlement[];
   settlementApplications:
     RemoteSettlementApplication[];
@@ -28,6 +31,8 @@ export interface InMemoryAuthSeed {
   memberships?: HouseholdMembership[];
   invitations?: HouseholdInvitation[];
   migrations?: RemoteMigrationDraft[];
+  coreSnapshots?:
+    RemoteHouseholdCoreSnapshot[];
   settlements?: RemoteSettlement[];
   settlementApplications?:
     RemoteSettlementApplication[];
@@ -51,6 +56,8 @@ export class InMemoryAuthStore {
         seed.invitations ?? [],
       migrations:
         seed.migrations ?? [],
+      coreSnapshots:
+        seed.coreSnapshots ?? [],
       settlements:
         seed.settlements ?? [],
       settlementApplications:
@@ -244,6 +251,61 @@ export class InMemoryAuthStore {
     });
   }
 
+  getCoreSnapshot(
+    householdId: string
+  ): RemoteHouseholdCoreSnapshot {
+    const snapshot =
+      this.state.coreSnapshots.find(
+        (candidate) =>
+          candidate.householdId ===
+          householdId
+      );
+
+    return snapshot
+      ? cloneCoreSnapshot(
+          snapshot
+        )
+      : {
+          householdId,
+          accounts: [],
+          transactions: [],
+        };
+  }
+
+  saveCoreSnapshot(
+    snapshot: RemoteHouseholdCoreSnapshot
+  ): RemoteHouseholdCoreSnapshot {
+    const storedSnapshot =
+      cloneCoreSnapshot(
+        snapshot
+      );
+    const index =
+      this.state.coreSnapshots
+        .findIndex(
+          (existing) =>
+            existing.householdId ===
+            snapshot.householdId
+        );
+
+    if (index >= 0) {
+      this.state.coreSnapshots[
+        index
+      ] = storedSnapshot;
+
+      return cloneCoreSnapshot(
+        storedSnapshot
+      );
+    }
+
+    this.state.coreSnapshots.push(
+      storedSnapshot
+    );
+
+    return cloneCoreSnapshot(
+      storedSnapshot
+    );
+  }
+
   listSettlements(
     householdId: string
   ): RemoteSettlement[] {
@@ -343,8 +405,43 @@ export class InMemoryAuthStore {
       .settlementApplications
       .push(...applications);
 
-    return applications;
+    return [
+      ...applications,
+    ];
   }
+}
+
+function cloneCoreSnapshot(
+  snapshot: RemoteHouseholdCoreSnapshot
+): RemoteHouseholdCoreSnapshot {
+  return {
+    householdId:
+      snapshot.householdId,
+    accounts:
+      snapshot.accounts.map(
+        (account) => ({
+          ...account,
+        })
+      ),
+    transactions:
+      snapshot.transactions.map(
+        (transaction) => ({
+          ...transaction,
+          attachments:
+            transaction.attachments?.map(
+              (attachment) => ({
+                ...attachment,
+              })
+            ),
+        })
+      ),
+    savedAt:
+      snapshot.savedAt
+        ? new Date(
+            snapshot.savedAt
+          )
+        : undefined,
+  };
 }
 
 export function createMembership({

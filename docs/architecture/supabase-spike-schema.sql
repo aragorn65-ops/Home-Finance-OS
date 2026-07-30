@@ -1161,6 +1161,148 @@ grant execute on function public.claim_household_from_backup(
   jsonb
 ) to authenticated;
 
+create or replace function public.load_household_preferences(
+  target_household_id uuid
+)
+returns table (
+  household_id uuid,
+  household_name text,
+  country text,
+  currency text,
+  timezone text,
+  status text,
+  owner_member_id uuid,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in before loading household preferences.';
+  end if;
+
+  if not public.is_household_member(target_household_id) then
+    raise exception 'Active household membership is required to load household preferences.';
+  end if;
+
+  return query
+  select
+    household.id as household_id,
+    household.name as household_name,
+    household.country,
+    household.currency,
+    household.timezone,
+    household.status,
+    owner_member.id as owner_member_id,
+    household.created_at,
+    household.updated_at
+  from public.households household
+  left join lateral (
+    select member.id
+    from public.household_members member
+    where member.household_id = household.id
+      and member.role = 'owner'
+      and member.status = 'active'
+    order by member.created_at
+    limit 1
+  ) owner_member on true
+  where household.id = target_household_id
+    and household.status = 'active';
+end;
+$$;
+
+revoke all on function public.load_household_preferences(
+  uuid
+) from public;
+
+grant execute on function public.load_household_preferences(
+  uuid
+) to authenticated;
+
+create or replace function public.save_household_preferences(
+  target_household_id uuid,
+  household_name text,
+  household_country text,
+  household_currency text,
+  household_timezone text
+)
+returns table (
+  household_id uuid,
+  household_name text,
+  country text,
+  currency text,
+  timezone text,
+  status text,
+  owner_member_id uuid,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  normalized_name text := btrim(household_name);
+  normalized_country text := upper(btrim(household_country));
+  normalized_currency text := upper(btrim(household_currency));
+  normalized_timezone text := btrim(household_timezone);
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in before saving household preferences.';
+  end if;
+
+  if not public.is_household_admin(target_household_id) then
+    raise exception 'Only a household admin can save household preferences.';
+  end if;
+
+  if
+    normalized_name = '' or
+    normalized_country = '' or
+    normalized_currency = '' or
+    normalized_timezone = ''
+  then
+    raise exception 'Household preferences are incomplete.';
+  end if;
+
+  update public.households
+  set
+    name = normalized_name,
+    country = normalized_country,
+    currency = normalized_currency,
+    timezone = normalized_timezone,
+    updated_at = now()
+  where id = target_household_id
+    and status = 'active';
+
+  if not found then
+    raise exception 'Household was not found.';
+  end if;
+
+  return query
+  select *
+  from public.load_household_preferences(target_household_id);
+end;
+$$;
+
+revoke all on function public.save_household_preferences(
+  uuid,
+  text,
+  text,
+  text,
+  text
+) from public;
+
+grant execute on function public.save_household_preferences(
+  uuid,
+  text,
+  text,
+  text,
+  text
+) to authenticated;
+
 create or replace function public.validate_migration_draft_metadata(
   target_draft_id uuid
 )
@@ -1842,6 +1984,489 @@ grant execute on function public.stage_migration_transactions(
   integer,
   jsonb
 ) to authenticated;
+
+create or replace function public.save_household_core_snapshot(
+  target_household_id uuid,
+  core_accounts jsonb,
+  core_transactions jsonb
+)
+returns table (
+  household_id uuid,
+  accounts jsonb,
+  transactions jsonb,
+  saved_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  current_member_id uuid;
+  snapshot_timestamp timestamptz := now();
+  fallback_cash_account_id uuid;
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before saving core finance records.';
+  end if;
+
+  if not public.is_household_admin(target_household_id) then
+    raise exception 'Only a household admin can save core finance records.';
+  end if;
+
+  current_member_id := public.current_household_member_id(target_household_id);
+
+  if current_member_id is null then
+    raise exception 'Active household membership is required to save core finance records.';
+  end if;
+
+  if jsonb_typeof(coalesce(core_accounts, '[]'::jsonb)) <> 'array' then
+    raise exception 'Core account snapshot must be an array.';
+  end if;
+
+  if jsonb_typeof(coalesce(core_transactions, '[]'::jsonb)) <> 'array' then
+    raise exception 'Core transaction snapshot must be an array.';
+  end if;
+
+  with transaction_payload as (
+    select transaction_record.id
+    from jsonb_to_recordset(coalesce(core_transactions, '[]'::jsonb)) as transaction_record(
+      id text
+    )
+  )
+  delete from public.transactions remote_transaction
+  where remote_transaction.household_id = target_household_id
+    and remote_transaction.local_record_id is not null
+    and not exists (
+      select 1
+      from transaction_payload
+      where transaction_payload.id = remote_transaction.local_record_id
+    );
+
+  with account_payload as (
+    select account_record.id
+    from jsonb_to_recordset(coalesce(core_accounts, '[]'::jsonb)) as account_record(
+      id text
+    )
+  )
+  delete from public.accounts remote_account
+  where remote_account.household_id = target_household_id
+    and remote_account.local_record_id is not null
+    and not exists (
+      select 1
+      from account_payload
+      where account_payload.id = remote_account.local_record_id
+    );
+
+  insert into public.accounts (
+    household_id,
+    local_record_id,
+    owner_member_id,
+    name,
+    institution,
+    account_class,
+    account_type,
+    visibility,
+    currency,
+    base_currency,
+    exchange_rate,
+    exchange_rate_effective_date,
+    exchange_rate_source,
+    exchange_rate_provider,
+    opening_balance,
+    current_balance,
+    opening_base_balance,
+    current_base_balance,
+    account_number,
+    credit_limit,
+    statement_balance,
+    minimum_payment,
+    payment_due_date,
+    is_active,
+    created_at,
+    updated_at,
+    updated_by_user_id
+  )
+  select
+    target_household_id,
+    account_record.id,
+    current_member_id,
+    account_record.name,
+    nullif(account_record.institution, ''),
+    account_record."accountClass",
+    account_record.type,
+    coalesce(account_record.visibility, 'household'),
+    account_record.currency,
+    nullif(account_record."baseCurrency", ''),
+    account_record."exchangeRate",
+    nullif(account_record."exchangeRateEffectiveDate", '')::date,
+    account_record."exchangeRateSource",
+    nullif(account_record."exchangeRateProvider", ''),
+    account_record."openingBalance",
+    account_record."currentBalance",
+    account_record."openingBaseBalance",
+    account_record."currentBaseBalance",
+    nullif(account_record."accountNumber", ''),
+    account_record."creditLimit",
+    account_record."statementBalance",
+    account_record."minimumPayment",
+    nullif(account_record."paymentDueDate", '')::date,
+    account_record."isActive",
+    coalesce(nullif(account_record."createdAt", '')::timestamptz, snapshot_timestamp),
+    snapshot_timestamp,
+    current_user_id
+  from jsonb_to_recordset(coalesce(core_accounts, '[]'::jsonb)) as account_record(
+    id text,
+    visibility text,
+    name text,
+    institution text,
+    "accountClass" text,
+    type text,
+    currency text,
+    "baseCurrency" text,
+    "exchangeRate" numeric,
+    "exchangeRateEffectiveDate" text,
+    "exchangeRateSource" text,
+    "exchangeRateProvider" text,
+    "openingBalance" numeric,
+    "currentBalance" numeric,
+    "openingBaseBalance" numeric,
+    "currentBaseBalance" numeric,
+    "accountNumber" text,
+    "creditLimit" numeric,
+    "statementBalance" numeric,
+    "minimumPayment" numeric,
+    "paymentDueDate" text,
+    "isActive" boolean,
+    "createdAt" text,
+    "updatedAt" text
+  )
+  on conflict (household_id, local_record_id)
+  where local_record_id is not null
+  do update set
+    owner_member_id = excluded.owner_member_id,
+    name = excluded.name,
+    institution = excluded.institution,
+    account_class = excluded.account_class,
+    account_type = excluded.account_type,
+    visibility = excluded.visibility,
+    currency = excluded.currency,
+    base_currency = excluded.base_currency,
+    exchange_rate = excluded.exchange_rate,
+    exchange_rate_effective_date = excluded.exchange_rate_effective_date,
+    exchange_rate_source = excluded.exchange_rate_source,
+    exchange_rate_provider = excluded.exchange_rate_provider,
+    opening_balance = excluded.opening_balance,
+    current_balance = excluded.current_balance,
+    opening_base_balance = excluded.opening_base_balance,
+    current_base_balance = excluded.current_base_balance,
+    account_number = excluded.account_number,
+    credit_limit = excluded.credit_limit,
+    statement_balance = excluded.statement_balance,
+    minimum_payment = excluded.minimum_payment,
+    payment_due_date = excluded.payment_due_date,
+    is_active = excluded.is_active,
+    updated_at = excluded.updated_at,
+    updated_by_user_id = excluded.updated_by_user_id;
+
+  insert into public.transactions (
+    household_id,
+    local_record_id,
+    created_by_member_id,
+    paid_by_member_id,
+    expense_split_method,
+    source_account_id,
+    destination_account_id,
+    type,
+    amount,
+    entered_amount,
+    entered_currency,
+    base_currency,
+    base_amount,
+    exchange_rate,
+    exchange_rate_effective_date,
+    exchange_rate_source,
+    exchange_rate_provider,
+    category,
+    description,
+    notes,
+    attachments,
+    visibility,
+    transaction_date,
+    is_active,
+    created_at,
+    updated_at,
+    updated_by_user_id
+  )
+  select
+    target_household_id,
+    transaction_record.id,
+    current_member_id,
+    case
+      when lower(trim(transaction_record.type)) = 'expense' then current_member_id
+      else null
+    end,
+    nullif(transaction_record."expenseSplitMethod", ''),
+    case
+      when lower(trim(transaction_record.type)) = 'expense' then
+        coalesce(source_account.id, cash_account.id)
+      else source_account.id
+    end,
+    destination_account.id,
+    transaction_record.type,
+    transaction_record.amount,
+    transaction_record."enteredAmount",
+    nullif(transaction_record."enteredCurrency", ''),
+    nullif(transaction_record."baseCurrency", ''),
+    transaction_record."baseAmount",
+    transaction_record."exchangeRate",
+    nullif(transaction_record."exchangeRateEffectiveDate", '')::date,
+    transaction_record."exchangeRateSource",
+    nullif(transaction_record."exchangeRateProvider", ''),
+    transaction_record.category,
+    coalesce(transaction_record.description, ''),
+    coalesce(transaction_record.notes, ''),
+    coalesce(transaction_record.attachments, '[]'::jsonb),
+    coalesce(transaction_record.visibility, 'household'),
+    transaction_record."transactionDate"::date,
+    transaction_record."isActive",
+    coalesce(nullif(transaction_record."createdAt", '')::timestamptz, snapshot_timestamp),
+    snapshot_timestamp,
+    current_user_id
+  from jsonb_to_recordset(coalesce(core_transactions, '[]'::jsonb)) as transaction_record(
+    id text,
+    "expenseSplitMethod" text,
+    visibility text,
+    type text,
+    amount numeric,
+    "enteredAmount" numeric,
+    "enteredCurrency" text,
+    "baseCurrency" text,
+    "baseAmount" numeric,
+    "exchangeRate" numeric,
+    "exchangeRateEffectiveDate" text,
+    "exchangeRateSource" text,
+    "exchangeRateProvider" text,
+    "sourceAccountId" text,
+    "destinationAccountId" text,
+    category text,
+    description text,
+    notes text,
+    attachments jsonb,
+    "transactionDate" text,
+    "isActive" boolean,
+    "createdAt" text,
+    "updatedAt" text
+  )
+  left join public.accounts source_account
+    on source_account.household_id = target_household_id
+   and source_account.local_record_id = transaction_record."sourceAccountId"
+  left join lateral (
+    select fallback_account.id
+    from public.accounts fallback_account
+    where fallback_account.household_id = target_household_id
+      and fallback_account.account_type = 'cash'
+      and fallback_account.account_class = 'asset'
+      and fallback_account.is_active = true
+    order by
+      case
+        when lower(fallback_account.name) = 'cash' then 0
+        else 1
+      end,
+      fallback_account.created_at,
+      fallback_account.id
+    limit 1
+  ) cash_account on true
+  left join public.accounts destination_account
+    on destination_account.household_id = target_household_id
+   and destination_account.local_record_id = transaction_record."destinationAccountId"
+  on conflict (household_id, local_record_id)
+  where local_record_id is not null
+  do update set
+    created_by_member_id = excluded.created_by_member_id,
+    paid_by_member_id = excluded.paid_by_member_id,
+    expense_split_method = excluded.expense_split_method,
+    source_account_id = excluded.source_account_id,
+    destination_account_id = excluded.destination_account_id,
+    type = excluded.type,
+    amount = excluded.amount,
+    entered_amount = excluded.entered_amount,
+    entered_currency = excluded.entered_currency,
+    base_currency = excluded.base_currency,
+    base_amount = excluded.base_amount,
+    exchange_rate = excluded.exchange_rate,
+    exchange_rate_effective_date = excluded.exchange_rate_effective_date,
+    exchange_rate_source = excluded.exchange_rate_source,
+    exchange_rate_provider = excluded.exchange_rate_provider,
+    category = excluded.category,
+    description = excluded.description,
+    notes = excluded.notes,
+    attachments = excluded.attachments,
+    visibility = excluded.visibility,
+    transaction_date = excluded.transaction_date,
+    is_active = excluded.is_active,
+    updated_at = excluded.updated_at,
+    updated_by_user_id = excluded.updated_by_user_id;
+
+  select fallback_account.id
+  into fallback_cash_account_id
+  from public.accounts fallback_account
+  where fallback_account.household_id = target_household_id
+    and fallback_account.account_type = 'cash'
+    and fallback_account.account_class = 'asset'
+    and fallback_account.is_active = true
+  order by
+    case
+      when lower(fallback_account.name) = 'cash' then 0
+      else 1
+    end,
+    fallback_account.created_at,
+    fallback_account.id
+  limit 1;
+
+  if fallback_cash_account_id is not null then
+    update public.transactions remote_transaction
+    set
+      source_account_id = fallback_cash_account_id,
+      paid_by_member_id = coalesce(remote_transaction.paid_by_member_id, current_member_id),
+      updated_at = snapshot_timestamp,
+      updated_by_user_id = current_user_id
+    where remote_transaction.household_id = target_household_id
+      and remote_transaction.local_record_id is not null
+      and lower(trim(remote_transaction.type)) = 'expense'
+      and remote_transaction.source_account_id is null;
+  end if;
+
+  return query
+  select *
+  from public.load_household_core_snapshot(target_household_id);
+end;
+$$;
+
+revoke all on function public.save_household_core_snapshot(
+  uuid,
+  jsonb,
+  jsonb
+) from public;
+
+grant execute on function public.save_household_core_snapshot(
+  uuid,
+  jsonb,
+  jsonb
+) to authenticated;
+
+create or replace function public.load_household_core_snapshot(
+  target_household_id uuid
+)
+returns table (
+  household_id uuid,
+  accounts jsonb,
+  transactions jsonb,
+  saved_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  snapshot_timestamp timestamptz := now();
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before loading core finance records.';
+  end if;
+
+  if not public.is_household_admin(target_household_id) then
+    raise exception 'Only a household admin can load core finance records.';
+  end if;
+
+  return query
+  select
+    target_household_id,
+    coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', coalesce(remote_account.local_record_id, remote_account.id::text),
+            'visibility', remote_account.visibility,
+            'name', remote_account.name,
+            'institution', remote_account.institution,
+            'accountClass', remote_account.account_class,
+            'type', remote_account.account_type,
+            'currency', remote_account.currency,
+            'baseCurrency', remote_account.base_currency,
+            'exchangeRate', remote_account.exchange_rate,
+            'exchangeRateEffectiveDate', remote_account.exchange_rate_effective_date,
+            'exchangeRateSource', remote_account.exchange_rate_source,
+            'exchangeRateProvider', remote_account.exchange_rate_provider,
+            'openingBalance', remote_account.opening_balance,
+            'currentBalance', remote_account.current_balance,
+            'openingBaseBalance', remote_account.opening_base_balance,
+            'currentBaseBalance', remote_account.current_base_balance,
+            'accountNumber', remote_account.account_number,
+            'creditLimit', remote_account.credit_limit,
+            'statementBalance', remote_account.statement_balance,
+            'minimumPayment', remote_account.minimum_payment,
+            'paymentDueDate', remote_account.payment_due_date,
+            'isActive', remote_account.is_active,
+            'createdAt', remote_account.created_at,
+            'updatedAt', remote_account.updated_at
+          )
+          order by remote_account.created_at, remote_account.id
+        )
+        from public.accounts remote_account
+        where remote_account.household_id = target_household_id
+      ),
+      '[]'::jsonb
+    ),
+    coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', coalesce(remote_transaction.local_record_id, remote_transaction.id::text),
+            'expenseSplitMethod', remote_transaction.expense_split_method,
+            'visibility', remote_transaction.visibility,
+            'type', remote_transaction.type,
+            'amount', remote_transaction.amount,
+            'enteredAmount', remote_transaction.entered_amount,
+            'enteredCurrency', remote_transaction.entered_currency,
+            'baseCurrency', remote_transaction.base_currency,
+            'baseAmount', remote_transaction.base_amount,
+            'exchangeRate', remote_transaction.exchange_rate,
+            'exchangeRateEffectiveDate', remote_transaction.exchange_rate_effective_date,
+            'exchangeRateSource', remote_transaction.exchange_rate_source,
+            'exchangeRateProvider', remote_transaction.exchange_rate_provider,
+            'sourceAccountId', source_account.local_record_id,
+            'destinationAccountId', destination_account.local_record_id,
+            'category', remote_transaction.category,
+            'description', remote_transaction.description,
+            'notes', remote_transaction.notes,
+            'attachments', remote_transaction.attachments,
+            'transactionDate', remote_transaction.transaction_date,
+            'isActive', remote_transaction.is_active,
+            'createdAt', remote_transaction.created_at,
+            'updatedAt', remote_transaction.updated_at
+          )
+          order by remote_transaction.transaction_date, remote_transaction.created_at, remote_transaction.id
+        )
+        from public.transactions remote_transaction
+        left join public.accounts source_account
+          on source_account.id = remote_transaction.source_account_id
+        left join public.accounts destination_account
+          on destination_account.id = remote_transaction.destination_account_id
+        where remote_transaction.household_id = target_household_id
+      ),
+      '[]'::jsonb
+    ),
+    snapshot_timestamp;
+end;
+$$;
+
+revoke all on function public.load_household_core_snapshot(uuid)
+from public;
+
+grant execute on function public.load_household_core_snapshot(uuid)
+to authenticated;
 
 create or replace function public.audit_migration_precommit(
   target_draft_id uuid

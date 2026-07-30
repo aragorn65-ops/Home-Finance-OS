@@ -2,6 +2,7 @@ import type {
   AuthBackendAdapter,
   HouseholdClaimDraft,
   HouseholdClaimResult,
+  RemoteHouseholdPreferencesInput,
 } from "./AuthBackendAdapter";
 import {
   createMembership,
@@ -10,6 +11,7 @@ import {
   type InMemoryAuthSeed,
 } from "./inMemoryAuthStore";
 import {
+  canAccessHousehold,
   canAccessSettlementRecord,
 } from "./authorization";
 import {
@@ -23,6 +25,9 @@ import type {
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteHousehold,
+  RemoteHouseholdCoreSnapshot,
+  RemoteHouseholdCoreSnapshotInput,
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
@@ -259,6 +264,86 @@ export class InMemoryAuthBackendAdapter
     };
   }
 
+  async loadRemoteHousehold(
+    householdId: string
+  ): Promise<RemoteHousehold> {
+    const household =
+      this.store.getHousehold(
+        householdId
+      );
+
+    if (!household) {
+      throw new Error(
+        "Remote household was not found."
+      );
+    }
+
+    const context =
+      this.createAuthorizationContext(
+        householdId
+      );
+
+    if (
+      !canAccessHousehold(
+        context,
+        householdId,
+        "view-household"
+      )
+    ) {
+      throw new Error(
+        "Active household membership is required to load household preferences."
+      );
+    }
+
+    return household;
+  }
+
+  async saveRemoteHouseholdPreferences(
+    input: RemoteHouseholdPreferencesInput
+  ): Promise<RemoteHousehold> {
+    const household =
+      this.store.getHousehold(
+        input.householdId
+      );
+
+    if (!household) {
+      throw new Error(
+        "Remote household was not found."
+      );
+    }
+
+    const context =
+      this.createAuthorizationContext(
+        input.householdId
+      );
+
+    if (
+      !canAccessHousehold(
+        context,
+        input.householdId,
+        "edit-household"
+      )
+    ) {
+      throw new Error(
+        "Only a household admin can save household preferences."
+      );
+    }
+
+    return this.store.saveHousehold({
+      ...household,
+      name:
+        input.name,
+      country:
+        input.country,
+      currency:
+        input.currency,
+      timezone:
+        input.timezone,
+      updatedAt:
+        new Date(),
+    });
+  }
+
   async commitMigrationDraft(
     draftId: string
   ): Promise<RemoteMigrationCommitResult> {
@@ -271,6 +356,63 @@ export class InMemoryAuthBackendAdapter
   ): Promise<void> {
     return this.migrationRepository
       .abortDraft(draftId);
+  }
+
+  async loadRemoteCoreSnapshot(
+    householdId: string
+  ): Promise<RemoteHouseholdCoreSnapshot> {
+    const context =
+      this.createAuthorizationContext(
+        householdId
+      );
+
+    if (
+      !canAccessHousehold(
+        context,
+        householdId,
+        "edit-household"
+      )
+    ) {
+      throw new Error(
+        "Only a household admin can load core finance records."
+      );
+    }
+
+    return this.store.getCoreSnapshot(
+      householdId
+    );
+  }
+
+  async saveRemoteCoreSnapshot(
+    input: RemoteHouseholdCoreSnapshotInput
+  ): Promise<RemoteHouseholdCoreSnapshot> {
+    const context =
+      this.createAuthorizationContext(
+        input.householdId
+      );
+
+    if (
+      !canAccessHousehold(
+        context,
+        input.householdId,
+        "edit-household"
+      )
+    ) {
+      throw new Error(
+        "Only a household admin can save core finance records."
+      );
+    }
+
+    return this.store.saveCoreSnapshot({
+      householdId:
+        input.householdId,
+      accounts:
+        input.accounts,
+      transactions:
+        input.transactions,
+      savedAt:
+        new Date(),
+    });
   }
 
   async listRemoteSettlements(

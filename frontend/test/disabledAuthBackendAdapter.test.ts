@@ -83,5 +83,41 @@ test(
         ),
       /Remote migration abort is disabled for migration-1\./
     );
+
+    await assert.rejects(
+      () =>
+        adapter.saveRemoteCoreSnapshot({
+          householdId:
+            "household-1",
+          accounts: [],
+          transactions: [],
+        }),
+      /Remote core household persistence is disabled for household-1\./
+    );
+
+    await assert.rejects(
+      () =>
+        adapter.loadRemoteHousehold(
+          "household-1"
+        ),
+      /Remote household persistence is disabled for household-1\./
+    );
+
+    await assert.rejects(
+      () =>
+        adapter.saveRemoteHouseholdPreferences({
+          householdId:
+            "household-1",
+          name:
+            "Home",
+          country:
+            "PH",
+          currency:
+            "PHP",
+          timezone:
+            "Asia/Manila",
+        }),
+      /Remote household persistence is disabled for household-1\./
+    );
   }
 );

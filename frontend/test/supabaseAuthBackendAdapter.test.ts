@@ -1575,6 +1575,412 @@ test(
 );
 
 test(
+  "Supabase auth adapter requires sign-in before household preference actions",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: null,
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.loadRemoteHousehold(
+          "household-1"
+        ),
+      /Sign in before loading household preferences\./
+    );
+
+    await assert.rejects(
+      () =>
+        adapter.saveRemoteHouseholdPreferences({
+          householdId:
+            "household-1",
+          name:
+            "Casa Test",
+          country:
+            "PH",
+          currency:
+            "PHP",
+          timezone:
+            "Asia/Manila",
+        }),
+      /Sign in before saving household preferences\./
+    );
+
+    assert.deepEqual(
+      rpcCalls,
+      []
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter loads and saves household preferences through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                household_id:
+                  "household-1",
+                household_name:
+                  functionName ===
+                  "save_household_preferences"
+                    ? "Casa Updated"
+                    : "Casa Test",
+                country:
+                  "PH",
+                currency:
+                  "PHP",
+                timezone:
+                  "Asia/Manila",
+                status:
+                  "active",
+                owner_member_id:
+                  "member-owner",
+                created_at:
+                  "2026-07-22T01:00:00Z",
+                updated_at:
+                  "2026-07-22T04:50:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    const saved =
+      await adapter
+        .saveRemoteHouseholdPreferences({
+          householdId:
+            "household-1",
+          name:
+            "Casa Updated",
+          country:
+            "PH",
+          currency:
+            "PHP",
+          timezone:
+            "Asia/Manila",
+        });
+    const loaded =
+      await adapter
+        .loadRemoteHousehold(
+          "household-1"
+        );
+
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "save_household_preferences",
+          parameters: {
+            target_household_id:
+              "household-1",
+            household_name:
+              "Casa Updated",
+            household_country:
+              "PH",
+            household_currency:
+              "PHP",
+            household_timezone:
+              "Asia/Manila",
+          },
+        },
+        {
+          functionName:
+            "load_household_preferences",
+          parameters: {
+            target_household_id:
+              "household-1",
+          },
+        },
+      ]
+    );
+    assert.equal(
+      saved.name,
+      "Casa Updated"
+    );
+    assert.equal(
+      saved.ownerMemberId,
+      "member-owner"
+    );
+    assert.equal(
+      loaded.name,
+      "Casa Test"
+    );
+    assert.equal(
+      loaded.updatedAt.toISOString(),
+      "2026-07-22T04:50:00.000Z"
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter requires sign-in before core snapshot actions",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedOutClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: null,
+              error: null,
+            };
+          },
+        },
+      });
+
+    await assert.rejects(
+      () =>
+        adapter.loadRemoteCoreSnapshot(
+          "household-1"
+        ),
+      /Sign in before loading core finance records\./
+    );
+
+    await assert.rejects(
+      () =>
+        adapter.saveRemoteCoreSnapshot({
+          householdId:
+            "household-1",
+          accounts: [],
+          transactions: [],
+        }),
+      /Sign in before saving core finance records\./
+    );
+
+    assert.deepEqual(
+      rpcCalls,
+      []
+    );
+  }
+);
+
+test(
+  "Supabase auth adapter loads and saves core snapshots through RPC",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const rpcCalls: unknown[] = [];
+    const accounts = [
+      {
+        id:
+          "account-1",
+        visibility:
+          "household",
+        name:
+          "Main Cash",
+        accountClass:
+          "asset",
+        type:
+          "cash",
+        currency:
+          "PHP",
+        openingBalance:
+          100,
+        currentBalance:
+          150,
+        isActive:
+          true,
+        createdAt:
+          "2026-07-22T01:00:00.000Z",
+        updatedAt:
+          "2026-07-22T02:00:00.000Z",
+      },
+    ];
+    const transactions = [
+      {
+        id:
+          "transaction-1",
+        visibility:
+          "household",
+        type:
+          "expense",
+        amount:
+          75,
+        sourceAccountId:
+          "account-1",
+        destinationAccountId:
+          null,
+        category:
+          "Groceries",
+        description:
+          "Market",
+        notes:
+          "",
+        transactionDate:
+          "2026-07-22",
+        isActive:
+          true,
+        createdAt:
+          "2026-07-22T03:00:00.000Z",
+        updatedAt:
+          "2026-07-22T03:30:00.000Z",
+      },
+    ];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient(),
+          async rpc(
+            functionName: string,
+            parameters: Record<string, unknown>
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                household_id:
+                  "household-1",
+                accounts,
+                transactions,
+                saved_at:
+                  "2026-07-22T04:55:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    const saved =
+      await adapter
+        .saveRemoteCoreSnapshot({
+          householdId:
+            "household-1",
+          accounts,
+          transactions,
+        });
+    const loaded =
+      await adapter
+        .loadRemoteCoreSnapshot(
+          "household-1"
+        );
+
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "save_household_core_snapshot",
+          parameters: {
+            target_household_id:
+              "household-1",
+            core_accounts:
+              accounts,
+            core_transactions:
+              transactions,
+          },
+        },
+        {
+          functionName:
+            "load_household_core_snapshot",
+          parameters: {
+            target_household_id:
+              "household-1",
+          },
+        },
+      ]
+    );
+    assert.equal(
+      saved.accounts[0]?.name,
+      "Main Cash"
+    );
+    assert.equal(
+      loaded.transactions[0]
+        ?.description,
+      "Market"
+    );
+    assert.equal(
+      saved.savedAt?.toISOString(),
+      "2026-07-22T04:55:00.000Z"
+    );
+  }
+);
+
+test(
   "Supabase auth adapter requires sign-in before settlement write actions",
   async () => {
     const {

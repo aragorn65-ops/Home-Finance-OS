@@ -2,12 +2,16 @@ import type {
   AuthBackendAdapter,
   HouseholdClaimDraft,
   HouseholdClaimResult,
+  RemoteHouseholdPreferencesInput,
 } from "./AuthBackendAdapter";
 import type {
   AuthSession,
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteHouseholdCoreSnapshot,
+  RemoteHouseholdCoreSnapshotInput,
+  RemoteHousehold,
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
@@ -89,6 +93,22 @@ export class DisabledAuthBackendAdapter
     );
   }
 
+  async loadRemoteHousehold(
+    householdId: string
+  ): Promise<RemoteHousehold> {
+    throw new Error(
+      `Remote household persistence is disabled for ${householdId}.`
+    );
+  }
+
+  async saveRemoteHouseholdPreferences(
+    input: RemoteHouseholdPreferencesInput
+  ): Promise<RemoteHousehold> {
+    throw new Error(
+      `Remote household persistence is disabled for ${input.householdId}.`
+    );
+  }
+
   async stageMigrationAccounts(
     draftId: string,
     payload: RemoteMigrationAccountUploadPayload
@@ -131,6 +151,24 @@ export class DisabledAuthBackendAdapter
     Promise<void> {
     throw new Error(
       `Remote migration abort is disabled for ${draftId}.`
+    );
+  }
+
+  async loadRemoteCoreSnapshot(
+    householdId: string
+  ): Promise<RemoteHouseholdCoreSnapshot> {
+    return {
+      householdId,
+      accounts: [],
+      transactions: [],
+    };
+  }
+
+  async saveRemoteCoreSnapshot(
+    input: RemoteHouseholdCoreSnapshotInput
+  ): Promise<RemoteHouseholdCoreSnapshot> {
+    throw new Error(
+      `Remote core household persistence is disabled for ${input.householdId}.`
     );
   }
 

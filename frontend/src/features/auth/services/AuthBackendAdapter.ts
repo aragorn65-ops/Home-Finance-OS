@@ -4,6 +4,8 @@ import type {
 import type {
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadStagingResult,
+  RemoteHouseholdCoreSnapshot,
+  RemoteHouseholdCoreSnapshotInput,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
   RemoteMigrationPreCommitAudit,
@@ -20,6 +22,7 @@ import type {
   AuthUser,
   HouseholdInvitation,
   HouseholdMembership,
+  RemoteHousehold,
 } from "../models";
 
 export interface HouseholdClaimDraft {
@@ -33,6 +36,14 @@ export interface HouseholdClaimResult {
   householdId: string;
   membership: HouseholdMembership;
   migrationDraft: RemoteMigrationDraft;
+}
+
+export interface RemoteHouseholdPreferencesInput {
+  householdId: string;
+  name: string;
+  country: string;
+  currency: string;
+  timezone: string;
 }
 
 export interface AuthSignInRequest {
@@ -72,6 +83,14 @@ export interface AuthBackendAdapter {
     draft: HouseholdClaimDraft
   ): Promise<HouseholdClaimResult>;
 
+  loadRemoteHousehold(
+    householdId: string
+  ): Promise<RemoteHousehold>;
+
+  saveRemoteHouseholdPreferences(
+    input: RemoteHouseholdPreferencesInput
+  ): Promise<RemoteHousehold>;
+
   listMigrationDrafts():
     Promise<RemoteMigrationDraft[]>;
 
@@ -105,6 +124,14 @@ export interface AuthBackendAdapter {
   abortMigrationDraft(
     draftId: string
   ): Promise<void>;
+
+  loadRemoteCoreSnapshot(
+    householdId: string
+  ): Promise<RemoteHouseholdCoreSnapshot>;
+
+  saveRemoteCoreSnapshot(
+    input: RemoteHouseholdCoreSnapshotInput
+  ): Promise<RemoteHouseholdCoreSnapshot>;
 
   listRemoteSettlements(
     householdId: string

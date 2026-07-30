@@ -21,6 +21,7 @@ import {
 import {
   getApplicationDataHealthSummary,
 } from "../../startup/services/applicationBackup";
+import CoreSnapshotSyncPanel from "./CoreSnapshotSyncPanel";
 import HouseholdClaimPanel from "./HouseholdClaimPanel";
 import MigrationCheckpointPanel from "./MigrationCheckpointPanel";
 import {
@@ -830,6 +831,10 @@ export default function AuthDiagnosticsPanel() {
             }}
           />
         )}
+
+      {session.status === "signed-in" && (
+        <CoreSnapshotSyncPanel />
+      )}
 
       {session.status === "signed-in" && (
         <MigrationCheckpointPanel

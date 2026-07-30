@@ -11,6 +11,8 @@ export type {
   HouseholdMembership,
   HouseholdMembershipStatus,
   RemoteHousehold,
+  RemoteHouseholdCoreSnapshot,
+  RemoteHouseholdCoreSnapshotInput,
   RemoteHouseholdStatus,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
@@ -29,6 +31,7 @@ export type {
   HouseholdClaimDraft,
   HouseholdClaimResult,
   InviteHouseholdMemberInput,
+  RemoteHouseholdPreferencesInput,
   RemoteMigrationRepository,
   RemoteTenantRepository,
   UpdateMembershipRoleInput,
@@ -36,28 +39,39 @@ export type {
 
 export {
   AuthDiagnosticsPanel,
+  AuthRouteGatePanel,
+  CoreSnapshotSyncPanel,
   AuthSessionButton,
 } from "./components";
 
 export {
   useAuthSession,
   useAuthDiagnostics,
+  useHouseholdMembership,
 } from "./hooks";
 
 export {
+  evaluateAuthRouteAccess,
   canAccessAccount,
   canAccessHousehold,
   canAccessTenantRecord,
   canManageMemberRole,
   createAuthDiagnostics,
   createAuthMigrationPreview,
+  createRemoteCoreSnapshotInput,
   DisabledAuthBackendAdapter,
   DisabledRemoteMigrationRepository,
   DisabledRemoteTenantRepository,
+  getAuthBackendAdapter,
+  getLocalCoreSnapshotCounts,
   InMemoryAuthBackendAdapter,
   InMemoryAuthStore,
   InMemoryRemoteMigrationRepository,
   InMemoryRemoteTenantRepository,
+  loadRemoteCoreSnapshotForHousehold,
+  saveCurrentBrowserCoreSnapshotForHousehold,
+  saveLinkedRemoteCoreSnapshot,
+  saveRemoteCoreSnapshotForHousehold,
 } from "./services";
 
 export {
@@ -66,5 +80,13 @@ export {
 } from "./services";
 
 export type {
+  CoreSnapshotAdapter,
+  CoreSnapshotRecordSource,
+  CurrentBrowserCoreSnapshotOptions,
   InMemoryAuthSeed,
+  LinkedCoreSnapshotHousehold,
+  LinkedCoreSnapshotSaveOptions,
+  LinkedCoreSnapshotSaveResult,
+  LocalCoreSnapshotCounts,
+  LocalCoreSnapshotSource,
 } from "./services";

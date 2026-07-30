@@ -10,6 +10,9 @@ export type RemoteHouseholdStatus =
 export interface RemoteHousehold {
   id: string;
   name: string;
+  country?: string;
+  currency?: string;
+  timezone?: string;
   ownerMemberId: HouseholdMember["id"];
   status: RemoteHouseholdStatus;
   createdAt: Date;
