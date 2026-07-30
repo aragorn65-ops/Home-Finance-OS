@@ -822,13 +822,19 @@ export default function SettlementForm({
       )}
 
       {errors.general && (
-        <p className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-900"
+        >
           {errors.general}
         </p>
       )}
 
       {errors.householdId && (
-        <p className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-900"
+        >
           {errors.householdId}
         </p>
       )}

@@ -83,6 +83,20 @@ test("admin can manage settlement records", () => {
   );
 });
 
+test("owner can create settlement records without being payer or receiver", () => {
+  assert.equal(
+    canAccessSettlementRecord(
+      createContext(
+        "owner",
+        "member-owner"
+      ),
+      settlementForm,
+      "create"
+    ),
+    true
+  );
+});
+
 test("member can create settlement records only when involved", () => {
   assert.equal(
     canAccessSettlementRecord(

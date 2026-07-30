@@ -606,12 +606,17 @@ export default function SettlementsPage() {
       );
     }
 
+    const submissionHouseholdId =
+      shouldEnforceSettlementAuth
+        ? cloudHouseholdId
+        : household.id;
+
     const submissionForm:
       SettlementFormData = {
         ...form,
 
         householdId:
-          household.id,
+          submissionHouseholdId,
       };
 
     const settlementAction =
