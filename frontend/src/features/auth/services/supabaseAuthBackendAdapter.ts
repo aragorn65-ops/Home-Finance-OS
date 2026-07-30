@@ -411,7 +411,8 @@ interface SupabaseTransactionRow {
 }
 
 interface SupabaseCoreSnapshotRpcRow {
-  household_id: string;
+  household_id?: string;
+  saved_household_id?: string;
   accounts?: unknown;
   transactions?: unknown;
   saved_at?: string | null;
@@ -3079,10 +3080,13 @@ function createRemoteCoreSnapshotResult(
     readSingleSupabaseRpcRow(
       result.data
     );
+  const householdId =
+    row?.saved_household_id ??
+    row?.household_id;
 
   if (
     !row ||
-    !row.household_id ||
+    !householdId ||
     !isRemoteAccountUploadRecordArray(
       row.accounts
     ) ||
@@ -3097,7 +3101,7 @@ function createRemoteCoreSnapshotResult(
 
   return {
     householdId:
-      row.household_id,
+      householdId,
     accounts:
       row.accounts,
     transactions:

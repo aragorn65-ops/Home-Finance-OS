@@ -2287,7 +2287,7 @@ create or replace function public.save_household_core_snapshot(
   core_transactions jsonb
 )
 returns table (
-  household_id uuid,
+  saved_household_id uuid,
   accounts jsonb,
   transactions jsonb,
   saved_at timestamptz
@@ -2634,8 +2634,12 @@ begin
   end if;
 
   return query
-  select *
-  from public.load_household_core_snapshot(target_household_id);
+  select
+    snapshot.household_id as saved_household_id,
+    snapshot.accounts,
+    snapshot.transactions,
+    snapshot.saved_at
+  from public.load_household_core_snapshot(target_household_id) as snapshot;
 end;
 $$;
 

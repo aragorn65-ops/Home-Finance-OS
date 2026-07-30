@@ -53,6 +53,47 @@ test("Supabase household preference save RPC avoids duplicate argument and retur
   );
 });
 
+test("Supabase core snapshot save RPC avoids ambiguous household return name", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+  const functionStart =
+    schemaSql.indexOf(
+      "create or replace function public.save_household_core_snapshot"
+    );
+  const functionEnd =
+    schemaSql.indexOf(
+      "revoke all on function public.save_household_core_snapshot",
+      functionStart
+    );
+  const functionSql =
+    schemaSql.slice(
+      functionStart,
+      functionEnd
+    );
+
+  assert.match(
+    functionSql,
+    /create or replace function public\.save_household_core_snapshot\([\s\S]+returns table \(\s*saved_household_id uuid,/
+  );
+  assert.match(
+    functionSql,
+    /snapshot\.household_id as saved_household_id/
+  );
+  assert.doesNotMatch(
+    functionSql,
+    /returns table \(\s*household_id uuid,/
+  );
+});
+
 test("Supabase settlement RPCs persist settlement attachments", () => {
   const schemaSql =
     readFileSync(
