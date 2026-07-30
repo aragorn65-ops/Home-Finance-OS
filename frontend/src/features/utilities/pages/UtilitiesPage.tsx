@@ -102,6 +102,11 @@ export default function UtilitiesPage() {
     Record<string, ProviderPaymentForm>
   >({});
 
+  const [
+    markingPaidProviderBillId,
+    setMarkingPaidProviderBillId,
+  ] = useState("");
+
   const notificationRef =
     useRef<HTMLDivElement | null>(
       null
@@ -194,14 +199,21 @@ export default function UtilitiesPage() {
     );
   };
 
-  const handleMarkProviderBillPaid = (
+  const handleMarkProviderBillPaid = async (
     providerBillId: string
-  ): void => {
+  ): Promise<void> => {
+    if (markingPaidProviderBillId) {
+      return;
+    }
+
     setSaveMessage("");
     setSaveError("");
+    setMarkingPaidProviderBillId(
+      providerBillId
+    );
 
     const result =
-      UtilityProviderBillService.markPaid(
+      await UtilityProviderBillService.markPaid(
         providerBillId,
         getProviderPaymentForm(
           providerBillId
@@ -233,6 +245,7 @@ export default function UtilitiesPage() {
 
       setIsValidationAlertOpen(true);
       showNotification();
+      setMarkingPaidProviderBillId("");
 
       return;
     }
@@ -262,6 +275,7 @@ export default function UtilitiesPage() {
     );
 
     showNotification();
+    setMarkingPaidProviderBillId("");
   };
 
   const handlePaymentReceiptChange = (
@@ -699,6 +713,10 @@ export default function UtilitiesPage() {
                       onMarkPaid={
                         handleMarkProviderBillPaid
                       }
+                      isMarkingPaid={
+                        markingPaidProviderBillId ===
+                        providerBill.id
+                      }
                       onAttachReceipt={
                         handlePaymentReceiptChange
                       }
@@ -897,7 +915,8 @@ interface ProviderBillPaymentControlsProps {
   ) => void;
   onMarkPaid: (
     providerBillId: string
-  ) => void;
+  ) => void | Promise<void>;
+  isMarkingPaid?: boolean;
   onAttachReceipt: (
     providerBillId: string,
     event: ChangeEvent<HTMLInputElement>
@@ -928,6 +947,7 @@ function ProviderBillPaymentControls({
   accounts,
   onChange,
   onMarkPaid,
+  isMarkingPaid = false,
   onAttachReceipt,
   onRemoveReceipt,
   onAttachBillFile,
@@ -1088,10 +1108,15 @@ function ProviderBillPaymentControls({
             type="button"
             className="h-10 w-full rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
             onClick={() =>
-              onMarkPaid(providerBillId)
+              void onMarkPaid(
+                providerBillId
+              )
             }
+            disabled={isMarkingPaid}
           >
-            Mark Paid
+            {isMarkingPaid
+              ? "Marking..."
+              : "Mark Paid"}
           </button>
         </div>
 

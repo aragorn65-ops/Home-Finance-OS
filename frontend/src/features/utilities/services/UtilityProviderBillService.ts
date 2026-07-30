@@ -197,7 +197,7 @@ export default class UtilityProviderBillService {
     );
   }
 
-  static markPaid(
+  static async markPaid(
     providerBillId: string,
     payment: {
       paidByMemberId: string;
@@ -206,7 +206,7 @@ export default class UtilityProviderBillService {
       referenceNumber: string;
       paymentAttachments: StoredAttachment[];
     }
-  ): OperationResult<UtilityProviderBill> {
+  ): Promise<OperationResult<UtilityProviderBill>> {
     const providerBill =
       UtilityProviderBillRepository.findById(
         providerBillId
@@ -267,7 +267,7 @@ export default class UtilityProviderBillService {
       );
 
     const saveResult =
-      UtilityBillPersistenceService.save(
+      await UtilityBillPersistenceService.save(
         transactionForm,
         providerBill.calculationSnapshot
       );

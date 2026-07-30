@@ -15,6 +15,16 @@ import TransactionService from "../../transactions/services/TransactionService";
 import {
   loadHousehold,
 } from "../../household/services/householdStorage";
+import {
+  isAuthFeatureEnabled,
+} from "../../../config/auth";
+import {
+  getAuthBackendAdapter,
+  saveLinkedRemoteCoreSnapshot,
+} from "../../auth";
+import {
+  browserCoreSnapshotRecordSource,
+} from "../../auth/services/browserCoreSnapshotRecordSource";
 
 import { currencies } from "../../../shared/data/currencies";
 
@@ -37,10 +47,10 @@ export default class UtilityBillPersistenceService {
    * Saves a calculated utility bill as an expense
    * transaction with exact member allocations.
    */
-  static save(
+  static async save(
     form: UtilityBillForm,
     calculation: UtilityBillShareResult
-  ): OperationResult<Transaction> {
+  ): Promise<OperationResult<Transaction>> {
     const household =
       loadHousehold();
 
@@ -121,10 +131,41 @@ export default class UtilityBillPersistenceService {
       );
     }
 
-    return OperationResults.success(
-      result.data as Transaction,
-      "Utility bill saved to Transactions and Settlements."
+    return this.persistLinkedCoreSnapshot(
+      result
     );
+  }
+
+  private static async persistLinkedCoreSnapshot(
+    result: OperationResult<Transaction>
+  ): Promise<OperationResult<Transaction>> {
+    try {
+      await saveLinkedRemoteCoreSnapshot({
+        authEnabled:
+          isAuthFeatureEnabled(),
+        household:
+          loadHousehold(),
+        adapter:
+          getAuthBackendAdapter(),
+        recordSource:
+          browserCoreSnapshotRecordSource,
+      });
+
+      return OperationResults.success(
+        result.data as Transaction,
+        "Utility bill saved to Transactions and Settlements."
+      );
+    } catch (error) {
+      return OperationResults.failure<
+        Transaction
+      >(
+        {
+          cloud:
+            getErrorMessage(error),
+        },
+        "Cloud utility transaction snapshot was not saved."
+      );
+    }
   }
 
   /**
@@ -400,4 +441,17 @@ export default class UtilityBillPersistenceService {
       }
     ).format(quantity);
   }
+}
+
+function getErrorMessage(
+  error: unknown
+): string {
+  if (
+    error instanceof Error &&
+    error.message.trim()
+  ) {
+    return error.message;
+  }
+
+  return "Core utility snapshot could not be saved.";
 }

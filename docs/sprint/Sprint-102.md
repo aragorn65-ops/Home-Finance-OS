@@ -125,6 +125,9 @@ for public beta.
 * [x] Wired transaction create/update/delete flows to await linked-household
   core snapshot saves and keep transaction dialogs open with visible cloud
   errors when the snapshot save fails.
+* [x] Wired paid utility provider bill transaction creation through
+  linked-household core snapshot saves so generated provider payment
+  transactions surface cloud snapshot failures.
 * [ ] Add cloud-backed persistence for household and core finance records.
 * [ ] Add real-time synchronization for the active authenticated household
   session.
