@@ -92,3 +92,37 @@ test(
     });
   }
 );
+
+test(
+  "public beta smoke routes keep member access settlement-only",
+  () => {
+    const memberAllowedRoutes =
+      new Set([
+        "/app/settlements",
+      ]);
+    const appRoutes =
+      publicBetaSmokeRoutes.filter(
+        (route) =>
+          route.startsWith("/app")
+      );
+
+    appRoutes.forEach((route) => {
+      const result =
+        evaluateAuthRouteAccess({
+          authEnabled: true,
+          pathname: route,
+          sessionStatus:
+            "signed-in",
+          role: "member",
+        });
+
+      assert.equal(
+        result.isAllowed,
+        memberAllowedRoutes.has(
+          route
+        ),
+        route
+      );
+    });
+  }
+);

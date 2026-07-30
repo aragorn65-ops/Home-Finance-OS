@@ -26,6 +26,9 @@ Supabase validation before inviting public beta testers.
 * Signed-out route blocking and limited member route access:
   `frontend/test/authRouteAccess.test.ts` and
   `frontend/test/publicBetaSmokeRoutes.test.ts`
+* Member route access remains settlement-only across the public beta smoke
+  route manifest:
+  `frontend/test/publicBetaSmokeRoutes.test.ts`
 * Settlement role authorization:
   `frontend/test/authorization.test.ts` and
   `frontend/test/remoteSettlementPersistence.test.ts`
