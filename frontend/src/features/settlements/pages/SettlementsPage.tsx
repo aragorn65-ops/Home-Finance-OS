@@ -943,9 +943,7 @@ export default function SettlementsPage() {
     );
 
   const formAllocationOptions =
-    shouldEnforceSettlementAuth
-      ? []
-      : household
+    household
       ? dialogMode === "edit" &&
         selectedSettlement
         ? SettlementAllocationService
