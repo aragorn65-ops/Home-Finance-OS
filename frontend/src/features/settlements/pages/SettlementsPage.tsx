@@ -395,6 +395,11 @@ function createCloudSettlementForm(
       cloudHouseholdId,
     fromMemberId,
     toMemberId,
+    // Public beta cloud sync stores the settlement record first;
+    // restored local allocation applications are not cloud-backed yet.
+    applicationMethod:
+      "oldest-first",
+    applications: [],
     sourceAccountId: "",
     destinationAccountId: "",
   };
@@ -938,7 +943,9 @@ export default function SettlementsPage() {
     );
 
   const formAllocationOptions =
-    household
+    shouldEnforceSettlementAuth
+      ? []
+      : household
       ? dialogMode === "edit" &&
         selectedSettlement
         ? SettlementAllocationService
