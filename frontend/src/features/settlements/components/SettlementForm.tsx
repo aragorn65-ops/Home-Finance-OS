@@ -376,6 +376,28 @@ function createApplicationForms(
   });
 }
 
+function getOldestOutstandingAmount(
+  options: SettlementAllocationOption[],
+  fromMemberId: string,
+  toMemberId: string
+): number {
+  const oldestOption =
+    options.find(
+      (option) =>
+        option.fromMemberId ===
+          fromMemberId &&
+        option.toMemberId ===
+          toMemberId
+    );
+
+  return oldestOption
+    ? Math.round(
+        oldestOption.outstandingAmount *
+          100
+      ) / 100
+    : 0;
+}
+
 export default function SettlementForm({
   householdId,
 
@@ -448,6 +470,11 @@ export default function SettlementForm({
     setAttachmentStatus,
   ] = useState("");
 
+  const [
+    isAmountManuallyEdited,
+    setIsAmountManuallyEdited,
+  ] = useState(false);
+
   const showValidationAlert = (
     nextErrors:
       Record<string, string> | undefined,
@@ -501,11 +528,22 @@ export default function SettlementForm({
             activeMembers
           );
 
-    setForm(nextForm);
+    setForm({
+      ...nextForm,
+      amount:
+        initialValues
+          ? nextForm.amount
+          : getOldestOutstandingAmount(
+              allocationOptions,
+              nextForm.fromMemberId,
+              nextForm.toMemberId
+            ),
+    });
     setErrors({});
     setValidationAlertErrors({});
     setIsValidationAlertOpen(false);
     setMessage("");
+    setIsAmountManuallyEdited(false);
   }, [
     initialValues,
     householdId,
@@ -685,6 +723,8 @@ export default function SettlementForm({
   const handleAmountChange = (
     amount: number
   ) => {
+    setIsAmountManuallyEdited(true);
+
     updateField(
       "amount",
       amount
@@ -718,21 +758,33 @@ export default function SettlementForm({
           )
         );
 
+      const nextToMemberId =
+        current.toMemberId ===
+        fromMemberId
+          ? ""
+          : current.toMemberId;
+
       return {
         ...current,
 
         fromMemberId,
 
         toMemberId:
-          current.toMemberId ===
-          fromMemberId
-            ? ""
-            : current.toMemberId,
+          nextToMemberId,
 
         sourceAccountId:
           shouldClearSource
             ? ""
             : current.sourceAccountId,
+
+        amount:
+          isAmountManuallyEdited
+            ? current.amount
+            : getOldestOutstandingAmount(
+                allocationOptions,
+                fromMemberId,
+                nextToMemberId
+              ),
 
         applications: [],
       };
@@ -774,22 +826,34 @@ export default function SettlementForm({
           )
         );
 
+      const nextFromMemberId =
+        current.fromMemberId ===
+        toMemberId
+          ? ""
+          : current.fromMemberId;
+
       return {
         ...current,
 
         toMemberId,
 
         fromMemberId:
-          current.fromMemberId ===
-          toMemberId
-            ? ""
-            : current.fromMemberId,
+          nextFromMemberId,
 
         destinationAccountId:
           shouldClearDestination
             ? ""
             : current
                 .destinationAccountId,
+
+        amount:
+          isAmountManuallyEdited
+            ? current.amount
+            : getOldestOutstandingAmount(
+                allocationOptions,
+                nextFromMemberId,
+                toMemberId
+              ),
 
         applications: [],
       };

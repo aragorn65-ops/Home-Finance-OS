@@ -27,6 +27,10 @@ type SettlementListProps = {
   onDelete?: (
     settlement: Settlement
   ) => void;
+
+  getMemberName?: (
+    memberId: string
+  ) => string;
 };
 
 export default function SettlementList({
@@ -39,8 +43,9 @@ export default function SettlementList({
   onView,
   onEdit,
   onDelete,
+  getMemberName,
 }: SettlementListProps) {
-  const getMemberName = (
+  const getFallbackMemberName = (
     memberId: string
   ): string => {
     return (
@@ -51,6 +56,10 @@ export default function SettlementList({
       "Unknown Member"
     );
   };
+
+  const resolveMemberName =
+    getMemberName ??
+    getFallbackMemberName;
 
   const getAccountName = (
     accountId?: string
@@ -87,10 +96,10 @@ export default function SettlementList({
                   settlement.id
                 )
             }
-            fromMemberName={getMemberName(
+            fromMemberName={resolveMemberName(
               settlement.fromMemberId
             )}
-            toMemberName={getMemberName(
+            toMemberName={resolveMemberName(
               settlement.toMemberId
             )}
             sourceAccountName={getAccountName(

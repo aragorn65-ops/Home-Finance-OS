@@ -1084,6 +1084,9 @@ export default function SettlementsPage() {
             members={members}
             accounts={accounts}
             currency={currency}
+            getMemberName={
+              getMemberName
+            }
             onView={
               handleViewSettlement
             }

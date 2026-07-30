@@ -1,5 +1,6 @@
 import type { Settlement } from "../models/Settlement";
 import formatCurrency from "../../../shared/utils/formatCurrency";
+import openAttachmentPreview from "../../../shared/utils/openAttachmentPreview";
 
 import type { SettlementApplicationDetails } from "../models/SettlementApplicationDetails";
 
@@ -31,6 +32,18 @@ function formatAmount(
     amount,
     currency
   );
+}
+
+function formatFileSize(
+  sizeBytes: number
+): string {
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`;
+  }
+
+  return `${(
+    sizeBytes / 1024
+  ).toFixed(1)} KB`;
 }
 
 function getApplicationMethodLabel(
@@ -421,6 +434,64 @@ export default function SettlementDetails({
                   </article>
                 );
               }
+            )}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4 border-t pt-5">
+        <div>
+          <h3 className="font-semibold text-foreground">
+            Transfer Receipts
+          </h3>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Receipt files attached to this settlement.
+          </p>
+        </div>
+
+        {settlement.attachments.length ===
+        0 ? (
+          <div className="rounded-lg border border-dashed p-6 text-center">
+            <h4 className="font-medium text-foreground">
+              No transfer receipts attached
+            </h4>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {settlement.attachments.map(
+              (attachment) => (
+                <div
+                  key={attachment.id}
+                  className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">
+                      {attachment.fileName}
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {attachment.category}
+                      {" - "}
+                      {formatFileSize(
+                        attachment.sizeBytes
+                      )}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openAttachmentPreview(
+                        attachment
+                      )
+                    }
+                    className="rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                  >
+                    Open
+                  </button>
+                </div>
+              )
             )}
           </div>
         )}
