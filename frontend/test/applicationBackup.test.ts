@@ -68,6 +68,191 @@ test(
 );
 
 test(
+  "local backup export validates preview counts and restores finance data",
+  async () => {
+    const { localStorage } =
+      installBrowserStorage();
+    const {
+      HFOS_STORAGE_KEYS,
+      saveStoredData,
+    } = await import(
+      "../src/shared/storage/localStorageStore.ts"
+    );
+    const {
+      createApplicationBackup,
+      restoreApplicationBackup,
+      validateApplicationBackup,
+    } = await import(
+      "../src/features/startup/services/applicationBackup.ts"
+    );
+
+    assert.equal(
+      saveStoredData(
+        HFOS_STORAGE_KEYS.household,
+        createLinkedHousehold()
+      ).success,
+      true
+    );
+    assert.equal(
+      saveStoredData(
+        HFOS_STORAGE_KEYS.accounts,
+        [
+          {
+            id: "account-1",
+            householdId:
+              "household-local-1",
+            name: "Cash",
+          },
+        ]
+      ).success,
+      true
+    );
+    assert.equal(
+      saveStoredData(
+        HFOS_STORAGE_KEYS.transactions,
+        [
+          {
+            id: "transaction-1",
+            householdId:
+              "household-local-1",
+            amount: 250,
+          },
+        ]
+      ).success,
+      true
+    );
+    assert.equal(
+      saveStoredData(
+        HFOS_STORAGE_KEYS.settlements,
+        [
+          {
+            id: "settlement-1",
+            householdId:
+              "household-local-1",
+            amount: 100,
+          },
+        ]
+      ).success,
+      true
+    );
+    assert.equal(
+      saveStoredData(
+        HFOS_STORAGE_KEYS.savingsGoals,
+        [
+          {
+            id: "savings-goal-1",
+            householdId:
+              "household-local-1",
+            name: "Emergency",
+          },
+        ]
+      ).success,
+      true
+    );
+
+    const backup =
+      await createApplicationBackup();
+
+    assert.equal(
+      backup.success,
+      true
+    );
+    assert.match(
+      backup.filename ?? "",
+      /^hfos-backup-.+\.hfos-backup\.json$/
+    );
+    assert.ok(backup.json);
+
+    const validation =
+      await validateApplicationBackup(
+        backup.json
+      );
+
+    assert.equal(
+      validation.success,
+      true
+    );
+
+    if (validation.success) {
+      assert.equal(
+        validation.summary
+          .accountCount,
+        1
+      );
+      assert.equal(
+        validation.summary
+          .transactionCount,
+        1
+      );
+      assert.equal(
+        validation.summary
+          .settlementCount,
+        1
+      );
+      assert.equal(
+        validation.summary
+          .savingsGoalCount,
+        1
+      );
+    }
+
+    localStorage.clear();
+
+    const restore =
+      await restoreApplicationBackup(
+        backup.json
+      );
+
+    assert.equal(
+      restore.success,
+      true
+    );
+
+    const restoredAccounts =
+      JSON.parse(
+        localStorage.getItem(
+          HFOS_STORAGE_KEYS.accounts
+        ) ?? "{}"
+      );
+    const restoredTransactions =
+      JSON.parse(
+        localStorage.getItem(
+          HFOS_STORAGE_KEYS.transactions
+        ) ?? "{}"
+      );
+    const restoredSettlements =
+      JSON.parse(
+        localStorage.getItem(
+          HFOS_STORAGE_KEYS.settlements
+        ) ?? "{}"
+      );
+    const restoredSavingsGoals =
+      JSON.parse(
+        localStorage.getItem(
+          HFOS_STORAGE_KEYS.savingsGoals
+        ) ?? "{}"
+      );
+
+    assert.equal(
+      restoredAccounts.data.length,
+      1
+    );
+    assert.equal(
+      restoredTransactions.data.length,
+      1
+    );
+    assert.equal(
+      restoredSettlements.data.length,
+      1
+    );
+    assert.equal(
+      restoredSavingsGoals.data.length,
+      1
+    );
+  }
+);
+
+test(
   "backup validation rejects malformed authenticated links",
   async () => {
     installBrowserStorage();

@@ -61,11 +61,11 @@ https://home-finance-os.pages.dev
   keep backups during public beta.
 * [x] Settings Data & Backup safety note repeats the public beta cloud and
   backup warning.
-* [ ] Local Export Backup creates a valid `.hfos-backup.json` file.
-* [ ] Local Import Backup validates the file, shows a restore preview, and
+* [x] Local Export Backup creates a valid `.hfos-backup.json` file.
+* [x] Local Import Backup validates the file, shows a restore preview, and
   restores Dashboard, Transactions, Settlements, and Analytics data.
-* [ ] Clear Test Data keeps household setup and removes financial test records.
-* [ ] Reset All Application Data returns the app to first-time setup.
+* [x] Clear Test Data keeps household setup and removes financial test records.
+* [x] Reset All Application Data returns the app to first-time setup.
 * [ ] Google Drive backup status in Settings is understood:
   `VITE_GOOGLE_CLIENT_ID` configured means Drive actions are enabled after
   Google permission; missing config means Drive actions stay disabled and local
