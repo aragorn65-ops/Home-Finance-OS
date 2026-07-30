@@ -8,11 +8,11 @@ Home Finance OS is a local-first household finance workspace for tracking accoun
 
 ### Is public beta data backed up automatically?
 
-No. Public beta data is stored in this browser. Export a backup before and after meaningful testing.
+No. Public beta cloud persistence covers the active authenticated household baseline, but backup is still your responsibility. Export a backup before and after meaningful testing.
 
 ### Should I use real financial data?
 
-Use sample or low-risk data only during public beta. HFOS does not have production account recovery or production cloud sync.
+Use sample or low-risk data only during public beta. HFOS does not have production account recovery, multi-device household access, shared collaboration, or conflict resolution.
 
 ### What does App Lock protect?
 

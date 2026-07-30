@@ -1,14 +1,18 @@
 # Home Finance OS How To Use
 
-## Guided Private Beta Guide
+## Public Beta Candidate Guide
 
-This guide is a short starting point for guided private local-first beta testing
-of Home Finance OS.
+This guide is a short starting point for Home Finance OS public beta candidate
+testing.
 
-Use sample, test, or low-risk data only. The current beta candidate stores data
-in your browser and does not yet include production login, production cloud sync,
-or shared household account management. Local and Google Drive backup tools are
-available, and backups can optionally be password protected.
+Use sample, test, or low-risk data only. The current public beta target requires
+authenticated admin access, limited member settlement-entry access,
+cloud-backed household metadata, account/transaction snapshots, settlement
+persistence, and real-time sync for the active household session. Local and
+Google Drive backup tools are available, and backups can optionally be password
+protected. Multi-device household access, broad shared collaboration, conflict
+resolution, and full utility/savings cloud persistence are outside the
+one-month public beta scope unless explicitly expanded.
 
 ---
 
@@ -56,9 +60,9 @@ Use Settings -> Data & Backup -> Export Backup to download a local `.hfos-backup
 
 Use Settings -> App Lock to enable a local PIN lock for this browser. App lock can lock HFOS after refresh, manual lock, or optional inactivity timeout. This is local browser privacy, not cloud login or household account authorization.
 
-Auth and migration diagnostics are prototype beta-hardening surfaces. They can
-help verify claimed, linked, and migration-checkpoint states, but they are not a
-production account system or production sync layer.
+Auth diagnostics help verify sign-in, session, household membership, cloud
+snapshot, and migration-checkpoint states. Migration diagnostics remain
+beta-hardening surfaces; they are not a shared household collaboration flow.
 
 For Google Drive backup in a deployed Cloudflare Pages preview, enable the Google Drive API for the Google Cloud project, create a Google OAuth web client, add `https://home-finance-os.pages.dev` as an authorized JavaScript origin, and set the client ID as a Cloudflare Pages environment variable named `VITE_GOOGLE_CLIENT_ID`. If the OAuth app is in Testing, add the Google account used for QA as a test user. Vite embeds the client ID when Cloudflare Pages builds the app, so redeploy after changing the Cloudflare variable. Without that client ID, Settings shows that Google Drive backup is not configured and local Export Backup remains available.
 
@@ -222,14 +226,17 @@ Good feedback examples:
 
 ## Current Limitations
 
-* Browser-only localStorage persistence.
+* Public beta cloud persistence is limited to household metadata,
+  account/transaction snapshots, and settlement records.
+* Utilities and savings remain local-module workflows for the one-month public
+  beta scope unless explicitly expanded.
 * Clear Test Data keeps the household setup but removes financial/test records from this browser.
 * Reset All Application Data deletes the household and returns the app to first-time setup.
-* No production login or account recovery yet.
-* Auth and migration diagnostics remain prototype surfaces.
-* No production cloud sync.
+* No production account recovery yet.
+* Migration diagnostics remain prototype surfaces.
 * Local backup export and restore are available, including optional password-protected backup files.
 * Google Drive backup is available only when a Google OAuth client ID is configured.
 * Local app lock is browser privacy only; it is not account authentication.
-* No shared household invite flow yet.
+* No shared household invite flow, multi-device household access, or conflict
+  resolution yet.
 * Use sample, test, or low-risk data only for beta testing.

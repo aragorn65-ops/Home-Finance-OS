@@ -30,18 +30,22 @@ clarity.
 
 ## Current Status
 
-Guided private local-first beta candidate.
+Public beta candidate, gated by the launch checklist.
 
-HFOS is ready for guided private beta testing with sample or low-risk data. The
-current app stores data in browser localStorage, supports local backup export and
-restore, and includes optional password-protected backup files. Production login,
-production cloud sync, and shared household collaboration are not part of the
-current beta scope.
+HFOS is moving from guided private local-first testing toward public beta with
+sample or low-risk data. The current public beta target requires authenticated
+admin access, limited member settlement-entry access, cloud-backed household
+metadata, account/transaction snapshots, settlement persistence, and real-time
+sync for the active household session. Local backup export and restore remain
+required safety rails. Shared household collaboration, multi-device household
+access, conflict resolution, and full utility/savings cloud persistence are not
+part of the one-month public beta scope unless explicitly expanded.
 
 Start with:
 
 * [How To Use](docs/HOW_TO_USE.md)
 * [Beta Readiness Checklist](docs/roadmap/Beta-Readiness-Checklist.md)
+* [Public Beta Launch Checklist](docs/qa/Public-Beta-Launch-Checklist.md)
 * [Private Beta Test Runbook](docs/qa/Private-Beta-Test-Runbook.md)
 
 ---
@@ -53,6 +57,7 @@ Start with:
 * Vite
 * Tailwind CSS
 * Browser localStorage
+* Supabase auth and cloud persistence contracts
 
 ---
 
