@@ -10,6 +10,7 @@ import {
 import type {
   StoredAttachment,
 } from "../../../shared/models/StoredAttachment";
+import createAttachmentMetadataRecords from "../../../shared/utils/createAttachmentMetadataRecords";
 
 import type {
   UtilityBillForm,
@@ -154,14 +155,8 @@ export default class UtilityProviderBillService {
         ),
 
       billAttachments:
-        form.attachments.map(
-          (attachment) => ({
-            ...attachment,
-            createdAt:
-              new Date(
-                attachment.createdAt
-              ),
-          })
+        createAttachmentMetadataRecords(
+          form.attachments
         ),
       paymentAttachments: [],
 
@@ -297,14 +292,8 @@ export default class UtilityProviderBillService {
       paymentReferenceNumber:
         payment.referenceNumber.trim(),
       paymentAttachments:
-        payment.paymentAttachments.map(
-          (attachment) => ({
-            ...attachment,
-            createdAt:
-              new Date(
-                attachment.createdAt
-              ),
-          })
+        createAttachmentMetadataRecords(
+          payment.paymentAttachments
         ),
       transactionId:
         saveResult.data?.id ?? "",
@@ -361,14 +350,8 @@ export default class UtilityProviderBillService {
       UtilityProviderBill = {
       ...providerBill,
       billAttachments:
-        billAttachments.map(
-          (attachment) => ({
-            ...attachment,
-            createdAt:
-              new Date(
-                attachment.createdAt
-              ),
-          })
+        createAttachmentMetadataRecords(
+          billAttachments
         ),
       updatedAt:
         new Date(),

@@ -4,9 +4,7 @@ import type {
 import type {
   Transaction,
 } from "../../transactions/models/Transaction";
-import type {
-  StoredAttachment,
-} from "../../../shared/models/StoredAttachment";
+import createAttachmentMetadataRecords from "../../../shared/utils/createAttachmentMetadataRecords";
 import type {
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadRecord,
@@ -158,7 +156,7 @@ function createTransactionUploadRecord(
     notes:
       transaction.notes,
     attachments:
-      createAttachmentMetadataUploadRecords(
+      createAttachmentMetadataRecords(
         transaction.attachments ?? []
       ),
     transactionDate:
@@ -172,19 +170,4 @@ function createTransactionUploadRecord(
     updatedAt:
       transaction.updatedAt.toISOString(),
   };
-}
-
-function createAttachmentMetadataUploadRecords(
-  attachments: StoredAttachment[]
-): StoredAttachment[] {
-  return attachments.map(
-    (attachment) => ({
-      ...attachment,
-      dataUrl: "",
-      createdAt:
-        new Date(
-          attachment.createdAt
-        ),
-    })
-  );
 }
