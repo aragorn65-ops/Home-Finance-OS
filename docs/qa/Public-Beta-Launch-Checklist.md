@@ -10,6 +10,10 @@ access, cloud-backed household persistence, and real-time synchronization.
 Testers must use sample or low-risk data and keep their own backups.
 Multi-device household access and conflict resolution remain out of scope.
 
+Repo-side evidence for completed gates is tracked in
+`docs/qa/Public-Beta-Launch-Evidence.md`. Unchecked gates require live
+production validation on the current Cloudflare Pages deployment.
+
 ---
 
 ## Launch Decision
