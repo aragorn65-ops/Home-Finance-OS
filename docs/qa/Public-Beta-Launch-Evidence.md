@@ -116,6 +116,17 @@ npm.cmd run build
 
 ---
 
+## Sprint 104 Supabase Cutover
+
+Before the live smoke pass, apply the schema and run the verification queries
+from:
+
+```text
+docs/qa/Sprint-104-Supabase-Cutover.md
+```
+
+---
+
 ## Sprint 104 Production Evidence Log
 
 Record the live smoke result here before checking launch gates:

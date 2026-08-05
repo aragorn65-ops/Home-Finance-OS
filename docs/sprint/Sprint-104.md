@@ -64,6 +64,7 @@ tester onboarding.
 * `docs/qa/Cloudflare-Pages-Smoke-Check.md`
 * `docs/qa/Public-Beta-Launch-Checklist.md`
 * `docs/qa/Public-Beta-Launch-Evidence.md`
+* `docs/qa/Sprint-104-Supabase-Cutover.md`
 
 ---
 
@@ -82,11 +83,17 @@ surfaced during Sprint 103 closeout:
 * Partial settlements must preserve the unpaid remainder on the next selected
   allocation.
 
+Use `docs/qa/Sprint-104-Supabase-Cutover.md` for the schema application and
+verification queries before running deployed smoke checks.
+
 ---
 
 ## Completed Checkpoints
 
-* [ ] Pending Sprint 104 implementation and live validation.
+* [x] Added the Sprint 104 Supabase cutover guide with the required schema
+  application, cache reload, RPC signature checks, allocation table check, and
+  deployed app verification steps.
+* [ ] Pending Sprint 104 live validation.
 
 ---
 
