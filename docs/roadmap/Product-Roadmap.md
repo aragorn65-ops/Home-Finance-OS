@@ -140,6 +140,10 @@ real-time synchronization, while leaving multi-device household access and
 conflict resolution out of scope.
 Sprint 103 turns that repo-side baseline into a live Cloudflare Pages and
 Supabase production validation pass before any public beta invitation.
+Sprint 104 turns the Sprint 103 settlement/allocation hardening into a
+production cutover readiness pass, with live validation of Supabase schema
+application, browser-refresh restore safety, settlement partial-payment
+persistence, and launch evidence before testers are invited.
 
 ---
 
@@ -219,6 +223,7 @@ Supabase production validation pass before any public beta invitation.
 | v0.101.0-alpha | Cloud restore preview |
 | v0.102.0-alpha | Public beta cloud direction |
 | v0.103.0-alpha | Public beta production validation |
+| v0.104.0-alpha | Public beta production cutover readiness |
 
 ---
 
@@ -292,6 +297,11 @@ runtime configuration, production Supabase auth, admin and limited member smoke
 checks, cloud persistence, browser-refresh restore, realtime active-session
 sync, route smoke checks, and optional Google Drive checks must pass against
 the deployed production URL before testers are invited.
+Sprint 104 keeps the cutover decision focused on the final production evidence:
+the latest Supabase schema must be applied, cloud snapshots must preserve
+expense allocations, partial settlement history and unsettled remainders must
+survive refresh, and the public beta launch evidence must be recorded before
+testers are invited.
 Sprint 91 keeps migration staging incremental by uploading accounts only after
 manifest staging passes, while keeping Commit and automatic sync disabled.
 Sprint 92 keeps that incremental staging path going by uploading transactions
