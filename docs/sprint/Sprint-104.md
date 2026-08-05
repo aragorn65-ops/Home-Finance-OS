@@ -23,7 +23,7 @@ tester onboarding.
 
 * [ ] Confirm the latest `main` deployment includes Sprint 103 closeout commit
   `3119114` or newer.
-* [ ] Apply the latest Supabase schema SQL and reload the PostgREST schema
+* [x] Apply the latest Supabase schema SQL and reload the PostgREST schema
   cache.
 * [ ] Verify Auth Diagnostics reports the expected Cloudflare build commit,
   branch, Supabase readiness probes, and RPC visibility.
@@ -93,6 +93,8 @@ verification queries before running deployed smoke checks.
 * [x] Added the Sprint 104 Supabase cutover guide with the required schema
   application, cache reload, RPC signature checks, allocation table check, and
   deployed app verification steps.
+* [x] Applied the latest Supabase schema SQL and reloaded the PostgREST schema
+  cache for the Sprint 104 cutover pass.
 * [ ] Pending Sprint 104 live validation.
 
 ---
