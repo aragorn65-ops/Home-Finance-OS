@@ -51,8 +51,11 @@ https://home-finance-os.pages.dev
   state.
 * [ ] A signed-in admin can review, edit, and delete member-submitted settlement
   records.
-* [ ] Household metadata, account/transaction core snapshots, and settlement
-  records persist to the cloud-backed household store.
+* [ ] Household metadata, account/transaction/expense-allocation core
+  snapshots, and settlement records persist to the cloud-backed household
+  store.
+* [ ] Partial settlement history persists across refresh while the unpaid
+  remainder from an earlier-month expense stays visible until fully settled.
 * [ ] Expense, utility provider bill, and settlement records save successfully
   when a receipt or bill file is attached.
 * [ ] Metadata-only attachments remain visible after refresh without exposing a
@@ -123,8 +126,9 @@ Run this only when Cloudflare Pages has `VITE_GOOGLE_CLIENT_ID` configured:
 * Keep backup passwords outside HFOS; forgotten backup passwords cannot be
   recovered.
 * Public beta supports authenticated admin access, limited member settlement
-  entry, cloud-backed household metadata, account/transaction snapshots,
-  settlement persistence, and real-time sync for the active household.
+  entry, cloud-backed household metadata, account/transaction/allocation
+  snapshots, settlement persistence, and real-time sync for the active
+  household.
 * Multi-device household access, broad shared collaboration, and conflict
   resolution are not part of public beta.
 * App lock protects only this browser session; it is separate from account

@@ -81,16 +81,42 @@ member expense contribution summary appears again in Analytics.
 
 1. Sign in with the invited admin account.
 2. Create or claim one test household.
-3. Add at least one account, one transaction, and one settlement.
+3. Add at least one account, one transaction with shared expense allocations,
+   and one settlement.
 4. Refresh the browser.
-5. Confirm the household metadata, account, transaction, and settlement records
-   reload from the cloud-backed store.
+5. Confirm the household metadata, account, transaction, allocation, and
+   settlement records reload from the cloud-backed store.
 6. Sign out.
 7. Confirm signed-out access cannot read or mutate cloud-backed household data.
 
 Expected result: authenticated admin household metadata, account/transaction
-snapshots, and settlement records survive refresh; signed-out access is blocked;
-and failed cloud writes are visible instead of silently succeeding.
+snapshots, expense allocations, and settlement records survive refresh;
+signed-out access is blocked; and failed cloud writes are visible instead of
+silently succeeding.
+
+---
+
+## Partial Settlement Carryover Check
+
+1. Sign in with the invited admin account.
+2. Select July 2026.
+3. Add shared unsettled expense allocations totaling 9,000 across at least two
+   outstanding allocation rows.
+4. Select August 2026.
+5. Add a settlement for 5,000.
+6. In manual settlement mode, check the intended allocation rows in order.
+7. Confirm the app applies the payment to the checked rows, fully covering the
+   first applicable row and applying the remaining amount as a partial payment
+   on the next row.
+8. Save the settlement.
+9. Refresh the browser.
+10. Confirm the August settlement history is still visible.
+11. Confirm the unpaid July remainder is still visible as unsettled until a
+    later settlement fully pays it.
+
+Expected result: the payment is recorded in the selected payment month, the
+original July obligation keeps its unpaid remainder, and the cloud save does
+not fail with a household allocation ownership error.
 
 ---
 

@@ -39,9 +39,16 @@ Supabase validation before inviting public beta testers.
   `frontend/test/remoteSettlementPersistence.test.ts`
 * Manual settlement partial-payment application:
   `frontend/test/settlementPartialApplications.test.ts`
+* Supabase core snapshots include expense allocations and settlements refresh
+  the core snapshot before remote save:
+  `frontend/test/coreSnapshotSync.test.ts` and
+  `frontend/test/supabaseAuthBackendAdapter.test.ts`
+* Cloud snapshot restore preserves local allocations when an older or
+  incomplete remote snapshot has transactions but no allocation rows:
+  `frontend/test/coreSnapshotSync.test.ts`
 * Household metadata cloud persistence contract:
   `frontend/test/remoteHouseholdPreferencesPersistence.test.ts`
-* Account and transaction cloud snapshot contract:
+* Account, transaction, and expense-allocation cloud snapshot contract:
   `frontend/test/remoteCoreSnapshotPersistence.test.ts` and
   `frontend/test/coreSnapshotSync.test.ts`
 * Public beta cloud persistence scope is limited to household metadata,
@@ -109,7 +116,7 @@ npm.cmd run build
 
 ---
 
-## Sprint 103 Production Evidence Log
+## Sprint 104 Production Evidence Log
 
 Record the live smoke result here before checking launch gates:
 
@@ -127,8 +134,12 @@ Supabase schema SQL applied:
 PostgREST schema cache reloaded:
 Admin auth result:
 Household persistence result:
-Account/transaction snapshot result:
+Account/transaction/allocation snapshot result:
 Settlement persistence result:
+July-to-August partial settlement result:
+July unsettled remainder after August payment:
+Settlement history after refresh:
+Failed-save form state result:
 Expense attachment save result:
 Utility provider bill attachment save result:
 Settlement attachment save result:
