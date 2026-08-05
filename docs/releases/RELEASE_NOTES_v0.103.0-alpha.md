@@ -17,6 +17,14 @@ partial-payment behavior.
   account/transaction snapshots, and settlement record mutations.
 * Preserved settlement application rows in remote settlement create/update
   payloads so allocation-payment details survive cloud persistence.
+* Synced expense allocation rows through the Supabase core snapshot flow and
+  refreshed that snapshot before remote settlement saves, preventing household
+  allocation ownership errors when recording partial settlements.
+* Added a conservative restore guard so an older or incomplete cloud snapshot
+  cannot wipe local expense allocations when transactions still exist.
+* Updated the Supabase schema script to drop the changed
+  `load_household_core_snapshot(uuid)` RPC before recreating it with allocation
+  data in the return payload.
 * Mapped remote settlement member UUIDs back to local household member IDs when
   Supabase returns `household_members.local_record_id`, keeping cloud-loaded
   settlement history readable after refresh or restore.
@@ -31,7 +39,7 @@ partial-payment behavior.
 
 ## Verified
 
-* `npm.cmd test` passed with 162 tests.
+* `npm.cmd test` passed with 165 tests.
 * `npm.cmd run build` passed.
 * `git diff --check` passed with no whitespace errors.
 

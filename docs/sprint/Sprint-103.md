@@ -114,6 +114,16 @@ Initial production validation should focus on:
 * [x] Normalized `shared/types` imports to explicit `shared/types/index` paths
   so the Node test runner can load service-level settlement tests without
   unsupported directory-import failures.
+* [x] Added Supabase core snapshot support for expense allocations so remote
+  settlement application rows can resolve the allocation records they apply to
+  within the household.
+* [x] Synced the current browser core snapshot before remote settlement
+  create/update calls, ensuring existing local allocation rows are uploaded
+  before settlement applications reference them.
+* [x] Updated the Supabase schema script to drop and recreate the changed core
+  snapshot load RPC, avoiding Postgres return-type deployment failures.
+* [x] Protected local expense allocations from being wiped by an older or
+  incomplete cloud snapshot that has transactions but no allocation rows yet.
 
 ---
 
@@ -128,8 +138,8 @@ Sprint 103 prepared the public beta candidate for live Cloudflare Pages and
 Supabase validation by improving deployed build diagnostics, widening
 production readiness probes, preserving settlement application details across
 remote create/update calls, mapping remote settlement member ids back to local
-household member ids, and hardening manual settlement entry for partial-payment
-household workflows.
+household member ids, syncing expense allocations into core cloud snapshots,
+and hardening manual settlement entry for partial-payment household workflows.
 
 The public beta is **not launched** by this sprint. The live production gates
 below still require validation against:
@@ -140,7 +150,7 @@ https://home-finance-os.pages.dev
 
 ### Final Verification
 
-* `npm.cmd test` passed with 162 tests.
+* `npm.cmd test` passed with 165 tests.
 * `npm.cmd run build` passed.
 * `git diff --check` passed with no whitespace errors.
 
