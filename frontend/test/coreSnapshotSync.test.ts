@@ -786,6 +786,63 @@ test("applies a remote core snapshot to the local household", () => {
   );
 });
 
+test("keeps local expense allocations when remote core snapshot has none for existing transactions", () => {
+  let replacedAllocations = false;
+  const snapshot:
+    RemoteHouseholdCoreSnapshot = {
+    householdId:
+      "remote-household-core-empty-allocations",
+    accounts: [],
+    transactions: [
+      {
+        id: "transaction-remote-empty-allocation",
+        visibility: "household",
+        type: "expense",
+        amount: 9000,
+        sourceAccountId: null,
+        destinationAccountId: null,
+        category: "Utilities",
+        description: "July electricity",
+        notes: "",
+        transactionDate:
+          "2026-07-31",
+        isActive: true,
+        createdAt:
+          "2026-07-31T03:00:00.000Z",
+        updatedAt:
+          "2026-07-31T04:00:00.000Z",
+      },
+    ],
+    expenseAllocations: [],
+  };
+
+  applyRemoteCoreSnapshotToLocalHousehold({
+    snapshot,
+    localHouseholdId:
+      householdId,
+    ownerMemberId:
+      "member-owner-1",
+    writer: {
+      replaceAccounts() {
+        return true;
+      },
+      replaceTransactions() {
+        return true;
+      },
+      replaceExpenseAllocations() {
+        replacedAllocations = true;
+
+        return true;
+      },
+    },
+  });
+
+  assert.equal(
+    replacedAllocations,
+    false
+  );
+});
+
 test("restores a linked remote core snapshot", async () => {
   const remoteHouseholdId =
     "remote-household-linked-restore-1";

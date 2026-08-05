@@ -353,6 +353,14 @@ export function applyRemoteCoreSnapshotToLocalHousehold(
           new Date(allocation.updatedAt),
       })
     );
+  const shouldReplaceExpenseAllocations =
+    Array.isArray(
+      options.snapshot.expenseAllocations
+    ) &&
+    (
+      expenseAllocations.length > 0 ||
+      transactions.length === 0
+    );
 
   if (
     !options.writer.replaceAccounts(
@@ -378,6 +386,7 @@ export function applyRemoteCoreSnapshotToLocalHousehold(
 
   if (
     options.writer.replaceExpenseAllocations &&
+    shouldReplaceExpenseAllocations &&
     !options.writer.replaceExpenseAllocations(
       options.localHouseholdId,
       expenseAllocations

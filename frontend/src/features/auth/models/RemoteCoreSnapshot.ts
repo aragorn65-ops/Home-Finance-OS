@@ -8,7 +8,7 @@ export interface RemoteHouseholdCoreSnapshot {
   householdId: string;
   accounts: RemoteMigrationAccountUploadRecord[];
   transactions: RemoteMigrationTransactionUploadRecord[];
-  expenseAllocations:
+  expenseAllocations?:
     RemoteMigrationExpenseAllocationUploadRecord[];
   savedAt?: Date;
 }
