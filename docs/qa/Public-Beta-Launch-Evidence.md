@@ -132,6 +132,39 @@ docs/qa/Sprint-104-Supabase-Cutover.md
 Record the live smoke result here before checking launch gates:
 
 ```text
+Date: 2026-08-06
+Tester: Product owner
+Browser: Production browser session
+Production URL: https://home-finance-os.pages.dev
+Expected build commit: 143b044 or newer
+Settings Auth Diagnostics build: Passed
+Settings Auth Diagnostics branch: main
+Cloudflare deployment status: Passed for deployed app access
+NODE_VERSION observed/configured: Pending explicit Cloudflare settings check
+Supabase schema SQL applied: Passed
+PostgREST schema cache reloaded: Passed
+Admin auth result: Pending full auth smoke pass
+Household persistence result: Passed for linked refresh scenario
+Account/transaction/allocation snapshot result: Passed
+Settlement persistence result: Passed
+July-to-August partial settlement result: Passed
+July unsettled remainder after August payment: Passed
+Settlement history after refresh: Passed
+Failed-save form state result: Passed after no-save-regression retest
+Expense attachment save result: Pending attachment smoke pass
+Utility provider bill attachment save result: Pending attachment smoke pass
+Settlement attachment save result: Pending attachment smoke pass
+Metadata-only attachment preview result: Pending attachment smoke pass
+Browser refresh restore result: Passed for linked household core and settlement records
+Realtime active-session result: Pending realtime smoke pass
+Limited member settlement-entry result: Pending limited member smoke pass
+Route smoke result: Pending full route smoke pass
+Google Drive result, if configured: Pending optional check
+Blockers: None for Supabase allocation cutover and partial settlement carryover
+Decision: Continue Sprint 104 live validation
+```
+
+```text
 Date:
 Tester:
 Browser:

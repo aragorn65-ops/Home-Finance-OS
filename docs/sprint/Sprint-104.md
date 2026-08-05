@@ -21,22 +21,22 @@ tester onboarding.
 
 ## Planned Scope
 
-* [ ] Confirm the latest `main` deployment includes Sprint 103 closeout commit
+* [x] Confirm the latest `main` deployment includes Sprint 103 closeout commit
   `3119114` or newer.
 * [x] Apply the latest Supabase schema SQL and reload the PostgREST schema
   cache.
-* [ ] Verify Auth Diagnostics reports the expected Cloudflare build commit,
+* [x] Verify Auth Diagnostics reports the expected Cloudflare build commit,
   branch, Supabase readiness probes, and RPC visibility.
 * [ ] Run admin sign-in, sign-out, session refresh, and expired-session
   recovery smoke checks on production.
-* [ ] Run linked-household restore after browser refresh with accounts,
+* [x] Run linked-household restore after browser refresh with accounts,
   transactions, expense allocations, and settlements present.
-* [ ] Re-test the July-to-August partial settlement workflow:
+* [x] Re-test the July-to-August partial settlement workflow:
   a 9,000 outstanding balance settled by a 5,000 payment that fully covers one
   allocation and partially covers the next.
-* [ ] Verify the settlement remains recorded in the selected payment month and
+* [x] Verify the settlement remains recorded in the selected payment month and
   the original July unsettled remainder remains visible until fully paid.
-* [ ] Verify remote settlement history appears after refresh and does not leave
+* [x] Verify remote settlement history appears after refresh and does not leave
   the form stuck in a saving/reset state after failures.
 * [ ] Run limited member settlement-entry smoke checks.
 * [ ] Run public beta route smoke checks on every first-class route.
@@ -95,6 +95,9 @@ verification queries before running deployed smoke checks.
   deployed app verification steps.
 * [x] Applied the latest Supabase schema SQL and reloaded the PostgREST schema
   cache for the Sprint 104 cutover pass.
+* [x] Verified the deployed Auth Diagnostics, core snapshot allocation sync,
+  linked-household refresh restore, August settlement history, and July
+  unsettled remainder behavior after the Sprint 104 Supabase cutover.
 * [ ] Pending Sprint 104 live validation.
 
 ---
