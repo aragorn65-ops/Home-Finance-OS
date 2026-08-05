@@ -14,7 +14,7 @@ import SharedPersonalAllocationService from "./SharedPersonalAllocationService";
 import {
   OperationResults,
   type OperationResult,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 
 export default class ExpenseAllocationService {
   /**

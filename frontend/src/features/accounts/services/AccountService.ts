@@ -7,7 +7,7 @@ import AccountValidator from "../validators/AccountValidator";
 import {
   OperationResults,
   type OperationResult,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 import {
   normalizeCurrency,
   normalizeExchangeRate,

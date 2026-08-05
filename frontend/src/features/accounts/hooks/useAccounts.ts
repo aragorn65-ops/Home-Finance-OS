@@ -9,10 +9,10 @@ import {
 } from "../../../config/auth";
 import type {
   OperationResult,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 import {
   OperationResults,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 import {
   coreSnapshotRestoredEvent,
   getAuthBackendAdapter,

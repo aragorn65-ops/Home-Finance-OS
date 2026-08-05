@@ -12,7 +12,7 @@ import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
 import type {
   OperationResult,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 import CurrencyInput from "../../../shared/ui/CurrencyInput";
 import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
 import formatCurrency from "../../../shared/utils/formatCurrency";
@@ -29,6 +29,10 @@ import type { Settlement } from "../models/Settlement";
 import type { SettlementAllocationOption } from "../models/SettlementAllocationOption";
 
 import type { SettlementApplicationForm } from "../models/SettlementApplicationForm";
+
+import {
+  recalculateManualSettlementApplications,
+} from "../services/manualSettlementApplications";
 
 import {
   defaultSettlementForm,
@@ -727,10 +731,31 @@ export default function SettlementForm({
   ) => {
     setIsAmountManuallyEdited(true);
 
-    updateField(
+    setForm((current) => {
+      const applications =
+        current.applicationMethod ===
+        "manual"
+          ? recalculateManualSettlementApplications(
+              eligibleAllocationOptions,
+              createApplicationForms(
+                eligibleAllocationOptions,
+                current.applications
+              ),
+              amount
+            )
+          : current.applications;
+
+      return {
+        ...current,
+        amount,
+        applications,
+      };
+    });
+
+    clearErrors([
       "amount",
-      amount
-    );
+      "applications",
+    ]);
   };
 
   const handleFromMemberChange = (
@@ -935,16 +960,36 @@ export default function SettlementForm({
     option: SettlementAllocationOption,
     isSelected: boolean
   ) => {
-    updateApplication(
-      option.expenseAllocationId,
-      {
-        isSelected,
-        appliedAmount:
-          isSelected
-            ? option.outstandingAmount
-            : 0,
-      }
-    );
+    setForm((current) => {
+      const applications =
+        createApplicationForms(
+          eligibleAllocationOptions,
+          current.applications
+        ).map((application) =>
+          application.expenseAllocationId ===
+          option.expenseAllocationId
+            ? {
+                ...application,
+                isSelected,
+              }
+            : application
+        );
+
+      return {
+        ...current,
+
+        applications:
+          recalculateManualSettlementApplications(
+            eligibleAllocationOptions,
+            applications,
+            current.amount
+          ),
+      };
+    });
+
+    clearErrors([
+      "applications",
+    ]);
   };
 
   const handleApplicationAmountChange = (

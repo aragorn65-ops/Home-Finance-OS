@@ -104,3 +104,58 @@ Initial production validation should focus on:
 * [x] Sent locally built settlement application rows with remote settlement
   create/update RPC calls so future cloud settlement records preserve the
   allocation-payment details needed for item-balance history.
+* [x] Added manual settlement auto-computation so a tester can enter the
+  desired settlement amount, check the intended outstanding allocations, and
+  have HFOS apply the payment in order with any remainder recorded as the next
+  allocation's partial payment.
+* [x] Added regression coverage for a 5,000 settlement applied against 9,000
+  of outstanding July obligations, fully covering one allocation and partially
+  covering the next while preserving the remaining outstanding balance.
+* [x] Normalized `shared/types` imports to explicit `shared/types/index` paths
+  so the Node test runner can load service-level settlement tests without
+  unsupported directory-import failures.
+
+---
+
+## Sprint Closeout
+
+**Closed:** 2026-08-06
+
+**Result:** Closed as a repo-side production validation and settlement
+hardening sprint.
+
+Sprint 103 prepared the public beta candidate for live Cloudflare Pages and
+Supabase validation by improving deployed build diagnostics, widening
+production readiness probes, preserving settlement application details across
+remote create/update calls, mapping remote settlement member ids back to local
+household member ids, and hardening manual settlement entry for partial-payment
+household workflows.
+
+The public beta is **not launched** by this sprint. The live production gates
+below still require validation against:
+
+```text
+https://home-finance-os.pages.dev
+```
+
+### Final Verification
+
+* `npm.cmd test` passed with 162 tests.
+* `npm.cmd run build` passed.
+* `git diff --check` passed with no whitespace errors.
+
+### Remaining Launch Gates
+
+* Cloudflare Pages production deployment must be green.
+* Settings Auth Diagnostics must report the expected deployed build commit and
+  branch for the current `main` checkpoint.
+* Cloudflare Pages must use `NODE_VERSION=22.13.0`.
+* Production Supabase auth environment variables must be configured.
+* Latest Supabase schema SQL must be applied and the PostgREST schema cache
+  must be reloaded.
+* Admin sign-in, sign-out, session refresh, expired-session recovery, household
+  claim/create, cloud persistence, browser-refresh restore, realtime
+  active-session sync, route smoke checks, and limited member settlement-entry
+  smoke checks must pass on the deployed site.
+* Optional Google Drive upload/list/download checks must pass when
+  `VITE_GOOGLE_CLIENT_ID` is configured for the deployed build.

@@ -7,7 +7,7 @@ import {
 import {
   OperationResults,
   type OperationResult,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 
 import {
   convertEnteredAmount,

@@ -7,7 +7,7 @@ import {
 
 import type {
   OperationResult,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 
 import type {
   HouseholdMember,

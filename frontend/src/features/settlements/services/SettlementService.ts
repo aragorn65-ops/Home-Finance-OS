@@ -14,7 +14,7 @@ import SettlementApplicationService from "./SettlementApplicationService";
 import {
   OperationResults,
   type OperationResult,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 
 type AccountOperationType =
   | "debit"

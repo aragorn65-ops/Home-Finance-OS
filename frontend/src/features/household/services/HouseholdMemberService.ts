@@ -16,7 +16,7 @@ import {
 import {
   OperationResults,
   type OperationResult,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 
 export default class HouseholdMemberService {
   /**

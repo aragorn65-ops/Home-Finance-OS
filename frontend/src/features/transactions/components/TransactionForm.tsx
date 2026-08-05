@@ -12,7 +12,7 @@ import {
 import type { Account } from "../../accounts/models/Account";
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
-import type { OperationResult } from "../../../shared/types";
+import type { OperationResult } from "../../../shared/types/index";
 import {
   currencies,
 } from "../../../shared/data/currencies";

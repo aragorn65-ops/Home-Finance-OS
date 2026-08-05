@@ -11,7 +11,7 @@ import {
 
 import {
   OperationResults,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 import formatCurrency from "../../../shared/utils/formatCurrency";
 import useReportingMonth from "../../../shared/hooks/useReportingMonth";
 import {

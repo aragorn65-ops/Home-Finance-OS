@@ -15,7 +15,7 @@ import AllocationPaymentService from "./AllocationPaymentService";
 import {
   OperationResults,
   type OperationResult,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 
 interface EligibleOutstandingAllocation {
   allocation: ExpenseAllocation;

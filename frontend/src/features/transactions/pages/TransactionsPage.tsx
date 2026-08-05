@@ -13,7 +13,7 @@ import {
 
 import {
   OperationResults,
-} from "../../../shared/types";
+} from "../../../shared/types/index";
 
 import {
   formatDateInput,

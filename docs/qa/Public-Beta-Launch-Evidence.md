@@ -37,6 +37,8 @@ Supabase validation before inviting public beta testers.
   `frontend/test/remoteSettlementPersistence.test.ts`
 * Admin review/edit/delete of member-submitted settlement records:
   `frontend/test/remoteSettlementPersistence.test.ts`
+* Manual settlement partial-payment application:
+  `frontend/test/settlementPartialApplications.test.ts`
 * Household metadata cloud persistence contract:
   `frontend/test/remoteHouseholdPreferencesPersistence.test.ts`
 * Account and transaction cloud snapshot contract:
