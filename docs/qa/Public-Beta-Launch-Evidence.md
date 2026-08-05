@@ -143,10 +143,10 @@ Cloudflare deployment status: Passed for deployed app access
 NODE_VERSION observed/configured: Pending explicit Cloudflare settings check
 Supabase schema SQL applied: Passed
 PostgREST schema cache reloaded: Passed
-Admin auth result: Pending full auth smoke pass
-Signed-out route blocking: Pending full auth smoke pass
-Session refresh result: Pending full auth smoke pass
-Expired-session recovery result: Pending full auth smoke pass
+Admin auth result: Passed
+Signed-out route blocking: Passed
+Session refresh result: Passed
+Expired-session recovery result: Passed
 Household persistence result: Passed for linked refresh scenario
 Account/transaction/allocation snapshot result: Passed
 Settlement persistence result: Passed

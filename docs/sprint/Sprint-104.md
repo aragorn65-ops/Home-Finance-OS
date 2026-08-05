@@ -27,7 +27,7 @@ tester onboarding.
   cache.
 * [x] Verify Auth Diagnostics reports the expected Cloudflare build commit,
   branch, Supabase readiness probes, and RPC visibility.
-* [ ] Run admin sign-in, sign-out, session refresh, and expired-session
+* [x] Run admin sign-in, sign-out, session refresh, and expired-session
   recovery smoke checks on production.
 * [x] Run linked-household restore after browser refresh with accounts,
   transactions, expense allocations, and settlements present.
@@ -104,6 +104,8 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
   unsettled remainder behavior after the Sprint 104 Supabase cutover.
 * [x] Added the Sprint 104 admin-auth smoke guide for production sign-in,
   sign-out, session refresh, and expired-session recovery validation.
+* [x] Verified production admin sign-in, signed-out route blocking, session
+  refresh, and expired-session recovery behavior.
 * [ ] Pending Sprint 104 live validation.
 
 ---
