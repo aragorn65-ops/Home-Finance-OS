@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
@@ -465,6 +466,8 @@ export default function SettlementForm({
     isValidationAlertOpen,
     setIsValidationAlertOpen,
   ] = useState(false);
+  const initializedFormKey =
+    useRef("");
 
   const [
     isPreparingAttachments,
@@ -507,6 +510,30 @@ export default function SettlementForm({
   };
 
   useEffect(() => {
+    const nextFormKey =
+      [
+        householdId,
+        initialValues?.householdId ?? "",
+        initialValues?.settlementDate ?? "",
+        initialValues?.fromMemberId ?? "",
+        initialValues?.toMemberId ?? "",
+        initialValues?.amount ?? "",
+        initialValues?.referenceNumber ?? "",
+        activeMembers
+          .map((member) => member.id)
+          .join("|"),
+      ].join("::");
+
+    if (
+      initializedFormKey.current ===
+      nextFormKey
+    ) {
+      return;
+    }
+
+    initializedFormKey.current =
+      nextFormKey;
+
     const nextForm =
       initialValues
         ? {
@@ -554,7 +581,6 @@ export default function SettlementForm({
     initialValues,
     householdId,
     activeMembers,
-    allocationOptions,
   ]);
 
   const eligibleAllocationOptions =
