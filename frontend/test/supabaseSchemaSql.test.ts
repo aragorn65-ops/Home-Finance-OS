@@ -132,6 +132,36 @@ test("Supabase core snapshot save RPC persists expense allocations", () => {
   );
 });
 
+test("Supabase core snapshot load RPC drops old return type before recreate", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+  const dropStart =
+    schemaSql.indexOf(
+      "drop function if exists public.load_household_core_snapshot(uuid)"
+    );
+  const functionStart =
+    schemaSql.indexOf(
+      "create or replace function public.load_household_core_snapshot"
+    );
+
+  assert.notEqual(
+    dropStart,
+    -1
+  );
+  assert.ok(
+    dropStart < functionStart
+  );
+});
+
 test("Supabase settlement RPCs persist settlement attachments", () => {
   const schemaSql =
     readFileSync(
