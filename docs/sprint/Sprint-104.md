@@ -65,6 +65,7 @@ tester onboarding.
 * `docs/qa/Public-Beta-Launch-Checklist.md`
 * `docs/qa/Public-Beta-Launch-Evidence.md`
 * `docs/qa/Sprint-104-Supabase-Cutover.md`
+* `docs/qa/Sprint-104-Admin-Auth-Smoke.md`
 
 ---
 
@@ -86,6 +87,9 @@ surfaced during Sprint 103 closeout:
 Use `docs/qa/Sprint-104-Supabase-Cutover.md` for the schema application and
 verification queries before running deployed smoke checks.
 
+Use `docs/qa/Sprint-104-Admin-Auth-Smoke.md` for the next live production
+gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
+
 ---
 
 ## Completed Checkpoints
@@ -98,6 +102,8 @@ verification queries before running deployed smoke checks.
 * [x] Verified the deployed Auth Diagnostics, core snapshot allocation sync,
   linked-household refresh restore, August settlement history, and July
   unsettled remainder behavior after the Sprint 104 Supabase cutover.
+* [x] Added the Sprint 104 admin-auth smoke guide for production sign-in,
+  sign-out, session refresh, and expired-session recovery validation.
 * [ ] Pending Sprint 104 live validation.
 
 ---
