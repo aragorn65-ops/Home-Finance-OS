@@ -269,6 +269,7 @@ export class InMemoryAuthStore {
           householdId,
           accounts: [],
           transactions: [],
+          expenseAllocations: [],
         };
   }
 
@@ -431,6 +432,18 @@ function cloneCoreSnapshot(
             transaction.attachments?.map(
               (attachment) => ({
                 ...attachment,
+              })
+            ),
+        })
+      ),
+    expenseAllocations:
+      (snapshot.expenseAllocations ?? []).map(
+        (allocation) => ({
+          ...allocation,
+          personalItems:
+            allocation.personalItems?.map(
+              (item) => ({
+                ...item,
               })
             ),
         })

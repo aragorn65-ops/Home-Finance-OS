@@ -105,6 +105,33 @@ test("Supabase core snapshot save RPC avoids ambiguous household return name", (
   );
 });
 
+test("Supabase core snapshot save RPC persists expense allocations", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /create or replace function public\.save_household_core_snapshot\(\s*target_household_id uuid,\s*core_accounts jsonb,\s*core_transactions jsonb,\s*core_expense_allocations jsonb/
+  );
+  assert.match(
+    schemaSql,
+    /insert into public\.expense_allocations \([\s\S]+local_record_id[\s\S]+transaction_id[\s\S]+paid_by_member_id[\s\S]+member_id/
+  );
+  assert.match(
+    schemaSql,
+    /'expense_allocations'|expense_allocations jsonb/
+  );
+});
+
 test("Supabase settlement RPCs persist settlement attachments", () => {
   const schemaSql =
     readFileSync(

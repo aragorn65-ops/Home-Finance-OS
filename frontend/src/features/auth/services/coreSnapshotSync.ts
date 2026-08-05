@@ -5,6 +5,9 @@ import type {
   Transaction,
 } from "../../transactions/models/Transaction";
 import type {
+  ExpenseAllocation,
+} from "../../transactions/models/ExpenseAllocation";
+import type {
   RemoteHouseholdCoreSnapshot,
   RemoteHouseholdCoreSnapshotInput,
 } from "../models";
@@ -14,6 +17,7 @@ import type {
 } from "./AuthBackendAdapter";
 import {
   createMigrationAccountUploadPayload,
+  createMigrationExpenseAllocationUploadRecords,
   createMigrationTransactionUploadPayload,
 } from "./remoteMigrationUploadPayloads";
 
@@ -22,11 +26,13 @@ export interface LocalCoreSnapshotSource {
   localHouseholdId?: string;
   accounts: Account[];
   transactions: Transaction[];
+  expenseAllocations?: ExpenseAllocation[];
 }
 
 export interface CoreSnapshotRecordSource {
   getAccounts(): Account[];
   getTransactions(): Transaction[];
+  getExpenseAllocations?(): ExpenseAllocation[];
 }
 
 export interface CurrentBrowserCoreSnapshotOptions {
@@ -75,6 +81,10 @@ export interface CoreSnapshotLocalWriter {
   replaceTransactions(
     householdId: string,
     transactions: Transaction[]
+  ): boolean;
+  replaceExpenseAllocations?(
+    householdId: string,
+    allocations: ExpenseAllocation[]
   ): boolean;
 }
 
@@ -139,6 +149,14 @@ export function createRemoteCoreSnapshotInput(
       source.transactions,
       localHouseholdId
     );
+  const expenseAllocations =
+    createMigrationExpenseAllocationUploadRecords(
+      source.expenseAllocations ?? [],
+      transactionPayload.transactions.map(
+        (transaction) =>
+          transaction.id
+      )
+    );
 
   return {
     householdId:
@@ -147,6 +165,7 @@ export function createRemoteCoreSnapshotInput(
       accountPayload.accounts,
     transactions:
       transactionPayload.transactions,
+    expenseAllocations,
   };
 }
 
@@ -199,6 +218,9 @@ export async function saveCurrentBrowserCoreSnapshotForHousehold(
       transactions:
         options.recordSource
           .getTransactions(),
+      expenseAllocations:
+        options.recordSource
+          .getExpenseAllocations?.() ?? [],
     }
   );
 }
@@ -321,6 +343,16 @@ export function applyRemoteCoreSnapshotToLocalHousehold(
           new Date(transaction.updatedAt),
       })
     );
+  const expenseAllocations =
+    (options.snapshot.expenseAllocations ?? []).map(
+      (allocation) => ({
+        ...allocation,
+        createdAt:
+          new Date(allocation.createdAt),
+        updatedAt:
+          new Date(allocation.updatedAt),
+      })
+    );
 
   if (
     !options.writer.replaceAccounts(
@@ -341,6 +373,18 @@ export function applyRemoteCoreSnapshotToLocalHousehold(
   ) {
     throw new Error(
       "Local transactions could not be replaced from the cloud snapshot."
+    );
+  }
+
+  if (
+    options.writer.replaceExpenseAllocations &&
+    !options.writer.replaceExpenseAllocations(
+      options.localHouseholdId,
+      expenseAllocations
+    )
+  ) {
+    throw new Error(
+      "Local expense allocations could not be replaced from the cloud snapshot."
     );
   }
 

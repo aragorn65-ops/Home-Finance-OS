@@ -47,6 +47,7 @@ export type {
 export type {
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadRecord,
+  RemoteMigrationExpenseAllocationUploadRecord,
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationTransactionUploadPayload,
   RemoteMigrationTransactionUploadRecord,

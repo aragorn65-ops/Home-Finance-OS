@@ -11,6 +11,12 @@ import {
 import type {
   AuthSettlementObserver,
 } from "../../auth/services";
+import {
+  saveCurrentBrowserCoreSnapshotForHousehold,
+} from "../../auth/services/coreSnapshotSync";
+import {
+  browserCoreSnapshotRecordSource,
+} from "../../auth/services/browserCoreSnapshotRecordSource";
 import type {
   RemoteSettlement,
   RemoteSettlementDraft,
@@ -504,6 +510,20 @@ export default function useSettlements(
     }
 
     try {
+      const adapter =
+        getAuthBackendAdapter();
+
+      await saveCurrentBrowserCoreSnapshotForHousehold(
+        {
+          adapter,
+          householdId,
+          localHouseholdId:
+            form.householdId,
+          recordSource:
+            browserCoreSnapshotRecordSource,
+        }
+      );
+
       const applications =
         createRemoteSettlementApplicationDrafts(
           SettlementService
@@ -512,8 +532,7 @@ export default function useSettlements(
             )
         );
 
-      await getAuthBackendAdapter()
-        .createRemoteSettlement({
+      await adapter.createRemoteSettlement({
           settlement:
             createRemoteSettlementDraft(
               {
@@ -602,6 +621,17 @@ export default function useSettlements(
     try {
       const adapter =
         getAuthBackendAdapter();
+      await saveCurrentBrowserCoreSnapshotForHousehold(
+        {
+          adapter,
+          householdId,
+          localHouseholdId:
+            form.householdId,
+          recordSource:
+            browserCoreSnapshotRecordSource,
+        }
+      );
+
       const remoteSettlements =
         await adapter.listRemoteSettlements(
           householdId

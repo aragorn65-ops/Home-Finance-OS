@@ -1,5 +1,6 @@
 import AccountRepository from "../../accounts/repositories/AccountRepository";
 import TransactionRepository from "../../transactions/repositories/TransactionRepository";
+import ExpenseAllocationRepository from "../../transactions/repositories/ExpenseAllocationRepository";
 
 import type {
   CoreSnapshotLocalWriter,
@@ -26,6 +27,17 @@ export const browserCoreSnapshotLocalWriter:
       .replaceForHousehold(
         householdId,
         transactions
+      );
+  },
+
+  replaceExpenseAllocations(
+    householdId,
+    allocations
+  ) {
+    return ExpenseAllocationRepository
+      .replaceForHousehold(
+        householdId,
+        allocations
       );
   },
 };

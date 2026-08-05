@@ -7,6 +7,9 @@ import type {
 import type {
   Transaction,
 } from "../../transactions/models/Transaction";
+import type {
+  ExpenseAllocation,
+} from "../../transactions/models/ExpenseAllocation";
 
 export type RemoteMigrationStatus =
   | "draft"
@@ -121,6 +124,22 @@ export interface RemoteMigrationTransactionUploadStagingResult {
   draftId: string;
   stagedTransactionCount: number;
   stagedAt: Date;
+}
+
+export interface RemoteMigrationExpenseAllocationUploadRecord
+  extends Omit<
+    ExpenseAllocation,
+    | "transactionId"
+    | "paidByMemberId"
+    | "memberId"
+    | "createdAt"
+    | "updatedAt"
+  > {
+  transactionId: string;
+  paidByMemberId: string;
+  memberId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface RemoteMigrationPreCommitAudit {

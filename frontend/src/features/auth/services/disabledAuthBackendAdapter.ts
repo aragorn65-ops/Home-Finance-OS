@@ -161,6 +161,7 @@ export class DisabledAuthBackendAdapter
       householdId,
       accounts: [],
       transactions: [],
+      expenseAllocations: [],
     };
   }
 

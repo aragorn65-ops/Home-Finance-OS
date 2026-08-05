@@ -1861,6 +1861,7 @@ test(
             "household-1",
           accounts: [],
           transactions: [],
+          expenseAllocations: [],
         }),
       /Sign in before saving core finance records\./
     );
@@ -1937,6 +1938,28 @@ test(
           "2026-07-22T03:30:00.000Z",
       },
     ];
+    const expenseAllocations = [
+      {
+        id:
+          "allocation-1",
+        transactionId:
+          "transaction-1",
+        paidByMemberId:
+          "member-1",
+        memberId:
+          "member-2",
+        isIncluded:
+          true,
+        allocatedAmount:
+          75,
+        personalItems:
+          [],
+        createdAt:
+          "2026-07-22T03:00:00.000Z",
+        updatedAt:
+          "2026-07-22T03:30:00.000Z",
+      },
+    ];
 
     const adapter =
       new SupabaseAuthBackendAdapter({
@@ -1961,6 +1984,8 @@ test(
                   "household-1",
                 accounts,
                 transactions,
+                expense_allocations:
+                  expenseAllocations,
                 saved_at:
                   "2026-07-22T04:55:00Z",
               },
@@ -1977,6 +2002,7 @@ test(
             "household-1",
           accounts,
           transactions,
+          expenseAllocations,
         });
     const loaded =
       await adapter
@@ -1997,6 +2023,8 @@ test(
               accounts,
             core_transactions:
               transactions,
+            core_expense_allocations:
+              expenseAllocations,
           },
         },
         {
@@ -2017,6 +2045,11 @@ test(
       loaded.transactions[0]
         ?.description,
       "Market"
+    );
+    assert.equal(
+      loaded.expenseAllocations[0]
+        ?.transactionId,
+      "transaction-1"
     );
     assert.equal(
       saved.savedAt?.toISOString(),

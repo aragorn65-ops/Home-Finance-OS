@@ -4,10 +4,14 @@ import type {
 import type {
   Transaction,
 } from "../../transactions/models/Transaction";
+import type {
+  ExpenseAllocation,
+} from "../../transactions/models/ExpenseAllocation";
 import createAttachmentMetadataRecords from "../../../shared/utils/createAttachmentMetadataRecords";
 import type {
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadRecord,
+  RemoteMigrationExpenseAllocationUploadRecord,
   RemoteMigrationTransactionUploadPayload,
   RemoteMigrationTransactionUploadRecord,
 } from "../models";
@@ -52,6 +56,24 @@ export function createMigrationTransactionUploadPayload(
         createTransactionUploadRecord
       ),
   };
+}
+
+export function createMigrationExpenseAllocationUploadRecords(
+  allocations: ExpenseAllocation[],
+  transactionIds: string[]
+): RemoteMigrationExpenseAllocationUploadRecord[] {
+  const transactionIdSet =
+    new Set(transactionIds);
+
+  return allocations
+    .filter((allocation) =>
+      transactionIdSet.has(
+        allocation.transactionId
+      )
+    )
+    .map(
+      createExpenseAllocationUploadRecord
+    );
 }
 
 function createAccountUploadRecord(
@@ -169,5 +191,34 @@ function createTransactionUploadRecord(
       transaction.createdAt.toISOString(),
     updatedAt:
       transaction.updatedAt.toISOString(),
+  };
+}
+
+function createExpenseAllocationUploadRecord(
+  allocation: ExpenseAllocation
+): RemoteMigrationExpenseAllocationUploadRecord {
+  return {
+    id:
+      allocation.id,
+    transactionId:
+      allocation.transactionId,
+    paidByMemberId:
+      allocation.paidByMemberId,
+    memberId:
+      allocation.memberId,
+    isIncluded:
+      allocation.isIncluded,
+    allocatedAmount:
+      allocation.allocatedAmount,
+    personalAmount:
+      allocation.personalAmount,
+    personalItems:
+      allocation.personalItems,
+    notes:
+      allocation.notes,
+    createdAt:
+      allocation.createdAt.toISOString(),
+    updatedAt:
+      allocation.updatedAt.toISOString(),
   };
 }

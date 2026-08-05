@@ -448,6 +448,8 @@ export class InMemoryAuthBackendAdapter
         input.accounts,
       transactions:
         input.transactions,
+      expenseAllocations:
+        input.expenseAllocations,
       savedAt:
         new Date(),
     });

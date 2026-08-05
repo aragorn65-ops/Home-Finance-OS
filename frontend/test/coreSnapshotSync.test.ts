@@ -21,6 +21,9 @@ import {
 import type {
   Transaction,
 } from "../src/features/transactions/models/Transaction.ts";
+import type {
+  ExpenseAllocation,
+} from "../src/features/transactions/models/ExpenseAllocation.ts";
 
 const householdId =
   "household-core-sync-1";
@@ -119,6 +122,25 @@ const transaction: Transaction = {
     new Date("2026-07-30T14:00:00Z"),
 };
 
+const expenseAllocation: ExpenseAllocation = {
+  id:
+    "allocation-1",
+  transactionId:
+    "transaction-1",
+  paidByMemberId:
+    "member-1",
+  memberId:
+    "member-2",
+  isIncluded:
+    true,
+  allocatedAmount:
+    150,
+  createdAt:
+    new Date("2026-07-30T13:05:00Z"),
+  updatedAt:
+    new Date("2026-07-30T14:05:00Z"),
+};
+
 test("creates a remote core snapshot input from local household records", () => {
   const remoteHouseholdId =
     "remote-household-core-sync-1";
@@ -146,6 +168,16 @@ test("creates a remote core snapshot input from local household records", () => 
             "transaction-other",
           householdId:
             "household-other",
+        },
+      ],
+      expenseAllocations: [
+        expenseAllocation,
+        {
+          ...expenseAllocation,
+          id:
+            "allocation-other",
+          transactionId:
+            "transaction-other",
         },
       ],
     });
@@ -178,6 +210,19 @@ test("creates a remote core snapshot input from local household records", () => 
     input.transactions[0]
       ?.transactionDate,
     "2026-07-30"
+  );
+  assert.deepEqual(
+    input.expenseAllocations.map(
+      (record) => record.id
+    ),
+    [
+      "allocation-1",
+    ]
+  );
+  assert.equal(
+    input.expenseAllocations[0]
+      ?.transactionId,
+    "transaction-1"
   );
 });
 

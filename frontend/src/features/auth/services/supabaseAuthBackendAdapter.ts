@@ -15,6 +15,7 @@ import type {
   RemoteHouseholdCoreSnapshot,
   RemoteHouseholdCoreSnapshotInput,
   RemoteMigrationAccountUploadRecord,
+  RemoteMigrationExpenseAllocationUploadRecord,
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
@@ -415,6 +416,7 @@ interface SupabaseCoreSnapshotRpcRow {
   saved_household_id?: string;
   accounts?: unknown;
   transactions?: unknown;
+  expense_allocations?: unknown;
   saved_at?: string | null;
 }
 
@@ -1877,6 +1879,8 @@ export class SupabaseAuthBackendAdapter
               input.accounts,
             core_transactions:
               input.transactions,
+            core_expense_allocations:
+              input.expenseAllocations,
           }
         ) as SupabaseCoreSnapshotRpcResult;
 
@@ -2688,6 +2692,7 @@ const schemaReadinessRpcs:
           schemaReadinessProbeId,
         core_accounts: [],
         core_transactions: [],
+        core_expense_allocations: [],
       },
     },
     {
@@ -3296,6 +3301,9 @@ function createRemoteCoreSnapshotResult(
     ) ||
     !isRemoteTransactionUploadRecordArray(
       row.transactions
+    ) ||
+    !isRemoteExpenseAllocationUploadRecordArray(
+      row.expense_allocations
     )
   ) {
     throw new Error(
@@ -3310,6 +3318,8 @@ function createRemoteCoreSnapshotResult(
       row.accounts,
     transactions:
       row.transactions,
+    expenseAllocations:
+      row.expense_allocations,
     savedAt:
       mapSupabaseDate(
         row.saved_at ?? undefined
@@ -3442,6 +3452,30 @@ function isRemoteTransactionUploadRecordArray(
           "string" &&
         typeof record.type ===
           "string"
+    )
+  );
+}
+
+function isRemoteExpenseAllocationUploadRecordArray(
+  value: unknown
+): value is RemoteMigrationExpenseAllocationUploadRecord[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (record) =>
+        isRecord(record) &&
+        typeof record.id ===
+          "string" &&
+        typeof record.transactionId ===
+          "string" &&
+        typeof record.paidByMemberId ===
+          "string" &&
+        typeof record.memberId ===
+          "string" &&
+        typeof record.isIncluded ===
+          "boolean" &&
+        typeof record.allocatedAmount ===
+          "number"
     )
   );
 }

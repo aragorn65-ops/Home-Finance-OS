@@ -297,8 +297,63 @@ export default class ExpenseAllocationRepository {
 
     return storedAllocations.map(
       (allocation) =>
-        this.clone(allocation)
+      this.clone(allocation)
     );
+  }
+
+  /**
+   * Replaces all allocations whose transactions belong
+   * to the active household.
+   *
+   * Used when restoring cloud-backed core snapshots.
+   */
+  static replaceForHousehold(
+    householdId: string,
+    allocations: ExpenseAllocation[]
+  ): boolean {
+    this.ensureInitialized();
+
+    if (
+      !this.initializedHouseholdId ||
+      this.initializedHouseholdId !==
+        householdId
+    ) {
+      return false;
+    }
+
+    const incomingIds =
+      new Set<string>();
+
+    for (const allocation of allocations) {
+      if (
+        incomingIds.has(allocation.id)
+      ) {
+        return false;
+      }
+
+      incomingIds.add(
+        allocation.id
+      );
+    }
+
+    const nextAllocations =
+      allocations.map(
+        (allocation) =>
+          this.clone(allocation)
+      );
+
+    if (
+      !this.persistAllocations(
+        nextAllocations
+      )
+    ) {
+      return false;
+    }
+
+    this.allocations =
+      nextAllocations;
+
+    return true;
   }
 
   /**

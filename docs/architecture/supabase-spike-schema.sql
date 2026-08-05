@@ -2287,15 +2287,24 @@ drop function if exists public.save_household_core_snapshot(
   jsonb
 );
 
+drop function if exists public.save_household_core_snapshot(
+  uuid,
+  jsonb,
+  jsonb,
+  jsonb
+);
+
 create or replace function public.save_household_core_snapshot(
   target_household_id uuid,
   core_accounts jsonb,
-  core_transactions jsonb
+  core_transactions jsonb,
+  core_expense_allocations jsonb
 )
 returns table (
   saved_household_id uuid,
   accounts jsonb,
   transactions jsonb,
+  expense_allocations jsonb,
   saved_at timestamptz
 )
 language plpgsql
@@ -2329,6 +2338,25 @@ begin
   if jsonb_typeof(coalesce(core_transactions, '[]'::jsonb)) <> 'array' then
     raise exception 'Core transaction snapshot must be an array.';
   end if;
+
+  if jsonb_typeof(coalesce(core_expense_allocations, '[]'::jsonb)) <> 'array' then
+    raise exception 'Core expense allocation snapshot must be an array.';
+  end if;
+
+  with allocation_payload as (
+    select allocation_record.id
+    from jsonb_to_recordset(coalesce(core_expense_allocations, '[]'::jsonb)) as allocation_record(
+      id text
+    )
+  )
+  delete from public.expense_allocations remote_allocation
+  where remote_allocation.household_id = target_household_id
+    and remote_allocation.local_record_id is not null
+    and not exists (
+      select 1
+      from allocation_payload
+      where allocation_payload.id = remote_allocation.local_record_id
+    );
 
   with transaction_payload as (
     select transaction_record.id
@@ -2639,11 +2667,83 @@ begin
       and remote_transaction.source_account_id is null;
   end if;
 
+  insert into public.expense_allocations (
+    household_id,
+    local_record_id,
+    transaction_id,
+    paid_by_member_id,
+    member_id,
+    is_included,
+    allocated_amount,
+    personal_amount,
+    personal_items,
+    notes,
+    created_at,
+    updated_at,
+    updated_by_user_id
+  )
+  select
+    target_household_id,
+    allocation_record.id,
+    remote_transaction.id,
+    coalesce(paid_by_member.id, current_member_id),
+    coalesce(allocation_member.id, current_member_id),
+    allocation_record."isIncluded",
+    allocation_record."allocatedAmount",
+    allocation_record."personalAmount",
+    coalesce(allocation_record."personalItems", '[]'::jsonb),
+    nullif(allocation_record.notes, ''),
+    coalesce(nullif(allocation_record."createdAt", '')::timestamptz, snapshot_timestamp),
+    snapshot_timestamp,
+    current_user_id
+  from jsonb_to_recordset(coalesce(core_expense_allocations, '[]'::jsonb)) as allocation_record(
+    id text,
+    "transactionId" text,
+    "paidByMemberId" text,
+    "memberId" text,
+    "isIncluded" boolean,
+    "allocatedAmount" numeric,
+    "personalAmount" numeric,
+    "personalItems" jsonb,
+    notes text,
+    "createdAt" text,
+    "updatedAt" text
+  )
+  join public.transactions remote_transaction
+    on remote_transaction.household_id = target_household_id
+   and remote_transaction.local_record_id = allocation_record."transactionId"
+  left join public.household_members paid_by_member
+    on paid_by_member.household_id = target_household_id
+   and (
+        paid_by_member.id::text = nullif(allocation_record."paidByMemberId", '')
+        or paid_by_member.local_record_id = nullif(allocation_record."paidByMemberId", '')
+   )
+  left join public.household_members allocation_member
+    on allocation_member.household_id = target_household_id
+   and (
+        allocation_member.id::text = nullif(allocation_record."memberId", '')
+        or allocation_member.local_record_id = nullif(allocation_record."memberId", '')
+   )
+  on conflict (household_id, local_record_id)
+  where local_record_id is not null
+  do update set
+    transaction_id = excluded.transaction_id,
+    paid_by_member_id = excluded.paid_by_member_id,
+    member_id = excluded.member_id,
+    is_included = excluded.is_included,
+    allocated_amount = excluded.allocated_amount,
+    personal_amount = excluded.personal_amount,
+    personal_items = excluded.personal_items,
+    notes = excluded.notes,
+    updated_at = excluded.updated_at,
+    updated_by_user_id = excluded.updated_by_user_id;
+
   return query
   select
     snapshot.household_id as saved_household_id,
     snapshot.accounts,
     snapshot.transactions,
+    snapshot.expense_allocations,
     snapshot.saved_at
   from public.load_household_core_snapshot(target_household_id) as snapshot;
 end;
@@ -2652,11 +2752,13 @@ $$;
 revoke all on function public.save_household_core_snapshot(
   uuid,
   jsonb,
+  jsonb,
   jsonb
 ) from public;
 
 grant execute on function public.save_household_core_snapshot(
   uuid,
+  jsonb,
   jsonb,
   jsonb
 ) to authenticated;
@@ -2668,6 +2770,7 @@ returns table (
   household_id uuid,
   accounts jsonb,
   transactions jsonb,
+  expense_allocations jsonb,
   saved_at timestamptz
 )
 language plpgsql
@@ -2761,6 +2864,36 @@ begin
         left join public.accounts destination_account
           on destination_account.id = remote_transaction.destination_account_id
         where remote_transaction.household_id = target_household_id
+      ),
+      '[]'::jsonb
+    ),
+    coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', coalesce(remote_allocation.local_record_id, remote_allocation.id::text),
+            'transactionId', remote_transaction.local_record_id,
+            'paidByMemberId', coalesce(paid_by_member.local_record_id, paid_by_member.id::text),
+            'memberId', coalesce(allocation_member.local_record_id, allocation_member.id::text),
+            'isIncluded', remote_allocation.is_included,
+            'allocatedAmount', remote_allocation.allocated_amount,
+            'personalAmount', remote_allocation.personal_amount,
+            'personalItems', remote_allocation.personal_items,
+            'notes', remote_allocation.notes,
+            'createdAt', remote_allocation.created_at,
+            'updatedAt', remote_allocation.updated_at
+          )
+          order by remote_transaction.transaction_date, remote_allocation.created_at, remote_allocation.id
+        )
+        from public.expense_allocations remote_allocation
+        join public.transactions remote_transaction
+          on remote_transaction.id = remote_allocation.transaction_id
+         and remote_transaction.household_id = remote_allocation.household_id
+        join public.household_members paid_by_member
+          on paid_by_member.id = remote_allocation.paid_by_member_id
+        join public.household_members allocation_member
+          on allocation_member.id = remote_allocation.member_id
+        where remote_allocation.household_id = target_household_id
       ),
       '[]'::jsonb
     ),
