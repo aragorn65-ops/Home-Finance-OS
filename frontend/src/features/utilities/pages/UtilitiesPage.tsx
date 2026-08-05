@@ -30,6 +30,9 @@ import type {
 } from "../models/UtilityBillShareResult";
 
 import UtilityProviderBillService from "../services/UtilityProviderBillService";
+import {
+  getProviderBillsPaidInMonth,
+} from "../services/providerBillMonthFilters";
 
 import type {
   UtilityProviderBill,
@@ -149,6 +152,15 @@ export default function UtilitiesPage() {
         ownerMemberId:
           account.ownerMemberId,
       })
+    );
+  const selectedMonth =
+    parseMonthInput(
+      selectedMonthValue
+    );
+  const paidProviderBillsForSelectedMonth =
+    getProviderBillsPaidInMonth(
+      paidProviderBills,
+      selectedMonth
     );
 
   const showNotification = (): void => {
@@ -740,9 +752,12 @@ export default function UtilitiesPage() {
           )}
         </section>
 
-        {paidProviderBills.length > 0 && (
+        {paidProviderBillsForSelectedMonth.length >
+          0 && (
           <ProviderPaymentsSummary
-            providerBills={paidProviderBills}
+            providerBills={
+              paidProviderBillsForSelectedMonth
+            }
             memberNames={memberNames}
           />
         )}
@@ -765,9 +780,7 @@ export default function UtilitiesPage() {
             accounts={accountOptions}
             defaultDate={
               formatDateInput(
-                parseMonthInput(
-                  selectedMonthValue
-                )
+                selectedMonth
               )
             }
             submitLabel="Save Provider Bill"
