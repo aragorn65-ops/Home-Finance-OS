@@ -13,6 +13,7 @@ import type {
 export interface AuthorizationContext {
   userId?: string;
   memberId?: HouseholdMember["id"];
+  memberIds?: HouseholdMember["id"][];
   membership?: HouseholdMembership;
 }
 
@@ -120,7 +121,9 @@ export function canAccessAccount(
     account.visibility === "private";
   const isOwnPersonalAccount =
     isPersonalAccount &&
-    account.ownerMemberId === context.memberId;
+    getAuthorizedMemberIds(
+      context
+    ).includes(account.ownerMemberId);
 
   if (
     membership.role === "owner" ||
@@ -244,9 +247,30 @@ export function canAccessTenantRecord(
     return true;
   }
 
-  return (
-    record.ownerMemberId ===
-    context.memberId
+  if (!record.ownerMemberId) {
+    return false;
+  }
+
+  return getAuthorizedMemberIds(
+    context
+  ).includes(record.ownerMemberId);
+}
+
+function getAuthorizedMemberIds(
+  context: AuthorizationContext
+): string[] {
+  return [
+    context.memberId,
+    ...(context.memberIds ?? []),
+  ].filter(
+    (
+      memberId,
+      index,
+      memberIds
+    ): memberId is string =>
+      Boolean(memberId) &&
+      memberIds.indexOf(memberId) ===
+        index
   );
 }
 

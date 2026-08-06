@@ -226,6 +226,29 @@ export default function AccountsPage() {
   const memberAccountOwnerId =
     currentLocalMemberId ||
     currentMemberId;
+  const memberAccountOwnerIds =
+    useMemo(
+      () =>
+        [
+          memberAccountOwnerId,
+          currentLocalMemberId,
+          currentMemberId,
+        ].filter(
+          (
+            memberId,
+            index,
+            memberIds
+          ): memberId is string =>
+            Boolean(memberId) &&
+            memberIds.indexOf(memberId) ===
+              index
+        ),
+      [
+        currentLocalMemberId,
+        currentMemberId,
+        memberAccountOwnerId,
+      ]
+    );
 
   const defaultOwnerMemberId =
     memberAccountOwnerId ||
@@ -246,6 +269,8 @@ export default function AccountsPage() {
           signedInUserId,
         memberId:
           memberAccountOwnerId,
+        memberIds:
+          memberAccountOwnerIds,
         membership:
           membership ?? undefined,
       }),
@@ -253,6 +278,7 @@ export default function AccountsPage() {
         currentMemberId,
         currentLocalMemberId,
         memberAccountOwnerId,
+        memberAccountOwnerIds,
         membership,
         signedInUserId,
       ]
@@ -317,9 +343,12 @@ export default function AccountsPage() {
 
       return accounts.filter(
         (account) =>
-          isAccountVisibleForMember(
-            account,
-            memberAccountOwnerId
+          memberAccountOwnerIds.some(
+            (memberId) =>
+              isAccountVisibleForMember(
+                account,
+                memberId
+              )
           )
       );
     }, [
@@ -328,6 +357,7 @@ export default function AccountsPage() {
       currentLocalMemberId,
       isSignedIn,
       memberAccountOwnerId,
+      memberAccountOwnerIds,
       membership?.role,
     ]);
   const summaryAccounts =

@@ -223,6 +223,10 @@ test("Supabase core snapshot RPC preserves account owner member ids", () => {
     schemaSql,
     /coalesce\(owner_member\.id, current_member_id\)/
   );
+  assert.match(
+    schemaSql,
+    /'ownerMemberId', coalesce\(owner_member\.local_record_id, owner_member\.id::text\)/
+  );
 });
 
 test("Supabase core snapshot load RPC drops old return type before recreate", () => {

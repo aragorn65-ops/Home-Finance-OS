@@ -3124,6 +3124,7 @@ begin
         select jsonb_agg(
           jsonb_build_object(
             'id', coalesce(remote_account.local_record_id, remote_account.id::text),
+            'ownerMemberId', coalesce(owner_member.local_record_id, owner_member.id::text),
             'visibility', remote_account.visibility,
             'name', remote_account.name,
             'institution', remote_account.institution,
@@ -3151,6 +3152,8 @@ begin
           order by remote_account.created_at, remote_account.id
         )
         from public.accounts remote_account
+        left join public.household_members owner_member
+          on owner_member.id = remote_account.owner_member_id
         where remote_account.household_id = target_household_id
       ),
       '[]'::jsonb

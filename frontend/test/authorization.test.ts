@@ -376,3 +376,29 @@ test("admin can delete but not view another member personal account", () => {
     true
   );
 });
+
+test("admin can view personal account with legacy member id alias", () => {
+  const adminContext =
+    createContext(
+      "admin",
+      "member-local-admin"
+    );
+
+  adminContext.memberIds = [
+    "member-local-admin",
+    "member-remote-admin",
+  ];
+
+  assert.equal(
+    canAccessAccount(
+      adminContext,
+      {
+        ...personalAccount,
+        ownerMemberId:
+          "member-remote-admin",
+      },
+      "view"
+    ),
+    true
+  );
+});
