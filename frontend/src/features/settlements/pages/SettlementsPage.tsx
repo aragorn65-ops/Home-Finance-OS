@@ -491,6 +491,13 @@ export default function SettlementsPage() {
   const shouldEnforceSettlementAuth =
     session.status ===
     "signed-in";
+  const canManageSettlementRecords =
+    !shouldEnforceSettlementAuth ||
+    membership?.role === "owner" ||
+    membership?.role === "admin";
+  const canRecordSettlement =
+    canManageSettlementRecords ||
+    membership?.role === "member";
 
   const authorizationContext:
     AuthorizationContext =
@@ -643,6 +650,14 @@ export default function SettlementsPage() {
   };
 
   const handleAddSettlement = () => {
+    if (!canRecordSettlement) {
+      setAuthorizationError(
+        "Only household members can record settlement payments."
+      );
+
+      return;
+    }
+
     setSelectedSettlement(null);
     setDeleteError("");
     setAuthorizationError("");
@@ -689,6 +704,14 @@ export default function SettlementsPage() {
   const handleEditSettlement = (
     settlement: Settlement
   ) => {
+    if (!canManageSettlementRecords) {
+      setAuthorizationError(
+        "Only a household admin can edit settlement records."
+      );
+
+      return;
+    }
+
     const authorizationSettlement =
       shouldEnforceSettlementAuth
         ? createCloudSettlementAccessRecord(
@@ -726,6 +749,14 @@ export default function SettlementsPage() {
   const handleDeleteRequest = (
     settlement: Settlement
   ) => {
+    if (!canManageSettlementRecords) {
+      setAuthorizationError(
+        "Only a household admin can delete settlement records."
+      );
+
+      return;
+    }
+
     const authorizationSettlement =
       shouldEnforceSettlementAuth
         ? createCloudSettlementAccessRecord(
@@ -1084,7 +1115,9 @@ export default function SettlementsPage() {
           setSelectedMonthValue
         }
         onAddSettlement={
-          handleAddSettlement
+          canRecordSettlement
+            ? handleAddSettlement
+            : undefined
         }
       />
 
@@ -1199,10 +1232,14 @@ export default function SettlementsPage() {
               handleViewSettlement
             }
             onEdit={
-              handleEditSettlement
+              canManageSettlementRecords
+                ? handleEditSettlement
+                : undefined
             }
             onDelete={
-              handleDeleteRequest
+              canManageSettlementRecords
+                ? handleDeleteRequest
+                : undefined
             }
           />
         </section>
@@ -1317,7 +1354,9 @@ export default function SettlementsPage() {
                 closeDialog
               }
               onEdit={
-                handleEditSettlement
+                canManageSettlementRecords
+                  ? handleEditSettlement
+                  : undefined
               }
             />
           )}

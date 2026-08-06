@@ -188,9 +188,16 @@ export function canAccessTenantRecord(
   }
 
   if (
-    membership.role === "viewer"
+    membership.role === "owner" ||
+    membership.role === "admin"
   ) {
-    return action === "view";
+    return true;
+  }
+
+  if (
+    action !== "view"
+  ) {
+    return false;
   }
 
   if (

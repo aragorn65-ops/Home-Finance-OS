@@ -31,13 +31,15 @@ export default function SettlementToolbar({
             }
           />
 
-        <button
-          type="button"
-          onClick={onAddSettlement}
-          className="rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:opacity-90"
-        >
-          + Record Settlement
-        </button>
+          {onAddSettlement && (
+            <button
+              type="button"
+              onClick={onAddSettlement}
+              className="rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:opacity-90"
+            >
+              + Record Settlement
+            </button>
+          )}
         </>
       }
     />

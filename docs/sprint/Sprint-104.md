@@ -129,6 +129,9 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
 * [x] Opened Accounts as a read-only member transparency route while keeping
   personal accounts visible only to the owning member and keeping account
   management controls owner/admin-only.
+* [x] Tightened member/viewer tenant-record authorization to read-only access
+  and hid settlement edit/delete controls from member transparency sessions
+  while preserving involved-member settlement entry.
 * [ ] Pending Sprint 104 live validation.
 
 ---
