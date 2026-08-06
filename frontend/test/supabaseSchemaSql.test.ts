@@ -120,7 +120,7 @@ test("Supabase core snapshot save RPC persists expense allocations", () => {
 
   assert.match(
     schemaSql,
-    /create or replace function public\.save_household_core_snapshot\(\s*target_household_id uuid,\s*core_accounts jsonb,\s*core_transactions jsonb,\s*core_expense_allocations jsonb/
+    /create or replace function public\.save_household_core_snapshot\(\s*target_household_id uuid,\s*core_accounts jsonb,\s*core_transactions jsonb,\s*core_expense_allocations jsonb,\s*core_provider_bills jsonb/
   );
   assert.match(
     schemaSql,
@@ -129,6 +129,37 @@ test("Supabase core snapshot save RPC persists expense allocations", () => {
   assert.match(
     schemaSql,
     /'expense_allocations'|expense_allocations jsonb/
+  );
+});
+
+test("Supabase core snapshot save RPC persists utility provider bills", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /provider_bills jsonb/
+  );
+  assert.match(
+    schemaSql,
+    /insert into public\.utility_provider_bills \([\s\S]+local_record_id[\s\S]+utility_type[\s\S]+bill_attachments[\s\S]+payment_attachments/
+  );
+  assert.match(
+    schemaSql,
+    /from jsonb_to_recordset\(coalesce\(core_provider_bills, '\[\]'::jsonb\)\)/
+  );
+  assert.match(
+    schemaSql,
+    /'provider_bills',|snapshot\.provider_bills/
   );
 });
 

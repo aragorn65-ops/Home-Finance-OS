@@ -24,6 +24,9 @@ import type {
 import type {
   ExpenseAllocation,
 } from "../src/features/transactions/models/ExpenseAllocation.ts";
+import type {
+  UtilityProviderBill,
+} from "../src/features/utilities/models/UtilityProviderBill.ts";
 
 const householdId =
   "household-core-sync-1";
@@ -141,6 +144,117 @@ const expenseAllocation: ExpenseAllocation = {
     new Date("2026-07-30T14:05:00Z"),
 };
 
+const providerBill: UtilityProviderBill = {
+  id:
+    "provider-bill-1",
+  householdId,
+  utilityType:
+    "electricity",
+  unit:
+    "kWh",
+  providerName:
+    "Power Co",
+  billingDate:
+    new Date("2026-07-01T00:00:00Z"),
+  dueDate:
+    new Date("2026-07-31T00:00:00Z"),
+  totalBillAmount:
+    150,
+  ratePerUnit:
+    10,
+  status:
+    "paid",
+  formSnapshot: {
+    utilityType:
+      "electricity",
+    unit:
+      "kWh",
+    providerName:
+      "Power Co",
+    billingDate:
+      "2026-07-01",
+    dueDate:
+      "2026-07-31",
+    totalBillAmount:
+      150,
+    ratePerUnit:
+      10,
+    totalConsumption:
+      15,
+    memberShares: [],
+    applianceUsages: [],
+    visibility:
+      "household",
+    description:
+      "Electric bill",
+    notes:
+      "",
+  },
+  calculationSnapshot: {
+    utilityType:
+      "electricity",
+    unit:
+      "kWh",
+    totalBillAmount:
+      150,
+    ratePerUnit:
+      10,
+    totalSubmeterConsumption:
+      0,
+    totalApplianceConsumption:
+      0,
+    totalSubmeterChargeAmount:
+      0,
+    totalApplianceChargeAmount:
+      0,
+    totalFixedCompensationAmount:
+      0,
+    totalDirectUsageAmount:
+      0,
+    sharedRemainderAmount:
+      150,
+    equalShareMemberCount:
+      1,
+    equalShareAmountPerMember:
+      150,
+    totalMemberShares:
+      150,
+    memberShares: [],
+    validationDifference:
+      0,
+    isBalanced:
+      true,
+  },
+  memberShareSnapshot:
+    [],
+  billAttachments:
+    [],
+  paymentAttachments:
+    [],
+  paidByMemberId:
+    "member-1",
+  sourceAccountId:
+    "account-1",
+  paidAt:
+    new Date("2026-07-30T00:00:00Z"),
+  paymentReferenceNumber:
+    "UTIL-1",
+  transactionId:
+    "transaction-1",
+  visibility:
+    "household",
+  description:
+    "Electric bill",
+  notes:
+    "",
+  isActive:
+    true,
+  createdAt:
+    new Date("2026-07-30T13:10:00Z"),
+  updatedAt:
+    new Date("2026-07-30T14:10:00Z"),
+};
+
 test("creates a remote core snapshot input from local household records", () => {
   const remoteHouseholdId =
     "remote-household-core-sync-1";
@@ -178,6 +292,16 @@ test("creates a remote core snapshot input from local household records", () => 
             "allocation-other",
           transactionId:
             "transaction-other",
+        },
+      ],
+      providerBills: [
+        providerBill,
+        {
+          ...providerBill,
+          id:
+            "provider-bill-other",
+          householdId:
+            "household-other",
         },
       ],
     });
@@ -223,6 +347,19 @@ test("creates a remote core snapshot input from local household records", () => 
     input.expenseAllocations[0]
       ?.transactionId,
     "transaction-1"
+  );
+  assert.deepEqual(
+    input.providerBills.map(
+      (record) => record.id
+    ),
+    [
+      "provider-bill-1",
+    ]
+  );
+  assert.equal(
+    input.providerBills[0]
+      ?.householdId,
+    remoteHouseholdId
   );
 });
 

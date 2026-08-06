@@ -486,6 +486,8 @@ export class InMemoryAuthBackendAdapter
         input.transactions,
       expenseAllocations:
         input.expenseAllocations,
+      providerBills:
+        input.providerBills ?? [],
       savedAt:
         new Date(),
     });

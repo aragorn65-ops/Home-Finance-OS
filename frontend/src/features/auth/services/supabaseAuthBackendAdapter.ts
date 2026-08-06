@@ -38,6 +38,9 @@ import type {
   StoredAttachment,
   StoredAttachmentCategory,
 } from "../../../shared/models/StoredAttachment";
+import type {
+  UtilityProviderBill,
+} from "../../utilities/models/UtilityProviderBill";
 
 interface SupabaseAuthClient {
   auth: {
@@ -429,6 +432,7 @@ interface SupabaseCoreSnapshotRpcRow {
   accounts?: unknown;
   transactions?: unknown;
   expense_allocations?: unknown;
+  provider_bills?: unknown;
   saved_at?: string | null;
 }
 
@@ -1971,6 +1975,10 @@ export class SupabaseAuthBackendAdapter
               input.transactions,
             core_expense_allocations:
               input.expenseAllocations,
+            core_provider_bills:
+              createSupabaseProviderBillPayload(
+                input.providerBills ?? []
+              ),
           }
         ) as SupabaseCoreSnapshotRpcResult;
 
@@ -2783,6 +2791,7 @@ const schemaReadinessRpcs:
         core_accounts: [],
         core_transactions: [],
         core_expense_allocations: [],
+        core_provider_bills: [],
       },
     },
     {
@@ -3382,6 +3391,10 @@ function createRemoteCoreSnapshotResult(
   const householdId =
     row?.saved_household_id ??
     row?.household_id;
+  const providerBills =
+    mapUtilityProviderBills(
+      row?.provider_bills ?? []
+    );
 
   if (
     !row ||
@@ -3394,7 +3407,8 @@ function createRemoteCoreSnapshotResult(
     ) ||
     !isRemoteExpenseAllocationUploadRecordArray(
       row.expense_allocations
-    )
+    ) ||
+    !providerBills
   ) {
     throw new Error(
       `Supabase core household snapshot ${action} returned an invalid result.`
@@ -3410,11 +3424,251 @@ function createRemoteCoreSnapshotResult(
       row.transactions,
     expenseAllocations:
       row.expense_allocations,
+    providerBills:
+      providerBills,
     savedAt:
       mapSupabaseDate(
         row.saved_at ?? undefined
       ),
   };
+}
+
+function createSupabaseProviderBillPayload(
+  providerBills: UtilityProviderBill[]
+) {
+  return providerBills.map(
+    (providerBill) => ({
+      id: providerBill.id,
+      householdId:
+        providerBill.householdId,
+      utilityType:
+        providerBill.utilityType,
+      unit:
+        providerBill.unit,
+      providerName:
+        providerBill.providerName,
+      billingDate:
+        formatDateOnly(
+          providerBill.billingDate
+        ),
+      dueDate:
+        formatDateOnly(
+          providerBill.dueDate
+        ),
+      totalBillAmount:
+        providerBill.totalBillAmount,
+      ratePerUnit:
+        providerBill.ratePerUnit,
+      status:
+        providerBill.status,
+      formSnapshot:
+        providerBill.formSnapshot,
+      calculationSnapshot:
+        providerBill.calculationSnapshot,
+      memberShareSnapshot:
+        providerBill.memberShareSnapshot,
+      billAttachments:
+        createSupabaseSettlementAttachmentPayload(
+          providerBill.billAttachments
+        ),
+      paymentAttachments:
+        createSupabaseSettlementAttachmentPayload(
+          providerBill.paymentAttachments
+        ),
+      paidByMemberId:
+        providerBill.paidByMemberId,
+      sourceAccountId:
+        providerBill.sourceAccountId,
+      paidAt:
+        providerBill.paidAt
+          ? providerBill.paidAt.toISOString()
+          : null,
+      paymentReferenceNumber:
+        providerBill.paymentReferenceNumber,
+      transactionId:
+        providerBill.transactionId,
+      visibility:
+        providerBill.visibility,
+      description:
+        providerBill.description,
+      notes:
+        providerBill.notes,
+      isActive:
+        providerBill.isActive,
+      createdAt:
+        providerBill.createdAt.toISOString(),
+      updatedAt:
+        providerBill.updatedAt.toISOString(),
+    })
+  );
+}
+
+function mapUtilityProviderBills(
+  value: unknown
+): UtilityProviderBill[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const providerBills:
+    UtilityProviderBill[] = [];
+
+  for (const item of value) {
+    if (!isRecord(item)) {
+      return undefined;
+    }
+
+    const providerBill =
+      mapUtilityProviderBill(item);
+
+    if (!providerBill) {
+      return undefined;
+    }
+
+    providerBills.push(
+      providerBill
+    );
+  }
+
+  return providerBills;
+}
+
+function mapUtilityProviderBill(
+  record: Record<string, unknown>
+): UtilityProviderBill | undefined {
+  if (
+    typeof record.id !== "string" ||
+    typeof record.householdId !== "string" ||
+    typeof record.utilityType !== "string" ||
+    typeof record.unit !== "string" ||
+    typeof record.providerName !==
+      "string" ||
+    typeof record.billingDate !==
+      "string" ||
+    typeof record.dueDate !== "string" ||
+    typeof record.totalBillAmount !==
+      "number" ||
+    typeof record.ratePerUnit !==
+      "number" ||
+    (
+      record.status !== "unpaid" &&
+      record.status !== "paid"
+    ) ||
+    !isRecord(record.formSnapshot) ||
+    !isRecord(
+      record.calculationSnapshot
+    ) ||
+    !Array.isArray(
+      record.memberShareSnapshot
+    ) ||
+    typeof record.paidByMemberId !==
+      "string" ||
+    typeof record.sourceAccountId !==
+      "string" ||
+    (
+      record.paidAt !== null &&
+      typeof record.paidAt !== "string"
+    ) ||
+    typeof record.paymentReferenceNumber !==
+      "string" ||
+    typeof record.transactionId !==
+      "string" ||
+    typeof record.visibility !== "string" ||
+    typeof record.description !==
+      "string" ||
+    typeof record.notes !== "string" ||
+    typeof record.isActive !==
+      "boolean" ||
+    typeof record.createdAt !== "string" ||
+    typeof record.updatedAt !== "string"
+  ) {
+    return undefined;
+  }
+
+  return {
+    id:
+      record.id,
+    householdId:
+      record.householdId,
+    utilityType:
+      record.utilityType as
+        UtilityProviderBill["utilityType"],
+    unit:
+      record.unit as
+        UtilityProviderBill["unit"],
+    providerName:
+      record.providerName,
+    billingDate:
+      mapSupabaseDate(
+        record.billingDate
+      ),
+    dueDate:
+      mapSupabaseDate(
+        record.dueDate
+      ),
+    totalBillAmount:
+      record.totalBillAmount,
+    ratePerUnit:
+      record.ratePerUnit,
+    status:
+      record.status,
+    formSnapshot:
+      record.formSnapshot as unknown as
+        UtilityProviderBill["formSnapshot"],
+    calculationSnapshot:
+      record.calculationSnapshot as unknown as
+        UtilityProviderBill["calculationSnapshot"],
+    memberShareSnapshot:
+      record.memberShareSnapshot as
+        UtilityProviderBill["memberShareSnapshot"],
+    billAttachments:
+      mapSupabaseSettlementAttachments(
+        record.billAttachments
+      ),
+    paymentAttachments:
+      mapSupabaseSettlementAttachments(
+        record.paymentAttachments
+      ),
+    paidByMemberId:
+      record.paidByMemberId,
+    sourceAccountId:
+      record.sourceAccountId,
+    paidAt:
+      record.paidAt
+        ? mapSupabaseDate(
+            record.paidAt
+          )
+        : null,
+    paymentReferenceNumber:
+      record.paymentReferenceNumber,
+    transactionId:
+      record.transactionId,
+    visibility:
+      record.visibility as
+        UtilityProviderBill["visibility"],
+    description:
+      record.description,
+    notes:
+      record.notes,
+    isActive:
+      record.isActive,
+    createdAt:
+      mapSupabaseDate(
+        record.createdAt
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        record.updatedAt
+      ),
+  };
+}
+
+function formatDateOnly(
+  date: Date
+): string {
+  return date
+    .toISOString()
+    .slice(0, 10);
 }
 
 function createRemoteHouseholdResult(

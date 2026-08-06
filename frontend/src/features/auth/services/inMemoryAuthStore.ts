@@ -445,6 +445,54 @@ function cloneCoreSnapshot(
               (item) => ({
                 ...item,
               })
+          ),
+        })
+      ),
+    providerBills:
+      (snapshot.providerBills ?? []).map(
+        (providerBill) => ({
+          ...providerBill,
+          billingDate:
+            new Date(
+              providerBill.billingDate
+            ),
+          dueDate:
+            new Date(
+              providerBill.dueDate
+            ),
+          paidAt:
+            providerBill.paidAt
+              ? new Date(
+                  providerBill.paidAt
+                )
+              : null,
+          billAttachments:
+            providerBill.billAttachments.map(
+              (attachment) => ({
+                ...attachment,
+                createdAt:
+                  new Date(
+                    attachment.createdAt
+                  ),
+              })
+            ),
+          paymentAttachments:
+            providerBill.paymentAttachments.map(
+              (attachment) => ({
+                ...attachment,
+                createdAt:
+                  new Date(
+                    attachment.createdAt
+                  ),
+              })
+            ),
+          createdAt:
+            new Date(
+              providerBill.createdAt
+            ),
+          updatedAt:
+            new Date(
+              providerBill.updatedAt
             ),
         })
       ),

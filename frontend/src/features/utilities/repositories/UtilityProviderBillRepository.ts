@@ -121,6 +121,33 @@ export default class UtilityProviderBillRepository {
     return this.clone(providerBill);
   }
 
+  static replaceForHousehold(
+    householdId: string,
+    providerBills:
+      UtilityProviderBill[]
+  ): boolean {
+    this.ensureInitialized();
+
+    this.providerBills = [
+      ...this.providerBills.filter(
+        (providerBill) =>
+          providerBill.householdId !==
+          householdId
+      ),
+      ...providerBills.map(
+        (providerBill) =>
+          this.clone({
+            ...providerBill,
+            householdId,
+          })
+      ),
+    ];
+
+    this.persist();
+
+    return true;
+  }
+
   private static ensureInitialized():
     void {
     if (this.isInitialized) {

@@ -2441,17 +2441,27 @@ drop function if exists public.save_household_core_snapshot(
   jsonb
 );
 
+drop function if exists public.save_household_core_snapshot(
+  uuid,
+  jsonb,
+  jsonb,
+  jsonb,
+  jsonb
+);
+
 create or replace function public.save_household_core_snapshot(
   target_household_id uuid,
   core_accounts jsonb,
   core_transactions jsonb,
-  core_expense_allocations jsonb
+  core_expense_allocations jsonb,
+  core_provider_bills jsonb
 )
 returns table (
   saved_household_id uuid,
   accounts jsonb,
   transactions jsonb,
   expense_allocations jsonb,
+  provider_bills jsonb,
   saved_at timestamptz
 )
 language plpgsql
@@ -2489,6 +2499,25 @@ begin
   if jsonb_typeof(coalesce(core_expense_allocations, '[]'::jsonb)) <> 'array' then
     raise exception 'Core expense allocation snapshot must be an array.';
   end if;
+
+  if jsonb_typeof(coalesce(core_provider_bills, '[]'::jsonb)) <> 'array' then
+    raise exception 'Core provider bill snapshot must be an array.';
+  end if;
+
+  with provider_bill_payload as (
+    select provider_bill_record.id
+    from jsonb_to_recordset(coalesce(core_provider_bills, '[]'::jsonb)) as provider_bill_record(
+      id text
+    )
+  )
+  delete from public.utility_provider_bills remote_provider_bill
+  where remote_provider_bill.household_id = target_household_id
+    and remote_provider_bill.local_record_id is not null
+    and not exists (
+      select 1
+      from provider_bill_payload
+      where provider_bill_payload.id = remote_provider_bill.local_record_id
+    );
 
   with allocation_payload as (
     select allocation_record.id
@@ -2896,12 +2925,137 @@ begin
     updated_at = excluded.updated_at,
     updated_by_user_id = excluded.updated_by_user_id;
 
+  insert into public.utility_provider_bills (
+    household_id,
+    local_record_id,
+    utility_type,
+    unit,
+    provider_name,
+    billing_date,
+    due_date,
+    total_bill_amount,
+    rate_per_unit,
+    status,
+    form_snapshot,
+    calculation_snapshot,
+    member_share_snapshot,
+    bill_attachments,
+    payment_attachments,
+    paid_by_member_id,
+    source_account_id,
+    paid_at,
+    payment_reference_number,
+    transaction_id,
+    visibility,
+    description,
+    notes,
+    is_active,
+    created_at,
+    updated_at,
+    updated_by_user_id
+  )
+  select
+    target_household_id,
+    provider_bill_record.id,
+    provider_bill_record."utilityType",
+    provider_bill_record.unit,
+    coalesce(provider_bill_record."providerName", ''),
+    provider_bill_record."billingDate"::date,
+    provider_bill_record."dueDate"::date,
+    provider_bill_record."totalBillAmount",
+    provider_bill_record."ratePerUnit",
+    coalesce(provider_bill_record.status, 'unpaid'),
+    coalesce(provider_bill_record."formSnapshot", '{}'::jsonb),
+    coalesce(provider_bill_record."calculationSnapshot", '{}'::jsonb),
+    coalesce(provider_bill_record."memberShareSnapshot", '[]'::jsonb),
+    coalesce(provider_bill_record."billAttachments", '[]'::jsonb),
+    coalesce(provider_bill_record."paymentAttachments", '[]'::jsonb),
+    paid_by_member.id,
+    source_account.id,
+    nullif(provider_bill_record."paidAt", '')::timestamptz,
+    nullif(provider_bill_record."paymentReferenceNumber", ''),
+    linked_transaction.id,
+    coalesce(provider_bill_record.visibility, 'household'),
+    coalesce(provider_bill_record.description, ''),
+    coalesce(provider_bill_record.notes, ''),
+    provider_bill_record."isActive",
+    coalesce(nullif(provider_bill_record."createdAt", '')::timestamptz, snapshot_timestamp),
+    snapshot_timestamp,
+    current_user_id
+  from jsonb_to_recordset(coalesce(core_provider_bills, '[]'::jsonb)) as provider_bill_record(
+    id text,
+    "utilityType" text,
+    unit text,
+    "providerName" text,
+    "billingDate" text,
+    "dueDate" text,
+    "totalBillAmount" numeric,
+    "ratePerUnit" numeric,
+    status text,
+    "formSnapshot" jsonb,
+    "calculationSnapshot" jsonb,
+    "memberShareSnapshot" jsonb,
+    "billAttachments" jsonb,
+    "paymentAttachments" jsonb,
+    "paidByMemberId" text,
+    "sourceAccountId" text,
+    "paidAt" text,
+    "paymentReferenceNumber" text,
+    "transactionId" text,
+    visibility text,
+    description text,
+    notes text,
+    "isActive" boolean,
+    "createdAt" text,
+    "updatedAt" text
+  )
+  left join public.household_members paid_by_member
+    on paid_by_member.household_id = target_household_id
+   and (
+        paid_by_member.id::text = nullif(provider_bill_record."paidByMemberId", '')
+        or paid_by_member.local_record_id = nullif(provider_bill_record."paidByMemberId", '')
+   )
+  left join public.accounts source_account
+    on source_account.household_id = target_household_id
+   and source_account.local_record_id = nullif(provider_bill_record."sourceAccountId", '')
+  left join public.transactions linked_transaction
+    on linked_transaction.household_id = target_household_id
+   and linked_transaction.local_record_id = nullif(provider_bill_record."transactionId", '')
+  on conflict (household_id, local_record_id)
+  where local_record_id is not null
+  do update set
+    utility_type = excluded.utility_type,
+    unit = excluded.unit,
+    provider_name = excluded.provider_name,
+    billing_date = excluded.billing_date,
+    due_date = excluded.due_date,
+    total_bill_amount = excluded.total_bill_amount,
+    rate_per_unit = excluded.rate_per_unit,
+    status = excluded.status,
+    form_snapshot = excluded.form_snapshot,
+    calculation_snapshot = excluded.calculation_snapshot,
+    member_share_snapshot = excluded.member_share_snapshot,
+    bill_attachments = excluded.bill_attachments,
+    payment_attachments = excluded.payment_attachments,
+    paid_by_member_id = excluded.paid_by_member_id,
+    source_account_id = excluded.source_account_id,
+    paid_at = excluded.paid_at,
+    payment_reference_number = excluded.payment_reference_number,
+    transaction_id = excluded.transaction_id,
+    visibility = excluded.visibility,
+    description = excluded.description,
+    notes = excluded.notes,
+    is_active = excluded.is_active,
+    updated_at = excluded.updated_at,
+    updated_by_user_id = excluded.updated_by_user_id;
+
   return query
   select
     snapshot.household_id as saved_household_id,
     snapshot.accounts,
     snapshot.transactions,
     snapshot.expense_allocations,
+    snapshot.provider_bills,
     snapshot.saved_at
   from public.load_household_core_snapshot(target_household_id) as snapshot;
 end;
@@ -2911,11 +3065,13 @@ revoke all on function public.save_household_core_snapshot(
   uuid,
   jsonb,
   jsonb,
+  jsonb,
   jsonb
 ) from public;
 
 grant execute on function public.save_household_core_snapshot(
   uuid,
+  jsonb,
   jsonb,
   jsonb,
   jsonb
@@ -2931,6 +3087,7 @@ returns table (
   accounts jsonb,
   transactions jsonb,
   expense_allocations jsonb,
+  provider_bills jsonb,
   saved_at timestamptz
 )
 language plpgsql
@@ -3063,6 +3220,50 @@ begin
         join public.household_members allocation_member
           on allocation_member.id = remote_allocation.member_id
         where remote_allocation.household_id = target_household_id
+      ),
+      '[]'::jsonb
+    ),
+    coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', coalesce(remote_provider_bill.local_record_id, remote_provider_bill.id::text),
+            'householdId', target_household_id::text,
+            'utilityType', remote_provider_bill.utility_type,
+            'unit', remote_provider_bill.unit,
+            'providerName', remote_provider_bill.provider_name,
+            'billingDate', remote_provider_bill.billing_date,
+            'dueDate', remote_provider_bill.due_date,
+            'totalBillAmount', remote_provider_bill.total_bill_amount,
+            'ratePerUnit', remote_provider_bill.rate_per_unit,
+            'status', remote_provider_bill.status,
+            'formSnapshot', remote_provider_bill.form_snapshot,
+            'calculationSnapshot', remote_provider_bill.calculation_snapshot,
+            'memberShareSnapshot', remote_provider_bill.member_share_snapshot,
+            'billAttachments', remote_provider_bill.bill_attachments,
+            'paymentAttachments', remote_provider_bill.payment_attachments,
+            'paidByMemberId', coalesce(paid_by_member.local_record_id, paid_by_member.id::text, ''),
+            'sourceAccountId', coalesce(source_account.local_record_id, ''),
+            'paidAt', remote_provider_bill.paid_at,
+            'paymentReferenceNumber', coalesce(remote_provider_bill.payment_reference_number, ''),
+            'transactionId', coalesce(linked_transaction.local_record_id, ''),
+            'visibility', remote_provider_bill.visibility,
+            'description', remote_provider_bill.description,
+            'notes', remote_provider_bill.notes,
+            'isActive', remote_provider_bill.is_active,
+            'createdAt', remote_provider_bill.created_at,
+            'updatedAt', remote_provider_bill.updated_at
+          )
+          order by remote_provider_bill.due_date, remote_provider_bill.created_at, remote_provider_bill.id
+        )
+        from public.utility_provider_bills remote_provider_bill
+        left join public.household_members paid_by_member
+          on paid_by_member.id = remote_provider_bill.paid_by_member_id
+        left join public.accounts source_account
+          on source_account.id = remote_provider_bill.source_account_id
+        left join public.transactions linked_transaction
+          on linked_transaction.id = remote_provider_bill.transaction_id
+        where remote_provider_bill.household_id = target_household_id
       ),
       '[]'::jsonb
     ),

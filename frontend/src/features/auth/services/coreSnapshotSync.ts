@@ -8,6 +8,9 @@ import type {
   ExpenseAllocation,
 } from "../../transactions/models/ExpenseAllocation";
 import type {
+  UtilityProviderBill,
+} from "../../utilities/models/UtilityProviderBill";
+import type {
   RemoteHouseholdCoreSnapshot,
   RemoteHouseholdCoreSnapshotInput,
 } from "../models";
@@ -27,12 +30,14 @@ export interface LocalCoreSnapshotSource {
   accounts: Account[];
   transactions: Transaction[];
   expenseAllocations?: ExpenseAllocation[];
+  providerBills?: UtilityProviderBill[];
 }
 
 export interface CoreSnapshotRecordSource {
   getAccounts(): Account[];
   getTransactions(): Transaction[];
   getExpenseAllocations?(): ExpenseAllocation[];
+  getProviderBills?(): UtilityProviderBill[];
 }
 
 export interface CurrentBrowserCoreSnapshotOptions {
@@ -85,6 +90,10 @@ export interface CoreSnapshotLocalWriter {
   replaceExpenseAllocations?(
     householdId: string,
     allocations: ExpenseAllocation[]
+  ): boolean;
+  replaceProviderBills?(
+    householdId: string,
+    providerBills: UtilityProviderBill[]
   ): boolean;
 }
 
@@ -166,6 +175,40 @@ export function createRemoteCoreSnapshotInput(
     transactions:
       transactionPayload.transactions,
     expenseAllocations,
+    providerBills:
+      (source.providerBills ?? [])
+        .filter(
+          (providerBill) =>
+            providerBill.householdId ===
+            localHouseholdId
+        )
+        .map((providerBill) => ({
+          ...providerBill,
+          householdId:
+            source.householdId,
+          billingDate:
+            new Date(
+              providerBill.billingDate
+            ),
+          dueDate:
+            new Date(
+              providerBill.dueDate
+            ),
+          paidAt:
+            providerBill.paidAt
+              ? new Date(
+                  providerBill.paidAt
+                )
+              : null,
+          createdAt:
+            new Date(
+              providerBill.createdAt
+            ),
+          updatedAt:
+            new Date(
+              providerBill.updatedAt
+            ),
+        })),
   };
 }
 
@@ -221,6 +264,9 @@ export async function saveCurrentBrowserCoreSnapshotForHousehold(
       expenseAllocations:
         options.recordSource
           .getExpenseAllocations?.() ?? [],
+      providerBills:
+        options.recordSource
+          .getProviderBills?.() ?? [],
     }
   );
 }
@@ -367,6 +413,56 @@ export function applyRemoteCoreSnapshotToLocalHousehold(
       expenseAllocations.length > 0 ||
       transactions.length === 0
     );
+  const providerBills =
+    (options.snapshot.providerBills ?? []).map(
+      (providerBill) => ({
+        ...providerBill,
+        householdId:
+          options.localHouseholdId,
+        billingDate:
+          new Date(
+            providerBill.billingDate
+          ),
+        dueDate:
+          new Date(
+            providerBill.dueDate
+          ),
+        paidAt:
+          providerBill.paidAt
+            ? new Date(
+                providerBill.paidAt
+              )
+            : null,
+        createdAt:
+          new Date(
+            providerBill.createdAt
+          ),
+        updatedAt:
+          new Date(
+            providerBill.updatedAt
+          ),
+        billAttachments:
+          providerBill.billAttachments.map(
+            (attachment) => ({
+              ...attachment,
+              createdAt:
+                new Date(
+                  attachment.createdAt
+                ),
+            })
+          ),
+        paymentAttachments:
+          providerBill.paymentAttachments.map(
+            (attachment) => ({
+              ...attachment,
+              createdAt:
+                new Date(
+                  attachment.createdAt
+                ),
+            })
+          ),
+      })
+    );
 
   if (
     !options.writer.replaceAccounts(
@@ -400,6 +496,21 @@ export function applyRemoteCoreSnapshotToLocalHousehold(
   ) {
     throw new Error(
       "Local expense allocations could not be replaced from the cloud snapshot."
+    );
+  }
+
+  if (
+    options.writer.replaceProviderBills &&
+    Array.isArray(
+      options.snapshot.providerBills
+    ) &&
+    !options.writer.replaceProviderBills(
+      options.localHouseholdId,
+      providerBills
+    )
+  ) {
+    throw new Error(
+      "Local utility provider bills could not be replaced from the cloud snapshot."
     );
   }
 

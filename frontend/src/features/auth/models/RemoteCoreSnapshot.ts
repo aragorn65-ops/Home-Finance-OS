@@ -3,6 +3,9 @@ import type {
   RemoteMigrationExpenseAllocationUploadRecord,
   RemoteMigrationTransactionUploadRecord,
 } from "./RemoteMigration";
+import type {
+  UtilityProviderBill,
+} from "../../utilities/models/UtilityProviderBill";
 
 export interface RemoteHouseholdCoreSnapshot {
   householdId: string;
@@ -10,6 +13,7 @@ export interface RemoteHouseholdCoreSnapshot {
   transactions: RemoteMigrationTransactionUploadRecord[];
   expenseAllocations?:
     RemoteMigrationExpenseAllocationUploadRecord[];
+  providerBills?: UtilityProviderBill[];
   savedAt?: Date;
 }
 
@@ -19,4 +23,5 @@ export interface RemoteHouseholdCoreSnapshotInput {
   transactions: RemoteMigrationTransactionUploadRecord[];
   expenseAllocations:
     RemoteMigrationExpenseAllocationUploadRecord[];
+  providerBills?: UtilityProviderBill[];
 }

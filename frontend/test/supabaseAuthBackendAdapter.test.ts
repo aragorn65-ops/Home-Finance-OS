@@ -1960,6 +1960,60 @@ test(
           "2026-07-22T03:30:00.000Z",
       },
     ];
+    const providerBills = [
+      {
+        id:
+          "provider-bill-1",
+        householdId:
+          "household-1",
+        utilityType:
+          "electricity",
+        unit:
+          "kWh",
+        providerName:
+          "Power Co",
+        billingDate:
+          "2026-07-01",
+        dueDate:
+          "2026-07-31",
+        totalBillAmount:
+          75,
+        ratePerUnit:
+          10,
+        status:
+          "paid",
+        formSnapshot: {},
+        calculationSnapshot: {},
+        memberShareSnapshot:
+          [],
+        billAttachments:
+          [],
+        paymentAttachments:
+          [],
+        paidByMemberId:
+          "member-1",
+        sourceAccountId:
+          "account-1",
+        paidAt:
+          "2026-07-22T04:00:00Z",
+        paymentReferenceNumber:
+          "UTIL-1",
+        transactionId:
+          "transaction-1",
+        visibility:
+          "household",
+        description:
+          "Electric bill",
+        notes:
+          "",
+        isActive:
+          true,
+        createdAt:
+          "2026-07-22T03:00:00.000Z",
+        updatedAt:
+          "2026-07-22T03:30:00.000Z",
+      },
+    ];
 
     const adapter =
       new SupabaseAuthBackendAdapter({
@@ -1986,6 +2040,8 @@ test(
                 transactions,
                 expense_allocations:
                   expenseAllocations,
+                provider_bills:
+                  providerBills,
                 saved_at:
                   "2026-07-22T04:55:00Z",
               },
@@ -2003,6 +2059,32 @@ test(
           accounts,
           transactions,
           expenseAllocations,
+          providerBills:
+            providerBills.map(
+              (providerBill) => ({
+                ...providerBill,
+                billingDate:
+                  new Date(
+                    providerBill.billingDate
+                  ),
+                dueDate:
+                  new Date(
+                    providerBill.dueDate
+                  ),
+                paidAt:
+                  new Date(
+                    providerBill.paidAt
+                  ),
+                createdAt:
+                  new Date(
+                    providerBill.createdAt
+                  ),
+                updatedAt:
+                  new Date(
+                    providerBill.updatedAt
+                  ),
+              })
+            ),
         });
     const loaded =
       await adapter
@@ -2025,6 +2107,13 @@ test(
               transactions,
             core_expense_allocations:
               expenseAllocations,
+            core_provider_bills: [
+              {
+                ...providerBills[0],
+                paidAt:
+                  "2026-07-22T04:00:00.000Z",
+              },
+            ],
           },
         },
         {
@@ -2050,6 +2139,16 @@ test(
       loaded.expenseAllocations[0]
         ?.transactionId,
       "transaction-1"
+    );
+    assert.equal(
+      loaded.providerBills?.[0]
+        ?.providerName,
+      "Power Co"
+    );
+    assert.equal(
+      loaded.providerBills?.[0]
+        ?.paidAt?.toISOString(),
+      "2026-07-22T04:00:00.000Z"
     );
     assert.equal(
       saved.savedAt?.toISOString(),
