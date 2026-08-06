@@ -171,6 +171,9 @@ permissible-attachment review pass.
   local member aliases for signed-in Supabase memberships.
 * [x] Preserved member-created personal accounts when a linked member session
   reloads through a different local household shell.
+* [x] Expanded member account-owner aliases so personal accounts remain visible
+  when a signed-in member is represented by local, linked-shell, or Supabase
+  member ids.
 * [ ] Pending Sprint 104 live validation.
 
 ---

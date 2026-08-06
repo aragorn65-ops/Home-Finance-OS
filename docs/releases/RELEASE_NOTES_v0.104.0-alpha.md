@@ -28,7 +28,7 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 
 ## Verified
 
-* Local verification passed with 197 tests.
+* Local verification passed with 198 tests.
 * Production Supabase cutover, Auth Diagnostics, admin auth, linked refresh
   restore, and July-to-August partial settlement carryover passed.
 * Utilities paid provider bills now filter by selected payment month.
@@ -61,6 +61,9 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   checks accept local member aliases from the signed-in session.
 * Preserved member-created personal accounts across linked member re-entry by
   salvaging local personal accounts into the current linked member shell.
+* Expanded member account-owner alias checks so personal accounts remain
+  visible after refresh when member identity is represented by a local,
+  linked-shell, or Supabase member id.
 
 ---
 

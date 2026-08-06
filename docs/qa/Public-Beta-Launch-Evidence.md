@@ -46,6 +46,10 @@ Supabase validation before inviting public beta testers.
   previous local household shell:
   `frontend/src/features/accounts/repositories/AccountRepository.ts` and
   `frontend/test/browserCoreSnapshotLocalWriter.test.ts`
+* Member account visibility accepts local, linked-shell, and Supabase owner id
+  aliases for the signed-in member:
+  `frontend/src/features/accounts/pages/AccountsPage.tsx` and
+  `frontend/test/authorization.test.ts`
 * Single-household authenticated-link conflicts are blocked before local link
   state can be overwritten:
   `frontend/test/householdStorage.test.ts`
@@ -206,7 +210,7 @@ Date: 2026-08-06
 Tester: Product owner
 Browser: Production browser session
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: f135cff or newer
+Expected build commit: 8bfa868 or newer
 Settings Auth Diagnostics build: Passed
 Settings Auth Diagnostics branch: main
 Cloudflare deployment status: Passed for deployed app access

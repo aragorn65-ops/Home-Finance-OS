@@ -31,7 +31,7 @@ but cannot record settlements.
   member.
 * The latest Supabase schema has been applied and PostgREST schema cache has
   been reloaded.
-* Production is deployed at commit `f135cff` or newer for member personal
+* Production is deployed at commit `8bfa868` or newer for member personal
   account visibility after save/re-entry and settlement member-alias
   authorization.
 
