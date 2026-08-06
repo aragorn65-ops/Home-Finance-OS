@@ -13,10 +13,33 @@ export const browserCoreSnapshotLocalWriter:
     householdId,
     accounts
   ) {
+    const remoteAccountIds =
+      new Set(
+        accounts.map(
+          (account) => account.id
+        )
+      );
+    const localPersonalAccounts =
+      AccountRepository
+        .findAll()
+        .filter(
+          (account) =>
+            account.householdId ===
+              householdId &&
+            account.visibility ===
+              "private" &&
+            !remoteAccountIds.has(
+              account.id
+            )
+        );
+
     return AccountRepository
       .replaceForHousehold(
         householdId,
-        accounts
+        [
+          ...accounts,
+          ...localPersonalAccounts,
+        ]
       );
   },
 
