@@ -53,6 +53,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   private transaction attachments remain hidden from non-involved members.
 * Added a Sprint 104 realtime production smoke guide for two-tab active-session
   sync validation.
+* Added a Sprint 104 attachment smoke guide for expense, utility, settlement,
+  metadata-only preview, and member-review validation.
 
 ---
 

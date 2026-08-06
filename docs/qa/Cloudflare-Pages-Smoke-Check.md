@@ -125,6 +125,9 @@ not fail with a household allocation ownership error.
 
 ## Attachment Save Check
 
+For the full attachment persistence and metadata-only preview checklist, use
+`docs/qa/Sprint-104-Attachment-Smoke.md`.
+
 1. Sign in with the invited admin account.
 2. Add an expense transaction with a small JPG, PNG, WebP, or PDF receipt.
 3. Add an unpaid utility provider bill with a bill or receipt file attached.

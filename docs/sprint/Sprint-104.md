@@ -69,6 +69,7 @@ tester onboarding.
 * `docs/qa/Sprint-104-Member-Transparency-Smoke.md`
 * `docs/qa/Sprint-104-Route-Smoke.md`
 * `docs/qa/Sprint-104-Realtime-Smoke.md`
+* `docs/qa/Sprint-104-Attachment-Smoke.md`
 
 ---
 
@@ -106,6 +107,10 @@ route pass across signed-out, admin, member, and viewer states.
 Use `docs/qa/Sprint-104-Realtime-Smoke.md` for the two-tab active-session
 sync pass across household preferences, core snapshots, utility provider
 bills, and settlements.
+
+Use `docs/qa/Sprint-104-Attachment-Smoke.md` for the expense, utility provider
+bill, payment receipt, settlement receipt, metadata-only preview, and member
+permissible-attachment review pass.
 
 ---
 
@@ -156,6 +161,9 @@ bills, and settlements.
 * [x] Added the Sprint 104 realtime smoke guide covering active-session
   household preference, core snapshot, utility provider bill, and settlement
   sync behavior.
+* [x] Added the Sprint 104 attachment smoke guide covering attachment saves,
+  refresh persistence, metadata-only preview copy, and member permissible
+  attachment review.
 * [ ] Pending Sprint 104 live validation.
 
 ---
