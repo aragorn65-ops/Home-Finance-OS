@@ -134,3 +134,45 @@ test(
     });
   }
 );
+
+test(
+  "public beta smoke routes keep viewer access read-only and transparent",
+  () => {
+    const viewerAllowedRoutes =
+      new Set([
+        "/app",
+        "/app/household-members",
+        "/app/transactions",
+        "/app/utilities",
+        "/app/settlements",
+        "/app/savings",
+        "/app/analytics",
+        "/app/help-center",
+        "/app/settings",
+      ]);
+    const appRoutes =
+      publicBetaSmokeRoutes.filter(
+        (route) =>
+          route.startsWith("/app")
+      );
+
+    appRoutes.forEach((route) => {
+      const result =
+        evaluateAuthRouteAccess({
+          authEnabled: true,
+          pathname: route,
+          sessionStatus:
+            "signed-in",
+          role: "viewer",
+        });
+
+      assert.equal(
+        result.isAllowed,
+        viewerAllowedRoutes.has(
+          route
+        ),
+        route
+      );
+    });
+  }
+);

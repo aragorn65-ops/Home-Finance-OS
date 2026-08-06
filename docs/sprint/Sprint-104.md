@@ -38,7 +38,7 @@ tester onboarding.
   the original July unsettled remainder remains visible until fully paid.
 * [x] Verify remote settlement history appears after refresh and does not leave
   the form stuck in a saving/reset state after failures.
-* [ ] Run limited member settlement-entry smoke checks.
+* [ ] Run limited member transparency and settlement-entry smoke checks.
 * [ ] Run public beta route smoke checks on every first-class route.
 * [ ] Record the live evidence in
   `docs/qa/Public-Beta-Launch-Evidence.md`.
@@ -50,8 +50,8 @@ tester onboarding.
 * Broad shared household collaboration.
 * Multi-device conflict resolution.
 * General invite or membership onboarding flows beyond limited member
-  settlement entry.
-* Full utility and savings cloud persistence.
+  transparency and settlement entry.
+* Full savings cloud persistence.
 * New finance modules.
 
 ---
@@ -116,8 +116,8 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
 * [x] Restored the shared reporting month selector in Utilities and Savings so
   the selected month remains visible on those public beta smoke routes.
 * [x] Added a Household Members invite action backed by Supabase member-linking
-  RPC support so limited member settlement-entry smoke testing has a production
-  UI path.
+  RPC support so limited member transparency and settlement-entry smoke testing
+  has a production UI path.
 * [x] Opened Household Members as a member transparency route while keeping
   roster management actions limited to owner/admin sessions.
 * [x] Kept Settings available for signed-out or pre-membership auth recovery

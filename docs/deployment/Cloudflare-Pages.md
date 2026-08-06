@@ -6,11 +6,12 @@ HFOS can be deployed to Cloudflare Pages as a static Vite application for the
 public beta candidate.
 
 The current public beta target requires production auth configuration,
-cloud-backed household metadata, account/transaction core snapshots, settlement
-records, limited member settlement-entry access, and real-time synchronization
-for the active household session. Utilities and savings remain smoke-tested
-routes, but full cloud persistence for those local modules is not a launch
-blocker unless the public beta scope is explicitly expanded.
+cloud-backed household metadata, account/transaction/allocation core snapshots,
+utility provider bills, settlement records, limited member transparency and
+settlement-entry access, and real-time synchronization for the active household
+session. Savings remains a smoke-tested route, but full cloud persistence for
+that local module is not a launch blocker unless the public beta scope is
+explicitly expanded.
 
 ---
 
@@ -112,13 +113,13 @@ After a Cloudflare Pages deployment, verify:
   Cloudflare 404.
 * Admin sign-in, sign-out, session refresh, and expired-session recovery work.
 * A signed-in admin can create or claim one household.
-* Household metadata, accounts, transactions, and settlements survive refresh
-  from the cloud-backed store.
-* A limited member can add settlement records only when they are the payer or
-  receiver.
+* Household metadata, accounts, transactions, allocations, utility provider
+  bills, and settlements survive refresh from the cloud-backed store.
+* A limited member can review shared household records and add settlement
+  records only when they are the payer or receiver.
 * Member access cannot create, edit, or delete accounts, transactions,
-  utilities, savings, settings, backups, household configuration, or migration
-  state.
+  utilities, savings goals or activity, backups, household configuration, or
+  migration state.
 * Active signed-in admin browser sessions receive cloud-backed household,
   account/transaction snapshot, and settlement changes without manual refresh.
 * Backup export creates an `.hfos-backup.json` file.

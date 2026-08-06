@@ -34,11 +34,11 @@ Public beta candidate, gated by the launch checklist.
 
 HFOS is moving from guided private local-first testing toward public beta with
 sample or low-risk data. The current public beta target requires authenticated
-admin access, limited member settlement-entry access, cloud-backed household
+admin access, limited member transparency and settlement-entry access, cloud-backed household
 metadata, account/transaction snapshots, settlement persistence, and real-time
 sync for the active household session. Local backup export and restore remain
 required safety rails. Shared household collaboration, multi-device household
-access, conflict resolution, and full utility/savings cloud persistence are not
+access, conflict resolution, and full savings cloud persistence are not
 part of the one-month public beta scope unless explicitly expanded.
 
 Start with:

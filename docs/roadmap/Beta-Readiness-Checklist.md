@@ -64,9 +64,9 @@ any restore, reset, attachment, currency, or mobile layout issue immediately.
 The current gate is public beta cloud readiness.
 
 HFOS should not be opened to public beta testers until authenticated admin
-access, limited member settlement-entry access, cloud-backed household
-persistence, and real-time synchronization pass the public beta launch checklist
-against the current Cloudflare Pages production deployment.
+access, limited member transparency and settlement-entry access, cloud-backed
+household persistence, and real-time synchronization pass the public beta
+launch checklist against the current Cloudflare Pages production deployment.
 
 Multi-device household access, broad shared household collaboration, general
 invite onboarding, offline merge, and conflict resolution remain explicitly out

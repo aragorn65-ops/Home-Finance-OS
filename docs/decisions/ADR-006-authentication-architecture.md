@@ -57,7 +57,8 @@ Initial authenticated roles should map from the existing local roles:
 * `admin`: household data management and invitations, but not ownership transfer or destructive household deletion.
 * `member`: normal household participation with access limited by record visibility.
 
-A future `viewer` role can be added when read-only sharing is needed, but it should not be exposed until the backend enforces it.
+The `viewer` role is available for read-only sharing once the backend enforces
+the same route and write restrictions as the client.
 
 ---
 

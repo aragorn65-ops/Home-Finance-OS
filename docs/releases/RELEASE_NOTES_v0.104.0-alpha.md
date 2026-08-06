@@ -14,8 +14,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 * Apply and validate the latest Supabase schema, including core snapshot
   expense-allocation support.
 * Re-run Auth Diagnostics, production auth, linked-household restore, remote
-  settlement persistence, limited member settlement entry, and route smoke
-  checks.
+  settlement persistence, limited member transparency and settlement entry, and
+  route smoke checks.
 * Prove the July-to-August partial settlement workflow preserves both the
   recorded payment history and the remaining unsettled balance.
 * Keep Utilities provider payment history scoped to the selected payment month
@@ -28,7 +28,7 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 
 ## Verified
 
-* Local verification passed with 166 tests.
+* Local verification passed with 178 tests.
 * Production Supabase cutover, Auth Diagnostics, admin auth, linked refresh
   restore, and July-to-August partial settlement carryover passed.
 * Utilities paid provider bills now filter by selected payment month.

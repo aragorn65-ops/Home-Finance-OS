@@ -135,9 +135,9 @@ or sync paths are enabled.
 Sprint 101 adds a read-only cloud restore preview that summarizes committed
 remote household data before any browser restore or sync path is enabled.
 Sprint 102 resets the public beta target around authenticated admin access,
-limited member settlement-entry access, cloud-backed household persistence, and
-real-time synchronization, while leaving multi-device household access and
-conflict resolution out of scope.
+limited member transparency and settlement-entry access, cloud-backed household
+persistence, and real-time synchronization, while leaving multi-device
+household access and conflict resolution out of scope.
 Sprint 103 turns that repo-side baseline into a live Cloudflare Pages and
 Supabase production validation pass before any public beta invitation.
 Sprint 104 turns the Sprint 103 settlement/allocation hardening into a
@@ -230,8 +230,8 @@ persistence, and launch evidence before testers are invited.
 ## Beta Target
 
 The near-term beta target is a safety-gated public beta with authenticated admin
-access, limited member settlement-entry access, cloud-backed household
-persistence, and real-time synchronization.
+access, limited member transparency and settlement-entry access, cloud-backed
+household persistence, and real-time synchronization.
 
 HFOS public beta requires a production-ready admin sign-in path, a durable
 remote household store, and live propagation of changes between the active
@@ -239,10 +239,11 @@ browser session and the cloud source of truth. Local backup and restore remain
 required safety rails, but browser localStorage is no longer sufficient as the
 primary persistence layer for public beta.
 
-Public beta also allows a narrow member role for settlement entry. A member may
-sign in and add a settlement only when they are the payer or receiver. Admins
-retain review, edit, and delete control over those records. Member access does
-not include accounts, transactions, utilities, savings, analytics, settings,
+Public beta also allows a narrow member role for transparency and settlement
+entry. A member may sign in to review shared household records and add a
+settlement only when they are the payer or receiver. Admins retain review,
+edit, and delete control over those records. Member access does not include
+creating, editing, or deleting accounts, transactions, utilities, savings,
 backups, household configuration, migration state, or broad collaboration.
 
 Multi-device household access, shared household collaboration, invitations,
@@ -289,9 +290,9 @@ so disabled Drive buttons explain the missing build variable.
 Sprint 84 recorded the earlier local-first public beta safety warning.
 Sprint 85 recorded the earlier local-first public beta launch checklist.
 Sprint 102 supersedes that launch direction: public beta now requires
-authenticated admin access, limited member settlement-entry access,
-cloud-backed household persistence, and real-time synchronization before
-testers are invited.
+authenticated admin access, limited member transparency and settlement-entry
+access, cloud-backed household persistence, and real-time synchronization
+before testers are invited.
 Sprint 103 keeps the next decision live-validation focused: Cloudflare Pages
 runtime configuration, production Supabase auth, admin and limited member smoke
 checks, cloud persistence, browser-refresh restore, realtime active-session

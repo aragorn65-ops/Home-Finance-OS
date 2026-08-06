@@ -6,13 +6,14 @@ This guide is a short starting point for Home Finance OS public beta candidate
 testing.
 
 Use sample, test, or low-risk data only. The current public beta target requires
-authenticated admin access, limited member settlement-entry access,
-cloud-backed household metadata, account/transaction snapshots, settlement
-persistence, and real-time sync for the active household session. Local and
-Google Drive backup tools are available, and backups can optionally be password
-protected. Multi-device household access, broad shared collaboration, conflict
-resolution, and full utility/savings cloud persistence are outside the
-one-month public beta scope unless explicitly expanded.
+authenticated admin access, limited member transparency and settlement-entry
+access, cloud-backed household metadata, account/transaction/allocation
+snapshots, utility provider bills, settlement persistence, and real-time sync
+for the active household session. Local and Google Drive backup tools are
+available, and backups can optionally be password protected. Multi-device
+household access, broad shared collaboration, conflict resolution, and full
+savings cloud persistence are outside the one-month public beta scope unless
+explicitly expanded.
 
 ---
 
@@ -227,9 +228,10 @@ Good feedback examples:
 ## Current Limitations
 
 * Public beta cloud persistence is limited to household metadata,
-  account/transaction snapshots, and settlement records.
-* Utilities and savings remain local-module workflows for the one-month public
-  beta scope unless explicitly expanded.
+  account/transaction/allocation snapshots, utility provider bills, and
+  settlement records.
+* Savings remains a local-module workflow for the one-month public beta scope
+  unless explicitly expanded.
 * Clear Test Data keeps the household setup but removes financial/test records from this browser.
 * Reset All Application Data deletes the household and returns the app to first-time setup.
 * No production account recovery yet.

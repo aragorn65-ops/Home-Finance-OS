@@ -2,9 +2,11 @@
 
 ## Purpose
 
-This document defines the future role model for authenticated HFOS households.
+This document defines the role model for authenticated HFOS households.
 
-The current app has local household roles, but those roles are not backed by server-side authentication yet. Future implementation must enforce these permissions in the backend before presenting them as security guarantees.
+The production public-beta path now backs household access with Supabase roles.
+The UI still hides actions by role, but backend APIs must continue to enforce
+the same permissions before any write is trusted.
 
 ---
 
@@ -15,7 +17,7 @@ The current app has local household roles, but those roles are not backed by ser
 | Owner | Household controller and final authority. | `owner` |
 | Admin | Trusted household manager. | `admin` |
 | Member | Normal participant in household finances. | `member` |
-| Viewer | Future read-only observer. | Not implemented |
+| Viewer | Read-only observer for shared household transparency routes. | `viewer` |
 
 ---
 
@@ -24,14 +26,16 @@ The current app has local household roles, but those roles are not backed by ser
 | Capability | Owner | Admin | Member | Viewer |
 | --- | --- | --- | --- | --- |
 | View household dashboard | Yes | Yes | Yes | Yes |
-| View household accounts | Yes | Yes | Yes | Yes |
+| View household accounts | Yes | Yes | No | No |
 | View another member's private account | No, unless explicitly shared | No, unless explicitly shared | No | No |
-| Create household accounts | Yes | Yes | Yes | No |
-| Create private accounts | Yes | Yes | Yes | No |
-| Edit own private account | Yes | Yes | Yes | No |
-| Edit household transactions | Yes | Yes | Yes | No |
-| Edit settlements | Yes | Yes | Yes | No |
-| Manage savings goals | Yes | Yes | Yes | No |
+| Create household accounts | Yes | Yes | No | No |
+| Create private accounts | Yes | Yes | No | No |
+| Edit own private account | Yes | Yes | No | No |
+| View shared transactions, utilities, settlements, savings, analytics, help, and household roster | Yes | Yes | Yes | Yes |
+| Edit household transactions | Yes | Yes | No | No |
+| Create involved-member settlement records | Yes | Yes | Yes | No |
+| Edit settlements | Yes | Yes | No | No |
+| Manage savings goals | Yes | Yes | No | No |
 | Invite members | Yes | Yes | No | No |
 | Change member roles | Yes | Limited, cannot assign owner | No | No |
 | Remove members | Yes | Limited, cannot remove owner | No | No |
@@ -46,8 +50,10 @@ The current app has local household roles, but those roles are not backed by ser
 * A household must always have one active owner.
 * Ownership transfer requires the current owner and target member to be active.
 * Admins may help manage household operations but cannot remove the owner or take ownership.
-* Members may participate in records but cannot manage membership.
-* Viewers should remain deferred until the backend can enforce read-only access.
+* Members may review shared household records and create settlement records
+  only when they are the payer or receiver.
+* Viewers may review shared household records but cannot create settlement
+  records or manage household data.
 
 ---
 
