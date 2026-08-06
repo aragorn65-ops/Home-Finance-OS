@@ -3,6 +3,7 @@ import type {
   AuthSessionSubscription,
   HouseholdClaimDraft,
   HouseholdClaimResult,
+  InviteLinkedHouseholdMemberRequest,
   RemoteHouseholdPreferencesInput,
 } from "./AuthBackendAdapter";
 import {
@@ -119,6 +120,41 @@ export class InMemoryAuthBackendAdapter
   async listInvitations():
     Promise<HouseholdInvitation[]> {
     return this.store.listInvitations();
+  }
+
+  async inviteLinkedHouseholdMember(
+    request: InviteLinkedHouseholdMemberRequest
+  ): Promise<HouseholdMembership> {
+    const currentUser =
+      this.store.getCurrentUser();
+
+    if (!currentUser) {
+      throw new Error(
+        "Sign in before inviting household members."
+      );
+    }
+
+    await this.tenantRepository.inviteMember({
+      householdId:
+        request.householdId,
+      email:
+        request.email,
+      role:
+        request.role,
+    });
+
+    return this.store.saveMembership(
+      createMembership({
+        householdId:
+          request.householdId,
+        userId:
+          createId("user"),
+        memberId:
+          request.localMemberId,
+        role:
+          request.role,
+      })
+    );
   }
 
   async createHouseholdClaimDraft(

@@ -51,6 +51,15 @@ export interface AuthSignInRequest {
   redirectTo?: string;
 }
 
+export interface InviteLinkedHouseholdMemberRequest {
+  householdId: string;
+  localMemberId: string;
+  displayName: string;
+  email: string;
+  role: HouseholdMembership["role"];
+  redirectTo?: string;
+}
+
 export interface AuthSessionSubscription {
   unsubscribe(): void;
 }
@@ -99,6 +108,10 @@ export interface AuthBackendAdapter {
 
   listInvitations():
     Promise<HouseholdInvitation[]>;
+
+  inviteLinkedHouseholdMember(
+    request: InviteLinkedHouseholdMemberRequest
+  ): Promise<HouseholdMembership>;
 
   createHouseholdClaimDraft(
     draft: HouseholdClaimDraft

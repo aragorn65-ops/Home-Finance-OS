@@ -115,6 +115,9 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
   is selected.
 * [x] Restored the shared reporting month selector in Utilities and Savings so
   the selected month remains visible on those public beta smoke routes.
+* [x] Added a Household Members invite action backed by Supabase member-linking
+  RPC support so limited member settlement-entry smoke testing has a production
+  UI path.
 * [ ] Pending Sprint 104 live validation.
 
 ---

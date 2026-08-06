@@ -1,6 +1,9 @@
 import {
   useState,
 } from "react";
+import type {
+  FormEvent,
+} from "react";
 
 import {
   Dialog,
@@ -19,10 +22,17 @@ import type {
 } from "../models/HouseholdMemberForm";
 
 import HouseholdMemberService from "../services/HouseholdMemberService";
+import {
+  loadHousehold,
+} from "../services/householdStorage";
+import {
+  getAuthBackendAdapter,
+} from "../../auth/services";
 
 type MemberDialogMode =
   | "create"
   | "edit"
+  | "invite"
   | null;
 
 function mapMemberToForm(
@@ -58,6 +68,13 @@ function getRoleLabel(
 }
 
 export default function HouseholdMemberManager() {
+  const household =
+    loadHousehold();
+
+  const remoteHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId;
+
   const [
     members,
     setMembers,
@@ -85,6 +102,21 @@ export default function HouseholdMemberManager() {
     setActionError,
   ] = useState("");
 
+  const [
+    inviteEmail,
+    setInviteEmail,
+  ] = useState("");
+
+  const [
+    inviteMessage,
+    setInviteMessage,
+  ] = useState("");
+
+  const [
+    isInviting,
+    setIsInviting,
+  ] = useState(false);
+
   const refreshMembers = () => {
     setMembers(
       HouseholdMemberService.getMembers()
@@ -94,6 +126,8 @@ export default function HouseholdMemberManager() {
   const closeDialog = () => {
     setDialogMode(null);
     setSelectedMember(null);
+    setInviteEmail("");
+    setInviteMessage("");
   };
 
   const handleAddMember = () => {
@@ -108,6 +142,16 @@ export default function HouseholdMemberManager() {
     setActionError("");
     setSelectedMember(member);
     setDialogMode("edit");
+  };
+
+  const handleInviteMember = (
+    member: HouseholdMember
+  ) => {
+    setActionError("");
+    setInviteMessage("");
+    setInviteEmail("");
+    setSelectedMember(member);
+    setDialogMode("invite");
   };
 
   const handleSubmit = (
@@ -163,6 +207,59 @@ export default function HouseholdMemberManager() {
     }
 
     refreshMembers();
+  };
+
+  const handleInviteSubmit = async (
+    event: FormEvent
+  ) => {
+    event.preventDefault();
+
+    if (
+      !selectedMember ||
+      !remoteHouseholdId
+    ) {
+      setInviteMessage(
+        "Link this household to Supabase before inviting members."
+      );
+
+      return;
+    }
+
+    setIsInviting(true);
+    setInviteMessage("");
+
+    try {
+      const membership =
+        await getAuthBackendAdapter()
+          .inviteLinkedHouseholdMember({
+            householdId:
+              remoteHouseholdId,
+            localMemberId:
+              selectedMember.id,
+            displayName:
+              selectedMember.displayName,
+            email:
+              inviteEmail,
+            role:
+              selectedMember.role,
+            redirectTo:
+              window.location.origin,
+          });
+
+      setInviteMessage(
+        `Magic link sent. ${selectedMember.displayName} is linked as ${membership.role}.`
+      );
+    }
+    catch (error) {
+      setInviteMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to invite this household member."
+      );
+    }
+    finally {
+      setIsInviting(false);
+    }
   };
 
   return (
@@ -273,19 +370,33 @@ export default function HouseholdMemberManager() {
 
                   {member.role !==
                     "owner" && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleToggleActive(
-                          member
-                        )
-                      }
-                      className="rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                    >
-                      {member.isActive
-                        ? "Deactivate"
-                        : "Reactivate"}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleInviteMember(
+                            member
+                          )
+                        }
+                        className="rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                      >
+                        Invite
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggleActive(
+                            member
+                          )
+                        }
+                        className="rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                      >
+                        {member.isActive
+                          ? "Deactivate"
+                          : "Reactivate"}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -300,34 +411,103 @@ export default function HouseholdMemberManager() {
       >
         <DialogHeader
           title={
-            dialogMode === "edit"
+            dialogMode === "invite"
+              ? "Invite Household Member"
+              : dialogMode === "edit"
               ? "Edit Household Member"
               : "Add Household Member"
           }
         />
 
         <DialogBody>
-          <HouseholdMemberForm
-            initialValues={
-              dialogMode === "edit" &&
-              selectedMember
-                ? mapMemberToForm(
-                    selectedMember
-                  )
-                : undefined
-            }
-            isOwner={
-              selectedMember?.role ===
-              "owner"
-            }
-            submitLabel={
-              dialogMode === "edit"
-                ? "Update Member"
-                : "Add Member"
-            }
-            onSubmit={handleSubmit}
-            onCancel={closeDialog}
-          />
+          {dialogMode === "invite" &&
+          selectedMember ? (
+            <form
+              onSubmit={handleInviteSubmit}
+              className="space-y-5"
+            >
+              <div className="space-y-2">
+                <label
+                  htmlFor="household-member-invite-email"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Email
+                </label>
+
+                <input
+                  id="household-member-invite-email"
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(event) =>
+                    setInviteEmail(
+                      event.target.value
+                    )
+                  }
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+                  placeholder="member@example.com"
+                  required
+                />
+              </div>
+
+              <div className="rounded-md border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                {selectedMember.displayName} will be
+                linked as {getRoleLabel(
+                  selectedMember.role
+                )}.
+              </div>
+
+              {inviteMessage && (
+                <div className="rounded-md border px-4 py-3 text-sm text-foreground">
+                  {inviteMessage}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeDialog}
+                  className="rounded-md border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={
+                    isInviting ||
+                    !remoteHouseholdId
+                  }
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isInviting
+                    ? "Sending..."
+                    : "Send Invite"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <HouseholdMemberForm
+              initialValues={
+                dialogMode === "edit" &&
+                selectedMember
+                  ? mapMemberToForm(
+                      selectedMember
+                    )
+                  : undefined
+              }
+              isOwner={
+                selectedMember?.role ===
+                "owner"
+              }
+              submitLabel={
+                dialogMode === "edit"
+                  ? "Update Member"
+                  : "Add Member"
+              }
+              onSubmit={handleSubmit}
+              onCancel={closeDialog}
+            />
+          )}
         </DialogBody>
       </Dialog>
     </>

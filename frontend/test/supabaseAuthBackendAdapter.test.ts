@@ -4075,6 +4075,145 @@ test(
 );
 
 test(
+  "Supabase auth adapter invites and links a household member",
+  async () => {
+    const {
+      SupabaseAuthBackendAdapter,
+    } = await import(
+      "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+    );
+    const magicLinks: unknown[] = [];
+    const rpcCalls: unknown[] = [];
+
+    const adapter =
+      new SupabaseAuthBackendAdapter({
+        projectUrl:
+          "https://example.supabase.co",
+        anonKey:
+          "anon-key",
+        client: {
+          ...createSignedInClient({
+            async signInWithOtp(
+              credentials: unknown
+            ) {
+              magicLinks.push(
+                credentials
+              );
+
+              return {
+                error: null,
+              };
+            },
+          }),
+          async rpc(
+            functionName: string,
+            parameters: Record<
+              string,
+              unknown
+            >
+          ) {
+            rpcCalls.push({
+              functionName,
+              parameters,
+            });
+
+            return {
+              data: {
+                id:
+                  "membership-1",
+                household_id:
+                  "household-remote-1",
+                user_id:
+                  "user-member-1",
+                member_id:
+                  "member-remote-1",
+                role:
+                  "member",
+                status:
+                  "active",
+                invited_by_user_id:
+                  "user-admin-1",
+                invited_at:
+                  "2026-08-06T00:00:00Z",
+                accepted_at:
+                  "2026-08-06T00:00:00Z",
+                removed_at:
+                  null,
+                created_at:
+                  "2026-08-06T00:00:00Z",
+                updated_at:
+                  "2026-08-06T00:00:00Z",
+              },
+              error: null,
+            };
+          },
+        },
+      });
+
+    const membership =
+      await adapter
+        .inviteLinkedHouseholdMember({
+          householdId:
+            "household-remote-1",
+          localMemberId:
+            "member-local-1",
+          displayName:
+            "Test Member",
+          email:
+            "member@example.com",
+          role:
+            "member",
+          redirectTo:
+            "https://home-finance-os.pages.dev",
+        });
+
+    assert.deepEqual(
+      magicLinks,
+      [
+        {
+          email:
+            "member@example.com",
+          options: {
+            emailRedirectTo:
+              "https://home-finance-os.pages.dev",
+            shouldCreateUser: true,
+          },
+        },
+      ]
+    );
+    assert.deepEqual(
+      rpcCalls,
+      [
+        {
+          functionName:
+            "invite_household_member",
+          parameters: {
+            target_household_id:
+              "household-remote-1",
+            local_member_id:
+              "member-local-1",
+            member_display_name:
+              "Test Member",
+            member_role:
+              "member",
+            invite_email:
+              "member@example.com",
+          },
+        },
+      ]
+    );
+    assert.equal(
+      membership.householdId,
+      "household-remote-1"
+    );
+    assert.equal(
+      membership.role,
+      "member"
+    );
+  }
+);
+
+test(
   "Supabase auth adapter creates aggregate account diagnostics",
   async () => {
     const {

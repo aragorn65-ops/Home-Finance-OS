@@ -28,6 +28,8 @@ The file must include these Sprint 104-critical changes:
 * `load_household_core_snapshot(uuid)` returns `expense_allocations`.
 * `public.expense_allocations` rows are upserted from local allocation IDs and
   joined to remote transactions by `transactions.local_record_id`.
+* `invite_household_member(uuid, text, text, text, text)` links a local
+  household member row to a Supabase magic-link user for member smoke testing.
 
 After the schema finishes, reload the PostgREST schema cache:
 
@@ -54,6 +56,7 @@ where n.nspname = 'public'
   and p.proname in (
     'save_household_core_snapshot',
     'load_household_core_snapshot',
+    'invite_household_member',
     'create_household_settlement',
     'update_household_settlement'
   )
@@ -65,6 +68,7 @@ Expected result includes:
 ```text
 save_household_core_snapshot | target_household_id uuid, core_accounts jsonb, core_transactions jsonb, core_expense_allocations jsonb
 load_household_core_snapshot | target_household_id uuid
+invite_household_member | target_household_id uuid, local_member_id text, member_display_name text, member_role text, invite_email text
 ```
 
 Then verify the allocation table exists:

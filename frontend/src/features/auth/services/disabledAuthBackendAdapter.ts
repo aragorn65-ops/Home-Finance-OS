@@ -2,6 +2,7 @@ import type {
   AuthBackendAdapter,
   HouseholdClaimDraft,
   HouseholdClaimResult,
+  InviteLinkedHouseholdMemberRequest,
   RemoteHouseholdPreferencesInput,
 } from "./AuthBackendAdapter";
 import type {
@@ -60,6 +61,14 @@ export class DisabledAuthBackendAdapter
   async listInvitations():
     Promise<HouseholdInvitation[]> {
     return [];
+  }
+
+  async inviteLinkedHouseholdMember(
+    request: InviteLinkedHouseholdMemberRequest
+  ): Promise<HouseholdMembership> {
+    throw new Error(
+      `Remote member invitations are disabled for ${request.email}.`
+    );
   }
 
   async createHouseholdClaimDraft(

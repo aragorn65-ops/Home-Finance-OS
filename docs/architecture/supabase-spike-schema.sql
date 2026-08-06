@@ -1457,6 +1457,170 @@ grant execute on function public.claim_household_from_backup(
   jsonb
 ) to authenticated;
 
+create or replace function public.invite_household_member(
+  target_household_id uuid,
+  local_member_id text,
+  member_display_name text,
+  member_role text,
+  invite_email text
+)
+returns table (
+  id uuid,
+  household_id uuid,
+  user_id uuid,
+  member_id uuid,
+  role text,
+  status text,
+  invited_by_user_id uuid,
+  invited_at timestamptz,
+  accepted_at timestamptz,
+  removed_at timestamptz,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  invited_user_id uuid;
+  resolved_member_id uuid;
+  resolved_membership_id uuid;
+  normalized_email text := lower(trim(invite_email));
+  normalized_role text := lower(trim(member_role));
+  created_timestamp timestamptz := now();
+begin
+  if current_user_id is null then
+    raise exception 'Sign in before inviting household members.';
+  end if;
+
+  if not public.is_household_admin(target_household_id) then
+    raise exception 'Owner or admin membership is required to invite household members.';
+  end if;
+
+  if normalized_email = '' then
+    raise exception 'Invitation email is required.';
+  end if;
+
+  if normalized_role not in ('admin', 'member', 'viewer') then
+    raise exception 'Invited household role must be admin, member, or viewer.';
+  end if;
+
+  select invited_user.id
+  into invited_user_id
+  from auth.users invited_user
+  where lower(invited_user.email) = normalized_email
+  order by invited_user.created_at desc
+  limit 1;
+
+  if invited_user_id is null then
+    raise exception 'No Supabase user exists for this email yet. Send the magic link first, then retry the member link.';
+  end if;
+
+  insert into public.household_members (
+    household_id,
+    local_record_id,
+    display_name,
+    role,
+    status,
+    linked_user_id,
+    created_at,
+    updated_at
+  )
+  values (
+    target_household_id,
+    nullif(local_member_id, ''),
+    coalesce(nullif(trim(member_display_name), ''), normalized_email),
+    normalized_role,
+    'active',
+    invited_user_id,
+    created_timestamp,
+    created_timestamp
+  )
+  on conflict (household_id, local_record_id)
+  where local_record_id is not null
+  do update set
+    display_name = excluded.display_name,
+    role = excluded.role,
+    status = 'active',
+    linked_user_id = excluded.linked_user_id,
+    updated_at = excluded.updated_at
+  returning public.household_members.id into resolved_member_id;
+
+  insert into public.household_memberships (
+    household_id,
+    member_id,
+    user_id,
+    role,
+    status,
+    invited_by_user_id,
+    invited_at,
+    accepted_at,
+    removed_at,
+    created_at,
+    updated_at
+  )
+  values (
+    target_household_id,
+    resolved_member_id,
+    invited_user_id,
+    normalized_role,
+    'active',
+    current_user_id,
+    created_timestamp,
+    created_timestamp,
+    null,
+    created_timestamp,
+    created_timestamp
+  )
+  on conflict (household_id, user_id)
+  do update set
+    member_id = excluded.member_id,
+    role = excluded.role,
+    status = 'active',
+    invited_by_user_id = excluded.invited_by_user_id,
+    invited_at = excluded.invited_at,
+    accepted_at = excluded.accepted_at,
+    removed_at = null,
+    updated_at = excluded.updated_at
+  returning public.household_memberships.id into resolved_membership_id;
+
+  return query
+  select
+    membership.id,
+    membership.household_id,
+    membership.user_id,
+    membership.member_id,
+    membership.role,
+    membership.status,
+    membership.invited_by_user_id,
+    membership.invited_at,
+    membership.accepted_at,
+    membership.removed_at,
+    membership.created_at,
+    membership.updated_at
+  from public.household_memberships membership
+  where membership.id = resolved_membership_id;
+end;
+$$;
+
+revoke all on function public.invite_household_member(
+  uuid,
+  text,
+  text,
+  text,
+  text
+) from public;
+
+grant execute on function public.invite_household_member(
+  uuid,
+  text,
+  text,
+  text,
+  text
+) to authenticated;
+
 create or replace function public.load_household_preferences(
   target_household_id uuid
 )

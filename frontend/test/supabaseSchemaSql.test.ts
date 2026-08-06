@@ -197,6 +197,41 @@ test("Supabase core snapshot load RPC drops old return type before recreate", ()
   );
 });
 
+test("Supabase member invite RPC links local members to auth users", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /create or replace function public\.invite_household_member\(\s*target_household_id uuid,\s*local_member_id text,\s*member_display_name text,\s*member_role text,\s*invite_email text/
+  );
+  assert.match(
+    schemaSql,
+    /if not public\.is_household_admin\(target_household_id\) then/
+  );
+  assert.match(
+    schemaSql,
+    /from auth\.users invited_user/
+  );
+  assert.match(
+    schemaSql,
+    /on conflict \(household_id, local_record_id\)[\s\S]+linked_user_id = excluded\.linked_user_id/
+  );
+  assert.match(
+    schemaSql,
+    /grant execute on function public\.invite_household_member\(\s*uuid,\s*text,\s*text,\s*text,\s*text\s*\) to authenticated;/
+  );
+});
+
 test("Supabase settlement RPCs persist settlement attachments", () => {
   const schemaSql =
     readFileSync(

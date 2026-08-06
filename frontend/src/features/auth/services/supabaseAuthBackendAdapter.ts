@@ -4,6 +4,7 @@ import type {
   AuthSessionSubscription,
   HouseholdClaimDraft,
   HouseholdClaimResult,
+  InviteLinkedHouseholdMemberRequest,
   RemoteHouseholdPreferencesInput,
 } from "./AuthBackendAdapter";
 import type {
@@ -78,7 +79,8 @@ interface SupabaseAuthClient {
     | SupabaseRemoteHouseholdRpcResult
     | SupabaseCoreSnapshotRpcResult
     | SupabaseSettlementMutationRpcResult
-      | SupabaseSettlementDeleteRpcResult
+    | SupabaseSettlementDeleteRpcResult
+    | SupabaseInviteMemberRpcResult
   >;
   channel?(
     topic: string
@@ -409,6 +411,16 @@ interface SupabaseTransactionRow {
   is_active: boolean;
   source_account_id?: string | null;
   destination_account_id?: string | null;
+}
+
+interface SupabaseInviteMemberRpcResult {
+  data:
+    | SupabaseMembershipRow
+    | SupabaseMembershipRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
 }
 
 interface SupabaseCoreSnapshotRpcRow {
@@ -838,6 +850,84 @@ export class SupabaseAuthBackendAdapter
   async listInvitations():
     Promise<HouseholdInvitation[]> {
     return [];
+  }
+
+  async inviteLinkedHouseholdMember(
+    request: InviteLinkedHouseholdMemberRequest
+  ): Promise<HouseholdMembership> {
+    const email =
+      request.email.trim();
+
+    if (!email) {
+      throw new Error(
+        "Enter an email address before inviting the member."
+      );
+    }
+
+    const client =
+      await this.getClient();
+
+    const magicLinkResult =
+      await client.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo:
+            request.redirectTo,
+          shouldCreateUser: true,
+        },
+      });
+
+    if (magicLinkResult.error) {
+      throw new Error(
+        `Supabase member magic-link invite failed: ${magicLinkResult.error.message}`
+      );
+    }
+
+    const inviteResult =
+      await client.rpc(
+        "invite_household_member",
+        {
+          target_household_id:
+            request.householdId,
+          local_member_id:
+            request.localMemberId,
+          member_display_name:
+            request.displayName,
+          member_role:
+            request.role,
+          invite_email:
+            email,
+        }
+      ) as SupabaseInviteMemberRpcResult;
+
+    const {
+      data,
+      error,
+    } = inviteResult;
+
+    if (error) {
+      throw new Error(
+        `Supabase member invitation failed: ${error.message}`
+      );
+    }
+
+    const row =
+      Array.isArray(data)
+        ? data[0]
+        : data;
+
+    const membership =
+      row
+        ? mapSupabaseMembership(row)
+        : undefined;
+
+    if (!membership) {
+      throw new Error(
+        "Supabase member invitation returned an invalid membership."
+      );
+    }
+
+    return membership;
   }
 
   async listHouseholdDiagnostics(
