@@ -1457,6 +1457,14 @@ grant execute on function public.claim_household_from_backup(
   jsonb
 ) to authenticated;
 
+drop function if exists public.invite_household_member(
+  uuid,
+  text,
+  text,
+  text,
+  text
+);
+
 create or replace function public.invite_household_member(
   target_household_id uuid,
   local_member_id text,
@@ -1464,20 +1472,7 @@ create or replace function public.invite_household_member(
   member_role text,
   invite_email text
 )
-returns table (
-  id uuid,
-  household_id uuid,
-  user_id uuid,
-  member_id uuid,
-  role text,
-  status text,
-  invited_by_user_id uuid,
-  invited_at timestamptz,
-  accepted_at timestamptz,
-  removed_at timestamptz,
-  created_at timestamptz,
-  updated_at timestamptz
-)
+returns setof public.household_memberships
 language plpgsql
 security definer
 set search_path = public
@@ -1587,19 +1582,7 @@ begin
   returning public.household_memberships.id into resolved_membership_id;
 
   return query
-  select
-    membership.id,
-    membership.household_id,
-    membership.user_id,
-    membership.member_id,
-    membership.role,
-    membership.status,
-    membership.invited_by_user_id,
-    membership.invited_at,
-    membership.accepted_at,
-    membership.removed_at,
-    membership.created_at,
-    membership.updated_at
+  select membership.*
   from public.household_memberships membership
   where membership.id = resolved_membership_id;
 end;

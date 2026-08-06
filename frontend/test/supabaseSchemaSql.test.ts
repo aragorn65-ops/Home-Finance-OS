@@ -212,7 +212,15 @@ test("Supabase member invite RPC links local members to auth users", () => {
 
   assert.match(
     schemaSql,
+    /drop function if exists public\.invite_household_member\(\s*uuid,\s*text,\s*text,\s*text,\s*text\s*\);[\s\S]+create or replace function public\.invite_household_member/
+  );
+  assert.match(
+    schemaSql,
     /create or replace function public\.invite_household_member\(\s*target_household_id uuid,\s*local_member_id text,\s*member_display_name text,\s*member_role text,\s*invite_email text/
+  );
+  assert.match(
+    schemaSql,
+    /returns setof public\.household_memberships/
   );
   assert.match(
     schemaSql,
