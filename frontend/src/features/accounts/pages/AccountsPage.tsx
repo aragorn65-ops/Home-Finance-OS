@@ -264,19 +264,31 @@ export default function AccountsPage() {
     household?.currency ?? "PHP";
   const authorizationContext =
     useMemo(
-      () => ({
-        userId:
-          signedInUserId,
-        memberId:
-          memberAccountOwnerId,
-        memberIds:
-          memberAccountOwnerIds,
-        membership:
-          membership ?? undefined,
-      }),
+      () => {
+        // Account records are keyed to the local household id even when membership is loaded from the remote household.
+        const localMembership =
+          membership
+            ? {
+                ...membership,
+                householdId:
+                  household?.id ??
+                  membership.householdId,
+              }
+            : undefined;
+
+        return {
+          userId:
+            signedInUserId,
+          memberId:
+            memberAccountOwnerId,
+          memberIds:
+            memberAccountOwnerIds,
+          membership:
+            localMembership,
+        };
+      },
       [
-        currentMemberId,
-        currentLocalMemberId,
+        household?.id,
         memberAccountOwnerId,
         memberAccountOwnerIds,
         membership,
