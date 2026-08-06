@@ -33,6 +33,10 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   restore, and July-to-August partial settlement carryover passed.
 * Utilities paid provider bills now filter by selected payment month.
 * Utilities and Savings show the shared reporting month selector.
+* Household Members is now available to members as a read-only transparency
+  route while owner/admin sessions keep roster management controls.
+* Utility provider bills are included in cloud core snapshots for save, load,
+  and linked-browser restore.
 
 ---
 

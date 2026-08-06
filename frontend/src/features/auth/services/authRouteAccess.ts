@@ -28,6 +28,7 @@ export interface AuthRouteAccessResult {
 const settingsPath =
   "/app/settings";
 const memberTransparencyPaths = [
+  "/app/household-members",
   "/app/transactions",
   "/app/utilities",
   "/app/settlements",

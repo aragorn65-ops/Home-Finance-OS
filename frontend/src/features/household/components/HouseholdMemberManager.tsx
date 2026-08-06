@@ -29,6 +29,10 @@ import {
   getAuthBackendAdapter,
 } from "../../auth/services";
 
+interface HouseholdMemberManagerProps {
+  isReadOnly?: boolean;
+}
+
 type MemberDialogMode =
   | "create"
   | "edit"
@@ -67,7 +71,9 @@ function getRoleLabel(
   return "Member";
 }
 
-export default function HouseholdMemberManager() {
+export default function HouseholdMemberManager({
+  isReadOnly = false,
+}: HouseholdMemberManagerProps) {
   const household =
     loadHousehold();
 
@@ -280,6 +286,7 @@ export default function HouseholdMemberManager() {
           <button
             type="button"
             onClick={handleAddMember}
+            hidden={isReadOnly}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             Add Member
@@ -355,6 +362,7 @@ export default function HouseholdMemberManager() {
                   </div>
                 </div>
 
+                {!isReadOnly && (
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -399,6 +407,7 @@ export default function HouseholdMemberManager() {
                     </>
                   )}
                 </div>
+                )}
               </div>
             ))}
           </div>

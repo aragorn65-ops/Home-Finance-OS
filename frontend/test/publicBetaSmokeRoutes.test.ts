@@ -99,6 +99,7 @@ test(
     const memberAllowedRoutes =
       new Set([
         "/app",
+        "/app/household-members",
         "/app/transactions",
         "/app/utilities",
         "/app/settlements",

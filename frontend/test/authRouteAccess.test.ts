@@ -111,6 +111,14 @@ test("auth route access allows member transparency routes", () => {
         "signed-in",
       role: "member",
     });
+  const accounts =
+    evaluateAuthRouteAccess({
+      authEnabled: true,
+      pathname: "/app/accounts",
+      sessionStatus:
+        "signed-in",
+      role: "member",
+    });
 
   assert.equal(
     transactions.isAllowed,
@@ -118,6 +126,10 @@ test("auth route access allows member transparency routes", () => {
   );
   assert.equal(
     householdMembers.isAllowed,
+    true
+  );
+  assert.equal(
+    accounts.isAllowed,
     false
   );
 });

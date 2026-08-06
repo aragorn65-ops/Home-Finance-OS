@@ -26,9 +26,13 @@ Supabase validation before inviting public beta testers.
 * Signed-out route blocking and limited member route access:
   `frontend/test/authRouteAccess.test.ts` and
   `frontend/test/publicBetaSmokeRoutes.test.ts`
-* Member route access remains settlement-only across the public beta smoke
-  route manifest:
+* Member route access remains limited to transparency routes across the public
+  beta smoke route manifest:
   `frontend/test/publicBetaSmokeRoutes.test.ts`
+* Household Members is available as a member transparency route, while
+  management controls remain owner/admin-only:
+  `frontend/src/features/auth/services/authRouteAccess.ts` and
+  `frontend/src/features/household/pages/HouseholdMembersPage.tsx`
 * Single-household authenticated-link conflicts are blocked before local link
   state can be overwritten:
   `frontend/test/householdStorage.test.ts`
@@ -51,8 +55,12 @@ Supabase validation before inviting public beta testers.
 * Account, transaction, and expense-allocation cloud snapshot contract:
   `frontend/test/remoteCoreSnapshotPersistence.test.ts` and
   `frontend/test/coreSnapshotSync.test.ts`
-* Public beta cloud persistence scope is limited to household metadata,
-  account/transaction core snapshots, and settlement records:
+* Utility provider bills are included in the cloud core snapshot contract:
+  `frontend/test/coreSnapshotSync.test.ts`,
+  `frontend/test/supabaseAuthBackendAdapter.test.ts`, and
+  `frontend/test/supabaseSchemaSql.test.ts`
+* Public beta cloud persistence scope covers household metadata, core finance
+  snapshots, utility provider bills, and settlement records:
   `docs/sprint/Sprint-102.md` and
   `docs/qa/Public-Beta-Launch-Checklist.md`
 * Cloud core snapshot write failures surface instead of being reported as saved:

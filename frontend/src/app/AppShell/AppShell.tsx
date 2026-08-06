@@ -620,6 +620,7 @@ function isMemberTransparencyPath(
   pathname: string
 ): boolean {
   const allowedPaths = [
+    "/app/household-members",
     "/app/transactions",
     "/app/utilities",
     "/app/settlements",

@@ -118,6 +118,8 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
 * [x] Added a Household Members invite action backed by Supabase member-linking
   RPC support so limited member settlement-entry smoke testing has a production
   UI path.
+* [x] Opened Household Members as a member transparency route while keeping
+  roster management actions limited to owner/admin sessions.
 * [ ] Pending Sprint 104 live validation.
 
 ---
