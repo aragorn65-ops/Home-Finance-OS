@@ -33,6 +33,8 @@ interface AccountFormProps {
   members: HouseholdMember[];
   baseCurrency?: string;
   isEditing?: boolean;
+  lockedOwnerMemberId?: string;
+  lockedVisibility?: AccountVisibility;
   onChange: (
     value: AccountFormModel
   ) => void;
@@ -115,6 +117,8 @@ export default function AccountForm({
   members,
   baseCurrency = "PHP",
   isEditing = false,
+  lockedOwnerMemberId,
+  lockedVisibility,
   onChange,
 }: AccountFormProps) {
   const normalizedBaseCurrency =
@@ -257,8 +261,19 @@ export default function AccountForm({
     <div className="space-y-4">
       <Select
         label="Account Owner"
-        value={value.ownerMemberId}
+        value={
+          lockedOwnerMemberId ??
+          value.ownerMemberId
+        }
         options={memberOptions}
+        disabled={
+          Boolean(lockedOwnerMemberId)
+        }
+        helperText={
+          lockedOwnerMemberId
+            ? "Members can only manage accounts they own."
+            : undefined
+        }
         onChange={(event) =>
           updateField(
             "ownerMemberId",
@@ -269,8 +284,19 @@ export default function AccountForm({
 
       <Select
         label="Visibility"
-        value={value.visibility}
+        value={
+          lockedVisibility ??
+          value.visibility
+        }
         options={accountVisibilities}
+        disabled={
+          Boolean(lockedVisibility)
+        }
+        helperText={
+          lockedVisibility === "private"
+            ? "Member accounts are personal by default."
+            : undefined
+        }
         onChange={(event) =>
           updateField(
             "visibility",

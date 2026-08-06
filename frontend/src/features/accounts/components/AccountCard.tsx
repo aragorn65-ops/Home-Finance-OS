@@ -4,15 +4,46 @@ import type { Account } from "../models/Account";
 
 interface AccountCardProps {
   account: Account;
+  isRedacted?: boolean;
   onEdit?: (account: Account) => void;
   onDelete?: (account: Account) => void;
 }
 
 export default function AccountCard({
   account,
+  isRedacted = false,
   onEdit,
   onDelete,
 }: AccountCardProps) {
+  if (isRedacted) {
+    return (
+      <div className="rounded-lg border p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">
+              Personal account
+            </h3>
+
+            <p className="text-sm text-gray-500">
+              Details are visible only to the owner.
+            </p>
+          </div>
+
+          {onDelete && (
+            <Button
+              variant="danger"
+              onClick={() =>
+                onDelete(account)
+              }
+            >
+              Delete
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const baseCurrency =
     account.baseCurrency ??
     account.currency;

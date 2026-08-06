@@ -82,6 +82,8 @@ function createAccountUploadRecord(
   return {
     id:
       account.id,
+    ownerMemberId:
+      account.ownerMemberId,
     visibility:
       account.visibility,
     name:

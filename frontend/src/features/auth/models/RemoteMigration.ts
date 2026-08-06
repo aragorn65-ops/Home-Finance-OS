@@ -75,7 +75,6 @@ export interface RemoteMigrationAccountUploadRecord
   extends Omit<
     Account,
     | "householdId"
-    | "ownerMemberId"
     | "paymentDueDate"
     | "exchangeRateEffectiveDate"
     | "createdAt"

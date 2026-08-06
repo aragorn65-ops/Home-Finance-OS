@@ -104,23 +104,61 @@ export function canAccessAccount(
   account: Account,
   action: FinancialRecordAction
 ): boolean {
-  return canAccessTenantRecord(
-    context,
-    {
-      id: account.id,
-      householdId:
-        account.householdId,
-      visibility:
-        account.visibility,
-      ownerMemberId:
-        account.ownerMemberId,
-      createdAt:
-        account.createdAt,
-      updatedAt:
-        account.updatedAt,
-    },
-    action
-  );
+  const membership =
+    context.membership;
+
+  if (
+    !membership ||
+    membership.status !== "active" ||
+    membership.householdId !==
+      account.householdId
+  ) {
+    return false;
+  }
+
+  const isPersonalAccount =
+    account.visibility === "private";
+  const isOwnPersonalAccount =
+    isPersonalAccount &&
+    account.ownerMemberId === context.memberId;
+
+  if (
+    membership.role === "owner" ||
+    membership.role === "admin"
+  ) {
+    if (
+      isPersonalAccount &&
+      !isOwnPersonalAccount
+    ) {
+      return action === "delete";
+    }
+
+    return true;
+  }
+
+  if (membership.role === "viewer") {
+    return (
+      action === "view" &&
+      (
+        !isPersonalAccount ||
+        isOwnPersonalAccount
+      )
+    );
+  }
+
+  if (membership.role !== "member") {
+    return false;
+  }
+
+  if (!isPersonalAccount) {
+    return action === "view";
+  }
+
+  if (!isOwnPersonalAccount) {
+    return false;
+  }
+
+  return true;
 }
 
 export function canAccessSettlementRecord(

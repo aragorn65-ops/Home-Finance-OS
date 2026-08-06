@@ -2596,7 +2596,7 @@ begin
   select
     target_household_id,
     account_record.id,
-    current_member_id,
+    coalesce(owner_member.id, current_member_id),
     account_record.name,
     nullif(account_record.institution, ''),
     account_record."accountClass",
@@ -2623,6 +2623,7 @@ begin
     current_user_id
   from jsonb_to_recordset(coalesce(core_accounts, '[]'::jsonb)) as account_record(
     id text,
+    "ownerMemberId" text,
     visibility text,
     name text,
     institution text,
@@ -2647,6 +2648,12 @@ begin
     "createdAt" text,
     "updatedAt" text
   )
+  left join public.household_members owner_member
+    on owner_member.household_id = target_household_id
+   and (
+        owner_member.id::text = nullif(account_record."ownerMemberId", '')
+        or owner_member.local_record_id = nullif(account_record."ownerMemberId", '')
+   )
   on conflict (household_id, local_record_id)
   where local_record_id is not null
   do update set

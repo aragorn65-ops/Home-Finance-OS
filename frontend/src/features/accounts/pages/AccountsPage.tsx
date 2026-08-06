@@ -16,6 +16,7 @@ import AccountSummary from "../components/AccountSummary";
 
 import useAccounts from "../hooks/useAccounts";
 import {
+  canAccessAccount,
   useHouseholdMembership,
 } from "../../auth";
 
@@ -197,12 +198,13 @@ export default function AccountsPage() {
   } = useHouseholdMembership(
     authHouseholdId
   );
-  const isReadOnlyMember =
-    session.status === "signed-in" &&
-    (
-      membership?.role === "member" ||
-      membership?.role === "viewer"
-    );
+  const isSignedIn =
+    session.status === "signed-in";
+  const currentMemberId =
+    membership?.memberId ?? "";
+  const isMemberRole =
+    isSignedIn &&
+    membership?.role === "member";
 
   const members =
     HouseholdMemberService.getActiveMembers();
@@ -216,27 +218,111 @@ export default function AccountsPage() {
 
   const baseCurrency =
     household?.currency ?? "PHP";
+  const authorizationContext =
+    useMemo(
+      () => ({
+        userId:
+          session.status === "signed-in"
+            ? session.user?.id
+            : undefined,
+        memberId:
+          currentMemberId,
+        membership:
+          membership ?? undefined,
+      }),
+      [
+        currentMemberId,
+        membership,
+        session,
+      ]
+    );
+  const canCreateAccount =
+    !isSignedIn ||
+    (
+      membership?.status === "active" &&
+      membership.role !== "viewer"
+    );
+  const canViewAccountDetails = (
+    account: Account
+  ) => {
+    if (!isSignedIn) {
+      return true;
+    }
+
+    return canAccessAccount(
+      authorizationContext,
+      account,
+      "view"
+    );
+  };
+  const canEditAccount = (
+    account: Account
+  ) => {
+    if (!isSignedIn) {
+      return true;
+    }
+
+    return canAccessAccount(
+      authorizationContext,
+      account,
+      "update"
+    );
+  };
+  const canDeleteAccount = (
+    account: Account
+  ) => {
+    if (!isSignedIn) {
+      return true;
+    }
+
+    return canAccessAccount(
+      authorizationContext,
+      account,
+      "delete"
+    );
+  };
   const visibleAccounts =
     useMemo(() => {
-      if (!isReadOnlyMember) {
+      if (!isSignedIn) {
         return accounts;
       }
 
-      return accounts.filter((account) =>
-        isAccountVisibleForMember(
-          account,
-          membership?.memberId ?? ""
-        )
+      if (
+        membership?.role === "owner" ||
+        membership?.role === "admin"
+      ) {
+        return accounts;
+      }
+
+      return accounts.filter(
+        (account) =>
+          isAccountVisibleForMember(
+            account,
+            currentMemberId
+          )
       );
     }, [
       accounts,
-      isReadOnlyMember,
-      membership?.memberId,
+      currentMemberId,
+      isSignedIn,
+      membership?.role,
     ]);
+  const summaryAccounts =
+    useMemo(
+      () =>
+        visibleAccounts.filter(
+          canViewAccountDetails
+        ),
+      [
+        authorizationContext,
+        isSignedIn,
+        visibleAccounts,
+      ]
+    );
   const visibleTotalBalance =
     useMemo(
       () =>
-        visibleAccounts.reduce(
+        summaryAccounts.reduce(
           (total, account) =>
             total +
             (
@@ -245,7 +331,7 @@ export default function AccountsPage() {
             ),
           0
         ),
-      [visibleAccounts]
+      [summaryAccounts]
     );
 
   const [isDialogOpen, setIsDialogOpen] =
@@ -338,10 +424,19 @@ export default function AccountsPage() {
     setEditingAccount(null);
 
     setForm(
-      createDefaultForm(
-        defaultOwnerMemberId,
-        baseCurrency
-      )
+      isMemberRole && currentMemberId
+        ? {
+            ...createDefaultForm(
+              currentMemberId,
+              baseCurrency
+            ),
+            visibility:
+              "private",
+          }
+        : createDefaultForm(
+            defaultOwnerMemberId,
+            baseCurrency
+          )
     );
 
     setSaveError("");
@@ -353,6 +448,10 @@ export default function AccountsPage() {
   const handleEditAccount = (
     account: Account
   ) => {
+    if (!canEditAccount(account)) {
+      return;
+    }
+
     setEditingAccount(account);
 
     setForm(
@@ -368,6 +467,10 @@ export default function AccountsPage() {
   const handleDeleteRequest = (
     account: Account
   ) => {
+    if (!canDeleteAccount(account)) {
+      return;
+    }
+
     setDeleteError("");
     setDeletingAccount(account);
   };
@@ -388,9 +491,26 @@ export default function AccountsPage() {
 
     setIsDeletingAccount(true);
 
+    if (
+      !canDeleteAccount(
+        deletingAccount
+      )
+    ) {
+      setDeleteError(
+        "You do not have permission to delete this account."
+      );
+      setIsDeletingAccount(false);
+
+      return;
+    }
+
     const result =
       await remove(
-        deletingAccount.id
+        deletingAccount.id,
+        {
+          persistRemote:
+            !isMemberRole,
+        }
       );
 
     if (!result.success) {
@@ -449,17 +569,91 @@ export default function AccountsPage() {
       return;
     }
 
+    const normalizedForm =
+      isMemberRole && currentMemberId
+        ? {
+            ...form,
+            ownerMemberId:
+              currentMemberId,
+            visibility:
+              "private" as const,
+          }
+        : form;
+
+    if (!canCreateAccount) {
+      const nextErrors = {
+        general:
+          "You do not have permission to add or edit accounts.",
+      };
+
+      setSaveError(nextErrors.general);
+      showValidationAlert(
+        nextErrors
+      );
+
+      return;
+    }
+
+    if (
+      editingAccount &&
+      !canEditAccount(
+        editingAccount
+      )
+    ) {
+      const nextErrors = {
+        general:
+          "You do not have permission to edit this account.",
+      };
+
+      setSaveError(nextErrors.general);
+      showValidationAlert(
+        nextErrors
+      );
+
+      return;
+    }
+
+    if (
+      isMemberRole &&
+      (
+        normalizedForm.ownerMemberId !==
+          currentMemberId ||
+        normalizedForm.visibility !==
+          "private"
+      )
+    ) {
+      const nextErrors = {
+        general:
+          "Members can only save personal accounts they own.",
+      };
+
+      setSaveError(nextErrors.general);
+      showValidationAlert(
+        nextErrors
+      );
+
+      return;
+    }
+
     setIsSavingAccount(true);
 
     const result =
       editingAccount
         ? await update(
             editingAccount.id,
-            form
+            normalizedForm,
+            {
+              persistRemote:
+                !isMemberRole,
+            }
           )
         : await create(
-            form,
-            household.id
+            normalizedForm,
+            household.id,
+            {
+              persistRemote:
+                !isMemberRole,
+            }
           );
 
     if (!result.success) {
@@ -488,19 +682,19 @@ export default function AccountsPage() {
     <>
       <AccountToolbar
         onAddAccount={
-          isReadOnlyMember
-            ? undefined
-            : handleAddAccount
+          canCreateAccount
+            ? handleAddAccount
+            : undefined
         }
       />
 
       <div className="space-y-6">
         <AccountSummary
           totalAccounts={
-            visibleAccounts.length
+            summaryAccounts.length
           }
           totalBalance={
-            isReadOnlyMember
+            isSignedIn
               ? visibleTotalBalance
               : totalBalance
           }
@@ -509,16 +703,13 @@ export default function AccountsPage() {
 
         <AccountList
           accounts={visibleAccounts}
-          onEdit={
-            isReadOnlyMember
-              ? undefined
-              : handleEditAccount
+          canViewDetails={
+            canViewAccountDetails
           }
-          onDelete={
-            isReadOnlyMember
-              ? undefined
-              : handleDeleteRequest
-          }
+          canEdit={canEditAccount}
+          canDelete={canDeleteAccount}
+          onEdit={handleEditAccount}
+          onDelete={handleDeleteRequest}
         />
       </div>
 
@@ -577,8 +768,29 @@ export default function AccountsPage() {
             isEditing={
               editingAccount !== null
             }
+            lockedOwnerMemberId={
+              isMemberRole
+                ? currentMemberId
+                : undefined
+            }
+            lockedVisibility={
+              isMemberRole
+                ? "private"
+                : undefined
+            }
             onChange={(nextForm) => {
-              setForm(nextForm);
+              setForm(
+                isMemberRole &&
+                  currentMemberId
+                  ? {
+                      ...nextForm,
+                      ownerMemberId:
+                        currentMemberId,
+                      visibility:
+                        "private",
+                    }
+                  : nextForm
+              );
               setSaveError("");
               setIsValidationAlertOpen(
                 false
@@ -596,7 +808,11 @@ export default function AccountsPage() {
         message={
           deleteError ||
           (deletingAccount
-            ? `Are you sure you want to delete "${deletingAccount.name}"?`
+            ? canViewAccountDetails(
+                deletingAccount
+              )
+              ? `Are you sure you want to delete "${deletingAccount.name}"?`
+              : "Are you sure you want to delete this personal account? Details are visible only to the owner."
             : "")
         }
         confirmLabel="Delete"

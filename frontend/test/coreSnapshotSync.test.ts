@@ -331,6 +331,10 @@ test("creates a remote core snapshot input from local household records", () => 
     "Operating Cash"
   );
   assert.equal(
+    input.accounts[0]?.ownerMemberId,
+    "member-1"
+  );
+  assert.equal(
     input.transactions[0]
       ?.transactionDate,
     "2026-07-30"
@@ -920,6 +924,63 @@ test("applies a remote core snapshot to the local household", () => {
       .toISOString()
       .slice(0, 10),
     "2026-07-29"
+  );
+});
+
+test("restores account owner ids from a remote core snapshot", () => {
+  let replacedAccounts: Account[] = [];
+  const targetRemoteHouseholdId =
+    "remote-household-core-owner-1";
+
+  applyRemoteCoreSnapshotToLocalHousehold({
+    snapshot: {
+      householdId:
+        targetRemoteHouseholdId,
+      accounts: [
+        {
+          ...createRemoteCoreSnapshotInput({
+            householdId:
+              targetRemoteHouseholdId,
+            localHouseholdId:
+              householdId,
+            accounts: [
+              {
+                ...account,
+                ownerMemberId:
+                  "member-personal-1",
+                visibility:
+                  "private",
+              },
+            ],
+            transactions: [],
+          }).accounts[0]!,
+        },
+      ],
+      transactions: [],
+    },
+    localHouseholdId:
+      householdId,
+    ownerMemberId:
+      "member-owner-1",
+    writer: {
+      replaceAccounts(
+        _targetHouseholdId,
+        accounts
+      ) {
+        replacedAccounts =
+          accounts;
+
+        return true;
+      },
+      replaceTransactions() {
+        return true;
+      },
+    },
+  });
+
+  assert.equal(
+    replacedAccounts[0]?.ownerMemberId,
+    "member-personal-1"
   );
 });
 

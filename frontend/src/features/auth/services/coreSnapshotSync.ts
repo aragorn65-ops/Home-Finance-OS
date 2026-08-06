@@ -337,6 +337,7 @@ export function applyRemoteCoreSnapshotToLocalHousehold(
         householdId:
           options.localHouseholdId,
         ownerMemberId:
+          account.ownerMemberId ??
           options.ownerMemberId,
         paymentDueDate:
           account.paymentDueDate

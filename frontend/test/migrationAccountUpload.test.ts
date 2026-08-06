@@ -85,6 +85,8 @@ test(
         {
           id:
             "account-1",
+          ownerMemberId:
+            "member-local-1",
           visibility:
             "household",
           name:

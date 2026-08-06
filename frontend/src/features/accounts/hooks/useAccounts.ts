@@ -29,6 +29,10 @@ import type { AccountForm } from "../models/AccountForm";
 
 import AccountService from "../services/AccountService";
 
+interface AccountMutationOptions {
+  persistRemote?: boolean;
+}
+
 function getErrorMessage(
   error: unknown
 ): string {
@@ -84,7 +88,8 @@ export default function useAccounts() {
    */
   const create = (
     form: AccountForm,
-    householdId: string
+    householdId: string,
+    options: AccountMutationOptions = {}
   ): Promise<OperationResult<Account>> => {
     const result =
       AccountService.create(
@@ -97,7 +102,8 @@ export default function useAccounts() {
     }
 
     return persistLinkedCoreSnapshot(
-      result
+      result,
+      options
     );
   };
 
@@ -109,7 +115,8 @@ export default function useAccounts() {
    */
   const update = (
     id: string,
-    form: AccountForm
+    form: AccountForm,
+    options: AccountMutationOptions = {}
   ): Promise<OperationResult<Account>> => {
     const result =
       AccountService.update(
@@ -122,7 +129,8 @@ export default function useAccounts() {
     }
 
     return persistLinkedCoreSnapshot(
-      result
+      result,
+      options
     );
   };
 
@@ -131,7 +139,8 @@ export default function useAccounts() {
    * local state after a successful operation.
    */
   const remove = (
-    id: string
+    id: string,
+    options: AccountMutationOptions = {}
   ): Promise<OperationResult<boolean>> => {
     const result =
       AccountService.delete(id);
@@ -141,15 +150,23 @@ export default function useAccounts() {
     }
 
     return persistLinkedCoreSnapshot(
-      result
+      result,
+      options
     );
   };
 
   const persistLinkedCoreSnapshot =
     async <T,>(
-      result: OperationResult<T>
+      result: OperationResult<T>,
+      options: AccountMutationOptions
     ): Promise<OperationResult<T>> => {
       if (!result.success) {
+        return result;
+      }
+
+      if (
+        options.persistRemote === false
+      ) {
         return result;
       }
 

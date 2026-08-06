@@ -280,7 +280,7 @@ test("member and viewer can only view household accounts", () => {
   );
 });
 
-test("personal accounts are visible only to the owning member", () => {
+test("member can manage only their own personal accounts", () => {
   assert.equal(
     canAccessAccount(
       createContext(
@@ -297,11 +297,82 @@ test("personal accounts are visible only to the owning member", () => {
     canAccessAccount(
       createContext(
         "member",
+        "member-1"
+      ),
+      personalAccount,
+      "update"
+    ),
+    true
+  );
+
+  assert.equal(
+    canAccessAccount(
+      createContext(
+        "member",
+        "member-1"
+      ),
+      personalAccount,
+      "delete"
+    ),
+    true
+  );
+
+  assert.equal(
+    canAccessAccount(
+      createContext(
+        "member",
         "member-2"
       ),
       personalAccount,
       "view"
     ),
     false
+  );
+
+  assert.equal(
+    canAccessAccount(
+      createContext(
+        "member",
+        "member-1"
+      ),
+      householdAccount,
+      "update"
+    ),
+    false
+  );
+});
+
+test("admin can delete but not view another member personal account", () => {
+  const adminContext =
+    createContext(
+      "admin",
+      "member-admin"
+    );
+
+  assert.equal(
+    canAccessAccount(
+      adminContext,
+      personalAccount,
+      "view"
+    ),
+    false
+  );
+
+  assert.equal(
+    canAccessAccount(
+      adminContext,
+      personalAccount,
+      "update"
+    ),
+    false
+  );
+
+  assert.equal(
+    canAccessAccount(
+      adminContext,
+      personalAccount,
+      "delete"
+    ),
+    true
   );
 });

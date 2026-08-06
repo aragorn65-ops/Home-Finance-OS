@@ -5,12 +5,18 @@ import AccountCard from "./AccountCard";
 
 interface AccountListProps {
   accounts: Account[];
+  canViewDetails?: (account: Account) => boolean;
+  canEdit?: (account: Account) => boolean;
+  canDelete?: (account: Account) => boolean;
   onEdit?: (account: Account) => void;
   onDelete?: (account: Account) => void;
 }
 
 export default function AccountList({
   accounts,
+  canViewDetails,
+  canEdit,
+  canDelete,
   onEdit,
   onDelete,
 }: AccountListProps) {
@@ -29,8 +35,31 @@ export default function AccountList({
         <AccountCard
           key={account.id}
           account={account}
-          onEdit={onEdit}
-          onDelete={onDelete}
+          isRedacted={
+            canViewDetails
+              ? !canViewDetails(account)
+              : false
+          }
+          onEdit={
+            onEdit &&
+            (
+              canEdit
+                ? canEdit(account)
+                : true
+            )
+              ? onEdit
+              : undefined
+          }
+          onDelete={
+            onDelete &&
+            (
+              canDelete
+                ? canDelete(account)
+                : true
+            )
+              ? onDelete
+              : undefined
+          }
         />
       ))}
     </div>

@@ -198,6 +198,33 @@ test("Supabase core snapshot RPC preserves transaction member ids", () => {
   );
 });
 
+test("Supabase core snapshot RPC preserves account owner member ids", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /"ownerMemberId" text,\s*visibility text/
+  );
+  assert.match(
+    schemaSql,
+    /left join public\.household_members owner_member[\s\S]+owner_member\.local_record_id = nullif\(account_record\."ownerMemberId", ''\)/
+  );
+  assert.match(
+    schemaSql,
+    /coalesce\(owner_member\.id, current_member_id\)/
+  );
+});
+
 test("Supabase core snapshot load RPC drops old return type before recreate", () => {
   const schemaSql =
     readFileSync(
