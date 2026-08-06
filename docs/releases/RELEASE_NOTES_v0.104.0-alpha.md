@@ -20,6 +20,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   recorded payment history and the remaining unsettled balance.
 * Keep Utilities provider payment history scoped to the selected payment month
   so earlier payment records do not appear in later-month views.
+* Retain the shared reporting month selector on Utilities and Savings during
+  production route validation.
 * Record production evidence before any public beta tester invitation.
 
 ---
@@ -30,6 +32,7 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 * Production Supabase cutover, Auth Diagnostics, admin auth, linked refresh
   restore, and July-to-August partial settlement carryover passed.
 * Utilities paid provider bills now filter by selected payment month.
+* Utilities and Savings show the shared reporting month selector.
 
 ---
 
