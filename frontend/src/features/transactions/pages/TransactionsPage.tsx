@@ -39,6 +39,7 @@ import TransactionToolbar from "../components/TransactionToolbar";
 import useTransactions from "../hooks/useTransactions";
 
 import TransactionService from "../services/TransactionService";
+import resolveTransactionMemberId from "../services/transactionMemberResolution";
 
 import type { AllocationPaymentStatus } from "../models/ExpenseAllocation";
 import type { Transaction } from "../models/Transaction";
@@ -70,6 +71,12 @@ function mapTransactionToForm(
           transaction.id
         )
       : [];
+
+  const transactionMemberId =
+    resolveTransactionMemberId(
+      transaction,
+      storedAllocations
+    );
 
   return {
     type:
@@ -109,9 +116,7 @@ function mapTransactionToForm(
       transaction.exchangeRateProvider ?? "",
 
     paidByMemberId:
-      transaction.paidByMemberId ??
-      transaction.createdByMemberId ??
-      "",
+      transactionMemberId,
 
     visibility:
       transaction.visibility ??
@@ -256,7 +261,7 @@ export default function TransactionsPage() {
   const members =
     household
       ? HouseholdMemberService
-          .getActiveMembers()
+          .getMembers()
           .filter(
             (member) =>
               member.householdId ===

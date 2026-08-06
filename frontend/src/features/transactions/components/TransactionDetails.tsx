@@ -3,6 +3,7 @@ import type { Transaction } from "../models/Transaction";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
 import TransactionService from "../services/TransactionService";
+import resolveTransactionMemberId from "../services/transactionMemberResolution";
 import formatCurrency from "../../../shared/utils/formatCurrency";
 import openAttachmentPreview, {
   hasAttachmentPreviewData,
@@ -53,6 +54,19 @@ export default function TransactionDetails({
   const formattedTransactionDate =
     transaction.transactionDate
       .toLocaleDateString();
+
+  const transactionMemberId =
+    resolveTransactionMemberId(
+      transaction,
+      allocations
+    );
+
+  const transactionMember =
+    transactionMemberId
+      ? HouseholdMemberService.getMemberById(
+          transactionMemberId
+        )
+      : undefined;
 
   const showEnteredIncome =
     transaction.type === "income" &&
@@ -113,6 +127,19 @@ export default function TransactionDetails({
             {normalizeTransactionCategory(
               transaction.category
             )}
+          </dd>
+        </div>
+
+        <div>
+          <dt className="text-sm font-medium text-muted-foreground">
+            {transaction.type === "expense"
+              ? "Paid By"
+              : "Recorded By"}
+          </dt>
+
+          <dd className="mt-1 text-sm text-foreground">
+            {transactionMember?.displayName ??
+              "Not recorded"}
           </dd>
         </div>
 

@@ -847,6 +847,28 @@ export default function TransactionForm({
         member.isActive
     );
 
+  const selectedMember =
+    initialValues?.paidByMemberId
+      ? members.find(
+          (member) =>
+            member.id ===
+            initialValues.paidByMemberId
+        )
+      : undefined;
+
+  const memberOptions =
+    selectedMember &&
+    !activeMembers.some(
+      (member) =>
+        member.id ===
+        selectedMember.id
+    )
+      ? [
+          selectedMember,
+          ...activeMembers,
+        ]
+      : activeMembers;
+
   const [form, setForm] =
     useState<TransactionFormData>(
       initialValues ??
@@ -2473,13 +2495,16 @@ export default function TransactionForm({
               Select household member
             </option>
 
-            {activeMembers.map(
+            {memberOptions.map(
               (member) => (
                 <option
                   key={member.id}
                   value={member.id}
                 >
                   {member.displayName}
+                  {member.isActive
+                    ? ""
+                    : " (inactive)"}
                 </option>
               )
             )}
