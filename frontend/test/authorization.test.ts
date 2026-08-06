@@ -378,6 +378,36 @@ test("member can manage only their own personal accounts", () => {
   );
 });
 
+test("member can manage personal accounts with a local member alias", () => {
+  const context =
+    createContext(
+      "member",
+      "remote-member-1"
+    );
+  context.memberIds = [
+    "remote-member-1",
+    "member-1",
+  ];
+
+  assert.equal(
+    canAccessAccount(
+      context,
+      personalAccount,
+      "view"
+    ),
+    true
+  );
+
+  assert.equal(
+    canAccessAccount(
+      context,
+      personalAccount,
+      "update"
+    ),
+    true
+  );
+});
+
 test("admin can delete but not view another member personal account", () => {
   const adminContext =
     createContext(
