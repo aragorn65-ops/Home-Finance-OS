@@ -28,6 +28,7 @@ import {
 import {
   AuthDiagnosticsPanel,
   getAuthBackendAdapter,
+  useHouseholdMembership,
 } from "../../auth";
 import {
   isAuthFeatureEnabled,
@@ -97,6 +98,25 @@ export default function SettingsPage() {
 
   const household =
     loadHousehold();
+  const authHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId ??
+    household?.id ??
+    "";
+  const {
+    session,
+    membership,
+  } = useHouseholdMembership(
+    authHouseholdId
+  );
+  const isLimitedMemberSettings =
+    session.status === "signed-in" &&
+    (
+      membership?.role === "member" ||
+      membership?.role === "viewer"
+    );
+  const canManageHouseholdSettings =
+    !isLimitedMemberSettings;
 
   const backupFileInputRef =
     useRef<HTMLInputElement | null>(
@@ -1104,7 +1124,11 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        subtitle="Configure and manage your household application data"
+        subtitle={
+          isLimitedMemberSettings
+            ? "Manage local display and app lock settings"
+            : "Configure and manage your household application data"
+        }
       />
 
       <div className="space-y-6">
@@ -1112,12 +1136,15 @@ export default function SettingsPage() {
           <div className="space-y-5">
             <div className="space-y-2">
               <h2 className="text-lg font-semibold text-foreground">
-                Household Preferences
+                {canManageHouseholdSettings
+                  ? "Household Preferences"
+                  : "Display Preferences"}
               </h2>
 
               <p className="text-sm text-muted-foreground">
-                Configure local display preferences for
-                this browser.
+                {canManageHouseholdSettings
+                  ? "Set household defaults and local display preferences."
+                  : "Configure local display preferences for this browser."}
               </p>
             </div>
 
@@ -1159,6 +1186,7 @@ export default function SettingsPage() {
               </p>
             </div>
 
+            {canManageHouseholdSettings && (
             <div className="settings-preferences-grid">
               <div className="settings-preferences-field settings-preferences-field--wide">
                 <label
@@ -1430,7 +1458,9 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+            )}
 
+            {canManageHouseholdSettings && (
             <div className="grid gap-2">
               <div className="settings-preferences-actions">
                 <Button
@@ -1464,6 +1494,7 @@ export default function SettingsPage() {
                 </p>
               )}
             </div>
+            )}
           </div>
         </Card>
 
@@ -1700,10 +1731,13 @@ export default function SettingsPage() {
           </div>
         </Card>
 
+        {canManageHouseholdSettings && (
         <Card>
           <AuthDiagnosticsPanel />
         </Card>
+        )}
 
+        {canManageHouseholdSettings && (
         <Card>
           <div className="space-y-5">
             <div>
@@ -2089,7 +2123,9 @@ export default function SettingsPage() {
             </div>
           </div>
         </Card>
+        )}
 
+        {canManageHouseholdSettings && (
         <Card>
           <div className="space-y-5">
             <div>
@@ -2161,7 +2197,9 @@ export default function SettingsPage() {
             )}
           </div>
         </Card>
+        )}
 
+        {canManageHouseholdSettings && (
         <Card>
           <div className="space-y-5">
             <div>
@@ -2238,6 +2276,7 @@ export default function SettingsPage() {
             )}
           </div>
         </Card>
+        )}
       </div>
     </>
   );

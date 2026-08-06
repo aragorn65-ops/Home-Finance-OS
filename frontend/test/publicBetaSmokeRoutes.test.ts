@@ -94,7 +94,7 @@ test(
 );
 
 test(
-  "public beta smoke routes keep member access settlement-only",
+  "public beta smoke routes keep member access to settlements and settings",
   () => {
     const memberAllowedRoutes =
       new Set([
