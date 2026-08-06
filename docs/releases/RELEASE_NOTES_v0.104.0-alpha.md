@@ -18,13 +18,18 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   checks.
 * Prove the July-to-August partial settlement workflow preserves both the
   recorded payment history and the remaining unsettled balance.
+* Keep Utilities provider payment history scoped to the selected payment month
+  so earlier payment records do not appear in later-month views.
 * Record production evidence before any public beta tester invitation.
 
 ---
 
 ## Verified
 
-Pending Sprint 104 implementation and live validation.
+* Local verification passed with 166 tests.
+* Production Supabase cutover, Auth Diagnostics, admin auth, linked refresh
+  restore, and July-to-August partial settlement carryover passed.
+* Utilities paid provider bills now filter by selected payment month.
 
 ---
 

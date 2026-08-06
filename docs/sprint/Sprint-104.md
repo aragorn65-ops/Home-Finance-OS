@@ -83,6 +83,8 @@ surfaced during Sprint 103 closeout:
   remote snapshot has transactions but no allocation rows.
 * Partial settlements must preserve the unpaid remainder on the next selected
   allocation.
+* Utilities payment history must stay scoped to the selected payment month so a
+  July payment does not appear in August unless it was actually paid in August.
 
 Use `docs/qa/Sprint-104-Supabase-Cutover.md` for the schema application and
 verification queries before running deployed smoke checks.
@@ -106,6 +108,9 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
   sign-out, session refresh, and expired-session recovery validation.
 * [x] Verified production admin sign-in, signed-out route blocking, session
   refresh, and expired-session recovery behavior.
+* [x] Filtered Utilities provider payment history by selected month and added
+  regression coverage so July paid provider bills do not appear while August
+  is selected.
 * [ ] Pending Sprint 104 live validation.
 
 ---
