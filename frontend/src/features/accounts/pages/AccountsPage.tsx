@@ -210,11 +210,14 @@ export default function AccountsPage() {
     HouseholdMemberService.getActiveMembers();
 
   const defaultOwnerMemberId =
-    HouseholdMemberService
-      .getOwnerMember()
-      ?.id ??
-    members[0]?.id ??
-    "";
+    currentMemberId ||
+    (
+      HouseholdMemberService
+        .getOwnerMember()
+        ?.id ??
+      members[0]?.id ??
+      ""
+    );
 
   const baseCurrency =
     household?.currency ?? "PHP";
