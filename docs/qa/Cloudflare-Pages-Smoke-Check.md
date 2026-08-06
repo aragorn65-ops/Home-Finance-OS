@@ -140,15 +140,17 @@ metadata-only attachments remain understandable after refresh.
 ## Member Transparency And Settlement Access Check
 
 1. Sign in with a limited member account.
-2. Confirm Transactions, Utilities, Settlements, Savings, Analytics, Help, and
-   Household Members open for review.
+2. Confirm Accounts, Transactions, Utilities, Settlements, Savings, Analytics,
+   Help, and Household Members open for review.
 3. Confirm transaction, utility, savings, backup, household configuration, and
    migration write paths are unavailable.
-4. Confirm Settings shows local display/app-lock controls and Auth
+4. Confirm Accounts shows household accounts plus the signed-in member's own
+   personal accounts, without Add, Edit, or Delete controls.
+5. Confirm Settings shows local display/app-lock controls and Auth
    Diagnostics without household backup/reset/preference management controls.
-5. Add a settlement record where the member is the payer or receiver.
-6. Confirm the settlement persists to the cloud-backed store.
-7. Sign in as admin and review, edit, then delete the member-submitted
+6. Add a settlement record where the member is the payer or receiver.
+7. Confirm the settlement persists to the cloud-backed store.
+8. Sign in as admin and review, edit, then delete the member-submitted
    settlement.
 
 Expected result: limited member access can review shared household records,

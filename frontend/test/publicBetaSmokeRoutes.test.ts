@@ -100,6 +100,7 @@ test(
       new Set([
         "/app",
         "/app/household-members",
+        "/app/accounts",
         "/app/transactions",
         "/app/utilities",
         "/app/settlements",
@@ -142,6 +143,7 @@ test(
       new Set([
         "/app",
         "/app/household-members",
+        "/app/accounts",
         "/app/transactions",
         "/app/utilities",
         "/app/settlements",

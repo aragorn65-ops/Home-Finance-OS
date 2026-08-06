@@ -126,6 +126,9 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
 * [x] Clarified personal account creation and payment selectors so household
   accounts remain available to selected payers while personal accounts appear
   only for their owner.
+* [x] Opened Accounts as a read-only member transparency route while keeping
+  personal accounts visible only to the owning member and keeping account
+  management controls owner/admin-only.
 * [ ] Pending Sprint 104 live validation.
 
 ---

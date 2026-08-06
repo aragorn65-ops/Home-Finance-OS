@@ -29,6 +29,7 @@ const settingsPath =
   "/app/settings";
 const memberTransparencyPaths = [
   "/app/household-members",
+  "/app/accounts",
   "/app/transactions",
   "/app/utilities",
   "/app/settlements",

@@ -42,6 +42,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   and linked-browser restore.
 * Personal accounts are labeled as owner-only in account setup and appear in
   payment account selectors only for the selected owning member.
+* Accounts is available to members/viewers as a read-only transparency page;
+  personal accounts remain visible only to their owning member.
 
 ---
 

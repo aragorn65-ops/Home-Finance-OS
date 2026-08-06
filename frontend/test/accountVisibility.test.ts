@@ -43,6 +43,19 @@ test("account visibility limits personal accounts to their owner", () => {
   );
 });
 
+test("account visibility hides personal accounts without a member id", () => {
+  assert.equal(
+    isAccountVisibleForMember(
+      {
+        ownerMemberId: "member-owner",
+        visibility: "private",
+      },
+      ""
+    ),
+    false
+  );
+});
+
 test("account visibility labels private accounts as personal", () => {
   assert.equal(
     getAccountVisibilityLabel({

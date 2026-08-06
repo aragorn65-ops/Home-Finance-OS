@@ -51,9 +51,9 @@ https://home-finance-os.pages.dev
 * [ ] A signed-in member cannot create, edit, or delete accounts, transactions,
   utilities, savings goals or activity, backups, household configuration, or
   migration state.
-* [ ] A signed-in member can review transactions, utility bills and bill files,
-  savings/goals, analytics, help, and the household roster without seeing
-  roster-management controls.
+* [ ] A signed-in member can review household accounts, their own personal
+  accounts, transactions, utility bills and bill files, savings/goals,
+  analytics, help, and the household roster without seeing management controls.
 * [ ] A signed-in admin can review, edit, and delete member-submitted settlement
   records.
 * [ ] Household metadata, account/transaction/expense-allocation core

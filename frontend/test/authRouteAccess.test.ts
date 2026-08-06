@@ -145,6 +145,6 @@ test("auth route access allows member transparency routes", () => {
   );
   assert.equal(
     accounts.isAllowed,
-    false
+    true
   );
 });

@@ -33,6 +33,12 @@ Supabase validation before inviting public beta testers.
   management controls remain owner/admin-only:
   `frontend/src/features/auth/services/authRouteAccess.ts` and
   `frontend/src/features/household/pages/HouseholdMembersPage.tsx`
+* Accounts is available as a read-only member transparency route, while
+  personal accounts remain visible only to the owning member and account
+  management controls remain owner/admin-only:
+  `frontend/src/features/auth/services/authRouteAccess.ts`,
+  `frontend/src/features/accounts/pages/AccountsPage.tsx`, and
+  `frontend/test/accountVisibility.test.ts`
 * Single-household authenticated-link conflicts are blocked before local link
   state can be overwritten:
   `frontend/test/householdStorage.test.ts`

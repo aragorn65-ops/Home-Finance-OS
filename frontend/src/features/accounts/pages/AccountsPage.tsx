@@ -1,4 +1,7 @@
-import { useState } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
 
 import {
   ConfirmDialog,
@@ -12,6 +15,9 @@ import AccountList from "../components/AccountList";
 import AccountSummary from "../components/AccountSummary";
 
 import useAccounts from "../hooks/useAccounts";
+import {
+  useHouseholdMembership,
+} from "../../auth";
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
@@ -20,6 +26,9 @@ import {
 } from "../../household/services/householdStorage";
 
 import type { Account } from "../models/Account";
+import {
+  isAccountVisibleForMember,
+} from "../services/accountVisibility";
 
 import {
   defaultAccountForm,
@@ -177,6 +186,23 @@ export default function AccountsPage() {
 
   const household =
     loadHousehold();
+  const authHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId ??
+    household?.id ??
+    "";
+  const {
+    session,
+    membership,
+  } = useHouseholdMembership(
+    authHouseholdId
+  );
+  const isReadOnlyMember =
+    session.status === "signed-in" &&
+    (
+      membership?.role === "member" ||
+      membership?.role === "viewer"
+    );
 
   const members =
     HouseholdMemberService.getActiveMembers();
@@ -190,6 +216,37 @@ export default function AccountsPage() {
 
   const baseCurrency =
     household?.currency ?? "PHP";
+  const visibleAccounts =
+    useMemo(() => {
+      if (!isReadOnlyMember) {
+        return accounts;
+      }
+
+      return accounts.filter((account) =>
+        isAccountVisibleForMember(
+          account,
+          membership?.memberId ?? ""
+        )
+      );
+    }, [
+      accounts,
+      isReadOnlyMember,
+      membership?.memberId,
+    ]);
+  const visibleTotalBalance =
+    useMemo(
+      () =>
+        visibleAccounts.reduce(
+          (total, account) =>
+            total +
+            (
+              account.currentBaseBalance ??
+              account.currentBalance
+            ),
+          0
+        ),
+      [visibleAccounts]
+    );
 
   const [isDialogOpen, setIsDialogOpen] =
     useState(false);
@@ -431,28 +488,36 @@ export default function AccountsPage() {
     <>
       <AccountToolbar
         onAddAccount={
-          handleAddAccount
+          isReadOnlyMember
+            ? undefined
+            : handleAddAccount
         }
       />
 
       <div className="space-y-6">
         <AccountSummary
           totalAccounts={
-            accounts.length
+            visibleAccounts.length
           }
           totalBalance={
-            totalBalance
+            isReadOnlyMember
+              ? visibleTotalBalance
+              : totalBalance
           }
           currency={baseCurrency}
         />
 
         <AccountList
-          accounts={accounts}
+          accounts={visibleAccounts}
           onEdit={
-            handleEditAccount
+            isReadOnlyMember
+              ? undefined
+              : handleEditAccount
           }
           onDelete={
-            handleDeleteRequest
+            isReadOnlyMember
+              ? undefined
+              : handleDeleteRequest
           }
         />
       </div>
