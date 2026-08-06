@@ -10,6 +10,9 @@ import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
 import type {
   StoredAttachment,
 } from "../../../shared/models/StoredAttachment";
+import openAttachmentPreview, {
+  hasAttachmentPreviewData,
+} from "../../../shared/utils/openAttachmentPreview";
 import useReportingMonth from "../../../shared/hooks/useReportingMonth";
 import {
   formatDateInput,
@@ -959,10 +962,13 @@ function ProviderPaymentsSummary({
                       "None"}
                   </td>
                   <td className="py-3 pr-3">
-                    {providerBill.paymentAttachments
-                      .length > 0
-                      ? `${providerBill.paymentAttachments.length} receipt`
-                      : "No receipt"}
+                    <AttachmentPreviewList
+                      attachments={
+                        providerBill
+                          .paymentAttachments
+                      }
+                      emptyLabel="No receipt"
+                    />
                   </td>
                   <td className="py-3">
                     {providerBill.transactionId ||
@@ -1239,6 +1245,12 @@ function ProviderBillPaymentControls({
                   >
                     {attachment.fileName}
 
+                    <AttachmentPreviewButton
+                      attachment={
+                        attachment
+                      }
+                    />
+
                     <button
                       type="button"
                       className="font-semibold text-red-600"
@@ -1409,6 +1421,10 @@ function ProviderBillAttachmentControls({
               >
                 {attachment.fileName}
 
+                <AttachmentPreviewButton
+                  attachment={attachment}
+                />
+
                 {!isReadOnly && (
                   <button
                     type="button"
@@ -1433,6 +1449,72 @@ function ProviderBillAttachmentControls({
         </p>
       )}
     </div>
+  );
+}
+
+function AttachmentPreviewList({
+  attachments,
+  emptyLabel,
+}: {
+  attachments: StoredAttachment[];
+  emptyLabel: string;
+}) {
+  if (attachments.length === 0) {
+    return (
+      <span>{emptyLabel}</span>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {attachments.map(
+        (attachment) => (
+          <span
+            key={attachment.id}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600"
+          >
+            {attachment.fileName}
+
+            <AttachmentPreviewButton
+              attachment={attachment}
+            />
+          </span>
+        )
+      )}
+    </div>
+  );
+}
+
+function AttachmentPreviewButton({
+  attachment,
+}: {
+  attachment: StoredAttachment;
+}) {
+  const canPreview =
+    hasAttachmentPreviewData(
+      attachment
+    );
+
+  if (!canPreview) {
+    return (
+      <span className="font-medium text-slate-400">
+        Unavailable
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="font-semibold text-blue-700 hover:text-blue-900"
+      onClick={() =>
+        openAttachmentPreview(
+          attachment
+        )
+      }
+    >
+      View
+    </button>
   );
 }
 
