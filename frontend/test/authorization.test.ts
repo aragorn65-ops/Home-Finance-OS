@@ -156,6 +156,42 @@ test("member can create settlement records only when involved", () => {
   );
 });
 
+test("member can create settlement records with a local member alias", () => {
+  const context =
+    createContext(
+      "member",
+      "remote-member-1"
+    );
+  context.memberIds = [
+    "remote-member-1",
+    "member-1",
+  ];
+
+  assert.equal(
+    canAccessSettlementRecord(
+      context,
+      settlementForm,
+      "create"
+    ),
+    true
+  );
+
+  assert.equal(
+    canAccessSettlementRecord(
+      context,
+      {
+        ...settlementForm,
+        fromMemberId:
+          "member-3",
+        toMemberId:
+          "member-4",
+      },
+      "create"
+    ),
+    false
+  );
+});
+
 test("member cannot update or delete settlement records", () => {
   const context =
     createContext(

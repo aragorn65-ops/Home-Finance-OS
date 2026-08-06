@@ -499,6 +499,48 @@ export default function SettlementsPage() {
     canManageSettlementRecords ||
     membership?.role === "member";
 
+  const localMemberId =
+    useMemo(
+      () =>
+        HouseholdMemberService
+          .getActiveMembers()
+          .find(
+            (member) =>
+              member.householdId ===
+                householdId &&
+              Boolean(
+                session.user?.id
+              ) &&
+              member.userId ===
+                session.user?.id
+          )?.id ?? "",
+      [
+        householdId,
+        session.user?.id,
+      ]
+    );
+  const authorizedMemberIds =
+    useMemo(
+      () =>
+        [
+          membership?.memberId,
+          localMemberId,
+        ].filter(
+          (
+            memberId,
+            index,
+            memberIds
+          ): memberId is string =>
+            Boolean(memberId) &&
+            memberIds.indexOf(memberId) ===
+              index
+        ),
+      [
+        localMemberId,
+        membership?.memberId,
+      ]
+    );
+
   const authorizationContext:
     AuthorizationContext =
     useMemo(
@@ -506,10 +548,15 @@ export default function SettlementsPage() {
         userId:
           session.user?.id,
         memberId:
+          localMemberId ||
           membership?.memberId,
+        memberIds:
+          authorizedMemberIds,
         membership,
       }),
       [
+        authorizedMemberIds,
+        localMemberId,
         session.user?.id,
         membership,
       ]

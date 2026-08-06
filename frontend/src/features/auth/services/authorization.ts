@@ -188,18 +188,21 @@ export function canAccessSettlementRecord(
     return true;
   }
 
-  if (
-    membership.role !== "member" ||
-    !context.memberId
-  ) {
+  if (membership.role !== "member") {
     return false;
   }
 
+  const authorizedMemberIds =
+    getAuthorizedMemberIds(
+      context
+    );
   const memberIsParticipant =
-    settlement.fromMemberId ===
-      context.memberId ||
-    settlement.toMemberId ===
-      context.memberId;
+    authorizedMemberIds.includes(
+      settlement.fromMemberId
+    ) ||
+    authorizedMemberIds.includes(
+      settlement.toMemberId
+    );
 
   if (!memberIsParticipant) {
     return false;
