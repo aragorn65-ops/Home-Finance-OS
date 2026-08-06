@@ -54,6 +54,21 @@ test("auth route access allows signed-out settings diagnostics", () => {
   );
 });
 
+test("auth route access allows signed-in settings diagnostics before membership", () => {
+  const result =
+    evaluateAuthRouteAccess({
+      authEnabled: true,
+      pathname: "/app/settings",
+      sessionStatus:
+        "signed-in",
+    });
+
+  assert.equal(
+    result.isAllowed,
+    true
+  );
+});
+
 test("auth route access allows admin routes", () => {
   const result =
     evaluateAuthRouteAccess({

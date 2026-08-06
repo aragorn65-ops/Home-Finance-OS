@@ -120,6 +120,9 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
   UI path.
 * [x] Opened Household Members as a member transparency route while keeping
   roster management actions limited to owner/admin sessions.
+* [x] Kept Settings available for signed-out or pre-membership auth recovery
+  while limiting household preferences, backup, and reset tools to owner/admin
+  sessions in production auth mode.
 * [ ] Pending Sprint 104 live validation.
 
 ---

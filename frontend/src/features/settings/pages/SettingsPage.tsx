@@ -109,14 +109,20 @@ export default function SettingsPage() {
   } = useHouseholdMembership(
     authHouseholdId
   );
-  const isLimitedMemberSettings =
-    session.status === "signed-in" &&
-    (
-      membership?.role === "member" ||
-      membership?.role === "viewer"
-    );
+  const isProductionAuthEnabled =
+    isAuthFeatureEnabled();
   const canManageHouseholdSettings =
-    !isLimitedMemberSettings;
+    !isProductionAuthEnabled ||
+    (
+      session.status === "signed-in" &&
+      (
+        membership?.role === "owner" ||
+        membership?.role === "admin"
+      )
+    );
+  const canViewAuthDiagnostics =
+    isProductionAuthEnabled ||
+    canManageHouseholdSettings;
 
   const backupFileInputRef =
     useRef<HTMLInputElement | null>(
@@ -1125,7 +1131,7 @@ export default function SettingsPage() {
       <PageHeader
         title="Settings"
         subtitle={
-          isLimitedMemberSettings
+          !canManageHouseholdSettings
             ? "Manage local display and app lock settings"
             : "Configure and manage your household application data"
         }
@@ -1731,7 +1737,7 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {canManageHouseholdSettings && (
+        {canViewAuthDiagnostics && (
         <Card>
           <AuthDiagnosticsPanel />
         </Card>

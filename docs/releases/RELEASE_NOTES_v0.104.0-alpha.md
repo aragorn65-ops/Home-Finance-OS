@@ -35,6 +35,9 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 * Utilities and Savings show the shared reporting month selector.
 * Household Members is now available to members as a read-only transparency
   route while owner/admin sessions keep roster management controls.
+* Settings remains available for signed-out and pre-membership auth recovery,
+  while household preferences, backup, and reset controls are limited to
+  owner/admin sessions in production auth mode.
 * Utility provider bills are included in cloud core snapshots for save, load,
   and linked-browser restore.
 

@@ -10,8 +10,8 @@ https://home-finance-os.pages.dev
 
 Use this checklist after Cloudflare Pages deployments to confirm the public beta
 app shell, client-side routing, authenticated admin access, cloud-backed
-household persistence, limited member settlement-entry access, real-time
-synchronization, and backup workflow are usable on the deployed site.
+household persistence, limited member transparency and settlement-entry access,
+real-time synchronization, and backup workflow are usable on the deployed site.
 
 Use sample or low-risk data only.
 
@@ -137,18 +137,23 @@ metadata-only attachments remain understandable after refresh.
 
 ---
 
-## Member Settlement Access Check
+## Member Transparency And Settlement Access Check
 
 1. Sign in with a limited member account.
-2. Add a settlement record where the member is the payer or receiver.
-3. Confirm the settlement persists to the cloud-backed store.
-4. Confirm the member cannot access account, transaction, utility, savings,
-   settings, backup, household configuration, or migration write paths.
-5. Sign in as admin and review, edit, then delete the member-submitted
+2. Confirm Transactions, Utilities, Settlements, Savings, Analytics, Help, and
+   Household Members open for review.
+3. Confirm transaction, utility, savings, backup, household configuration, and
+   migration write paths are unavailable.
+4. Confirm Settings shows local display/app-lock controls and Auth
+   Diagnostics without household backup/reset/preference management controls.
+5. Add a settlement record where the member is the payer or receiver.
+6. Confirm the settlement persists to the cloud-backed store.
+7. Sign in as admin and review, edit, then delete the member-submitted
    settlement.
 
-Expected result: limited member access can submit settlement records only, and
-admin retains control over settlement review and correction.
+Expected result: limited member access can review shared household records,
+submit involved-member settlement records, and cannot manage admin-only data.
+Admin retains control over settlement review and correction.
 
 ---
 
@@ -186,7 +191,7 @@ required manual backup smoke-check path.
 ## Supabase Cloud Status
 
 Public beta requires production auth configuration, cloud-backed household
-persistence, limited member settlement-entry access, and real-time
+persistence, limited member transparency and settlement-entry access, and real-time
 synchronization on the Cloudflare Pages deployment.
 
 Before running the production auth and cloud smoke checks, apply the latest
@@ -206,9 +211,9 @@ beta tables and required RPCs. Before running record-save smoke tests, confirm
 the household preferences, core snapshot, and settlement RPC checks pass.
 
 For the one-month public beta scope, cloud persistence means household metadata,
-account/transaction core snapshots, and settlement records. Utilities and
-savings routes still smoke-pass, but full utility and savings cloud persistence
-is not a launch blocker unless scope is explicitly expanded.
+account/transaction/allocation core snapshots, utility provider bills, and
+settlement records. Savings routes still smoke-pass, but full savings cloud
+persistence is not a launch blocker unless scope is explicitly expanded.
 
 Do not expose multi-device household access, shared collaboration, or conflict
 resolution as supported public beta behavior.

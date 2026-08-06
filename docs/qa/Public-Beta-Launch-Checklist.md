@@ -5,8 +5,9 @@
 Use this checklist before inviting public beta testers to the Cloudflare Pages
 deployment.
 
-Public beta requires authenticated admin access, limited member settlement-entry
-access, cloud-backed household persistence, and real-time synchronization.
+Public beta requires authenticated admin access, limited member transparency
+with settlement-entry access, cloud-backed household persistence, and real-time
+synchronization.
 Testers must use sample or low-risk data and keep their own backups.
 Multi-device household access and conflict resolution remain out of scope.
 
@@ -40,15 +41,19 @@ https://home-finance-os.pages.dev
   cache has been reloaded.
 * [ ] Admin sign-in, sign-out, session refresh, and expired-session recovery
   pass on the production deployment.
-* [ ] Limited member sign-in works for settlement entry only.
+* [ ] Limited member sign-in works for read-only transparency routes and
+  settlement entry.
 * [ ] Signed-out users cannot access or mutate cloud-backed household data.
 * [ ] A signed-in admin can create or claim one household and persist household
   metadata to the cloud source of truth.
 * [ ] A signed-in member can add a settlement record only when they are the
   paying or receiving member.
 * [ ] A signed-in member cannot create, edit, or delete accounts, transactions,
-  utilities, savings, settings, backups, household configuration, or migration
-  state.
+  utilities, savings goals or activity, backups, household configuration, or
+  migration state.
+* [ ] A signed-in member can review transactions, utility bills and bill files,
+  savings/goals, analytics, help, and the household roster without seeing
+  roster-management controls.
 * [ ] A signed-in admin can review, edit, and delete member-submitted settlement
   records.
 * [ ] Household metadata, account/transaction/expense-allocation core
@@ -66,9 +71,10 @@ https://home-finance-os.pages.dev
   signed-in browser session without manual refresh.
 * [ ] Cloud write failures are visible, fail closed, and do not silently report
   saved data.
-* [ ] Admin access is single-household and member access is settlement-entry
-  only for public beta; broad invite, shared membership, and multi-device
-  collaboration flows are not exposed as supported beta behavior.
+* [ ] Admin access is single-household and member access is limited to
+  transparency plus involved-member settlement entry for public beta; broad
+  collaboration and multi-device conflict workflows are not exposed as
+  supported beta behavior.
 * [ ] Conflict resolution is not promised; unsupported concurrent edit states
   are blocked, serialized, or clearly reported.
 * [ ] Route smoke checks pass for `/`, `/app`, `/app/household-members`,
@@ -93,12 +99,11 @@ https://home-finance-os.pages.dev
 ## Public Beta Scope Boundary
 
 For the one-month public beta target, cloud-backed persistence is required for
-household metadata, account/transaction core snapshots, and settlement records.
-Utilities and savings routes remain part of the smoke pass, but full cloud
-persistence for utility provider bills, savings goals, and savings activities
-is not a public beta launch blocker unless the scope is explicitly expanded.
-Local export/import backup remains the required safety rail for those local
-modules.
+household metadata, account/transaction/allocation core snapshots, utility
+provider bills, and settlement records. Savings routes remain part of the smoke
+pass, but full cloud persistence for savings goals and savings activities is
+not a public beta launch blocker unless the scope is explicitly expanded. Local
+export/import backup remains the required safety rail for local-only modules.
 
 ---
 
@@ -120,15 +125,15 @@ Run this only when Cloudflare Pages has `VITE_GOOGLE_CLIENT_ID` configured:
 * Use sample or low-risk data only.
 * Sign in with the invited admin account before testing cloud-backed household
   workflows.
-* Members may sign in only to add settlement records where they are the payer or
-  receiver.
+* Members may sign in to review shared household records and add settlement
+  records where they are the payer or receiver.
 * Export a backup before and after meaningful testing.
 * Keep backup passwords outside HFOS; forgotten backup passwords cannot be
   recovered.
-* Public beta supports authenticated admin access, limited member settlement
-  entry, cloud-backed household metadata, account/transaction/allocation
-  snapshots, settlement persistence, and real-time sync for the active
-  household.
+* Public beta supports authenticated admin access, limited member transparency
+  and settlement entry, cloud-backed household metadata,
+  account/transaction/allocation snapshots, utility provider bills, settlement
+  persistence, and real-time sync for the active household.
 * Multi-device household access, broad shared collaboration, and conflict
   resolution are not part of public beta.
 * App lock protects only this browser session; it is separate from account

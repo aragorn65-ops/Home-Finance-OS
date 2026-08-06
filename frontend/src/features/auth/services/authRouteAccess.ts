@@ -89,6 +89,10 @@ export function evaluateAuthRouteAccess({
   }
 
   if (!role) {
+    if (isSettingsPath(pathname)) {
+      return allow();
+    }
+
     return {
       status: "membership-required",
       isAllowed: false,
