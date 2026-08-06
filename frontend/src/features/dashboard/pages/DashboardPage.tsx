@@ -49,6 +49,9 @@ import {
 import {
   loadHousehold,
 } from "../../household/services/householdStorage";
+import {
+  useHouseholdMembership,
+} from "../../auth";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 import useSavings from "../../savings/hooks/useSavings";
 import SettlementAllocationService from "../../settlements/services/SettlementAllocationService";
@@ -407,6 +410,22 @@ export default function DashboardPage() {
 
   const householdId =
     household?.id ?? "";
+  const authHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId ??
+    householdId;
+  const {
+    session,
+    membership,
+  } = useHouseholdMembership(
+    authHouseholdId
+  );
+  const isReadOnlyMember =
+    session.status === "signed-in" &&
+    (
+      membership?.role === "member" ||
+      membership?.role === "viewer"
+    );
 
   const currency =
     household?.currency ?? "PHP";
@@ -1089,6 +1108,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="quick-actions">
+              {!isReadOnlyMember && (
               <Link to="/app/transactions">
                 <ReceiptText
                   size={18}
@@ -1096,7 +1116,9 @@ export default function DashboardPage() {
                 />
                 Add Expense
               </Link>
+              )}
 
+              {!isReadOnlyMember && (
               <Link to="/app/savings">
                 <Plus
                   size={18}
@@ -1104,6 +1126,7 @@ export default function DashboardPage() {
                 />
                 Add Contribution
               </Link>
+              )}
 
               <Link to="/app/settlements">
                 <ArrowRightLeft
@@ -1144,13 +1167,15 @@ export default function DashboardPage() {
                 Estimate Remittance
               </button>
 
-              <Link to="/app/savings">
-                <Target
-                  size={18}
-                  aria-hidden="true"
-                />
-                Create Goal
-              </Link>
+              {!isReadOnlyMember && (
+                <Link to="/app/savings">
+                  <Target
+                    size={18}
+                    aria-hidden="true"
+                  />
+                  Create Goal
+                </Link>
+              )}
             </div>
         </section>
 

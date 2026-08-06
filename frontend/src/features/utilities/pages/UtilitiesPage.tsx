@@ -17,7 +17,13 @@ import {
 } from "../../../shared/utils/monthSelection";
 
 import AccountService from "../../accounts/services/AccountService";
+import {
+  useHouseholdMembership,
+} from "../../auth";
 
+import {
+  loadHousehold,
+} from "../../household/services/householdStorage";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
 import UtilityBillForm from "../components/UtilityBillForm";
@@ -48,6 +54,26 @@ interface ProviderPaymentForm {
 }
 
 export default function UtilitiesPage() {
+  const household =
+    loadHousehold();
+  const authHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId ??
+    household?.id ??
+    "";
+  const {
+    session,
+    membership,
+  } = useHouseholdMembership(
+    authHouseholdId
+  );
+  const isReadOnlyMember =
+    session.status === "signed-in" &&
+    (
+      membership?.role === "member" ||
+      membership?.role === "viewer"
+    );
+
   const {
     selectedMonthValue,
     setSelectedMonthValue,
@@ -216,6 +242,10 @@ export default function UtilitiesPage() {
   const handleMarkProviderBillPaid = async (
     providerBillId: string
   ): Promise<void> => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     if (markingPaidProviderBillId) {
       return;
     }
@@ -297,6 +327,11 @@ export default function UtilitiesPage() {
     event:
       ChangeEvent<HTMLInputElement>
   ): void => {
+    if (isReadOnlyMember) {
+      event.target.value = "";
+      return;
+    }
+
     const file =
       event.target.files?.[0];
 
@@ -349,6 +384,10 @@ export default function UtilitiesPage() {
     providerBillId: string,
     attachmentId: string
   ): void => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     const currentForm =
       getProviderPaymentForm(
         providerBillId
@@ -372,6 +411,11 @@ export default function UtilitiesPage() {
     event:
       ChangeEvent<HTMLInputElement>
   ): void => {
+    if (isReadOnlyMember) {
+      event.target.value = "";
+      return;
+    }
+
     const file =
       event.target.files?.[0];
 
@@ -419,6 +463,10 @@ export default function UtilitiesPage() {
       UtilityProviderBill,
     attachmentId: string
   ): void => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     updateBillAttachments(
       providerBill.id,
       providerBill.billAttachments.filter(
@@ -465,6 +513,10 @@ export default function UtilitiesPage() {
   const handleDeleteProviderBill = (
     providerBill: UtilityProviderBill
   ): void => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     const confirmed =
       window.confirm(
         `Delete unpaid provider bill "${providerBill.providerName || getProviderFallbackLabel(providerBill)}"? This does not affect transactions or settlements because the bill is not paid yet.`
@@ -502,6 +554,13 @@ export default function UtilitiesPage() {
     form: UtilityBillFormData,
     calculation: UtilityBillShareResult
   ): void => {
+    if (isReadOnlyMember) {
+      setSaveError(
+        "Member access is read-only for utilities."
+      );
+      return;
+    }
+
     setSaveMessage("");
     setSaveError("");
 
@@ -743,6 +802,9 @@ export default function UtilitiesPage() {
                         markingPaidProviderBillId ===
                         providerBill.id
                       }
+                      isReadOnly={
+                        isReadOnlyMember
+                      }
                       onAttachReceipt={
                         handlePaymentReceiptChange
                       }
@@ -785,6 +847,19 @@ export default function UtilitiesPage() {
             <p className="mt-2 text-sm text-amber-800">
               Add or reactivate at least one household
               member before calculating a utility bill.
+            </p>
+          </section>
+        ) : isReadOnlyMember ? (
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="font-semibold text-slate-900">
+              Utility Bill Entry
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-500">
+              Member access can review utility bills,
+              calculated shares, and payment history.
+              Recording new provider bills remains
+              available to household admins.
             </p>
           </section>
         ) : (
@@ -944,6 +1019,7 @@ interface ProviderBillPaymentControlsProps {
     providerBillId: string
   ) => void | Promise<void>;
   isMarkingPaid?: boolean;
+  isReadOnly?: boolean;
   onAttachReceipt: (
     providerBillId: string,
     event: ChangeEvent<HTMLInputElement>
@@ -975,6 +1051,7 @@ function ProviderBillPaymentControls({
   onChange,
   onMarkPaid,
   isMarkingPaid = false,
+  isReadOnly = false,
   onAttachReceipt,
   onRemoveReceipt,
   onAttachBillFile,
@@ -997,6 +1074,7 @@ function ProviderBillPaymentControls({
 
       <ProviderBillAttachmentControls
         providerBill={providerBill}
+        isReadOnly={isReadOnly}
         onAttachBillFile={
           onAttachBillFile
         }
@@ -1005,6 +1083,8 @@ function ProviderBillPaymentControls({
         }
       />
 
+      {!isReadOnly && (
+      <>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
         <label className="text-sm font-medium text-slate-700">
           Paid By
@@ -1190,6 +1270,8 @@ function ProviderBillPaymentControls({
           Delete Unpaid Bill
         </button>
       </div>
+      </>
+      )}
     </div>
   );
 }
@@ -1270,10 +1352,12 @@ function ProviderBillShareBreakdown({
 
 function ProviderBillAttachmentControls({
   providerBill,
+  isReadOnly = false,
   onAttachBillFile,
   onRemoveBillFile,
 }: {
   providerBill: UtilityProviderBill;
+  isReadOnly?: boolean;
   onAttachBillFile: (
     providerBill: UtilityProviderBill,
     event: ChangeEvent<HTMLInputElement>
@@ -1292,10 +1376,11 @@ function ProviderBillAttachmentControls({
           </h4>
 
           <p className="mt-1 text-xs text-slate-500">
-            Replace a wrong bill file before marking this bill paid.
+            Review provider bill files recorded for this bill.
           </p>
         </div>
 
+        {!isReadOnly && (
         <label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
           Add Bill File
           <input
@@ -1310,6 +1395,7 @@ function ProviderBillAttachmentControls({
             }
           />
         </label>
+        )}
       </div>
 
       {providerBill.billAttachments.length >
@@ -1323,18 +1409,20 @@ function ProviderBillAttachmentControls({
               >
                 {attachment.fileName}
 
-                <button
-                  type="button"
-                  className="font-semibold text-red-600"
-                  onClick={() =>
-                    onRemoveBillFile(
-                      providerBill,
-                      attachment.id
-                    )
-                  }
-                >
-                  Remove
-                </button>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    className="font-semibold text-red-600"
+                    onClick={() =>
+                      onRemoveBillFile(
+                        providerBill,
+                        attachment.id
+                      )
+                    }
+                  >
+                    Remove
+                  </button>
+                )}
               </span>
             )
           )}

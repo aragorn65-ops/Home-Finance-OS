@@ -31,15 +31,19 @@ export default function TransactionToolbar({
             }
           />
 
-          <div className="flex items-end">
-            <button
-              type="button"
-              onClick={onAddTransaction}
-              className="rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:opacity-90"
-            >
-              + Add Transaction
-            </button>
-          </div>
+          {onAddTransaction && (
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={
+                  onAddTransaction
+                }
+                className="rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:opacity-90"
+              >
+                + Add Transaction
+              </button>
+            </div>
+          )}
         </>
       }
     />

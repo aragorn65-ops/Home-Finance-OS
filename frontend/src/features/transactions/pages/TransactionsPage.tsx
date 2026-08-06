@@ -23,6 +23,9 @@ import {
 import useReportingMonth from "../../../shared/hooks/useReportingMonth";
 
 import AccountService from "../../accounts/services/AccountService";
+import {
+  useHouseholdMembership,
+} from "../../auth";
 
 import {
   loadHousehold,
@@ -245,6 +248,23 @@ export default function TransactionsPage() {
 
   const household =
     loadHousehold();
+  const authHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId ??
+    household?.id ??
+    "";
+  const {
+    session,
+    membership,
+  } = useHouseholdMembership(
+    authHouseholdId
+  );
+  const isReadOnlyMember =
+    session.status === "signed-in" &&
+    (
+      membership?.role === "member" ||
+      membership?.role === "viewer"
+    );
 
   const currency =
     household?.currency ?? "PHP";
@@ -319,6 +339,10 @@ export default function TransactionsPage() {
   };
 
   const handleAddTransaction = () => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     setSelectedTransaction(null);
     setDeleteError("");
     setDialogMode("create");
@@ -338,6 +362,10 @@ export default function TransactionsPage() {
   const handleEditTransaction = (
     transaction: Transaction
   ) => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     setSelectedTransaction(
       transaction
     );
@@ -349,6 +377,10 @@ export default function TransactionsPage() {
   const handleDeleteRequest = (
     transaction: Transaction
   ) => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     setSelectedTransaction(
       transaction
     );
@@ -360,6 +392,16 @@ export default function TransactionsPage() {
   const handleSubmitTransaction = async (
     form: TransactionFormData
   ) => {
+    if (isReadOnlyMember) {
+      return OperationResults.failure<Transaction>(
+        {
+          general:
+            "Member access is read-only for transactions.",
+        },
+        "Unable to save the transaction."
+      );
+    }
+
     if (!household) {
       return OperationResults.failure<Transaction>(
         {
@@ -392,6 +434,10 @@ export default function TransactionsPage() {
   const handleDeleteConfirm = async (
     transaction: Transaction
   ) => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     if (isDeletingTransaction) {
       return;
     }
@@ -470,8 +516,11 @@ export default function TransactionsPage() {
     );
 
   const isFormDialogOpen =
-    dialogMode === "create" ||
-    dialogMode === "edit";
+    !isReadOnlyMember &&
+    (
+      dialogMode === "create" ||
+      dialogMode === "edit"
+    );
 
   return (
     <>
@@ -483,7 +532,9 @@ export default function TransactionsPage() {
           setSelectedMonthValue
         }
         onAddTransaction={
-          handleAddTransaction
+          isReadOnlyMember
+            ? undefined
+            : handleAddTransaction
         }
       />
 
@@ -501,10 +552,14 @@ export default function TransactionsPage() {
             handleViewTransaction
           }
           onEdit={
-            handleEditTransaction
+            isReadOnlyMember
+              ? undefined
+              : handleEditTransaction
           }
           onDelete={
-            handleDeleteRequest
+            isReadOnlyMember
+              ? undefined
+              : handleDeleteRequest
           }
         />
       </div>
@@ -585,7 +640,9 @@ export default function TransactionsPage() {
                 closeDialog
               }
               onEdit={
-                handleEditTransaction
+                isReadOnlyMember
+                  ? undefined
+                  : handleEditTransaction
               }
             />
           )}

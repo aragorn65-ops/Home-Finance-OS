@@ -14,6 +14,9 @@ import {
 import useReportingMonth from "../../../shared/hooks/useReportingMonth";
 
 import AccountService from "../../accounts/services/AccountService";
+import {
+  useHouseholdMembership,
+} from "../../auth";
 
 import {
   loadHousehold,
@@ -293,6 +296,22 @@ export default function SavingsPage() {
 
   const householdId =
     household?.id ?? "";
+  const authHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId ??
+    householdId;
+  const {
+    session,
+    membership,
+  } = useHouseholdMembership(
+    authHouseholdId
+  );
+  const isReadOnlyMember =
+    session.status === "signed-in" &&
+    (
+      membership?.role === "member" ||
+      membership?.role === "viewer"
+    );
 
   const currency =
     household?.currency ??
@@ -499,6 +518,10 @@ export default function SavingsPage() {
   };
 
   const handleAddGoal = () => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     setSelectedGoal(null);
     setSelectedActivity(null);
 
@@ -539,6 +562,10 @@ export default function SavingsPage() {
   const handleEditGoal = (
     goal: SavingsGoal
   ) => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     setSelectedGoal(goal);
     setSelectedActivity(null);
 
@@ -559,6 +586,10 @@ export default function SavingsPage() {
   const handleRecordActivity = (
     goal: SavingsGoal
   ) => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     setSelectedGoal(goal);
     setSelectedActivity(null);
 
@@ -584,6 +615,10 @@ export default function SavingsPage() {
   const handleEditActivity = (
     activity: SavingsActivity
   ) => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     const activityGoal = [
       ...activeGoals,
       ...completedGoals,
@@ -623,6 +658,13 @@ export default function SavingsPage() {
   };
 
   const handleSaveGoal = () => {
+    if (isReadOnlyMember) {
+      setSaveError(
+        "Member access is read-only for savings."
+      );
+      return;
+    }
+
     setGoalErrors({});
     setSaveError("");
 
@@ -703,6 +745,13 @@ export default function SavingsPage() {
   };
 
   const handleSaveActivity = () => {
+    if (isReadOnlyMember) {
+      setSaveError(
+        "Member access is read-only for savings."
+      );
+      return;
+    }
+
     setActivityErrors({});
     setSaveError("");
 
@@ -786,6 +835,10 @@ export default function SavingsPage() {
   const requestArchiveGoal = (
     goal: SavingsGoal
   ) => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     setConfirmationError("");
 
     setConfirmation({
@@ -799,6 +852,10 @@ export default function SavingsPage() {
   const requestDeleteGoal = (
     goal: SavingsGoal
   ) => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     setConfirmationError("");
 
     setConfirmation({
@@ -812,6 +869,10 @@ export default function SavingsPage() {
   const requestDeleteActivity = (
     activity: SavingsActivity
   ) => {
+    if (isReadOnlyMember) {
+      return;
+    }
+
     setConfirmationError("");
 
     setConfirmation({
@@ -933,16 +994,24 @@ export default function SavingsPage() {
       : [];
 
   const isGoalFormOpen =
+    !isReadOnlyMember &&
     dialogMode ===
       "create-goal" ||
-    dialogMode ===
-      "edit-goal";
+    (
+      !isReadOnlyMember &&
+      dialogMode ===
+        "edit-goal"
+    );
 
   const isActivityFormOpen =
+    !isReadOnlyMember &&
     dialogMode ===
       "create-activity" ||
-    dialogMode ===
-      "edit-activity";
+    (
+      !isReadOnlyMember &&
+      dialogMode ===
+        "edit-activity"
+    );
 
   const confirmationTitle =
     confirmation?.type ===
@@ -990,7 +1059,9 @@ export default function SavingsPage() {
           setSelectedMonthValue
         }
         onAddGoal={
-          handleAddGoal
+          isReadOnlyMember
+            ? undefined
+            : handleAddGoal
         }
       />
 
@@ -1042,16 +1113,24 @@ export default function SavingsPage() {
               handleViewGoal
             }
             onRecordActivity={
-              handleRecordActivity
+              isReadOnlyMember
+                ? undefined
+                : handleRecordActivity
             }
             onEdit={
-              handleEditGoal
+              isReadOnlyMember
+                ? undefined
+                : handleEditGoal
             }
             onArchive={
-              requestArchiveGoal
+              isReadOnlyMember
+                ? undefined
+                : requestArchiveGoal
             }
             onDelete={
-              requestDeleteGoal
+              isReadOnlyMember
+                ? undefined
+                : requestDeleteGoal
             }
           />
         </section>
@@ -1080,16 +1159,24 @@ export default function SavingsPage() {
               handleViewGoal
             }
             onRecordActivity={
-              handleRecordActivity
+              isReadOnlyMember
+                ? undefined
+                : handleRecordActivity
             }
             onEdit={
-              handleEditGoal
+              isReadOnlyMember
+                ? undefined
+                : handleEditGoal
             }
             onArchive={
-              requestArchiveGoal
+              isReadOnlyMember
+                ? undefined
+                : requestArchiveGoal
             }
             onDelete={
-              requestDeleteGoal
+              isReadOnlyMember
+                ? undefined
+                : requestDeleteGoal
             }
           />
         </section>
@@ -1120,7 +1207,9 @@ export default function SavingsPage() {
                 handleViewGoal
               }
               onDelete={
-                requestDeleteGoal
+                isReadOnlyMember
+                  ? undefined
+                  : requestDeleteGoal
               }
             />
           </section>
@@ -1418,24 +1507,28 @@ export default function SavingsPage() {
                   closeAllDialogs
                 }
                 onRecordActivity={
+                  isReadOnlyMember ||
                   selectedGoal.status ===
                     "archived"
                     ? undefined
                     : handleRecordActivity
                 }
                 onEditGoal={
+                  isReadOnlyMember ||
                   selectedGoal.status ===
                     "archived"
                     ? undefined
                     : handleEditGoal
                 }
                 onEditActivity={
+                  isReadOnlyMember ||
                   selectedGoal.status ===
                     "archived"
                     ? undefined
                     : handleEditActivity
                 }
                 onDeleteActivity={
+                  isReadOnlyMember ||
                   selectedGoal.status ===
                     "archived"
                     ? undefined

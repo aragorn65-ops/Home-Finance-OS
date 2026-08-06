@@ -7,7 +7,7 @@ interface SavingsToolbarProps {
   onSelectedMonthChange: (
     selectedMonth: string
   ) => void;
-  onAddGoal: () => void;
+  onAddGoal?: () => void;
 }
 
 export default function SavingsToolbar({
@@ -32,13 +32,15 @@ export default function SavingsToolbar({
             }
           />
 
-          <Button
-            type="button"
-            variant="primary"
-            onClick={onAddGoal}
-          >
-            Add Goal
-          </Button>
+          {onAddGoal && (
+            <Button
+              type="button"
+              variant="primary"
+              onClick={onAddGoal}
+            >
+              Add Goal
+            </Button>
+          )}
         </>
       }
     />
