@@ -22,6 +22,9 @@ back to `main`.
 
 ## Route Checks
 
+For the full signed-out, admin, member, and viewer route matrix, use
+`docs/qa/Sprint-104-Route-Smoke.md`.
+
 Open and refresh each route. These are the first-class sidebar routes plus the
 startup route:
 

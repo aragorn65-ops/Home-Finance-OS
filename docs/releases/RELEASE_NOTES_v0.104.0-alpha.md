@@ -47,6 +47,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 * Member/viewer tenant-record access is read-only, and settlement correction
   controls remain limited to owner/admin sessions while members can still
   record involved settlement payments.
+* Sprint 104 production smoke guides now cover member transparency and full
+  signed-out/admin/member/viewer route validation.
 
 ---
 

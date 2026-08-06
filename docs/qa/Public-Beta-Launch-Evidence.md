@@ -155,6 +155,16 @@ docs/qa/Sprint-104-Member-Transparency-Smoke.md
 
 ---
 
+## Sprint 104 Route Smoke
+
+Use this guide for the signed-out, admin, member, and viewer route pass:
+
+```text
+docs/qa/Sprint-104-Route-Smoke.md
+```
+
+---
+
 ## Sprint 104 Production Evidence Log
 
 Record the live smoke result here before checking launch gates:
@@ -164,7 +174,7 @@ Date: 2026-08-06
 Tester: Product owner
 Browser: Production browser session
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: 143b044 or newer
+Expected build commit: ff56772 or newer
 Settings Auth Diagnostics build: Passed
 Settings Auth Diagnostics branch: main
 Cloudflare deployment status: Passed for deployed app access

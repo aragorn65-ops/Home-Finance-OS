@@ -67,6 +67,7 @@ tester onboarding.
 * `docs/qa/Sprint-104-Supabase-Cutover.md`
 * `docs/qa/Sprint-104-Admin-Auth-Smoke.md`
 * `docs/qa/Sprint-104-Member-Transparency-Smoke.md`
+* `docs/qa/Sprint-104-Route-Smoke.md`
 
 ---
 
@@ -97,6 +98,9 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
 
 Use `docs/qa/Sprint-104-Member-Transparency-Smoke.md` for the limited member
 and viewer transparency pass before closing public beta route validation.
+
+Use `docs/qa/Sprint-104-Route-Smoke.md` for the direct-open and browser-refresh
+route pass across signed-out, admin, member, and viewer states.
 
 ---
 
@@ -139,6 +143,8 @@ and viewer transparency pass before closing public beta route validation.
 * [x] Added the Sprint 104 member transparency smoke guide covering member
   route review, read-only controls, personal account visibility, involved
   settlement entry, viewer restrictions, and admin review.
+* [x] Added the Sprint 104 route smoke guide covering direct-open and refresh
+  behavior for signed-out, admin, member, and viewer route states.
 * [ ] Pending Sprint 104 live validation.
 
 ---
