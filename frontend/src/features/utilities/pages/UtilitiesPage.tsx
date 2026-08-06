@@ -1510,7 +1510,7 @@ function AttachmentPreviewButton({
   if (!canPreview) {
     return (
       <span className="font-medium text-slate-400">
-        Unavailable
+        Preview unavailable in cloud beta
       </span>
     );
   }

@@ -145,6 +145,9 @@ route pass across signed-out, admin, member, and viewer states.
   settlement entry, viewer restrictions, and admin review.
 * [x] Added the Sprint 104 route smoke guide covering direct-open and refresh
   behavior for signed-out, admin, member, and viewer route states.
+* [x] Scoped member transaction attachment review to transactions the member
+  may view, and clarified provider-bill metadata-only attachment copy for
+  read-only review.
 * [ ] Pending Sprint 104 live validation.
 
 ---

@@ -6,6 +6,9 @@ import {
 } from "../src/features/household/services/householdStorage.ts";
 import TransactionService from "../src/features/transactions/services/TransactionService.ts";
 import type {
+  Transaction,
+} from "../src/features/transactions/models/Transaction.ts";
+import type {
   TransactionForm,
 } from "../src/features/transactions/models/TransactionForm.ts";
 import {
@@ -24,6 +27,8 @@ const householdId =
 const payerMemberId = "member-payer";
 const participantMemberId =
   "member-participant";
+const uninvolvedMemberId =
+  "member-uninvolved";
 
 function seedHousehold() {
   installBrowserStorage();
@@ -46,6 +51,16 @@ function seedHousehold() {
           householdId,
           displayName: "Payer",
           role: "owner",
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: uninvolvedMemberId,
+          householdId,
+          displayName:
+            "Uninvolved Member",
+          role: "member",
           isActive: true,
           createdAt: now,
           updatedAt: now,
@@ -78,6 +93,54 @@ function seedHousehold() {
       []
     );
   }
+}
+
+function createTransaction(
+  overrides: Partial<Transaction>
+): Transaction {
+  const now =
+    new Date("2026-08-06T00:00:00Z");
+
+  return {
+    id: "transaction-1",
+    householdId,
+    createdByMemberId:
+      payerMemberId,
+    paidByMemberId:
+      payerMemberId,
+    visibility: "household",
+    type: "expense",
+    amount: 100,
+    enteredAmount: 100,
+    enteredCurrency: "PHP",
+    baseCurrency: "PHP",
+    baseAmount: 100,
+    exchangeRate: 1,
+    exchangeRateSource: "manual",
+    sourceAccountId: null,
+    destinationAccountId: null,
+    category: "Groceries",
+    description: "Groceries",
+    notes: "",
+    attachments: [
+      {
+        id: "attachment-1",
+        category: "receipt",
+        fileName: "receipt.pdf",
+        mimeType:
+          "application/pdf",
+        sizeBytes: 1000,
+        dataUrl:
+          "data:application/pdf;base64,JVBERi0x",
+        createdAt: now,
+      },
+    ],
+    transactionDate: now,
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
 }
 
 function createSplitExpenseForm():
@@ -227,6 +290,99 @@ test(
     assert.equal(
       updateResult.data.description,
       "Updated groceries"
+    );
+  }
+);
+
+test(
+  "member can view household transactions with attachments",
+  () => {
+    seedHousehold();
+
+    assert.equal(
+      TransactionService
+        .canMemberViewTransaction(
+          createTransaction({
+            visibility:
+              "household",
+          }),
+          participantMemberId
+        ),
+      true
+    );
+  }
+);
+
+test(
+  "member cannot view another member private transaction attachments",
+  () => {
+    seedHousehold();
+
+    assert.equal(
+      TransactionService
+        .canMemberViewTransaction(
+          createTransaction({
+            visibility:
+              "private",
+          }),
+          uninvolvedMemberId
+        ),
+      false
+    );
+
+    assert.equal(
+      TransactionService
+        .canMemberViewTransaction(
+          createTransaction({
+            visibility:
+              "private",
+          }),
+          payerMemberId
+        ),
+      true
+    );
+  }
+);
+
+test(
+  "member can view participant transaction attachments only when allocated",
+  () => {
+    seedHousehold();
+
+    const createResult =
+      TransactionService.create(
+        {
+          ...createSplitExpenseForm(),
+          visibility:
+            "participants",
+          attachments:
+            createTransaction({})
+              .attachments ?? [],
+        },
+        householdId
+      );
+
+    assert.equal(
+      createResult.success,
+      true
+    );
+
+    assert.equal(
+      TransactionService
+        .canMemberViewTransaction(
+          createResult.data,
+          participantMemberId
+        ),
+      true
+    );
+
+    assert.equal(
+      TransactionService
+        .canMemberViewTransaction(
+          createResult.data,
+          uninvolvedMemberId
+        ),
+      false
     );
   }
 );

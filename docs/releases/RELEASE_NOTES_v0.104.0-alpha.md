@@ -49,6 +49,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   record involved settlement payments.
 * Sprint 104 production smoke guides now cover member transparency and full
   signed-out/admin/member/viewer route validation.
+* Members can review attachments on transactions they are permitted to view;
+  private transaction attachments remain hidden from non-involved members.
 
 ---
 

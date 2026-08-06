@@ -484,13 +484,28 @@ export default function TransactionsPage() {
 
   const householdTransactions =
     transactions.filter(
-      (transaction) =>
-        transaction.householdId ===
-          household?.id &&
-        isSameMonth(
-          transaction.transactionDate,
-          selectedMonth
-        )
+      (transaction) => {
+        if (
+          transaction.householdId !==
+            household?.id ||
+          !isSameMonth(
+            transaction.transactionDate,
+            selectedMonth
+          )
+        ) {
+          return false;
+        }
+
+        if (!isReadOnlyMember) {
+          return true;
+        }
+
+        return TransactionService
+          .canMemberViewTransaction(
+            transaction,
+            membership?.memberId ?? ""
+          );
+      }
     );
 
   const paymentStatusByTransactionId =
