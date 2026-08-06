@@ -169,6 +169,8 @@ permissible-attachment review pass.
   member identity.
 * [x] Hardened involved-member settlement entry and review checks to accept
   local member aliases for signed-in Supabase memberships.
+* [x] Preserved member-created personal accounts when a linked member session
+  reloads through a different local household shell.
 * [ ] Pending Sprint 104 live validation.
 
 ---

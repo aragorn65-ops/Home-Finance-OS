@@ -42,6 +42,10 @@ Supabase validation before inviting public beta testers.
 * Member personal account creation keeps the signed-in member as the effective
   owner and authorizes the saved local account against the local household id:
   `frontend/src/features/accounts/pages/AccountsPage.tsx`
+* Linked member re-entry preserves local personal accounts saved under a
+  previous local household shell:
+  `frontend/src/features/accounts/repositories/AccountRepository.ts` and
+  `frontend/test/browserCoreSnapshotLocalWriter.test.ts`
 * Single-household authenticated-link conflicts are blocked before local link
   state can be overwritten:
   `frontend/test/householdStorage.test.ts`
@@ -202,7 +206,7 @@ Date: 2026-08-06
 Tester: Product owner
 Browser: Production browser session
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: b7dea21 or newer
+Expected build commit: f135cff or newer
 Settings Auth Diagnostics build: Passed
 Settings Auth Diagnostics branch: main
 Cloudflare deployment status: Passed for deployed app access

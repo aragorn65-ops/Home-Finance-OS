@@ -24,7 +24,7 @@ copy instead of a broken Open or View action.
 
 1. Open `/app/settings`.
 2. Open Auth Diagnostics.
-3. Confirm Build is `b7dea21` or newer.
+3. Confirm Build is `f135cff` or newer.
 4. Confirm Branch is `main`.
 5. Confirm Cloud Schema Readiness passes.
 
@@ -125,7 +125,7 @@ Date:
 Tester:
 Browser:
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: b7dea21 or newer
+Expected build commit: f135cff or newer
 Auth Diagnostics build:
 Auth Diagnostics branch:
 Cloud Schema Readiness:
