@@ -362,10 +362,53 @@ export default class AccountRepository {
             household.id
         );
 
-      this.accounts =
-        belongsToActiveHousehold
-          ? hydratedAccounts
-          : [];
+      if (belongsToActiveHousehold) {
+        this.accounts =
+          hydratedAccounts;
+      } else {
+        const activeHouseholdAccounts =
+          hydratedAccounts.filter(
+            (account) =>
+              account.householdId ===
+              household.id
+          );
+        const linkedShellMember =
+          household.authenticatedLink &&
+          household.members.length === 1
+            ? household.members[0]
+            : undefined;
+        const salvagedPersonalAccounts =
+          linkedShellMember
+            ? hydratedAccounts
+                .filter(
+                  (account) =>
+                    account.householdId !==
+                      household.id &&
+                    account.visibility ===
+                      "private"
+                )
+                .map((account) => ({
+                  ...account,
+                  householdId:
+                    household.id,
+                  ownerMemberId:
+                    linkedShellMember.id,
+                }))
+            : [];
+
+        this.accounts = [
+          ...activeHouseholdAccounts,
+          ...salvagedPersonalAccounts,
+        ];
+
+        if (
+          salvagedPersonalAccounts.length > 0
+        ) {
+          this.persistAccounts(
+            this.accounts
+          );
+        }
+      }
 
       this.initializedHouseholdId =
         household.id;

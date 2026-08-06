@@ -233,3 +233,110 @@ test("cloud restore keeps local accounts when remote account snapshot is empty",
     ]
   );
 });
+
+test("linked member shell salvages local personal accounts from previous household id", () => {
+  installBrowserStorage();
+
+  const now =
+    new Date("2026-08-06T00:00:00Z");
+  const previousHouseholdId =
+    "previous-local-household";
+  const linkedHouseholdId =
+    "linked-member-household";
+  const personalAccount = {
+    ...createAccount(
+      "member-personal-account",
+      "private"
+    ),
+    householdId:
+      previousHouseholdId,
+    ownerMemberId:
+      "previous-member-rasha",
+  };
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.household,
+    {
+      id:
+        linkedHouseholdId,
+      householdName:
+        "Linked Member Household",
+      country:
+        "PH",
+      currency:
+        "PHP",
+      timezone:
+        "Asia/Manila",
+      authenticatedLink: {
+        remoteHouseholdId:
+          "remote-household",
+        migrationId:
+          "member-bootstrap",
+        ownerMemberId:
+          "member-rasha",
+        linkedByUserId:
+          "user-rasha",
+        linkedAt:
+          now.toISOString(),
+      },
+      members: [
+        {
+          id:
+            "member-rasha",
+          householdId:
+            linkedHouseholdId,
+          displayName:
+            "Rasha",
+          role:
+            "member",
+          userId:
+            "user-rasha",
+          isActive:
+            true,
+          createdAt:
+            now,
+          updatedAt:
+            now,
+        },
+      ],
+      createdAt:
+        now,
+      updatedAt:
+        now,
+    }
+  );
+  saveStoredData(
+    HFOS_STORAGE_KEYS.accounts,
+    [
+      {
+        ...personalAccount,
+        createdAt:
+          personalAccount.createdAt
+            .toISOString(),
+        updatedAt:
+          personalAccount.updatedAt
+            .toISOString(),
+      },
+    ]
+  );
+
+  const accounts =
+    AccountRepository.findAll();
+
+  assert.equal(
+    accounts.length,
+    1
+  );
+  assert.equal(
+    accounts[0]?.id,
+    "member-personal-account"
+  );
+  assert.equal(
+    accounts[0]?.householdId,
+    linkedHouseholdId
+  );
+  assert.equal(
+    accounts[0]?.ownerMemberId,
+    "member-rasha"
+  );
+});
