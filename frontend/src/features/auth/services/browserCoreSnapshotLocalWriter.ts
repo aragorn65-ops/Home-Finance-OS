@@ -13,6 +13,22 @@ export const browserCoreSnapshotLocalWriter:
     householdId,
     accounts
   ) {
+    const localAccounts =
+      AccountRepository
+        .findAll()
+        .filter(
+          (account) =>
+            account.householdId ===
+            householdId
+        );
+
+    if (
+      accounts.length === 0 &&
+      localAccounts.length > 0
+    ) {
+      return true;
+    }
+
     const remoteAccountIds =
       new Set(
         accounts.map(
@@ -20,18 +36,14 @@ export const browserCoreSnapshotLocalWriter:
         )
       );
     const localPersonalAccounts =
-      AccountRepository
-        .findAll()
-        .filter(
-          (account) =>
-            account.householdId ===
-              householdId &&
+      localAccounts.filter(
+        (account) =>
             account.visibility ===
               "private" &&
             !remoteAccountIds.has(
               account.id
             )
-        );
+      );
 
     return AccountRepository
       .replaceForHousehold(

@@ -155,3 +155,81 @@ test("cloud restore preserves local-only personal accounts", () => {
     ]
   );
 });
+
+test("cloud restore keeps local accounts when remote account snapshot is empty", () => {
+  installBrowserStorage();
+
+  const now =
+    new Date("2026-08-06T00:00:00Z");
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.household,
+    {
+      id:
+        householdId,
+      householdName:
+        "Writer Household",
+      country:
+        "PH",
+      currency:
+        "PHP",
+      timezone:
+        "Asia/Manila",
+      members: [
+        {
+          id:
+            "member-rasha",
+          householdId,
+          displayName:
+            "Rasha",
+          role:
+            "member",
+          isActive:
+            true,
+          createdAt:
+            now,
+          updatedAt:
+            now,
+        },
+      ],
+      createdAt:
+        now,
+      updatedAt:
+        now,
+    }
+  );
+
+  const localHouseholdAccount =
+    createAccount(
+      "local-household-account",
+      "household"
+    );
+
+  assert.equal(
+    AccountRepository.replaceForHousehold(
+      householdId,
+      [
+        localHouseholdAccount,
+      ]
+    ),
+    true
+  );
+
+  assert.equal(
+    browserCoreSnapshotLocalWriter
+      .replaceAccounts(
+        householdId,
+        []
+      ),
+    true
+  );
+
+  assert.deepEqual(
+    AccountRepository
+      .findAll()
+      .map((account) => account.id),
+    [
+      "local-household-account",
+    ]
+  );
+});
