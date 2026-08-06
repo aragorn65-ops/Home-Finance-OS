@@ -443,11 +443,11 @@ export class InMemoryAuthBackendAdapter
       !canAccessHousehold(
         context,
         householdId,
-        "edit-household"
+        "view-household"
       )
     ) {
       throw new Error(
-        "Only a household admin can load core finance records."
+        "Active household membership is required to load core finance records."
       );
     }
 

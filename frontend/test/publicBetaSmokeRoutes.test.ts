@@ -94,11 +94,17 @@ test(
 );
 
 test(
-  "public beta smoke routes keep member access to settlements and settings",
+  "public beta smoke routes keep member access to transparency pages",
   () => {
     const memberAllowedRoutes =
       new Set([
+        "/app",
+        "/app/transactions",
+        "/app/utilities",
         "/app/settlements",
+        "/app/savings",
+        "/app/analytics",
+        "/app/help-center",
         "/app/settings",
       ]);
     const appRoutes =

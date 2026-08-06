@@ -27,8 +27,14 @@ export interface AuthRouteAccessResult {
 
 const settingsPath =
   "/app/settings";
-const settlementPath =
-  "/app/settlements";
+const memberTransparencyPaths = [
+  "/app/transactions",
+  "/app/utilities",
+  "/app/settlements",
+  "/app/savings",
+  "/app/analytics",
+  "/app/help-center",
+];
 
 export function evaluateAuthRouteAccess({
   authEnabled,
@@ -96,8 +102,15 @@ export function evaluateAuthRouteAccess({
 
   if (
     role === "member" &&
+    isMemberTransparencyPath(pathname)
+  ) {
+    return allow();
+  }
+
+  if (
+    role === "viewer" &&
     (
-      isSettlementPath(pathname) ||
+      isMemberTransparencyPath(pathname) ||
       isSettingsPath(pathname)
     )
   ) {
@@ -109,7 +122,7 @@ export function evaluateAuthRouteAccess({
     isAllowed: false,
     title: "Admin Access Required",
     message:
-      "This public beta account can only add settlement records for the household.",
+      "This public beta account can only open member transparency pages for the household.",
   };
 }
 
@@ -131,13 +144,18 @@ function isSettingsPath(
   );
 }
 
-function isSettlementPath(
+function isMemberTransparencyPath(
   pathname: string
 ): boolean {
   return (
-    pathname === settlementPath ||
-    pathname.startsWith(
-      `${settlementPath}/`
-    )
+    pathname === "/app" ||
+    memberTransparencyPaths.some(
+      (allowedPath) =>
+        pathname === allowedPath ||
+        pathname.startsWith(
+          `${allowedPath}/`
+        )
+    ) ||
+    isSettingsPath(pathname)
   );
 }

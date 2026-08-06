@@ -64,7 +64,9 @@ export function useLinkedCoreSnapshotRestore({
     sessionStatus === "signed-in" &&
     (
       role === "owner" ||
-      role === "admin"
+      role === "admin" ||
+      role === "member" ||
+      role === "viewer"
     ) &&
     Boolean(
       household?.authenticatedLink

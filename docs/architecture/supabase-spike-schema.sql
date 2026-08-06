@@ -2939,14 +2939,17 @@ set search_path = public
 as $$
 declare
   current_user_id uuid := auth.uid();
+  current_member_id uuid;
   snapshot_timestamp timestamptz := now();
 begin
   if current_user_id is null then
     raise exception 'Sign in before loading core finance records.';
   end if;
 
-  if not public.is_household_admin(target_household_id) then
-    raise exception 'Only a household admin can load core finance records.';
+  current_member_id := public.current_household_member_id(target_household_id);
+
+  if current_member_id is null then
+    raise exception 'Active household membership is required to load core finance records.';
   end if;
 
   return query

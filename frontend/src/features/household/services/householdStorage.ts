@@ -140,6 +140,92 @@ export function saveHousehold(
   );
 }
 
+export interface LinkedHouseholdShellInput {
+  id: string;
+  householdName: string;
+  country: string;
+  currency: string;
+  timezone: string;
+  remoteHouseholdId: string;
+  ownerMemberId: string;
+  linkedByUserId: string;
+  member: HouseholdMember;
+  migrationId?: string;
+  linkedAt?: Date;
+}
+
+export function saveLinkedHouseholdShell(
+  input: LinkedHouseholdShellInput
+): StoredHousehold | null {
+  const existing =
+    loadHousehold();
+
+  if (existing) {
+    return existing;
+  }
+
+  const now =
+    new Date();
+  const linkedAt =
+    input.linkedAt ?? now;
+
+  const household:
+    StoredHousehold = {
+    id:
+      input.id,
+    householdName:
+      input.householdName.trim(),
+    country:
+      input.country.trim(),
+    currency:
+      input.currency
+        .trim()
+        .toUpperCase(),
+    timezone:
+      input.timezone.trim(),
+    authenticatedLink: {
+      remoteHouseholdId:
+        input.remoteHouseholdId,
+      migrationId:
+        input.migrationId ??
+        "member-bootstrap",
+      ownerMemberId:
+        input.ownerMemberId,
+      linkedByUserId:
+        input.linkedByUserId,
+      linkedAt:
+        linkedAt.toISOString(),
+    },
+    members: [
+      cloneMember(input.member),
+    ],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  if (
+    !household.householdName ||
+    !household.country ||
+    !household.currency ||
+    !household.timezone
+  ) {
+    return null;
+  }
+
+  const saved =
+    persistHousehold(household);
+
+  if (!saved) {
+    return null;
+  }
+
+  initializeEmptyFinancialCollections();
+
+  return cloneHousehold(
+    household
+  );
+}
+
 /**
  * Loads the single active household.
  *

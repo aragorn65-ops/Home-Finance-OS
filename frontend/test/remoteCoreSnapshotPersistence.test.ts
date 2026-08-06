@@ -7,6 +7,7 @@ import {
 } from "../src/features/auth/services/index.ts";
 import type {
   AuthUser,
+  RemoteHouseholdCoreSnapshot,
   RemoteMigrationAccountUploadRecord,
   RemoteMigrationTransactionUploadRecord,
 } from "../src/features/auth/models/index.ts";
@@ -72,7 +73,9 @@ const transaction:
 };
 
 function createAdapter(
-  user: AuthUser
+  user: AuthUser,
+  coreSnapshots:
+    RemoteHouseholdCoreSnapshot[] = []
 ) {
   return new InMemoryAuthBackendAdapter({
     user,
@@ -111,6 +114,7 @@ function createAdapter(
         role: "member",
       }),
     ],
+    coreSnapshots,
   });
 }
 
@@ -162,13 +166,47 @@ test("remote core snapshot persistence allows admin save and load", async () => 
   );
 });
 
-test("remote core snapshot persistence blocks member access", async () => {
-  const adapter =
-    createAdapter(memberUser);
+test("remote core snapshot persistence allows member load but blocks save", async () => {
+  const memberAdapter =
+    createAdapter(
+      memberUser,
+      [
+        {
+          householdId,
+          accounts: [
+            account,
+          ],
+          transactions: [
+            transaction,
+          ],
+          expenseAllocations:
+            [],
+          savedAt:
+            new Date(
+              "2026-07-30T03:00:00.000Z"
+            ),
+        },
+      ]
+    );
 
+  const loaded =
+    await memberAdapter
+      .loadRemoteCoreSnapshot(
+        householdId
+      );
+  assert.equal(
+    loaded.accounts[0]?.name,
+    "Cash Wallet"
+  );
+  assert.equal(
+    loaded.transactions[0]
+      ?.description,
+    "Market"
+  );
   await assert.rejects(
     () =>
-      adapter.saveRemoteCoreSnapshot({
+      memberAdapter
+        .saveRemoteCoreSnapshot({
         householdId,
         accounts: [
           account,
@@ -178,13 +216,5 @@ test("remote core snapshot persistence blocks member access", async () => {
         ],
       }),
     /Only a household admin can save core finance records\./
-  );
-
-  await assert.rejects(
-    () =>
-      adapter.loadRemoteCoreSnapshot(
-        householdId
-      ),
-    /Only a household admin can load core finance records\./
   );
 });

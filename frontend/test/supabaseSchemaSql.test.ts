@@ -197,6 +197,50 @@ test("Supabase core snapshot load RPC drops old return type before recreate", ()
   );
 });
 
+test("Supabase core snapshot load RPC allows active member reads", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+  const functionStart =
+    schemaSql.indexOf(
+      "create or replace function public.load_household_core_snapshot"
+    );
+  const grantStart =
+    schemaSql.indexOf(
+      "revoke all on function public.load_household_core_snapshot(uuid)"
+    );
+  const functionSql =
+    schemaSql.slice(
+      functionStart,
+      grantStart
+    );
+
+  assert.match(
+    functionSql,
+    /current_member_id uuid;/
+  );
+  assert.match(
+    functionSql,
+    /current_member_id := public\.current_household_member_id\(target_household_id\);/
+  );
+  assert.match(
+    functionSql,
+    /Active household membership is required to load core finance records\./
+  );
+  assert.doesNotMatch(
+    functionSql,
+    /Only a household admin can load core finance records\./
+  );
+});
+
 test("Supabase member invite RPC links local members to auth users", () => {
   const schemaSql =
     readFileSync(

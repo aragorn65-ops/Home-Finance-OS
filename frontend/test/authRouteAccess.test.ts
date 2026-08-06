@@ -93,30 +93,31 @@ test("auth route access sends signed-in users without a role to household setup"
   );
 });
 
-test("auth route access limits member routes to settlements and settings", () => {
-  const settlements =
+test("auth route access allows member transparency routes", () => {
+  const transactions =
     evaluateAuthRouteAccess({
       authEnabled: true,
-      pathname: "/app/settlements",
+      pathname: "/app/transactions",
       sessionStatus:
         "signed-in",
       role: "member",
     });
-  const settings =
+  const householdMembers =
     evaluateAuthRouteAccess({
       authEnabled: true,
-      pathname: "/app/settings",
+      pathname:
+        "/app/household-members",
       sessionStatus:
         "signed-in",
       role: "member",
     });
 
   assert.equal(
-    settlements.isAllowed,
+    transactions.isAllowed,
     true
   );
   assert.equal(
-    settings.isAllowed,
-    true
+    householdMembers.isAllowed,
+    false
   );
 });

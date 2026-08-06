@@ -20,6 +20,7 @@ import {
 } from "../../config/auth";
 import {
   AuthRouteGatePanel,
+  getAuthBackendAdapter,
   useHouseholdMembership,
   useLinkedHouseholdPreferencesRestore,
   useLinkedCoreSnapshotRestore,
@@ -29,6 +30,7 @@ import {
 } from "../../features/auth/services";
 import {
   loadHousehold,
+  saveLinkedHouseholdShell,
 } from "../../features/household/services/householdStorage";
 import AppUnlockScreen from "../../features/security/components/AppUnlockScreen";
 import {
@@ -37,6 +39,10 @@ import {
 } from "../../features/security/services/appLockService";
 
 export default function AppShell() {
+  const [
+    householdBootstrapVersion,
+    setHouseholdBootstrapVersion,
+  ] = useState(0);
   const household = loadHousehold();
   const location = useLocation();
   const navigate = useNavigate();
@@ -52,6 +58,10 @@ export default function AppShell() {
     );
   const isCurrentSettlementPath =
     isSettlementPath(
+      location.pathname
+    );
+  const isCurrentMemberTransparencyPath =
+    isMemberTransparencyPath(
       location.pathname
     );
   const isProductionAuthEnabled =
@@ -257,10 +267,116 @@ export default function AppShell() {
         isCurrentSettingsPath,
     });
 
+  useEffect(() => {
+    if (
+      household ||
+      !isProductionAuthEnabled ||
+      !authRouteAccess.isAllowed ||
+      isCurrentSettingsPath ||
+      session.status !== "signed-in" ||
+      !session.user ||
+      !membership ||
+      membership.status !== "active" ||
+      (
+        membership.role !== "member" &&
+        membership.role !== "viewer"
+      )
+    ) {
+      return;
+    }
+
+    let isActive = true;
+    const signedInUser =
+      session.user;
+
+    void getAuthBackendAdapter()
+      .loadRemoteHousehold(
+        membership.householdId
+      )
+      .then((remoteHousehold) => {
+        if (!isActive) {
+          return;
+        }
+
+        const now =
+          new Date();
+        const saved =
+          saveLinkedHouseholdShell({
+            id:
+              remoteHousehold.id,
+            remoteHouseholdId:
+              remoteHousehold.id,
+            householdName:
+              remoteHousehold.name,
+            country:
+              remoteHousehold.country ?? "",
+            currency:
+              remoteHousehold.currency ?? "",
+            timezone:
+              remoteHousehold.timezone ?? "",
+            ownerMemberId:
+              membership.memberId,
+            linkedByUserId:
+              signedInUser.id,
+            member: {
+              id:
+                membership.memberId,
+              householdId:
+                remoteHousehold.id,
+              userId:
+                signedInUser.id,
+              displayName:
+                signedInUser.email ??
+                "You",
+              role:
+                membership.role ===
+                "viewer"
+                  ? "member"
+                  : membership.role,
+              isActive: true,
+              createdAt:
+                membership.createdAt ??
+                now,
+              updatedAt:
+                membership.updatedAt ??
+                now,
+            },
+          });
+
+        if (saved) {
+          setHouseholdBootstrapVersion(
+            (current) =>
+              current + 1
+          );
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setHouseholdBootstrapVersion(
+            (current) => current
+          );
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    authRouteAccess.isAllowed,
+    household,
+    householdBootstrapVersion,
+    isCurrentSettingsPath,
+    isProductionAuthEnabled,
+    membership,
+    session.status,
+    session.user,
+  ]);
+
   if (
     !household &&
     !isCurrentSettingsPath &&
-    !isCurrentSettlementPath
+    !isCurrentSettlementPath &&
+    !isCurrentMemberTransparencyPath
   ) {
     return (
       <Navigate
@@ -497,5 +613,27 @@ function isSettlementPath(
     pathname.startsWith(
       "/app/settlements/"
     )
+  );
+}
+
+function isMemberTransparencyPath(
+  pathname: string
+): boolean {
+  const allowedPaths = [
+    "/app/transactions",
+    "/app/utilities",
+    "/app/settlements",
+    "/app/savings",
+    "/app/analytics",
+    "/app/help-center",
+  ];
+
+  return allowedPaths.some(
+    (allowedPath) =>
+      pathname === "/app" ||
+      pathname === allowedPath ||
+      pathname.startsWith(
+        `${allowedPath}/`
+      )
   );
 }
