@@ -180,6 +180,28 @@ permissible-attachment review pass.
 
 ---
 
+## Pause Note - 2026-08-06
+
+Paused after the member account ownership retest exposed a magic-link delivery
+block. Latest pushed code checkpoint is `3a7b065`; latest docs checkpoint is
+`be9df1c`.
+
+Resume by waiting for the Cloudflare production build to show `3a7b065` or
+newer in Settings -> Auth Diagnostics, then sign in as Rasha/member and retest:
+
+* Create a fresh personal account.
+* Confirm the account owner is Rasha, not the admin household owner.
+* Refresh Accounts and confirm the account remains visible.
+* If the magic-link success message appears but no email arrives, check
+  Supabase Authentication logs, spam/junk/promotions, email spelling, and avoid
+  repeated sends while rate limits may be active.
+
+After account ownership/refresh passes, continue Sprint 104 live validation
+with involved-member settlement entry, full route smoke, attachment smoke, and
+two-tab realtime smoke.
+
+---
+
 ## Sprint Closeout
 
 **Closed:** Pending
