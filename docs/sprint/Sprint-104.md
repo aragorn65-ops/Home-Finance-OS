@@ -66,6 +66,7 @@ tester onboarding.
 * `docs/qa/Public-Beta-Launch-Evidence.md`
 * `docs/qa/Sprint-104-Supabase-Cutover.md`
 * `docs/qa/Sprint-104-Admin-Auth-Smoke.md`
+* `docs/qa/Sprint-104-Member-Transparency-Smoke.md`
 
 ---
 
@@ -93,6 +94,9 @@ verification queries before running deployed smoke checks.
 
 Use `docs/qa/Sprint-104-Admin-Auth-Smoke.md` for the next live production
 gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
+
+Use `docs/qa/Sprint-104-Member-Transparency-Smoke.md` for the limited member
+and viewer transparency pass before closing public beta route validation.
 
 ---
 
@@ -132,6 +136,9 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
 * [x] Tightened member/viewer tenant-record authorization to read-only access
   and hid settlement edit/delete controls from member transparency sessions
   while preserving involved-member settlement entry.
+* [x] Added the Sprint 104 member transparency smoke guide covering member
+  route review, read-only controls, personal account visibility, involved
+  settlement entry, viewer restrictions, and admin review.
 * [ ] Pending Sprint 104 live validation.
 
 ---

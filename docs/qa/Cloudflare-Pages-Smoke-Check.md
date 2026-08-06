@@ -139,6 +139,9 @@ metadata-only attachments remain understandable after refresh.
 
 ## Member Transparency And Settlement Access Check
 
+For the full limited-member checklist, use
+`docs/qa/Sprint-104-Member-Transparency-Smoke.md`.
+
 1. Sign in with a limited member account.
 2. Confirm Accounts, Transactions, Utilities, Settlements, Savings, Analytics,
    Help, and Household Members open for review.

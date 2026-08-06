@@ -45,6 +45,10 @@ Supabase validation before inviting public beta testers.
 * Settlement role authorization:
   `frontend/test/authorization.test.ts` and
   `frontend/test/remoteSettlementPersistence.test.ts`
+* Member/viewer tenant-record access is read-only in the shared authorization
+  helper, including owner-only personal account visibility:
+  `frontend/src/features/auth/services/authorization.ts` and
+  `frontend/test/authorization.test.ts`
 * Admin review/edit/delete of member-submitted settlement records:
   `frontend/test/remoteSettlementPersistence.test.ts`
 * Manual settlement partial-payment application:
@@ -137,6 +141,16 @@ from:
 
 ```text
 docs/qa/Sprint-104-Supabase-Cutover.md
+```
+
+---
+
+## Sprint 104 Member Transparency
+
+Use this guide for the limited member and viewer production smoke pass:
+
+```text
+docs/qa/Sprint-104-Member-Transparency-Smoke.md
 ```
 
 ---
