@@ -243,7 +243,7 @@ export default function HouseholdMemberManager() {
             role:
               selectedMember.role,
             redirectTo:
-              window.location.origin,
+              `${window.location.origin}/app/settings`,
           });
 
       setInviteMessage(

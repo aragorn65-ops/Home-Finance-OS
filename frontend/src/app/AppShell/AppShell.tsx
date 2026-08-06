@@ -46,6 +46,10 @@ export default function AppShell() {
     household?.authenticatedLink
       ?.remoteHouseholdId ??
     householdId;
+  const isCurrentSettingsPath =
+    isSettingsPath(
+      location.pathname
+    );
   const isProductionAuthEnabled =
     isAuthFeatureEnabled();
   const {
@@ -234,9 +238,7 @@ export default function AppShell() {
       isRouteAllowed:
         authRouteAccess.isAllowed,
       isSettingsRoute:
-        isSettingsPath(
-          location.pathname
-        ),
+        isCurrentSettingsPath,
     });
   const householdPreferencesRestore =
     useLinkedHouseholdPreferencesRestore({
@@ -248,12 +250,13 @@ export default function AppShell() {
       isRouteAllowed:
         authRouteAccess.isAllowed,
       isSettingsRoute:
-        isSettingsPath(
-          location.pathname
-        ),
+        isCurrentSettingsPath,
     });
 
-  if (!household) {
+  if (
+    !household &&
+    !isCurrentSettingsPath
+  ) {
     return (
       <Navigate
         to="/household"
@@ -263,6 +266,7 @@ export default function AppShell() {
   }
 
   if (
+    household &&
     isLockEnabled &&
     isLocked
   ) {
@@ -298,6 +302,7 @@ export default function AppShell() {
           isMenuOpen={isSidebarOpen}
           onMenuToggle={toggleSidebar}
           onLock={
+            household &&
             isLockEnabled
               ? () => {
                   setIsSidebarOpen(false);
@@ -322,7 +327,10 @@ export default function AppShell() {
 
         <main className="app-content">
           <div className="page-container">
-            {householdPreferencesRestore
+            {!household &&
+            isCurrentSettingsPath ? (
+              <Outlet />
+            ) : householdPreferencesRestore
               .isRestoring ? (
               <AuthRouteGatePanel
                 access={{
