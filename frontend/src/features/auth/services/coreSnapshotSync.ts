@@ -317,6 +317,12 @@ export function applyRemoteCoreSnapshotToLocalHousehold(
         ...transaction,
         householdId:
           options.localHouseholdId,
+        createdByMemberId:
+          transaction.createdByMemberId ??
+          undefined,
+        paidByMemberId:
+          transaction.paidByMemberId ??
+          undefined,
         transactionDate:
           parseDateOnly(
             transaction.transactionDate

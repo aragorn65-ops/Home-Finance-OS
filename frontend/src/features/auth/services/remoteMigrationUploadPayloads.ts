@@ -141,6 +141,10 @@ function createTransactionUploadRecord(
   return {
     id:
       transaction.id,
+    createdByMemberId:
+      transaction.createdByMemberId,
+    paidByMemberId:
+      transaction.paidByMemberId,
     expenseSplitMethod:
       transaction.expenseSplitMethod,
     visibility:

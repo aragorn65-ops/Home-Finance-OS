@@ -132,6 +132,37 @@ test("Supabase core snapshot save RPC persists expense allocations", () => {
   );
 });
 
+test("Supabase core snapshot RPC preserves transaction member ids", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /"createdByMemberId" text,\s*"paidByMemberId" text/
+  );
+  assert.match(
+    schemaSql,
+    /left join public\.household_members created_by_member[\s\S]+created_by_member\.local_record_id = nullif\(transaction_record\."createdByMemberId", ''\)/
+  );
+  assert.match(
+    schemaSql,
+    /'createdByMemberId', coalesce\(created_by_member\.local_record_id, created_by_member\.id::text\)/
+  );
+  assert.match(
+    schemaSql,
+    /'paidByMemberId', coalesce\(paid_by_member\.local_record_id, paid_by_member\.id::text\)/
+  );
+});
+
 test("Supabase core snapshot load RPC drops old return type before recreate", () => {
   const schemaSql =
     readFileSync(

@@ -116,6 +116,10 @@ test(
         {
           id:
             "transaction-1",
+          createdByMemberId:
+            "member-local-1",
+          paidByMemberId:
+            "member-local-1",
           expenseSplitMethod:
             "equal",
           visibility:

@@ -2531,9 +2531,10 @@ begin
   select
     target_household_id,
     transaction_record.id,
-    current_member_id,
+    coalesce(created_by_member.id, current_member_id),
     case
-      when lower(trim(transaction_record.type)) = 'expense' then current_member_id
+      when lower(trim(transaction_record.type)) = 'expense' then
+        coalesce(paid_by_member.id, created_by_member.id, current_member_id)
       else null
     end,
     nullif(transaction_record."expenseSplitMethod", ''),
@@ -2565,6 +2566,8 @@ begin
     current_user_id
   from jsonb_to_recordset(coalesce(core_transactions, '[]'::jsonb)) as transaction_record(
     id text,
+    "createdByMemberId" text,
+    "paidByMemberId" text,
     "expenseSplitMethod" text,
     visibility text,
     type text,
@@ -2588,6 +2591,18 @@ begin
     "createdAt" text,
     "updatedAt" text
   )
+  left join public.household_members created_by_member
+    on created_by_member.household_id = target_household_id
+   and (
+        created_by_member.id::text = nullif(transaction_record."createdByMemberId", '')
+        or created_by_member.local_record_id = nullif(transaction_record."createdByMemberId", '')
+   )
+  left join public.household_members paid_by_member
+    on paid_by_member.household_id = target_household_id
+   and (
+        paid_by_member.id::text = nullif(transaction_record."paidByMemberId", '')
+        or paid_by_member.local_record_id = nullif(transaction_record."paidByMemberId", '')
+   )
   left join public.accounts source_account
     on source_account.household_id = target_household_id
    and source_account.local_record_id = transaction_record."sourceAccountId"
@@ -2835,6 +2850,8 @@ begin
         select jsonb_agg(
           jsonb_build_object(
             'id', coalesce(remote_transaction.local_record_id, remote_transaction.id::text),
+            'createdByMemberId', coalesce(created_by_member.local_record_id, created_by_member.id::text),
+            'paidByMemberId', coalesce(paid_by_member.local_record_id, paid_by_member.id::text),
             'expenseSplitMethod', remote_transaction.expense_split_method,
             'visibility', remote_transaction.visibility,
             'type', remote_transaction.type,
@@ -2861,6 +2878,10 @@ begin
           order by remote_transaction.transaction_date, remote_transaction.created_at, remote_transaction.id
         )
         from public.transactions remote_transaction
+        left join public.household_members created_by_member
+          on created_by_member.id = remote_transaction.created_by_member_id
+        left join public.household_members paid_by_member
+          on paid_by_member.id = remote_transaction.paid_by_member_id
         left join public.accounts source_account
           on source_account.id = remote_transaction.source_account_id
         left join public.accounts destination_account

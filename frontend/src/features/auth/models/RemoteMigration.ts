@@ -102,8 +102,6 @@ export interface RemoteMigrationTransactionUploadRecord
   extends Omit<
     Transaction,
     | "householdId"
-    | "createdByMemberId"
-    | "paidByMemberId"
     | "transactionDate"
     | "exchangeRateEffectiveDate"
     | "createdAt"

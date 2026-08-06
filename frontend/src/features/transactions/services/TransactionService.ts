@@ -863,8 +863,8 @@ export default class TransactionService {
         ...existing,
 
         createdByMemberId:
-          existing.createdByMemberId ??
-          selectedMemberId,
+          selectedMemberId ??
+          existing.createdByMemberId,
 
         paidByMemberId:
           form.type ===
