@@ -483,6 +483,11 @@ export default function SettlementsPage() {
     cloudHouseholdId
   );
 
+  const effectiveCloudHouseholdId =
+    cloudHouseholdId ||
+    membership?.householdId ||
+    "";
+
   const shouldEnforceSettlementAuth =
     session.status ===
     "signed-in";
@@ -513,7 +518,7 @@ export default function SettlementsPage() {
       settlementError,
   } = useSettlements(
     shouldEnforceSettlementAuth
-      ? cloudHouseholdId
+      ? effectiveCloudHouseholdId
       : householdId,
     {
       remoteEnabled:
@@ -558,17 +563,46 @@ export default function SettlementsPage() {
 
   const members =
     useMemo(
-      () =>
-        household
-          ? HouseholdMemberService
-              .getActiveMembers()
-              .filter(
-                (member) =>
-                  member.householdId ===
-                  household.id
-              )
-          : [],
-      [household]
+      () => {
+        if (household) {
+          return HouseholdMemberService
+            .getActiveMembers()
+            .filter(
+              (member) =>
+                member.householdId ===
+                household.id
+            );
+        }
+
+        if (!membership) {
+          return [];
+        }
+
+        return [
+          {
+            id:
+              membership.memberId,
+            householdId:
+              membership.householdId,
+            displayName:
+              "You",
+            role:
+              membership.role ===
+              "viewer"
+                ? "member"
+                : membership.role,
+            isActive: true,
+            createdAt:
+              membership.createdAt,
+            updatedAt:
+              membership.updatedAt,
+          },
+        ];
+      },
+      [
+        household,
+        membership,
+      ]
     );
 
   const [

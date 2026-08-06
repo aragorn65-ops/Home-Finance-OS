@@ -50,6 +50,10 @@ export default function AppShell() {
     isSettingsPath(
       location.pathname
     );
+  const isCurrentSettlementPath =
+    isSettlementPath(
+      location.pathname
+    );
   const isProductionAuthEnabled =
     isAuthFeatureEnabled();
   const {
@@ -255,7 +259,8 @@ export default function AppShell() {
 
   if (
     !household &&
-    !isCurrentSettingsPath
+    !isCurrentSettingsPath &&
+    !isCurrentSettlementPath
   ) {
     return (
       <Navigate
@@ -480,6 +485,17 @@ function isSettingsPath(
     pathname === "/app/settings" ||
     pathname.startsWith(
       "/app/settings/"
+    )
+  );
+}
+
+function isSettlementPath(
+  pathname: string
+): boolean {
+  return (
+    pathname === "/app/settlements" ||
+    pathname.startsWith(
+      "/app/settlements/"
     )
   );
 }

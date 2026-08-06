@@ -43,8 +43,7 @@ export function useHouseholdMembership(
 
     if (
       session.status !==
-        "signed-in" ||
-      !householdId
+        "signed-in"
     ) {
       setMemberships([]);
       setError("");
@@ -67,8 +66,11 @@ export function useHouseholdMembership(
         setMemberships(
           nextMemberships.filter(
             (membership) =>
-              membership.householdId ===
-                householdId &&
+              (
+                !householdId ||
+                membership.householdId ===
+                  householdId
+              ) &&
               membership.status ===
                 "active"
           )

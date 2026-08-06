@@ -99,6 +99,7 @@ test(
     const memberAllowedRoutes =
       new Set([
         "/app/settlements",
+        "/app/settings",
       ]);
     const appRoutes =
       publicBetaSmokeRoutes.filter(

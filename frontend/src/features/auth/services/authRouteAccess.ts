@@ -96,7 +96,10 @@ export function evaluateAuthRouteAccess({
 
   if (
     role === "member" &&
-    isSettlementPath(pathname)
+    (
+      isSettlementPath(pathname) ||
+      isSettingsPath(pathname)
+    )
   ) {
     return allow();
   }

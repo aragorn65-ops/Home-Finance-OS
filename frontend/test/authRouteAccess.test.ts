@@ -93,7 +93,7 @@ test("auth route access sends signed-in users without a role to household setup"
   );
 });
 
-test("auth route access limits member routes to settlements", () => {
+test("auth route access limits member routes to settlements and settings", () => {
   const settlements =
     evaluateAuthRouteAccess({
       authEnabled: true,
@@ -117,10 +117,6 @@ test("auth route access limits member routes to settlements", () => {
   );
   assert.equal(
     settings.isAllowed,
-    false
-  );
-  assert.equal(
-    settings.status,
-    "role-blocked"
+    true
   );
 });
