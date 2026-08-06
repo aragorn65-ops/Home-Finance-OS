@@ -223,9 +223,12 @@ export default function AccountsPage() {
         member.id === currentMemberId
     )?.id ??
     "";
+  const memberAccountOwnerId =
+    currentLocalMemberId ||
+    currentMemberId;
 
   const defaultOwnerMemberId =
-    currentLocalMemberId ||
+    memberAccountOwnerId ||
     (
       HouseholdMemberService
         .getOwnerMember()
@@ -242,14 +245,14 @@ export default function AccountsPage() {
         userId:
           signedInUserId,
         memberId:
-          currentLocalMemberId ||
-          currentMemberId,
+          memberAccountOwnerId,
         membership:
           membership ?? undefined,
       }),
       [
         currentMemberId,
         currentLocalMemberId,
+        memberAccountOwnerId,
         membership,
         signedInUserId,
       ]
@@ -316,8 +319,7 @@ export default function AccountsPage() {
         (account) =>
           isAccountVisibleForMember(
             account,
-            currentLocalMemberId ||
-              currentMemberId
+            memberAccountOwnerId
           )
       );
     }, [
@@ -325,6 +327,7 @@ export default function AccountsPage() {
       currentMemberId,
       currentLocalMemberId,
       isSignedIn,
+      memberAccountOwnerId,
       membership?.role,
     ]);
   const summaryAccounts =
@@ -444,11 +447,10 @@ export default function AccountsPage() {
     setEditingAccount(null);
 
     setForm(
-      isMemberRole && currentMemberId
+      isMemberRole && memberAccountOwnerId
         ? {
             ...createDefaultForm(
-              currentLocalMemberId ||
-                currentMemberId,
+              memberAccountOwnerId,
               baseCurrency
             ),
             visibility:
@@ -574,7 +576,18 @@ export default function AccountsPage() {
       return;
     }
 
-    if (!form.ownerMemberId) {
+    const normalizedForm =
+      isMemberRole && memberAccountOwnerId
+        ? {
+            ...form,
+            ownerMemberId:
+              memberAccountOwnerId,
+            visibility:
+              "private" as const,
+          }
+        : form;
+
+    if (!normalizedForm.ownerMemberId) {
       const nextErrors = {
         ownerMemberId:
           "Select the member who owns this account.",
@@ -589,18 +602,6 @@ export default function AccountsPage() {
 
       return;
     }
-
-    const normalizedForm =
-      isMemberRole && currentMemberId
-        ? {
-            ...form,
-            ownerMemberId:
-              currentLocalMemberId ||
-              currentMemberId,
-            visibility:
-              "private" as const,
-          }
-        : form;
 
     if (!canCreateAccount) {
       const nextErrors = {
@@ -639,10 +640,7 @@ export default function AccountsPage() {
       isMemberRole &&
       (
         normalizedForm.ownerMemberId !==
-          (
-            currentLocalMemberId ||
-            currentMemberId
-          ) ||
+          memberAccountOwnerId ||
         normalizedForm.visibility !==
           "private"
       )
@@ -795,8 +793,7 @@ export default function AccountsPage() {
             }
             lockedOwnerMemberId={
               isMemberRole
-                ? currentLocalMemberId ||
-                  currentMemberId
+                ? memberAccountOwnerId
                 : undefined
             }
             lockedVisibility={
@@ -807,12 +804,11 @@ export default function AccountsPage() {
             onChange={(nextForm) => {
               setForm(
                 isMemberRole &&
-                  currentMemberId
+                  memberAccountOwnerId
                   ? {
                       ...nextForm,
                       ownerMemberId:
-                        currentLocalMemberId ||
-                        currentMemberId,
+                        memberAccountOwnerId,
                       visibility:
                         "private",
                     }
