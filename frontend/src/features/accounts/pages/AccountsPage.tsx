@@ -225,10 +225,15 @@ export default function AccountsPage() {
     "";
   const memberAccountOwnerId =
     currentLocalMemberId ||
-    currentMemberId ||
-    household?.authenticatedLink
-      ?.ownerMemberId ||
-    "";
+    currentMemberId;
+  const signedInLinkedOwnerMemberId =
+    household?.authenticatedLink &&
+    household.authenticatedLink
+      .linkedByUserId ===
+      signedInUserId
+      ? household.authenticatedLink
+          .ownerMemberId
+      : undefined;
   const memberAccountOwnerIds =
     useMemo(
       () =>
@@ -236,8 +241,7 @@ export default function AccountsPage() {
           memberAccountOwnerId,
           currentLocalMemberId,
           currentMemberId,
-          household?.authenticatedLink
-            ?.ownerMemberId,
+          signedInLinkedOwnerMemberId,
           ...members
             .filter(
               (member) =>
@@ -263,10 +267,9 @@ export default function AccountsPage() {
       [
         currentLocalMemberId,
         currentMemberId,
-        household?.authenticatedLink
-          ?.ownerMemberId,
         memberAccountOwnerId,
         members,
+        signedInLinkedOwnerMemberId,
         signedInUserId,
       ]
     );
