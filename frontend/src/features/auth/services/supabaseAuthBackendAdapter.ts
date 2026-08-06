@@ -381,6 +381,9 @@ interface SupabaseMembershipRow {
   household_id: string;
   user_id: string;
   member_id: string;
+  member?: {
+    local_record_id?: string | null;
+  } | null;
   role: string;
   status: string;
   invited_by_user_id?: string | null;
@@ -816,6 +819,7 @@ export class SupabaseAuthBackendAdapter
             "household_id",
             "user_id",
             "member_id",
+            "member:household_members!household_memberships_member_id_fkey(local_record_id)",
             "role",
             "status",
             "invited_by_user_id",
@@ -2944,6 +2948,7 @@ function mapSupabaseMembership(
     userId:
       row.user_id,
     memberId:
+      row.member?.local_record_id ??
       row.member_id,
     role,
     status,

@@ -4086,7 +4086,11 @@ test(
                           user_id:
                             "user-1",
                           member_id:
-                            "member-1",
+                            "remote-member-1",
+                          member: {
+                            local_record_id:
+                              "member-1",
+                          },
                           role:
                             "owner",
                           status:
@@ -4145,7 +4149,7 @@ test(
           tableName:
             "household_memberships",
           columns:
-            "id,household_id,user_id,member_id,role,status,invited_by_user_id,invited_at,accepted_at,removed_at,created_at,updated_at",
+            "id,household_id,user_id,member_id,member:household_members!household_memberships_member_id_fkey(local_record_id),role,status,invited_by_user_id,invited_at,accepted_at,removed_at,created_at,updated_at",
           column:
             "user_id",
           value:

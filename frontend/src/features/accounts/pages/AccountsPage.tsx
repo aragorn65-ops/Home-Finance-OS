@@ -208,9 +208,24 @@ export default function AccountsPage() {
 
   const members =
     HouseholdMemberService.getActiveMembers();
+  const signedInUserId =
+    session.status === "signed-in"
+      ? session.user?.id
+      : undefined;
+  const currentLocalMemberId =
+    members.find(
+      (member) =>
+        Boolean(signedInUserId) &&
+        member.userId === signedInUserId
+    )?.id ??
+    members.find(
+      (member) =>
+        member.id === currentMemberId
+    )?.id ??
+    "";
 
   const defaultOwnerMemberId =
-    currentMemberId ||
+    currentLocalMemberId ||
     (
       HouseholdMemberService
         .getOwnerMember()
@@ -225,18 +240,18 @@ export default function AccountsPage() {
     useMemo(
       () => ({
         userId:
-          session.status === "signed-in"
-            ? session.user?.id
-            : undefined,
+          signedInUserId,
         memberId:
+          currentLocalMemberId ||
           currentMemberId,
         membership:
           membership ?? undefined,
       }),
       [
         currentMemberId,
+        currentLocalMemberId,
         membership,
-        session,
+        signedInUserId,
       ]
     );
   const canCreateAccount =
@@ -301,12 +316,14 @@ export default function AccountsPage() {
         (account) =>
           isAccountVisibleForMember(
             account,
-            currentMemberId
+            currentLocalMemberId ||
+              currentMemberId
           )
       );
     }, [
       accounts,
       currentMemberId,
+      currentLocalMemberId,
       isSignedIn,
       membership?.role,
     ]);
@@ -430,7 +447,8 @@ export default function AccountsPage() {
       isMemberRole && currentMemberId
         ? {
             ...createDefaultForm(
-              currentMemberId,
+              currentLocalMemberId ||
+                currentMemberId,
               baseCurrency
             ),
             visibility:
@@ -577,6 +595,7 @@ export default function AccountsPage() {
         ? {
             ...form,
             ownerMemberId:
+              currentLocalMemberId ||
               currentMemberId,
             visibility:
               "private" as const,
@@ -620,7 +639,10 @@ export default function AccountsPage() {
       isMemberRole &&
       (
         normalizedForm.ownerMemberId !==
-          currentMemberId ||
+          (
+            currentLocalMemberId ||
+            currentMemberId
+          ) ||
         normalizedForm.visibility !==
           "private"
       )
@@ -773,7 +795,8 @@ export default function AccountsPage() {
             }
             lockedOwnerMemberId={
               isMemberRole
-                ? currentMemberId
+                ? currentLocalMemberId ||
+                  currentMemberId
                 : undefined
             }
             lockedVisibility={
@@ -788,6 +811,7 @@ export default function AccountsPage() {
                   ? {
                       ...nextForm,
                       ownerMemberId:
+                        currentLocalMemberId ||
                         currentMemberId,
                       visibility:
                         "private",
