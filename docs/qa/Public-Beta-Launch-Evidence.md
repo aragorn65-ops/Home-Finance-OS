@@ -39,6 +39,9 @@ Supabase validation before inviting public beta testers.
   `frontend/src/features/auth/services/authRouteAccess.ts`,
   `frontend/src/features/accounts/pages/AccountsPage.tsx`, and
   `frontend/test/accountVisibility.test.ts`
+* Member personal account creation keeps the signed-in member as the effective
+  owner and authorizes the saved local account against the local household id:
+  `frontend/src/features/accounts/pages/AccountsPage.tsx`
 * Single-household authenticated-link conflicts are blocked before local link
   state can be overwritten:
   `frontend/test/householdStorage.test.ts`
@@ -194,7 +197,7 @@ Date: 2026-08-06
 Tester: Product owner
 Browser: Production browser session
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: ed6f6de or newer
+Expected build commit: 33c336b or newer
 Settings Auth Diagnostics build: Passed
 Settings Auth Diagnostics branch: main
 Cloudflare deployment status: Passed for deployed app access
@@ -219,6 +222,8 @@ Metadata-only attachment preview result: Pending attachment smoke pass
 Browser refresh restore result: Passed for linked household core and settlement records
 Realtime active-session result: Pending realtime smoke pass
 Limited member settlement-entry result: Pending limited member smoke pass
+Limited member personal account visibility: Passed after member save/refresh
+  retest
 Route smoke result: Pending full route smoke pass
 Google Drive result, if configured: Pending optional check
 Blockers: None for Supabase allocation cutover and partial settlement carryover
@@ -255,6 +260,7 @@ Metadata-only attachment preview result:
 Browser refresh restore result:
 Realtime active-session result:
 Limited member settlement-entry result:
+Limited member personal account visibility:
 Route smoke result:
 Google Drive result, if configured:
 Blockers:

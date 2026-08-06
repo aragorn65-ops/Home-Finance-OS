@@ -164,6 +164,9 @@ permissible-attachment review pass.
 * [x] Added the Sprint 104 attachment smoke guide covering attachment saves,
   refresh persistence, metadata-only preview copy, and member permissible
   attachment review.
+* [x] Fixed member personal account visibility after save by authorizing local
+  account records against the local household id while preserving the signed-in
+  member identity.
 * [ ] Pending Sprint 104 live validation.
 
 ---

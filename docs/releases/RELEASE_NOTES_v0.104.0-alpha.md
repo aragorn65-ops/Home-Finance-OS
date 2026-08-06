@@ -28,7 +28,7 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 
 ## Verified
 
-* Local verification passed with 178 tests.
+* Local verification passed with 195 tests.
 * Production Supabase cutover, Auth Diagnostics, admin auth, linked refresh
   restore, and July-to-August partial settlement carryover passed.
 * Utilities paid provider bills now filter by selected payment month.
@@ -55,6 +55,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   sync validation.
 * Added a Sprint 104 attachment smoke guide for expense, utility, settlement,
   metadata-only preview, and member-review validation.
+* Fixed member personal account visibility after save so a signed-in member's
+  own newly created personal account remains visible and counted.
 
 ---
 
