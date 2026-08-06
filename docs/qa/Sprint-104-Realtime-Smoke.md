@@ -25,7 +25,7 @@ Multi-device collaboration and conflict resolution remain out of scope.
 
 1. Open `/app/settings`.
 2. Open Auth Diagnostics.
-3. Confirm Build is `8bfa868` or newer.
+3. Confirm Build is `3a7b065` or newer.
 4. Confirm Branch is `main`.
 5. Confirm Cloud Schema Readiness passes for household preferences, core
    snapshot, settlement RPCs, and realtime checks.
@@ -122,7 +122,7 @@ Date:
 Tester:
 Browser:
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: 8bfa868 or newer
+Expected build commit: 3a7b065 or newer
 Auth Diagnostics build:
 Auth Diagnostics branch:
 Cloud Schema Readiness:

@@ -174,6 +174,8 @@ permissible-attachment review pass.
 * [x] Expanded member account-owner aliases so personal accounts remain visible
   when a signed-in member is represented by local, linked-shell, or Supabase
   member ids.
+* [x] Removed the admin household owner fallback from member account creation
+  so new member personal accounts default to the signed-in member only.
 * [ ] Pending Sprint 104 live validation.
 
 ---

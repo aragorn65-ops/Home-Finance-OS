@@ -64,6 +64,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 * Expanded member account-owner alias checks so personal accounts remain
   visible after refresh when member identity is represented by a local,
   linked-shell, or Supabase member id.
+* Removed the admin household owner fallback from member account creation so a
+  member-created personal account is not assigned to the admin owner.
 
 ---
 
