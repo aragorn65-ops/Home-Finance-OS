@@ -31,9 +31,11 @@ export interface Transaction {
   createdByMemberId?: HouseholdMember["id"];
 
   /**
-   * Member who paid an expense.
+   * Member selected in the transaction form.
    *
-   * Used for reimbursements and settlements.
+   * For expenses this is the payer used for reimbursements
+   * and settlements. For income and transfers this retains
+   * the recorded-by member shown when editing the record.
    */
   paidByMemberId?: HouseholdMember["id"];
 

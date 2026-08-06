@@ -566,10 +566,7 @@ export default class TransactionService {
           recordedByMemberId,
 
         paidByMemberId:
-          form.type ===
-          "expense"
-            ? recordedByMemberId
-            : undefined,
+          recordedByMemberId,
 
         expenseSplitMethod:
           form.type ===
@@ -867,10 +864,8 @@ export default class TransactionService {
           existing.createdByMemberId,
 
         paidByMemberId:
-          form.type ===
-          "expense"
-            ? selectedMemberId
-            : undefined,
+          selectedMemberId ??
+          existing.paidByMemberId,
 
         expenseSplitMethod:
           form.type ===

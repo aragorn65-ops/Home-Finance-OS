@@ -155,6 +155,10 @@ test("Supabase core snapshot RPC preserves transaction member ids", () => {
   );
   assert.match(
     schemaSql,
+    /coalesce\(paid_by_member\.id, created_by_member\.id, current_member_id\)/
+  );
+  assert.match(
+    schemaSql,
     /'createdByMemberId', coalesce\(created_by_member\.local_record_id, created_by_member\.id::text\)/
   );
   assert.match(

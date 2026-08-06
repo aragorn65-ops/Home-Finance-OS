@@ -2532,11 +2532,7 @@ begin
     target_household_id,
     transaction_record.id,
     coalesce(created_by_member.id, current_member_id),
-    case
-      when lower(trim(transaction_record.type)) = 'expense' then
-        coalesce(paid_by_member.id, created_by_member.id, current_member_id)
-      else null
-    end,
+    coalesce(paid_by_member.id, created_by_member.id, current_member_id),
     nullif(transaction_record."expenseSplitMethod", ''),
     case
       when lower(trim(transaction_record.type)) = 'expense' then

@@ -188,3 +188,79 @@ test(
     );
   }
 );
+
+test(
+  "transaction upload payload retains recorded member for non-expense transactions",
+  () => {
+    const transfer: Transaction = {
+      id:
+        "transfer-1",
+      householdId:
+        "household-1",
+      createdByMemberId:
+        "member-local-2",
+      paidByMemberId:
+        "member-local-2",
+      visibility:
+        "household",
+      type:
+        "transfer",
+      amount:
+        500,
+      enteredAmount:
+        500,
+      enteredCurrency:
+        "PHP",
+      baseCurrency:
+        "PHP",
+      baseAmount:
+        500,
+      exchangeRate:
+        1,
+      sourceAccountId:
+        "account-source",
+      destinationAccountId:
+        "account-destination",
+      category:
+        "Transfer",
+      description:
+        "Move money",
+      notes:
+        "",
+      attachments: [],
+      transactionDate:
+        new Date(
+          "2026-08-06T12:00:00Z"
+        ),
+      isActive:
+        true,
+      createdAt:
+        new Date(
+          "2026-08-06T13:00:00Z"
+        ),
+      updatedAt:
+        new Date(
+          "2026-08-06T14:00:00Z"
+        ),
+    };
+
+    const payload =
+      createMigrationTransactionUploadPayload(
+        [
+          transfer,
+        ],
+        "household-1"
+      );
+
+    assert.equal(
+      payload.transactions[0]
+        ?.createdByMemberId,
+      "member-local-2"
+    );
+    assert.equal(
+      payload.transactions[0]
+        ?.paidByMemberId,
+      "member-local-2"
+    );
+  }
+);
