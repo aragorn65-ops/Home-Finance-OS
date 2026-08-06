@@ -21,6 +21,10 @@ import {
 
 import AccountService from "../../accounts/services/AccountService";
 import {
+  getAccountVisibilityLabel,
+  isAccountVisibleForMember,
+} from "../../accounts/services/accountVisibility";
+import {
   useHouseholdMembership,
 } from "../../auth";
 
@@ -182,6 +186,8 @@ export default function UtilitiesPage() {
 
         ownerMemberId:
           account.ownerMemberId,
+        visibility:
+          account.visibility,
       })
     );
   const selectedMonth =
@@ -1016,6 +1022,7 @@ interface ProviderBillPaymentControlsProps {
     id: string;
     name: string;
     ownerMemberId: string;
+    visibility: "household" | "private";
   }[];
   onChange: (
     providerBillId: string,
@@ -1067,8 +1074,10 @@ function ProviderBillPaymentControls({
   const paymentAccounts =
     accounts.filter(
       (account) =>
-        account.ownerMemberId ===
-        paymentForm.paidByMemberId
+        isAccountVisibleForMember(
+          account,
+          paymentForm.paidByMemberId
+        )
     );
 
   return (
@@ -1155,7 +1164,10 @@ function ProviderBillPaymentControls({
                   key={account.id}
                   value={account.id}
                 >
-                  {account.name}
+                  {account.name} -{" "}
+                  {getAccountVisibilityLabel(
+                    account
+                  )}
                 </option>
               )
             )}

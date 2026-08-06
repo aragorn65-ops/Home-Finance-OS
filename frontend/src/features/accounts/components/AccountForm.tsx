@@ -105,7 +105,7 @@ const accountVisibilities = [
     value: "household",
   },
   {
-    label: "Private",
+    label: "Personal (owner only)",
     value: "private",
   },
 ];

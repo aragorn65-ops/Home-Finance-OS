@@ -123,6 +123,9 @@ gate: admin sign-in, sign-out, session refresh, and expired-session recovery.
 * [x] Kept Settings available for signed-out or pre-membership auth recovery
   while limiting household preferences, backup, and reset tools to owner/admin
   sessions in production auth mode.
+* [x] Clarified personal account creation and payment selectors so household
+  accounts remain available to selected payers while personal accounts appear
+  only for their owner.
 * [ ] Pending Sprint 104 live validation.
 
 ---

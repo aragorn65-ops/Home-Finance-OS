@@ -10,6 +10,9 @@ import {
 } from "react";
 
 import type { Account } from "../../accounts/models/Account";
+import {
+  isAccountVisibleForMember,
+} from "../../accounts/services/accountVisibility";
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
 import type { OperationResult } from "../../../shared/types/index";
@@ -1032,8 +1035,10 @@ export default function TransactionForm({
       return accounts.filter(
         (account) =>
           account.isActive &&
-          account.ownerMemberId ===
+          isAccountVisibleForMember(
+            account,
             form.paidByMemberId
+          )
       );
     }, [
       accounts,
@@ -2612,7 +2617,7 @@ export default function TransactionForm({
                   {account.name} - {account.currency}
                   {account.visibility ===
                   "private"
-                    ? " — Private"
+                    ? " — Personal"
                     : ""}
                   {account.accountClass ===
                   "liability"
@@ -2677,7 +2682,7 @@ export default function TransactionForm({
                   {account.name} - {account.currency}
                   {account.visibility ===
                   "private"
-                    ? " — Private"
+                    ? " — Personal"
                     : ""}
                   {account.accountClass ===
                   "liability"

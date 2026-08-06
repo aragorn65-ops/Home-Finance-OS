@@ -40,6 +40,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   owner/admin sessions in production auth mode.
 * Utility provider bills are included in cloud core snapshots for save, load,
   and linked-browser restore.
+* Personal accounts are labeled as owner-only in account setup and appear in
+  payment account selectors only for the selected owning member.
 
 ---
 

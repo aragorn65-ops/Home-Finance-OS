@@ -15,6 +15,10 @@ import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
 import openAttachmentPreview, {
   hasAttachmentPreviewData,
 } from "../../../shared/utils/openAttachmentPreview";
+import {
+  getAccountVisibilityLabel,
+  isAccountVisibleForMember,
+} from "../../accounts/services/accountVisibility";
 
 import type {
   UtilityApplianceUsageForm,
@@ -43,6 +47,7 @@ export interface UtilityAccountOption {
   id: string;
   name: string;
   ownerMemberId: string;
+  visibility: "household" | "private";
 }
 
 interface UtilityBillFormProps {
@@ -295,8 +300,10 @@ export default function UtilityBillForm({
 
       return accounts.filter(
         (account) =>
-          account.ownerMemberId ===
-          form.paidByMemberId
+          isAccountVisibleForMember(
+            account,
+            form.paidByMemberId
+          )
       );
     }, [
       accounts,
@@ -1816,7 +1823,10 @@ export default function UtilityBillForm({
                     key={account.id}
                     value={account.id}
                   >
-                    {account.name}
+                    {account.name} -{" "}
+                    {getAccountVisibilityLabel(
+                      account
+                    )}
                   </option>
                 )
               )}

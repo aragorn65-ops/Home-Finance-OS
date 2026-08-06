@@ -8,6 +8,10 @@ import {
 } from "react";
 
 import type { Account } from "../../accounts/models/Account";
+import {
+  getAccountVisibilityLabel,
+  isAccountVisibleForMember,
+} from "../../accounts/services/accountVisibility";
 
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
 
@@ -618,8 +622,10 @@ export default function SettlementForm({
           account.isActive &&
           account.householdId ===
             householdId &&
-          account.ownerMemberId ===
+          isAccountVisibleForMember(
+            account,
             form.fromMemberId
+          )
       );
     }, [
       accounts,
@@ -638,8 +644,10 @@ export default function SettlementForm({
           account.isActive &&
           account.householdId ===
             householdId &&
-          account.ownerMemberId ===
+          isAccountVisibleForMember(
+            account,
             form.toMemberId
+          )
       );
     }, [
       accounts,
@@ -806,8 +814,10 @@ export default function SettlementForm({
             !sourceAccount.isActive ||
             sourceAccount.householdId !==
               householdId ||
-            sourceAccount.ownerMemberId !==
+            !isAccountVisibleForMember(
+              sourceAccount,
               fromMemberId
+            )
           )
         );
 
@@ -874,8 +884,10 @@ export default function SettlementForm({
             !destinationAccount.isActive ||
             destinationAccount.householdId !==
               householdId ||
-            destinationAccount.ownerMemberId !==
+            !isAccountVisibleForMember(
+              destinationAccount,
               toMemberId
+            )
           )
         );
 
@@ -1525,11 +1537,10 @@ export default function SettlementForm({
                   key={account.id}
                   value={account.id}
                 >
-                  {account.name}
-                  {account.visibility ===
-                  "private"
-                    ? " — Private"
-                    : ""}
+                  {account.name} -{" "}
+                  {getAccountVisibilityLabel(
+                    account
+                  )}
                 </option>
               )
             )}
@@ -1586,11 +1597,10 @@ export default function SettlementForm({
                     form.sourceAccountId
                   }
                 >
-                  {account.name}
-                  {account.visibility ===
-                  "private"
-                    ? " — Private"
-                    : ""}
+                  {account.name} -{" "}
+                  {getAccountVisibilityLabel(
+                    account
+                  )}
                 </option>
               )
             )}
