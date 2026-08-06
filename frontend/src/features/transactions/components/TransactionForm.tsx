@@ -2896,7 +2896,7 @@ export default function TransactionForm({
                   index
                 ) => {
                   const member =
-                    activeMembers.find(
+                    members.find(
                       (item) =>
                         item.id ===
                         allocation.memberId

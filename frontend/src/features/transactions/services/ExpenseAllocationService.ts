@@ -66,7 +66,10 @@ export default class ExpenseAllocationService {
         paidByMemberId,
         splitMethod,
         transactionAmount,
-        forms
+        forms,
+        {
+          requireActiveMembers: true,
+        }
       );
 
     if (!buildResult.success) {
@@ -133,7 +136,10 @@ export default class ExpenseAllocationService {
         paidByMemberId,
         splitMethod,
         transactionAmount,
-        forms
+        forms,
+        {
+          requireActiveMembers: false,
+        }
       );
 
     if (!buildResult.success) {
@@ -228,7 +234,10 @@ export default class ExpenseAllocationService {
     paidByMemberId: string,
     splitMethod: ExpenseSplitMethod,
     transactionAmount: number,
-    forms: ExpenseAllocationForm[]
+    forms: ExpenseAllocationForm[],
+    options: {
+      requireActiveMembers: boolean;
+    }
   ): OperationResult<ExpenseAllocation[]> {
     if (
       !transactionId.trim()
@@ -288,7 +297,8 @@ export default class ExpenseAllocationService {
       this.validateMembers(
         householdId,
         paidByMemberId,
-        forms
+        forms,
+        options
       );
 
     if (
@@ -447,7 +457,10 @@ export default class ExpenseAllocationService {
   private static validateMembers(
     householdId: string,
     paidByMemberId: string,
-    forms: ExpenseAllocationForm[]
+    forms: ExpenseAllocationForm[],
+    options: {
+      requireActiveMembers: boolean;
+    }
   ): OperationResult<boolean> {
     const payer =
       HouseholdMemberService
@@ -470,14 +483,19 @@ export default class ExpenseAllocationService {
     if (
       payer.householdId !==
         householdId ||
-      !payer.isActive
+      (
+        options.requireActiveMembers &&
+        !payer.isActive
+      )
     ) {
       return OperationResults.failure<
         boolean
       >(
         {
           paidByMemberId:
-            "The expense payer is not an active member of this household.",
+            options.requireActiveMembers
+              ? "The expense payer is not an active member of this household."
+              : "The expense payer does not belong to this household.",
         },
         "Unable to validate the expense payer."
       );
@@ -548,14 +566,19 @@ export default class ExpenseAllocationService {
         !member ||
         member.householdId !==
           householdId ||
-        !member.isActive
+        (
+          options.requireActiveMembers &&
+          !member.isActive
+        )
       ) {
         return OperationResults.failure<
           boolean
         >(
           {
             allocations:
-              "Every allocation member must be active and belong to the household.",
+              options.requireActiveMembers
+                ? "Every allocation member must be active and belong to the household."
+                : "Every allocation member must belong to the household.",
           },
           "Unable to validate expense allocations."
         );

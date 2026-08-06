@@ -504,7 +504,10 @@ export default class TransactionService {
     const memberErrors =
       this.validateMemberReferences(
         form,
-        householdId
+        householdId,
+        {
+          requireActiveMembers: true,
+        }
       );
 
     if (
@@ -807,7 +810,10 @@ export default class TransactionService {
     const memberErrors =
       this.validateMemberReferences(
         form,
-        existing.householdId
+        existing.householdId,
+        {
+          requireActiveMembers: false,
+        }
       );
 
     if (
@@ -1563,7 +1569,10 @@ export default class TransactionService {
    */
   private static validateMemberReferences(
     form: TransactionForm,
-    householdId: string
+    householdId: string,
+    options: {
+      requireActiveMembers: boolean;
+    }
   ): Record<string, string> {
     const errors:
       Record<string, string> = {};
@@ -1589,10 +1598,15 @@ export default class TransactionService {
       if (
         selectedMember.householdId !==
           householdId ||
-        !selectedMember.isActive
+        (
+          options.requireActiveMembers &&
+          !selectedMember.isActive
+        )
       ) {
         errors.paidByMemberId =
-          "The selected member must be active and belong to this household.";
+          options.requireActiveMembers
+            ? "The selected member must be active and belong to this household."
+            : "The selected member must belong to this household.";
 
         return errors;
       }
@@ -1646,10 +1660,15 @@ export default class TransactionService {
         !member ||
         member.householdId !==
           householdId ||
-        !member.isActive
+        (
+          options.requireActiveMembers &&
+          !member.isActive
+        )
       ) {
         errors.allocations =
-          "Every expense participant must be an active member of this household.";
+          options.requireActiveMembers
+            ? "Every expense participant must be an active member of this household."
+            : "Every expense participant must belong to this household.";
 
         break;
       }
