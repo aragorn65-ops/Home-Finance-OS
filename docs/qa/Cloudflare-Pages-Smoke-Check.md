@@ -167,6 +167,9 @@ Admin retains control over settlement review and correction.
 
 ## Real-Time Synchronization Check
 
+For the full two-tab realtime checklist, use
+`docs/qa/Sprint-104-Realtime-Smoke.md`.
+
 1. Sign in with the invited admin account.
 2. Open the deployed app in a second browser tab for the same admin session.
 3. Change household metadata, an account/transaction snapshot, or a settlement

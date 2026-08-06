@@ -165,6 +165,16 @@ docs/qa/Sprint-104-Route-Smoke.md
 
 ---
 
+## Sprint 104 Realtime Smoke
+
+Use this guide for the two-tab active-session realtime pass:
+
+```text
+docs/qa/Sprint-104-Realtime-Smoke.md
+```
+
+---
+
 ## Sprint 104 Production Evidence Log
 
 Record the live smoke result here before checking launch gates:
@@ -174,7 +184,7 @@ Date: 2026-08-06
 Tester: Product owner
 Browser: Production browser session
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: ff56772 or newer
+Expected build commit: 418c204 or newer
 Settings Auth Diagnostics build: Passed
 Settings Auth Diagnostics branch: main
 Cloudflare deployment status: Passed for deployed app access

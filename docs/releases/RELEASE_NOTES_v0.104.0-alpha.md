@@ -51,6 +51,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   signed-out/admin/member/viewer route validation.
 * Members can review attachments on transactions they are permitted to view;
   private transaction attachments remain hidden from non-involved members.
+* Added a Sprint 104 realtime production smoke guide for two-tab active-session
+  sync validation.
 
 ---
 
