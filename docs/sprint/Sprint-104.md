@@ -167,6 +167,8 @@ permissible-attachment review pass.
 * [x] Fixed member personal account visibility after save by authorizing local
   account records against the local household id while preserving the signed-in
   member identity.
+* [x] Hardened involved-member settlement entry and review checks to accept
+  local member aliases for signed-in Supabase memberships.
 * [ ] Pending Sprint 104 live validation.
 
 ---

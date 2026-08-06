@@ -48,6 +48,11 @@ Supabase validation before inviting public beta testers.
 * Settlement role authorization:
   `frontend/test/authorization.test.ts` and
   `frontend/test/remoteSettlementPersistence.test.ts`
+* Member settlement access accepts local member aliases for involved-member
+  create and view authorization:
+  `frontend/src/features/auth/services/authorization.ts`,
+  `frontend/src/features/settlements/pages/SettlementsPage.tsx`, and
+  `frontend/test/authorization.test.ts`
 * Member/viewer tenant-record access is read-only in the shared authorization
   helper, including owner-only personal account visibility:
   `frontend/src/features/auth/services/authorization.ts` and
@@ -197,7 +202,7 @@ Date: 2026-08-06
 Tester: Product owner
 Browser: Production browser session
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: 33c336b or newer
+Expected build commit: b7dea21 or newer
 Settings Auth Diagnostics build: Passed
 Settings Auth Diagnostics branch: main
 Cloudflare deployment status: Passed for deployed app access
