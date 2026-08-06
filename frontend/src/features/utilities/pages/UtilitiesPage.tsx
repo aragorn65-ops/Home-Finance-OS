@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import PageHeader from "../../../shared/ui/PageHeader";
+import Input from "../../../shared/ui/Input";
 import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
 import type {
   StoredAttachment,
@@ -49,6 +50,7 @@ interface ProviderPaymentForm {
 export default function UtilitiesPage() {
   const {
     selectedMonthValue,
+    setSelectedMonthValue,
   } = useReportingMonth();
 
   const [
@@ -566,6 +568,18 @@ export default function UtilitiesPage() {
       <PageHeader
         title="Utilities"
         subtitle="Calculate and save provider bill shares before payment."
+        actions={
+          <Input
+            type="month"
+            aria-label="Reporting month"
+            value={selectedMonthValue}
+            onChange={(event) =>
+              setSelectedMonthValue(
+                event.target.value
+              )
+            }
+          />
+        }
       />
 
       <FormValidationAlert

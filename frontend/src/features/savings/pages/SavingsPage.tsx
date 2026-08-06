@@ -11,6 +11,7 @@ import {
   DialogHeader,
   FormValidationAlert,
 } from "../../../shared/ui";
+import useReportingMonth from "../../../shared/hooks/useReportingMonth";
 
 import AccountService from "../../accounts/services/AccountService";
 
@@ -282,6 +283,11 @@ function getFirstError(
 }
 
 export default function SavingsPage() {
+  const {
+    selectedMonthValue,
+    setSelectedMonthValue,
+  } = useReportingMonth();
+
   const household =
     loadHousehold();
 
@@ -977,6 +983,12 @@ export default function SavingsPage() {
   return (
     <>
       <SavingsToolbar
+        selectedMonth={
+          selectedMonthValue
+        }
+        onSelectedMonthChange={
+          setSelectedMonthValue
+        }
         onAddGoal={
           handleAddGoal
         }
