@@ -53,6 +53,11 @@ Supabase validation before inviting public beta testers.
 * Member account creation no longer falls back to the admin household owner
   when choosing the default account owner:
   `frontend/src/features/accounts/pages/AccountsPage.tsx`
+* Member-created personal accounts are archived locally and merged back after
+  cloud core snapshot restore so refresh does not hide or erase them:
+  `frontend/src/features/accounts/repositories/AccountRepository.ts`,
+  `frontend/src/shared/storage/localStorageStore.ts`, and
+  `frontend/test/browserCoreSnapshotLocalWriter.test.ts`
 * Single-household authenticated-link conflicts are blocked before local link
   state can be overwritten:
   `frontend/test/householdStorage.test.ts`
@@ -213,7 +218,7 @@ Date: 2026-08-06
 Tester: Product owner
 Browser: Production browser session
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: 3a7b065 or newer
+Expected build commit: 90b775e or newer
 Settings Auth Diagnostics build: Passed
 Settings Auth Diagnostics branch: main
 Cloudflare deployment status: Passed for deployed app access

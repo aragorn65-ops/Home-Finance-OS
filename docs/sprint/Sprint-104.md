@@ -176,6 +176,8 @@ permissible-attachment review pass.
   member ids.
 * [x] Removed the admin household owner fallback from member account creation
   so new member personal accounts default to the signed-in member only.
+* [x] Added a local member-personal account archive so member-created personal
+  accounts survive cloud core snapshot restore and browser refresh.
 * [ ] Pending Sprint 104 live validation.
 
 ---
@@ -186,7 +188,12 @@ Paused after the member account ownership retest exposed a magic-link delivery
 block. Latest pushed code checkpoint is `3a7b065`; latest docs checkpoint is
 `be9df1c`.
 
-Resume by waiting for the Cloudflare production build to show `3a7b065` or
+Resumed on 2026-08-08. Magic-link sign-in as Rasha succeeded, but a newly
+created member personal account disappeared after browser refresh. Added
+checkpoint `90b775e`, which stores member-created personal accounts in a local
+archive and merges that archive back after cloud core snapshot restore.
+
+Resume by waiting for the Cloudflare production build to show `90b775e` or
 newer in Settings -> Auth Diagnostics, then sign in as Rasha/member and retest:
 
 * Create a fresh personal account.

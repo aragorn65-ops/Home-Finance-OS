@@ -28,7 +28,7 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 
 ## Verified
 
-* Local verification passed with 198 tests.
+* Local verification passed with 199 tests.
 * Production Supabase cutover, Auth Diagnostics, admin auth, linked refresh
   restore, and July-to-August partial settlement carryover passed.
 * Utilities paid provider bills now filter by selected payment month.
@@ -66,6 +66,8 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   linked-shell, or Supabase member id.
 * Removed the admin household owner fallback from member account creation so a
   member-created personal account is not assigned to the admin owner.
+* Added a local archive for member-created personal accounts so they survive
+  browser refresh and cloud core snapshot restore in member sessions.
 
 ---
 
