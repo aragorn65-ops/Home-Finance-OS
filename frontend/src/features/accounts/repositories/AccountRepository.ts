@@ -144,6 +144,10 @@ export default class AccountRepository {
       return undefined;
     }
 
+    this.persistPersonalAccountArchive(
+      storedAccount
+    );
+
     this.accounts =
       nextAccounts;
 
@@ -201,6 +205,10 @@ export default class AccountRepository {
       return undefined;
     }
 
+    this.persistPersonalAccountArchive(
+      updatedAccount
+    );
+
     this.accounts =
       nextAccounts;
 
@@ -248,6 +256,10 @@ export default class AccountRepository {
       return false;
     }
 
+    this.removePersonalAccountArchive(
+      id
+    );
+
     this.accounts =
       nextAccounts;
 
@@ -276,9 +288,9 @@ export default class AccountRepository {
     }
 
     const nextAccounts =
-      accounts.map(
-        (account) =>
-          this.clone(account)
+      this.mergePersonalAccountArchive(
+        householdId,
+        accounts
       );
 
     if (
@@ -364,7 +376,10 @@ export default class AccountRepository {
 
       if (belongsToActiveHousehold) {
         this.accounts =
-          hydratedAccounts;
+          this.mergePersonalAccountArchive(
+            household.id,
+            hydratedAccounts
+          );
       } else {
         const activeHouseholdAccounts =
           hydratedAccounts.filter(
@@ -396,10 +411,14 @@ export default class AccountRepository {
                 }))
             : [];
 
-        this.accounts = [
-          ...activeHouseholdAccounts,
-          ...salvagedPersonalAccounts,
-        ];
+        this.accounts =
+          this.mergePersonalAccountArchive(
+            household.id,
+            [
+              ...activeHouseholdAccounts,
+              ...salvagedPersonalAccounts,
+            ]
+          );
 
         if (
           salvagedPersonalAccounts.length > 0
@@ -474,6 +493,142 @@ export default class AccountRepository {
       );
 
     return result.success;
+  }
+
+  private static mergePersonalAccountArchive(
+    householdId: string,
+    accounts: Account[]
+  ): Account[] {
+    const household =
+      loadHousehold();
+    const linkedShellMember =
+      household?.id === householdId &&
+      household.authenticatedLink &&
+      household.members.length === 1
+        ? household.members[0]
+        : undefined;
+    const accountById =
+      new Map<string, Account>();
+
+    for (const account of accounts) {
+      accountById.set(
+        account.id,
+        this.clone(account)
+      );
+    }
+
+    for (const account of this.loadPersonalAccountArchive()) {
+      const archivedAccount =
+        account.householdId === householdId
+          ? account
+          : linkedShellMember
+            ? {
+                ...account,
+                householdId,
+                ownerMemberId:
+                  linkedShellMember.id,
+              }
+            : undefined;
+
+      if (!archivedAccount) {
+        continue;
+      }
+
+      accountById.set(
+        archivedAccount.id,
+        this.clone(archivedAccount)
+      );
+    }
+
+    return [
+      ...accountById.values(),
+    ];
+  }
+
+  private static persistPersonalAccountArchive(
+    account: Account
+  ): void {
+    if (
+      account.visibility !== "private"
+    ) {
+      this.removePersonalAccountArchive(
+        account.id
+      );
+
+      return;
+    }
+
+    this.persistPersonalAccountArchiveCollection(
+      [
+        ...this.loadPersonalAccountArchive()
+          .filter(
+            (item) =>
+              item.id !== account.id
+          ),
+        this.clone(account),
+      ]
+    );
+  }
+
+  private static removePersonalAccountArchive(
+    accountId: string
+  ): void {
+    this.persistPersonalAccountArchiveCollection(
+      this.loadPersonalAccountArchive()
+        .filter(
+          (account) =>
+            account.id !== accountId
+        )
+    );
+  }
+
+  private static loadPersonalAccountArchive():
+    Account[] {
+    const loadResult =
+      loadStoredData<
+        SerializedAccount[]
+      >(
+        HFOS_STORAGE_KEYS
+          .memberPersonalAccounts,
+
+        (
+          value
+        ): value is SerializedAccount[] =>
+          this.isSerializedAccountArray(
+            value
+          )
+      );
+
+    if (
+      loadResult.status !==
+      "loaded"
+    ) {
+      return [];
+    }
+
+    return (
+      loadResult.data ?? []
+    ).map(
+      (account) =>
+        this.deserializeAccount(
+          account
+        )
+    );
+  }
+
+  private static persistPersonalAccountArchiveCollection(
+    accounts: Account[]
+  ): void {
+    saveStoredData(
+      HFOS_STORAGE_KEYS
+        .memberPersonalAccounts,
+      accounts.map(
+        (account) =>
+          this.serializeAccount(
+            account
+          )
+      )
+    );
   }
 
   /**

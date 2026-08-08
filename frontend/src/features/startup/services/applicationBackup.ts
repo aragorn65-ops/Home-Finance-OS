@@ -34,6 +34,8 @@ const backupStorageKeys =
 const collectionKeys =
   new Set<HfosStorageKey>([
     HFOS_STORAGE_KEYS.accounts,
+    HFOS_STORAGE_KEYS
+      .memberPersonalAccounts,
     HFOS_STORAGE_KEYS.transactions,
     HFOS_STORAGE_KEYS
       .expenseAllocations,
@@ -49,6 +51,8 @@ const collectionKeys =
 const optionalBackupStorageKeys =
   new Set<HfosStorageKey>([
     HFOS_STORAGE_KEYS.providerBills,
+    HFOS_STORAGE_KEYS
+      .memberPersonalAccounts,
   ]);
 
 export interface ApplicationBackupResult {
@@ -408,6 +412,13 @@ export async function restoreApplicationBackup(
     [HFOS_STORAGE_KEYS.providerBills]:
       backup.records[
         HFOS_STORAGE_KEYS.providerBills
+      ] ?? [],
+
+    [HFOS_STORAGE_KEYS
+      .memberPersonalAccounts]:
+      backup.records[
+        HFOS_STORAGE_KEYS
+          .memberPersonalAccounts
       ] ?? [],
   };
 

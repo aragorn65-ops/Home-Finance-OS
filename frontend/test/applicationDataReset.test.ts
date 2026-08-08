@@ -50,6 +50,19 @@ test(
       ).success,
       true
     );
+    assert.equal(
+      saveStoredData(
+        HFOS_STORAGE_KEYS
+          .memberPersonalAccounts,
+        [
+          {
+            id: "personal-account-1",
+            name: "Rasha Wallet",
+          },
+        ]
+      ).success,
+      true
+    );
 
     localStorage.setItem(
       APP_LOCK_STORAGE_KEY,
@@ -103,6 +116,13 @@ test(
           HFOS_STORAGE_KEYS.accounts
         ) ?? "{}"
       );
+    const storedMemberPersonalAccounts =
+      JSON.parse(
+        localStorage.getItem(
+          HFOS_STORAGE_KEYS
+            .memberPersonalAccounts
+        ) ?? "{}"
+      );
 
     assert.equal(
       storedHousehold.data
@@ -112,6 +132,10 @@ test(
     );
     assert.deepEqual(
       storedAccounts.data,
+      []
+    );
+    assert.deepEqual(
+      storedMemberPersonalAccounts.data,
       []
     );
   }

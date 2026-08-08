@@ -5,6 +5,9 @@ export const HFOS_STORAGE_KEYS = {
 
   accounts: "hfos.v1.accounts",
 
+  memberPersonalAccounts:
+    "hfos.v1.member-personal-accounts",
+
   transactions: "hfos.v1.transactions",
 
   expenseAllocations:

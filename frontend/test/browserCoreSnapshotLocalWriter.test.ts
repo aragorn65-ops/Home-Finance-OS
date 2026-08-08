@@ -340,3 +340,84 @@ test("linked member shell salvages local personal accounts from previous househo
     "member-rasha"
   );
 });
+
+test("member personal account archive survives account collection replacement", () => {
+  installBrowserStorage();
+
+  const now =
+    new Date("2026-08-06T00:00:00Z");
+
+  saveStoredData(
+    HFOS_STORAGE_KEYS.household,
+    {
+      id:
+        householdId,
+      householdName:
+        "Writer Household",
+      country:
+        "PH",
+      currency:
+        "PHP",
+      timezone:
+        "Asia/Manila",
+      members: [
+        {
+          id:
+            "member-rasha",
+          householdId,
+          displayName:
+            "Rasha",
+          role:
+            "member",
+          isActive:
+            true,
+          createdAt:
+            now,
+          updatedAt:
+            now,
+        },
+      ],
+      createdAt:
+        now,
+      updatedAt:
+        now,
+    }
+  );
+
+  const personalAccount =
+    createAccount(
+      "member-personal-archive",
+      "private"
+    );
+
+  assert.equal(
+    AccountRepository.create(
+      personalAccount
+    )?.id,
+    personalAccount.id
+  );
+
+  assert.equal(
+    AccountRepository.replaceForHousehold(
+      householdId,
+      []
+    ),
+    true
+  );
+
+  const accounts =
+    AccountRepository.findAll();
+
+  assert.equal(
+    accounts.length,
+    1
+  );
+  assert.equal(
+    accounts[0]?.id,
+    personalAccount.id
+  );
+  assert.equal(
+    accounts[0]?.ownerMemberId,
+    "member-rasha"
+  );
+});

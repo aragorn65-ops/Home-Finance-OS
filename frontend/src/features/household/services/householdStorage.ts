@@ -999,6 +999,12 @@ function initializeEmptyFinancialCollections():
   );
 
   saveStoredData(
+    HFOS_STORAGE_KEYS
+      .memberPersonalAccounts,
+    []
+  );
+
+  saveStoredData(
     HFOS_STORAGE_KEYS.transactions,
     []
   );

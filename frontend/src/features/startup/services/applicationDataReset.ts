@@ -21,6 +21,8 @@ const hfosStorageKeyPrefix = "hfos.";
 const resetPreservedLocalStorageKeys =
   new Set<string>([
     HFOS_STORAGE_KEYS.accounts,
+    HFOS_STORAGE_KEYS
+      .memberPersonalAccounts,
     HFOS_STORAGE_KEYS.transactions,
     HFOS_STORAGE_KEYS
       .expenseAllocations,
@@ -275,6 +277,16 @@ function clearFinancialCollections(
     "Accounts",
     saveStoredData(
       HFOS_STORAGE_KEYS.accounts,
+      []
+    )
+  );
+
+  clearCurrentCollection(
+    errors,
+    "Member personal accounts",
+    saveStoredData(
+      HFOS_STORAGE_KEYS
+        .memberPersonalAccounts,
       []
     )
   );
