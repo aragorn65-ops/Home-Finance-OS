@@ -12,9 +12,6 @@ import type {
   AuthSettlementObserver,
 } from "../../auth/services";
 import {
-  saveCurrentBrowserCoreSnapshotForHousehold,
-} from "../../auth/services/coreSnapshotSync";
-import {
   browserCoreSnapshotRecordSource,
 } from "../../auth/services/browserCoreSnapshotRecordSource";
 import type {
@@ -35,6 +32,9 @@ import SettlementBalanceService from "../services/SettlementBalanceService";
 import {
   createRemoteSettlementApplicationDrafts,
 } from "../services/settlementRemoteDrafts";
+import {
+  saveSettlementCoreSnapshotIfAllowed,
+} from "../services/settlementCoreSnapshotSave";
 
 import {
   OperationResults,
@@ -513,7 +513,7 @@ export default function useSettlements(
       const adapter =
         getAuthBackendAdapter();
 
-      await saveCurrentBrowserCoreSnapshotForHousehold(
+      await saveSettlementCoreSnapshotIfAllowed(
         {
           adapter,
           householdId,
@@ -621,7 +621,7 @@ export default function useSettlements(
     try {
       const adapter =
         getAuthBackendAdapter();
-      await saveCurrentBrowserCoreSnapshotForHousehold(
+      await saveSettlementCoreSnapshotIfAllowed(
         {
           adapter,
           householdId,
