@@ -28,7 +28,7 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
 
 ## Verified
 
-* Local verification passed with 199 tests.
+* Local verification passed with 201 tests.
 * Production Supabase cutover, Auth Diagnostics, admin auth, linked refresh
   restore, and July-to-August partial settlement carryover passed.
 * Utilities paid provider bills now filter by selected payment month.
@@ -68,6 +68,9 @@ after the Sprint 103 settlement and Supabase allocation-sync hardening.
   member-created personal account is not assigned to the admin owner.
 * Added a local archive for member-created personal accounts so they survive
   browser refresh and cloud core snapshot restore in member sessions.
+* Member settlement saves now skip the admin-only core snapshot pre-save
+  refusal and continue to the settlement RPC, allowing involved members to
+  record their own payments without granting core finance write access.
 
 ---
 

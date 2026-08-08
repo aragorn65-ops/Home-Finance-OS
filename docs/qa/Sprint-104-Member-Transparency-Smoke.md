@@ -31,9 +31,10 @@ but cannot record settlements.
   member.
 * The latest Supabase schema has been applied and PostgREST schema cache has
   been reloaded.
-* Production is deployed at commit `90b775e` or newer for member personal
-  account visibility after save/re-entry and settlement member-alias
-  authorization.
+* Production is deployed at commit `288331a` or newer for member personal
+  account visibility after save/re-entry, settlement member-alias
+  authorization, and member settlement save continuation after an admin-only
+  core snapshot pre-save refusal.
 
 ---
 
@@ -116,6 +117,9 @@ remain visible for household workflows.
 
 Expected result: involved-member settlement entry saves and reloads from the
 cloud-backed store.
+
+If the save fails with `Only a household admin can save core finance records`,
+the deployed build is older than the member settlement checkpoint.
 
 ---
 

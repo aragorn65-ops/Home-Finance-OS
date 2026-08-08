@@ -178,6 +178,9 @@ permissible-attachment review pass.
   so new member personal accounts default to the signed-in member only.
 * [x] Added a local member-personal account archive so member-created personal
   accounts survive cloud core snapshot restore and browser refresh.
+* [x] Allowed involved-member settlement saves to continue when the pre-save
+  core finance snapshot is rejected by Supabase admin-only permissions, while
+  keeping the settlement RPC as the final authorization check.
 * [ ] Pending Sprint 104 live validation.
 
 ---
@@ -193,12 +196,19 @@ created member personal account disappeared after browser refresh. Added
 checkpoint `90b775e`, which stores member-created personal accounts in a local
 archive and merges that archive back after cloud core snapshot restore.
 
-Resume by waiting for the Cloudflare production build to show `90b775e` or
+Rasha member settlement entry then exposed an admin-only core snapshot pre-save
+failure before the settlement RPC could run. Added checkpoint `288331a`, which
+skips only that admin-only snapshot refusal for settlement saves and continues
+to the involved-member settlement creation check.
+
+Resume by waiting for the Cloudflare production build to show `288331a` or
 newer in Settings -> Auth Diagnostics, then sign in as Rasha/member and retest:
 
 * Create a fresh personal account.
 * Confirm the account owner is Rasha, not the admin household owner.
 * Refresh Accounts and confirm the account remains visible.
+* Record an involved-member settlement and confirm it saves, appears in the
+  selected payment month, and remains after refresh.
 * If the magic-link success message appears but no email arrives, check
   Supabase Authentication logs, spam/junk/promotions, email spelling, and avoid
   repeated sends while rate limits may be active.

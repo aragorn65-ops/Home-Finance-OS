@@ -58,6 +58,12 @@ Supabase validation before inviting public beta testers.
   `frontend/src/features/accounts/repositories/AccountRepository.ts`,
   `frontend/src/shared/storage/localStorageStore.ts`, and
   `frontend/test/browserCoreSnapshotLocalWriter.test.ts`
+* Member settlement creation skips only the admin-only core snapshot pre-save
+  refusal and still relies on the settlement RPC for involved-member
+  authorization:
+  `frontend/src/features/settlements/services/settlementCoreSnapshotSave.ts`,
+  `frontend/src/features/settlements/hooks/useSettlements.ts`, and
+  `frontend/test/settlementCoreSnapshotSave.test.ts`
 * Single-household authenticated-link conflicts are blocked before local link
   state can be overwritten:
   `frontend/test/householdStorage.test.ts`
@@ -218,7 +224,7 @@ Date: 2026-08-06
 Tester: Product owner
 Browser: Production browser session
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: 90b775e or newer
+Expected build commit: 288331a or newer
 Settings Auth Diagnostics build: Passed
 Settings Auth Diagnostics branch: main
 Cloudflare deployment status: Passed for deployed app access
@@ -242,7 +248,7 @@ Settlement attachment save result: Pending attachment smoke pass
 Metadata-only attachment preview result: Pending attachment smoke pass
 Browser refresh restore result: Passed for linked household core and settlement records
 Realtime active-session result: Pending realtime smoke pass
-Limited member settlement-entry result: Pending limited member smoke pass
+Limited member settlement-entry result: Pending retest on build 288331a or newer
 Limited member personal account visibility: Passed after member save/refresh
   retest
 Route smoke result: Pending full route smoke pass

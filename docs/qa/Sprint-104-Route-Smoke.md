@@ -23,7 +23,7 @@ beta testers are invited.
 
 1. Open `/app/settings`.
 2. Open Auth Diagnostics.
-3. Confirm Build is `90b775e` or newer.
+3. Confirm Build is `288331a` or newer.
 4. Confirm Branch is `main`.
 
 Expected result: the production site is running the intended Sprint 104 route
@@ -131,7 +131,7 @@ Date:
 Tester:
 Browser:
 Production URL: https://home-finance-os.pages.dev
-Expected build commit: 90b775e or newer
+Expected build commit: 288331a or newer
 Auth Diagnostics build:
 Auth Diagnostics branch:
 Signed-out route result:
