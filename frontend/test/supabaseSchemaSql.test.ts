@@ -408,6 +408,33 @@ test("Supabase settlement RPCs resolve local household member ids", () => {
   );
 });
 
+test("Supabase settlement update lets involved members revise records", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /current_household_member_id\(existing_settlement\.household_id\) not in \([\s\S]+resolved_from_member_id,[\s\S]+resolved_to_member_id/
+  );
+  assert.match(
+    schemaSql,
+    /Members can update only settlement records where they are the payer or receiver\./
+  );
+  assert.doesNotMatch(
+    schemaSql,
+    /Only a household admin can update settlement records\./
+  );
+});
+
 test("Supabase settlement applications resolve local allocation ids", () => {
   const schemaSql =
     readFileSync(

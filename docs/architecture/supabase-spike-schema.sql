@@ -1060,10 +1060,6 @@ begin
     raise exception 'Settlement was not found.';
   end if;
 
-  if not public.is_household_admin(existing_settlement.household_id) then
-    raise exception 'Only a household admin can update settlement records.';
-  end if;
-
   if application_method not in ('oldest-first', 'manual') then
     raise exception 'Invalid settlement application method.';
   end if;
@@ -1130,6 +1126,14 @@ begin
       now()
     )
     returning id into resolved_to_member_id;
+  end if;
+
+  if not public.is_household_admin(existing_settlement.household_id)
+    and public.current_household_member_id(existing_settlement.household_id) not in (
+      resolved_from_member_id,
+      resolved_to_member_id
+    ) then
+    raise exception 'Members can update only settlement records where they are the payer or receiver.';
   end if;
 
   select account.id

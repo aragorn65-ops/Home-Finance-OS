@@ -192,7 +192,7 @@ test("member can create settlement records with a local member alias", () => {
   );
 });
 
-test("member cannot update or delete settlement records", () => {
+test("member can update but not delete involved settlement records", () => {
   const context =
     createContext(
       "member",
@@ -205,7 +205,7 @@ test("member cannot update or delete settlement records", () => {
       settlementForm,
       "update"
     ),
-    false
+    true
   );
 
   assert.equal(
@@ -213,6 +213,18 @@ test("member cannot update or delete settlement records", () => {
       context,
       settlementForm,
       "delete"
+    ),
+    false
+  );
+
+  assert.equal(
+    canAccessSettlementRecord(
+      createContext(
+        "member",
+        "member-3"
+      ),
+      settlementForm,
+      "update"
     ),
     false
   );

@@ -210,6 +210,7 @@ export function canAccessSettlementRecord(
 
   return (
     action === "create" ||
+    action === "update" ||
     action === "view"
   );
 }

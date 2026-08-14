@@ -267,7 +267,7 @@ test("remote settlement persistence lets admin revise member-submitted records",
   );
 });
 
-test("remote settlement persistence blocks member update and delete", async () => {
+test("remote settlement persistence lets involved members update but not delete", async () => {
   const adminAdapter =
     createAdapter(adminUser);
   const created =
@@ -294,16 +294,20 @@ test("remote settlement persistence blocks member update and delete", async () =
       ],
     });
 
-  await assert.rejects(
-    () =>
-      memberAdapter
-        .updateRemoteSettlement({
-          settlementId:
-            created.settlement.id,
-          settlement:
-            createSettlementDraft(),
-        }),
-    /Current user cannot update this settlement\./
+  const updated =
+    await memberAdapter
+      .updateRemoteSettlement({
+        settlementId:
+          created.settlement.id,
+        settlement: {
+          ...createSettlementDraft(),
+          amount: 150,
+        },
+      });
+
+  assert.equal(
+    updated.settlement.amount,
+    150
   );
 
   await assert.rejects(
@@ -314,6 +318,36 @@ test("remote settlement persistence blocks member update and delete", async () =
           created.settlement.id
         ),
     /Current user cannot delete this settlement\./
+  );
+
+  const uninvolvedAdapter =
+    new InMemoryAuthBackendAdapter({
+      user: uninvolvedUser,
+      memberships: [
+        createMembership({
+          householdId,
+          userId:
+            uninvolvedUser.id,
+          memberId:
+            "member-3",
+          role: "member",
+        }),
+      ],
+      settlements: [
+        created.settlement,
+      ],
+    });
+
+  await assert.rejects(
+    () =>
+      uninvolvedAdapter
+        .updateRemoteSettlement({
+          settlementId:
+            created.settlement.id,
+          settlement:
+            createSettlementDraft(),
+        }),
+    /Current user cannot update this settlement\./
   );
 });
 

@@ -751,9 +751,9 @@ export default function SettlementsPage() {
   const handleEditSettlement = (
     settlement: Settlement
   ) => {
-    if (!canManageSettlementRecords) {
+    if (!canRecordSettlement) {
       setAuthorizationError(
-        "Only a household admin can edit settlement records."
+        "Only household members can edit settlement records."
       );
 
       return;
@@ -778,7 +778,7 @@ export default function SettlementsPage() {
       )
     ) {
       setAuthorizationError(
-        "Only a household admin can edit settlement records."
+        "You can only update settlements where you are the payer or receiver."
       );
 
       return;
@@ -894,7 +894,7 @@ export default function SettlementsPage() {
             settlementAction ===
             "create"
               ? "You can only record settlements where you are the payer or receiver."
-              : "Only a household admin can update settlement records.",
+              : "You can only update settlements where you are the payer or receiver.",
         },
         "Settlement was not saved."
       );
@@ -1279,7 +1279,7 @@ export default function SettlementsPage() {
               handleViewSettlement
             }
             onEdit={
-              canManageSettlementRecords
+              canRecordSettlement
                 ? handleEditSettlement
                 : undefined
             }
@@ -1401,7 +1401,7 @@ export default function SettlementsPage() {
                 closeDialog
               }
               onEdit={
-                canManageSettlementRecords
+                canRecordSettlement
                   ? handleEditSettlement
                   : undefined
               }
