@@ -1030,7 +1030,7 @@ export default function SettlementsPage() {
                 household.id
               )
           : [],
-      [household]
+      [household, settlements]
     );
 
   const currentMonthOutstandingAllocations =

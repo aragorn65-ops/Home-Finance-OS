@@ -558,6 +558,44 @@ export class InMemoryAuthBackendAdapter
       );
   }
 
+  async listRemoteSettlementApplications(
+    householdId: string
+  ): Promise<RemoteSettlementApplication[]> {
+    const membership =
+      this.getActiveMembership(
+        householdId
+      );
+
+    if (!membership) {
+      return [];
+    }
+
+    const visibleSettlementIds =
+      new Set(
+        (
+          await this.listRemoteSettlements(
+            householdId
+          )
+        ).map(
+          (settlement) =>
+            settlement.id
+        )
+      );
+
+    return this.store
+      .listSettlements(householdId)
+      .flatMap((settlement) =>
+        visibleSettlementIds.has(
+          settlement.id
+        )
+          ? this.store
+              .listSettlementApplications(
+                settlement.id
+              )
+          : []
+      );
+  }
+
   async createRemoteSettlement(
     input: RemoteSettlementCreateInput
   ): Promise<RemoteSettlementMutationResult> {

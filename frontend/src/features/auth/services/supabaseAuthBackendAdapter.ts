@@ -549,12 +549,28 @@ interface SupabaseSettlementMemberReference {
   local_record_id?: string | null;
 }
 
+interface SupabaseSettlementReference {
+  local_record_id?: string | null;
+}
+
+interface SupabaseExpenseAllocationReference {
+  local_record_id?: string | null;
+}
+
 interface SupabaseSettlementApplicationRow {
   id: string;
   household_id: string;
   local_record_id?: string | null;
   settlement_id: string;
   expense_allocation_id: string;
+  settlement?:
+    | SupabaseSettlementReference
+    | SupabaseSettlementReference[]
+    | null;
+  expense_allocation?:
+    | SupabaseExpenseAllocationReference
+    | SupabaseExpenseAllocationReference[]
+    | null;
   applied_amount: number;
   created_at?: string | null;
   updated_at?: string | null;
@@ -2048,6 +2064,58 @@ export class SupabaseAuthBackendAdapter
       );
   }
 
+  async listRemoteSettlementApplications(
+    householdId: string
+  ): Promise<RemoteSettlementApplication[]> {
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    const applicationResult =
+      await (
+      await this.getClient()
+      )
+        .from("settlement_applications")
+        .select(
+          [
+            "id",
+            "household_id",
+            "local_record_id",
+            "settlement_id",
+            "expense_allocation_id",
+            "settlement:settlements(local_record_id)",
+            "expense_allocation:expense_allocations(local_record_id)",
+            "applied_amount",
+            "created_at",
+            "updated_at",
+            "updated_by_user_id",
+          ].join(",")
+        )
+        .eq(
+          "household_id",
+          householdId
+        ) as SupabaseSettlementApplicationRowsResult;
+
+    if (applicationResult.error) {
+      throw new Error(
+        `Supabase settlement application lookup failed: ${applicationResult.error.message}`
+      );
+    }
+
+    return (
+      applicationResult.data ?? []
+    )
+      .map(
+        mapSupabaseSettlementApplication
+      )
+      .filter(
+        (
+          application
+        ): application is RemoteSettlementApplication =>
+          Boolean(application)
+      );
+  }
+
   async createRemoteSettlement(
     input: RemoteSettlementCreateInput
   ): Promise<RemoteSettlementMutationResult> {
@@ -2510,7 +2578,7 @@ export class SupabaseAuthBackendAdapter
 
     const applications =
       await this
-        .listRemoteSettlementApplications(
+        .listRemoteSettlementApplicationsBySettlementId(
           settlement.id
         );
 
@@ -2520,7 +2588,7 @@ export class SupabaseAuthBackendAdapter
     };
   }
 
-  private async listRemoteSettlementApplications(
+  private async listRemoteSettlementApplicationsBySettlementId(
     settlementId: string
   ): Promise<RemoteSettlementApplication[]> {
     const applicationResult =
@@ -2535,6 +2603,8 @@ export class SupabaseAuthBackendAdapter
             "local_record_id",
             "settlement_id",
             "expense_allocation_id",
+            "settlement:settlements(local_record_id)",
+            "expense_allocation:expense_allocations(local_record_id)",
             "applied_amount",
             "created_at",
             "updated_at",
@@ -4142,9 +4212,13 @@ function mapSupabaseSettlementApplication(
     localRecordId:
       row.local_record_id ?? undefined,
     settlementId:
-      row.settlement_id,
+      getSupabaseLocalRecordId(
+        row.settlement
+      ) ?? row.settlement_id,
     expenseAllocationId:
-      row.expense_allocation_id,
+      getSupabaseLocalRecordId(
+        row.expense_allocation
+      ) ?? row.expense_allocation_id,
     appliedAmount:
       row.applied_amount,
     createdAt:
@@ -4161,6 +4235,25 @@ function mapSupabaseSettlementApplication(
       row.updated_by_user_id ??
       undefined,
   };
+}
+
+function getSupabaseLocalRecordId(
+  value:
+    | SupabaseSettlementReference
+    | SupabaseSettlementReference[]
+    | SupabaseExpenseAllocationReference
+    | SupabaseExpenseAllocationReference[]
+    | null
+    | undefined
+): string | undefined {
+  const reference =
+    Array.isArray(value)
+      ? value[0]
+      : value;
+
+  return reference
+    ?.local_record_id
+    ?.trim() || undefined;
 }
 
 function normalizeSettlementApplicationMethod(

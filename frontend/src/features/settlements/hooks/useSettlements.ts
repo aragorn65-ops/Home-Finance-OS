@@ -35,6 +35,9 @@ import {
 import {
   saveSettlementCoreSnapshotIfAllowed,
 } from "../services/settlementCoreSnapshotSave";
+import {
+  persistRemoteSettlementRecords,
+} from "../services/remoteSettlementSync";
 
 import {
   OperationResults,
@@ -85,6 +88,7 @@ function mapRemoteSettlement(
     id:
       settlement.id,
     householdId:
+      localHouseholdId ??
       settlement.householdId,
     fromMemberId:
       settlement.fromMemberId,
@@ -310,13 +314,20 @@ export default function useSettlements(
       }
 
       try {
-        const remoteSettlements =
-          await getAuthBackendAdapter()
-            .listRemoteSettlements(
+        const adapter =
+          getAuthBackendAdapter();
+        const [
+          remoteSettlements,
+          remoteApplications,
+        ] = await Promise.all([
+          adapter.listRemoteSettlements(
+            householdId
+          ),
+          adapter
+            .listRemoteSettlementApplications(
               householdId
-            );
-        const localSettlements =
-          loadSettlements();
+            ),
+        ]);
         const mappedRemoteSettlements =
           remoteSettlements.map(
             (settlement) =>
@@ -326,11 +337,25 @@ export default function useSettlements(
               )
           );
 
+        persistRemoteSettlementRecords(
+          remoteSettlements,
+          mappedRemoteSettlements,
+          remoteApplications
+        );
+
         setSettlements(
           mergeSettlements(
-            localSettlements,
+            loadSettlements(),
             mappedRemoteSettlements
           )
+        );
+
+        setMemberBalances(
+          loadMemberBalances()
+        );
+
+        setObligations(
+          loadObligations()
         );
 
         setError("");
@@ -346,6 +371,8 @@ export default function useSettlements(
       householdId,
       localHouseholdId,
       loadSettlements,
+      loadMemberBalances,
+      loadObligations,
       remoteEnabled,
     ]);
 

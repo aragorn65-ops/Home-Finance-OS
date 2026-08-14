@@ -24,6 +24,7 @@ import type {
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
   RemoteSettlement,
+  RemoteSettlementApplication,
   RemoteSettlementCreateInput,
   RemoteSettlementMutationResult,
   RemoteSettlementUpdateInput,
@@ -209,6 +210,13 @@ export class DisabledAuthBackendAdapter
   async listRemoteSettlements(
     householdId: string
   ): Promise<RemoteSettlement[]> {
+    void householdId;
+    return [];
+  }
+
+  async listRemoteSettlementApplications(
+    householdId: string
+  ): Promise<RemoteSettlementApplication[]> {
     void householdId;
     return [];
   }

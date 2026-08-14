@@ -15,6 +15,7 @@ import type {
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
   RemoteSettlement,
+  RemoteSettlementApplication,
   RemoteSettlementCreateInput,
   RemoteSettlementMutationResult,
   RemoteSettlementUpdateInput,
@@ -170,6 +171,10 @@ export interface AuthBackendAdapter {
   listRemoteSettlements(
     householdId: string
   ): Promise<RemoteSettlement[]>;
+
+  listRemoteSettlementApplications(
+    householdId: string
+  ): Promise<RemoteSettlementApplication[]>;
 
   createRemoteSettlement(
     input: RemoteSettlementCreateInput
