@@ -18,6 +18,7 @@ import type {
 import {
   getAuthBackendAdapter,
 } from "../services/createAuthBackendAdapter";
+import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
 export interface HouseholdClaimPanelProps {
   household: StoredHousehold;
@@ -47,7 +48,9 @@ export default function HouseholdClaimPanel({
     setShowConfirmation,
   ] = useState(false);
 
-  const ownerMember = household.members.find(
+  const householdMembers =
+    HouseholdMemberService.getMembers();
+  const ownerMember = householdMembers.find(
     (m) => m.role === "owner"
   );
 
@@ -77,7 +80,7 @@ export default function HouseholdClaimPanel({
           backupSummary,
           ownerMemberId:
             ownerMember?.id ||
-            household.members[0]?.id ||
+            householdMembers[0]?.id ||
             "",
         };
 
@@ -109,6 +112,7 @@ export default function HouseholdClaimPanel({
       }
     }, [
       household,
+      householdMembers,
       backupSummary,
       ownerMember,
       onClaimSuccess,
@@ -148,7 +152,7 @@ export default function HouseholdClaimPanel({
         <div className="household-claim-panel__summary-item">
           <dt>Members</dt>
           <dd>
-            {household.members.length}
+            {householdMembers.length}
           </dd>
         </div>
 
