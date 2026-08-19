@@ -815,9 +815,7 @@ export default function AuthDiagnosticsPanel() {
       {session.status === "signed-in" &&
         household &&
         healthSummary &&
-        !authenticatedLink &&
-        (diagnostics?.membershipCount ??
-          0) === 0 && (
+        !authenticatedLink && (
           <HouseholdClaimPanel
             household={household}
             backupSummary={{
