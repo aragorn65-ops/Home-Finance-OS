@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix frontend --cache .npm-cache install --package-lock=false --no-audit --no-fund && npm --prefix frontend run build && node scripts/copy-frontend-dist.mjs"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
