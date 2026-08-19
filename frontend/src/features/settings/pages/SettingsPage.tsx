@@ -2205,7 +2205,6 @@ export default function SettingsPage() {
         </Card>
         )}
 
-        {canManageHouseholdSettings && (
         <Card>
           <div className="space-y-5">
             <div>
@@ -2282,7 +2281,6 @@ export default function SettingsPage() {
             )}
           </div>
         </Card>
-        )}
       </div>
     </>
   );
