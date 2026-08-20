@@ -16,6 +16,9 @@ import type {
   StoredHousehold,
 } from "../../household/services/householdStorage";
 import {
+  linkHouseholdToAuthenticatedTenant,
+} from "../../household/services/householdStorage";
+import {
   getAuthBackendAdapter,
 } from "../services/createAuthBackendAdapter";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
@@ -91,6 +94,28 @@ export default function HouseholdClaimPanel({
               claimDraft
             );
 
+        const linkedHousehold =
+          linkHouseholdToAuthenticatedTenant({
+            remoteHouseholdId:
+              claimResult.householdId,
+            migrationId:
+              claimResult.migrationDraft.id,
+            ownerMemberId:
+              claimDraft.ownerMemberId,
+            linkedByUserId:
+              claimResult.migrationDraft
+                .requestedByUserId,
+            linkedAt:
+              claimResult.migrationDraft
+                .createdAt,
+          });
+
+        if (!linkedHousehold) {
+          throw new Error(
+            "Household was claimed, but local link state could not be saved."
+          );
+        }
+
         // Log claim success for diagnostics
         console.log(
           "Household claimed:",
@@ -99,6 +124,7 @@ export default function HouseholdClaimPanel({
 
         setShowConfirmation(false);
         onClaimSuccess?.();
+        window.location.reload();
       } catch (err) {
         const message =
           err instanceof Error
