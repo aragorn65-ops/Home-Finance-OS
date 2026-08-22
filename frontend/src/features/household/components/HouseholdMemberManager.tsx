@@ -374,8 +374,8 @@ export default function HouseholdMemberManager({
                         }
                       >
                         {member.isActive
-                          ? "Active"
-                          : "Inactive"}
+                          ? "Included"
+                          : "Opted out"}
                       </span>
                     </div>
 
@@ -428,8 +428,8 @@ export default function HouseholdMemberManager({
                         className="rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
                       >
                         {member.isActive
-                          ? "Deactivate"
-                          : "Reactivate"}
+                          ? "Opt Out"
+                          : "Include"}
                       </button>
                     </>
                   )}

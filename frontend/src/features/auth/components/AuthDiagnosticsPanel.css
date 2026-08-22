@@ -646,7 +646,7 @@
 
 .test-sync-setup__form-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1.5fr 0.8fr;
+  grid-template-columns: 1.2fr 1.5fr 0.8fr 1fr;
   gap: var(--space-2);
 }
 
@@ -670,9 +670,26 @@
   padding: 0 var(--space-3);
 }
 
+.test-sync-setup__checkbox-row {
+  display: flex;
+  min-height: var(--control-height-sm);
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.test-sync-setup__form-grid .test-sync-setup__checkbox-row input {
+  min-height: 1rem;
+  width: 1rem;
+  min-width: 1rem;
+  padding: 0;
+}
+
 .test-sync-setup__member-list dl {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1.2fr 1.6fr 1fr 1.2fr;
+  grid-template-columns: 1fr 1.2fr 1.2fr 1.6fr 1fr 1.2fr 1.2fr;
   gap: var(--space-2);
   margin: 0;
   border: 1px solid var(--color-border);

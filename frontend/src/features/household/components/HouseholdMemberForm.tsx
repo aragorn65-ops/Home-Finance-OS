@@ -336,12 +336,13 @@ export default function HouseholdMemberForm({
 
         <span>
           <span className="block text-sm font-medium text-foreground">
-            Active Member
+            Include in expense sharing
           </span>
 
           <span className="block text-xs text-muted-foreground">
-            Active members may participate in expenses
-            and settlements.
+            Turn this off to keep the member in
+            the household but opt them out of new
+            expense splits and settlements.
           </span>
         </span>
       </label>

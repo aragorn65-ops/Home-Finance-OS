@@ -80,6 +80,7 @@ interface InviteFormState {
   displayName: string;
   email: string;
   role: HouseholdMember["role"];
+  isActive: boolean;
 }
 
 interface SetupStep {
@@ -96,6 +97,7 @@ const defaultInviteForm:
     displayName: "",
     email: "",
     role: "member",
+    isActive: true,
   };
 
 function getDiagnosticsStorageKey(
@@ -582,7 +584,8 @@ export default function TestSyncSetupPanel({
               role:
                 inviteForm.role,
               color: "",
-              isActive: true,
+              isActive:
+                inviteForm.isActive,
             });
 
           if (
@@ -607,9 +610,12 @@ export default function TestSyncSetupPanel({
             result.data;
           refreshMembers();
         } else if (
-          email &&
           member.email !==
-            email.toLowerCase()
+            email.toLowerCase() ||
+          member.role !==
+            inviteForm.role ||
+          member.isActive !==
+            inviteForm.isActive
         ) {
           const updateResult =
             HouseholdMemberService.update(
@@ -619,11 +625,11 @@ export default function TestSyncSetupPanel({
                   member.displayName,
                 email,
                 role:
-                  member.role,
+                  inviteForm.role,
                 color:
                   member.color ?? "",
                 isActive:
-                  member.isActive,
+                  inviteForm.isActive,
               }
             );
 
@@ -826,24 +832,32 @@ export default function TestSyncSetupPanel({
         );
 
       if (existingMember) {
+        const nextEmail =
+          email ||
+          existingMember.email ||
+          "";
+
         if (
-          email &&
           existingMember.email !==
-            email.toLowerCase()
+            nextEmail.toLowerCase() ||
+          existingMember.role !==
+            inviteForm.role ||
+          existingMember.isActive !==
+            inviteForm.isActive
         ) {
           HouseholdMemberService.update(
             existingMember.id,
             {
               displayName:
                 existingMember.displayName,
-              email,
+              email: nextEmail,
               role:
-                existingMember.role,
+                inviteForm.role,
               color:
                 existingMember.color ??
                 "",
               isActive:
-                existingMember.isActive,
+                inviteForm.isActive,
             }
           );
           refreshMembers();
@@ -879,7 +893,8 @@ export default function TestSyncSetupPanel({
           role:
             inviteForm.role,
           color: "",
-          isActive: true,
+          isActive:
+            inviteForm.isActive,
         });
 
       if (
@@ -1347,6 +1362,28 @@ export default function TestSyncSetupPanel({
               </option>
             </select>
           </label>
+          <label>
+            Expense sharing
+            <span className="test-sync-setup__checkbox-row">
+              <input
+                type="checkbox"
+                checked={
+                  inviteForm.isActive
+                }
+                onChange={(event) => {
+                  setInviteForm(
+                    (current) => ({
+                      ...current,
+                      isActive:
+                        event.target.checked,
+                    })
+                  );
+                }}
+                disabled={isBusy}
+              />
+              Include in new splits
+            </span>
+          </label>
         </div>
 
         <div className="test-sync-setup__invite-actions">
@@ -1446,6 +1483,16 @@ export default function TestSyncSetupPanel({
                     {formatDateTime(
                       diagnostic?.attemptedAt
                     )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>
+                    Split status
+                  </dt>
+                  <dd>
+                    {member.isActive
+                      ? "included in new splits"
+                      : "opted out of new splits"}
                   </dd>
                 </div>
                 <div>
