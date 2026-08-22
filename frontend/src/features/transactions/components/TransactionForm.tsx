@@ -845,6 +845,8 @@ function resolveMemberReference(
   return members.find(
     (member) =>
       member.id === memberId ||
+      member.remoteMemberId ===
+        memberId ||
       member.email
         ?.trim()
         .toLowerCase() ===

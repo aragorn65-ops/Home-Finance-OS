@@ -31,6 +31,7 @@ import {
 import {
   loadHousehold,
   saveLinkedHouseholdShell,
+  saveHouseholdMembers,
 } from "../../features/household/services/householdStorage";
 import AppUnlockScreen from "../../features/security/components/AppUnlockScreen";
 import {
@@ -121,6 +122,18 @@ export default function AppShell() {
     shouldRepairMemberHouseholdLink ||
     shouldRepairMemberDisplayName ||
     shouldHydrateSparseMemberShell;
+  const shouldHydrateRemoteMemberAliases =
+    Boolean(
+      household &&
+      linkedRemoteHouseholdId &&
+      session.status === "signed-in" &&
+      membership?.status === "active" &&
+      household.members.length > 0 &&
+      household.members.some(
+        (member) =>
+          !member.remoteMemberId
+      )
+    );
 
   const [
     isLockEnabled,
@@ -442,6 +455,121 @@ export default function AppShell() {
     session.status,
     session.user,
     shouldRepairMemberHouseholdShell,
+  ]);
+
+  useEffect(() => {
+    if (
+      !household ||
+      !linkedRemoteHouseholdId ||
+      !shouldHydrateRemoteMemberAliases ||
+      !isProductionAuthEnabled ||
+      !authRouteAccess.isAllowed ||
+      session.status !== "signed-in" ||
+      !membership ||
+      membership.status !== "active"
+    ) {
+      return;
+    }
+
+    let isActive = true;
+    const adapter =
+      getAuthBackendAdapter();
+
+    void adapter
+      .listRemoteHouseholdMembers(
+        linkedRemoteHouseholdId
+      )
+      .then((remoteMembers) => {
+        if (
+          !isActive ||
+          remoteMembers.length === 0
+        ) {
+          return;
+        }
+
+        const remoteByLocalId =
+          new Map(
+            remoteMembers.map(
+              (member) => [
+                member.id,
+                member,
+              ]
+            )
+          );
+        const remoteByName =
+          new Map(
+            remoteMembers.map(
+              (member) => [
+                member.displayName
+                  .trim()
+                  .toLowerCase(),
+                member,
+              ]
+            )
+          );
+
+        let changed = false;
+        const mergedMembers =
+          household.members.map(
+            (member) => {
+              const remoteMember =
+                remoteByLocalId.get(
+                  member.id
+                ) ??
+                remoteByName.get(
+                  member.displayName
+                    .trim()
+                    .toLowerCase()
+                );
+
+              if (
+                !remoteMember?.remoteMemberId ||
+                member.remoteMemberId ===
+                  remoteMember.remoteMemberId
+              ) {
+                return member;
+              }
+
+              changed = true;
+
+              return {
+                ...member,
+                remoteMemberId:
+                  remoteMember.remoteMemberId,
+                updatedAt:
+                  new Date(),
+              };
+            }
+          );
+
+        if (
+          changed &&
+          saveHouseholdMembers(
+            mergedMembers
+          )
+        ) {
+          setHouseholdBootstrapVersion(
+            (current) =>
+              current + 1
+          );
+        }
+      })
+      .catch(() => {
+        // Keep local member records unchanged if
+        // remote alias hydration is unavailable.
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    authRouteAccess.isAllowed,
+    household,
+    isProductionAuthEnabled,
+    linkedRemoteHouseholdId,
+    membership,
+    session.status,
+    shouldHydrateRemoteMemberAliases,
   ]);
 
   if (

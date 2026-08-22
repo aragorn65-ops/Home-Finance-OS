@@ -100,11 +100,7 @@ export default class TransactionService {
     const value =
       memberId.trim();
 
-    if (!value.includes("@")) {
-      return value;
-    }
-
-    const normalizedEmail =
+    const normalizedValue =
       value.toLowerCase();
 
     const matchingMember =
@@ -114,17 +110,26 @@ export default class TransactionService {
           (member) =>
             member.householdId ===
               householdId &&
-            member.email
-              ?.trim()
-              .toLowerCase() ===
-              normalizedEmail
+            (
+              member.id === value ||
+              member.remoteMemberId ===
+                value ||
+              member.email
+                ?.trim()
+                .toLowerCase() ===
+                normalizedValue
+            )
         );
 
     return (
       matchingMember?.id ??
-      this.findDiagnosticMemberIdByEmail(
-        householdId,
-        normalizedEmail
+      (
+        value.includes("@")
+          ? this.findDiagnosticMemberIdByEmail(
+              householdId,
+              normalizedValue
+            )
+          : undefined
       ) ??
       value
     );

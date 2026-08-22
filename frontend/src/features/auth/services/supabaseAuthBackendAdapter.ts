@@ -3156,6 +3156,8 @@ function mapSupabaseHouseholdMember(
       row.id,
     householdId:
       row.household_id,
+    remoteMemberId:
+      row.id,
     userId:
       row.linked_user_id ??
       undefined,
