@@ -17,6 +17,7 @@ export interface HouseholdMembership {
   householdId: string;
   userId: string;
   memberId: string;
+  memberDisplayName?: string;
   role: AuthHouseholdRole;
   status: HouseholdMembershipStatus;
   invitedByUserId?: string;

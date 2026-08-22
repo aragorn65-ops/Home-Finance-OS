@@ -346,6 +346,8 @@ export default function AppShell() {
               userId:
                 signedInUser.id,
               displayName:
+                membership.memberDisplayName ??
+                signedInUser.displayName ??
                 signedInUser.email ??
                 "You",
               role:
