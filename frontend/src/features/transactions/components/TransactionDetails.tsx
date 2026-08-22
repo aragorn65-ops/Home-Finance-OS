@@ -1,6 +1,8 @@
 import type { Transaction } from "../models/Transaction";
 
-import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+import {
+  findHouseholdMemberByReference,
+} from "../../household/services/householdMemberResolution";
 
 import TransactionService from "../services/TransactionService";
 import resolveTransactionMemberId from "../services/transactionMemberResolution";
@@ -63,8 +65,9 @@ export default function TransactionDetails({
 
   const transactionMember =
     transactionMemberId
-      ? HouseholdMemberService.getMemberById(
-          transactionMemberId
+      ? findHouseholdMemberByReference(
+          transactionMemberId,
+          transaction.householdId
         )
       : undefined;
 
@@ -221,10 +224,10 @@ export default function TransactionDetails({
             {allocations.map(
               (allocation) => {
                 const member =
-                  HouseholdMemberService
-                    .getMemberById(
-                      allocation.memberId
-                    );
+                  findHouseholdMemberByReference(
+                    allocation.memberId,
+                    transaction.householdId
+                  );
 
                 const personalItems =
                   allocation.personalItems ??

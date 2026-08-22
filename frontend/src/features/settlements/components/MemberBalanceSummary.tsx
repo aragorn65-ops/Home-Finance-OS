@@ -1,4 +1,7 @@
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
+import {
+  resolveHouseholdMemberReference,
+} from "../../household/services/householdMemberResolution";
 
 import type {
   MemberSettlementBalance,
@@ -105,9 +108,9 @@ export default function MemberBalanceSummary({
     memberId: string
   ): string => {
     return (
-      members.find(
-        (member) =>
-          member.id === memberId
+      resolveHouseholdMemberReference(
+        members,
+        memberId
       )?.displayName ??
       "Unknown Member"
     );

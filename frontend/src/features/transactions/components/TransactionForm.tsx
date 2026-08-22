@@ -14,6 +14,9 @@ import {
   isAccountVisibleForMember,
 } from "../../accounts/services/accountVisibility";
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
+import {
+  resolveHouseholdMemberReference,
+} from "../../household/services/householdMemberResolution";
 
 import type { OperationResult } from "../../../shared/types/index";
 import {
@@ -839,18 +842,9 @@ function resolveMemberReference(
   members: HouseholdMember[],
   memberId: string
 ): HouseholdMember | undefined {
-  const normalizedMemberId =
-    memberId.trim().toLowerCase();
-
-  return members.find(
-    (member) =>
-      member.id === memberId ||
-      member.remoteMemberId ===
-        memberId ||
-      member.email
-        ?.trim()
-        .toLowerCase() ===
-        normalizedMemberId
+  return resolveHouseholdMemberReference(
+    members,
+    memberId
   );
 }
 

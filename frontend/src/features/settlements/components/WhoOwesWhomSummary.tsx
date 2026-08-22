@@ -1,4 +1,7 @@
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
+import {
+  resolveHouseholdMemberReference,
+} from "../../household/services/householdMemberResolution";
 
 import type { MemberSettlementObligation } from "../models/MemberSettlementObligation";
 import formatCurrency from "../../../shared/utils/formatCurrency";
@@ -25,9 +28,9 @@ export default function WhoOwesWhomSummary({
     memberId: string
   ): string => {
     return (
-      members.find(
-        (member) =>
-          member.id === memberId
+      resolveHouseholdMemberReference(
+        members,
+        memberId
       )?.displayName ??
       "Unknown Member"
     );

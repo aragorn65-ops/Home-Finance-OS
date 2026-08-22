@@ -38,6 +38,9 @@ import {
 } from "../../household/services/householdStorage";
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+import {
+  resolveHouseholdMemberReference,
+} from "../../household/services/householdMemberResolution";
 
 import MemberBalanceSummary from "../components/MemberBalanceSummary";
 import SettlementDeleteConfirmation from "../components/SettlementDeleteConfirmation";
@@ -988,11 +991,12 @@ export default function SettlementsPage() {
         household?.authenticatedLink
           ?.ownerMemberId;
       const localOwner =
-        members.find(
-          (member) =>
-            member.id ===
-            localOwnerMemberId
-        );
+        localOwnerMemberId
+          ? resolveHouseholdMemberReference(
+              members,
+              localOwnerMemberId
+            )
+          : undefined;
 
       if (localOwner) {
         return localOwner.displayName;
@@ -1000,9 +1004,9 @@ export default function SettlementsPage() {
     }
 
     return (
-      members.find(
-        (member) =>
-          member.id === memberId
+      resolveHouseholdMemberReference(
+        members,
+        memberId
       )?.displayName ??
       "Unknown Member"
     );

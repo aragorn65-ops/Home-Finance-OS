@@ -3,6 +3,9 @@ import { EmptyState } from "../../../shared/ui";
 import type { Account } from "../../accounts/models/Account";
 
 import type { HouseholdMember } from "../../household/models/HouseholdMember";
+import {
+  resolveHouseholdMemberReference,
+} from "../../household/services/householdMemberResolution";
 
 import type { Settlement } from "../models/Settlement";
 import SettlementApplicationDetailsService from "../services/SettlementApplicationDetailsService";
@@ -49,9 +52,9 @@ export default function SettlementList({
     memberId: string
   ): string => {
     return (
-      members.find(
-        (member) =>
-          member.id === memberId
+      resolveHouseholdMemberReference(
+        members,
+        memberId
       )?.displayName ??
       "Unknown Member"
     );
