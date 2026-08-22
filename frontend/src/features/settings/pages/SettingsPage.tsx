@@ -525,8 +525,24 @@ export default function SettingsPage() {
       canManageHouseholdSettings
     ) {
       try {
+        const adapter =
+          getAuthBackendAdapter();
+        const remoteSettlements =
+          await adapter
+            .listRemoteSettlements(
+              remoteHouseholdId
+            );
+
+        for (const settlement of remoteSettlements) {
+          await adapter
+            .deleteRemoteSettlement(
+              remoteHouseholdId,
+              settlement.id
+            );
+        }
+
         await saveRemoteCoreSnapshotForHousehold(
-          getAuthBackendAdapter(),
+          adapter,
           {
             householdId:
               remoteHouseholdId,

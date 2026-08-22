@@ -2624,6 +2624,24 @@ begin
       id text
     )
   )
+  delete from public.settlement_applications remote_application
+  using public.expense_allocations remote_allocation
+  where remote_application.household_id = target_household_id
+    and remote_application.expense_allocation_id = remote_allocation.id
+    and remote_allocation.household_id = target_household_id
+    and remote_allocation.local_record_id is not null
+    and not exists (
+      select 1
+      from allocation_payload
+      where allocation_payload.id = remote_allocation.local_record_id
+    );
+
+  with allocation_payload as (
+    select allocation_record.id
+    from jsonb_to_recordset(coalesce(core_expense_allocations, '[]'::jsonb)) as allocation_record(
+      id text
+    )
+  )
   delete from public.expense_allocations remote_allocation
   where remote_allocation.household_id = target_household_id
     and remote_allocation.local_record_id is not null

@@ -132,6 +132,57 @@ test("Supabase core snapshot save RPC persists expense allocations", () => {
   );
 });
 
+test("Supabase core snapshot save RPC clears settlement applications before deleted allocations", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+  const functionStart =
+    schemaSql.indexOf(
+      "create or replace function public.save_household_core_snapshot"
+    );
+  const functionEnd =
+    schemaSql.indexOf(
+      "revoke all on function public.save_household_core_snapshot",
+      functionStart
+    );
+  const functionSql =
+    schemaSql.slice(
+      functionStart,
+      functionEnd
+    );
+  const applicationDeleteIndex =
+    functionSql.indexOf(
+      "delete from public.settlement_applications"
+    );
+  const allocationDeleteIndex =
+    functionSql.indexOf(
+      "delete from public.expense_allocations"
+    );
+
+  assert.ok(
+    applicationDeleteIndex > -1
+  );
+  assert.ok(
+    allocationDeleteIndex > -1
+  );
+  assert.ok(
+    applicationDeleteIndex <
+      allocationDeleteIndex
+  );
+  assert.match(
+    functionSql,
+    /remote_application\.expense_allocation_id = remote_allocation\.id/
+  );
+});
+
 test("Supabase core snapshot save RPC persists utility provider bills", () => {
   const schemaSql =
     readFileSync(
