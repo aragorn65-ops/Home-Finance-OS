@@ -123,6 +123,53 @@
   flex: 0 0 auto;
 }
 
+.settings-member-appearance {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.settings-member-appearance-avatar {
+  display: flex;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 999px;
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.settings-member-appearance-fields {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.settings-member-appearance-fields p {
+  margin: 0;
+}
+
+.settings-member-appearance-controls {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(8rem, 12rem);
+  gap: var(--space-3);
+}
+
+.settings-member-color-picker {
+  width: 3.5rem;
+  height: var(--control-height-md);
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  padding: 0.1875rem;
+}
+
 @media (max-width: 58rem) {
   .settings-preferences-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -139,6 +186,14 @@
   .settings-app-lock-actions,
   .settings-app-lock-actions > * {
     width: 100%;
+  }
+
+  .settings-member-appearance {
+    align-items: flex-start;
+  }
+
+  .settings-member-appearance-controls {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
   }
 }
 

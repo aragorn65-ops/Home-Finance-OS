@@ -451,7 +451,15 @@ test("Supabase member profile RPC updates synced profile fields", () => {
   );
   assert.match(
     schemaSql,
-    /if not public\.is_household_admin\(target_household_id\) then/
+    /current_member_id uuid := public\.current_household_member_id\(target_household_id\);/
+  );
+  assert.match(
+    schemaSql,
+    /if current_member_id is null then/
+  );
+  assert.match(
+    schemaSql,
+    /if not is_admin and target_member_id <> current_member_id then/
   );
   assert.match(
     schemaSql,
@@ -463,11 +471,15 @@ test("Supabase member profile RPC updates synced profile fields", () => {
   );
   assert.match(
     schemaSql,
-    /status = coalesce\(normalized_status, member\.status\)/
+    /when is_admin then coalesce\(normalized_status, member\.status\)/
   );
   assert.match(
     schemaSql,
-    /from public\.household_memberships membership[\s\S]+membership\.user_id = current_user_id/
+    /when is_admin then coalesce\(normalized_role, member\.role\)/
+  );
+  assert.match(
+    schemaSql,
+    /raise exception 'Members can update only their own household member profile\.';/
   );
   assert.match(
     schemaSql,

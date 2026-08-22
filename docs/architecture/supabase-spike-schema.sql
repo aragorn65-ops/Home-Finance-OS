@@ -1510,14 +1510,17 @@ declare
   normalized_color text := nullif(trim(coalesce(member_color, '')), '');
   normalized_status text := nullif(lower(trim(coalesce(member_status, ''))), '');
   normalized_role text := nullif(lower(trim(coalesce(member_role, ''))), '');
+  is_admin boolean := public.is_household_admin(target_household_id);
+  current_member_id uuid := public.current_household_member_id(target_household_id);
+  target_member_id uuid;
   updated_member_id uuid;
 begin
   if current_user_id is null then
     raise exception 'Sign in before updating household member profiles.';
   end if;
 
-  if not public.is_household_admin(target_household_id) then
-    raise exception 'Owner or admin membership is required to update household member profiles.';
+  if current_member_id is null then
+    raise exception 'Active household membership is required to update household member profiles.';
   end if;
 
   if normalized_display_name = '' then
@@ -1536,37 +1539,43 @@ begin
     raise exception 'Member role is invalid.';
   end if;
 
-  update public.household_members member
-  set
-    display_name = normalized_display_name,
-    color = coalesce(normalized_color, member.color),
-    status = coalesce(normalized_status, member.status),
-    role = coalesce(normalized_role, member.role),
-    updated_at = now()
+  select member.id
+  into target_member_id
+  from public.household_members member
   where member.household_id = target_household_id
     and (
       member.id::text = nullif(local_member_id, '')
       or member.local_record_id = nullif(local_member_id, '')
-    )
-  returning member.id into updated_member_id;
+    );
 
-  if updated_member_id is null then
-    update public.household_members member
-    set
-      display_name = normalized_display_name,
-      color = coalesce(normalized_color, member.color),
-      status = coalesce(normalized_status, member.status),
-      role = coalesce(normalized_role, member.role),
-      updated_at = now()
-    from public.household_memberships membership
-    where member.id = membership.member_id
-      and member.household_id = target_household_id
-      and membership.household_id = target_household_id
-      and membership.user_id = current_user_id
-      and membership.status = 'active'
-      and membership.role in ('owner', 'admin')
-    returning member.id into updated_member_id;
+  if target_member_id is null and is_admin then
+    target_member_id := current_member_id;
   end if;
+
+  if target_member_id is null then
+    raise exception 'Household member was not found.';
+  end if;
+
+  if not is_admin and target_member_id <> current_member_id then
+    raise exception 'Members can update only their own household member profile.';
+  end if;
+
+  update public.household_members member
+  set
+    display_name = normalized_display_name,
+    color = coalesce(normalized_color, member.color),
+    status = case
+      when is_admin then coalesce(normalized_status, member.status)
+      else member.status
+    end,
+    role = case
+      when is_admin then coalesce(normalized_role, member.role)
+      else member.role
+    end,
+    updated_at = now()
+  where member.id = target_member_id
+    and member.household_id = target_household_id
+  returning member.id into updated_member_id;
 
   if updated_member_id is null then
     raise exception 'Household member was not found.';

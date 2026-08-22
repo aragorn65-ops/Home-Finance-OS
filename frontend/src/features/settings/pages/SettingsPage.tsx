@@ -25,6 +25,7 @@ import {
   loadHousehold,
   saveHouseholdPreferences,
 } from "../../household/services/householdStorage";
+import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 import {
   AuthDiagnosticsPanel,
   getAuthBackendAdapter,
@@ -124,6 +125,14 @@ export default function SettingsPage() {
   const canViewAuthDiagnostics =
     isProductionAuthEnabled ||
     canManageHouseholdSettings;
+  const signedInMember =
+    household?.members.find(
+      (member) =>
+        member.id ===
+          membership?.memberId ||
+        member.remoteMemberId ===
+          membership?.memberId
+    );
 
   const backupFileInputRef =
     useRef<HTMLInputElement | null>(
@@ -182,6 +191,28 @@ export default function SettingsPage() {
   const [
     isSavingPreferences,
     setIsSavingPreferences,
+  ] = useState(false);
+
+  const [
+    memberAppearanceColor,
+    setMemberAppearanceColor,
+  ] = useState(
+    signedInMember?.color ?? ""
+  );
+
+  const [
+    memberAppearanceMessage,
+    setMemberAppearanceMessage,
+  ] = useState("");
+
+  const [
+    memberAppearanceError,
+    setMemberAppearanceError,
+  ] = useState("");
+
+  const [
+    isSavingMemberAppearance,
+    setIsSavingMemberAppearance,
   ] = useState(false);
 
   const [
@@ -445,6 +476,17 @@ export default function SettingsPage() {
       themePreference
     );
   }, [themePreference]);
+
+  useEffect(() => {
+    setMemberAppearanceColor(
+      signedInMember?.color ?? ""
+    );
+    setMemberAppearanceMessage("");
+    setMemberAppearanceError("");
+  }, [
+    signedInMember?.id,
+    signedInMember?.color,
+  ]);
 
   useEffect(() => {
     if (!isConfirmingRestore) {
@@ -1041,6 +1083,114 @@ export default function SettingsPage() {
     navigate("/app");
   };
 
+  const handleMemberAppearanceColorChange =
+    (nextColor: string): void => {
+      setMemberAppearanceColor(
+        nextColor
+      );
+      setMemberAppearanceMessage("");
+      setMemberAppearanceError("");
+    };
+
+  const saveMemberAppearance =
+    async (): Promise<void> => {
+      setMemberAppearanceMessage("");
+      setMemberAppearanceError("");
+
+      if (
+        !household ||
+        !signedInMember
+      ) {
+        setMemberAppearanceError(
+          "Sign in as a household member before changing your member color."
+        );
+
+        return;
+      }
+
+      const normalizedColor =
+        memberAppearanceColor
+          .trim()
+          .toUpperCase();
+
+      const result =
+        HouseholdMemberService.updateMember(
+          signedInMember.id,
+          {
+            displayName:
+              signedInMember.displayName,
+            email:
+              signedInMember.email,
+            role:
+              signedInMember.role,
+            color:
+              normalizedColor,
+            isActive:
+              signedInMember.isActive,
+          }
+        );
+
+      if (!result.success) {
+        setMemberAppearanceError(
+          result.errors?.color ??
+            result.message ??
+            "Unable to update your member color."
+        );
+
+        return;
+      }
+
+      setIsSavingMemberAppearance(
+        true
+      );
+
+      try {
+        if (
+          isAuthFeatureEnabled() &&
+          household.authenticatedLink &&
+          session.status ===
+            "signed-in"
+        ) {
+          await getAuthBackendAdapter()
+            .updateRemoteHouseholdMemberProfile({
+              householdId:
+                household
+                  .authenticatedLink
+                  .remoteHouseholdId,
+              localMemberId:
+                signedInMember
+                  .remoteMemberId ??
+                signedInMember.id,
+              displayName:
+                signedInMember
+                  .displayName,
+              color:
+                normalizedColor ||
+                undefined,
+              isActive:
+                signedInMember.isActive,
+              role:
+                signedInMember.role,
+            });
+        }
+
+        setMemberAppearanceColor(
+          normalizedColor
+        );
+        setMemberAppearanceMessage(
+          "Member color updated."
+        );
+      } catch (error) {
+        setMemberAppearanceError(
+          `Member color was saved locally, but cloud sync failed: ${getErrorMessage(error)}`
+        );
+      } finally {
+        setIsSavingMemberAppearance(
+          false
+        );
+      }
+    };
+
   const handleEnableAppLock =
     async (): Promise<void> => {
       setAppLockMessage("");
@@ -1557,6 +1707,122 @@ export default function SettingsPage() {
             )}
           </div>
         </Card>
+
+        {signedInMember && (
+        <Card>
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                Member Appearance
+              </h2>
+
+              <p className="mt-2 text-sm text-muted-foreground">
+                Choose the color used for your member badge in
+                household expense and settlement views.
+              </p>
+            </div>
+
+            {(memberAppearanceMessage ||
+              memberAppearanceError) && (
+              <div
+                role={
+                  memberAppearanceError
+                    ? "alert"
+                    : "status"
+                }
+                className={[
+                  "settings-alert",
+                  memberAppearanceError
+                    ? "settings-alert--danger"
+                    : "settings-alert--success",
+                ].join(" ")}
+              >
+                {memberAppearanceError ||
+                  memberAppearanceMessage}
+              </div>
+            )}
+
+            <div className="settings-member-appearance">
+              <div
+                className="settings-member-appearance-avatar"
+                style={{
+                  backgroundColor:
+                    memberAppearanceColor ||
+                    signedInMember.color ||
+                    "#688F24",
+                }}
+              >
+                {signedInMember.displayName
+                  .trim()
+                  .charAt(0)
+                  .toUpperCase()}
+              </div>
+
+              <div className="settings-member-appearance-fields">
+                <p className="text-sm font-medium text-foreground">
+                  {signedInMember.displayName}
+                </p>
+
+                <div className="settings-member-appearance-controls">
+                  <input
+                    id="settings-member-color"
+                    type="color"
+                    value={
+                      memberAppearanceColor ||
+                      signedInMember.color ||
+                      "#688F24"
+                    }
+                    onChange={(event) =>
+                      handleMemberAppearanceColorChange(
+                        event.target.value
+                          .toUpperCase()
+                      )
+                    }
+                    className="settings-member-color-picker"
+                  />
+
+                  <label
+                    htmlFor="settings-member-color-text"
+                    className="sr-only"
+                  >
+                    Member color hex value
+                  </label>
+
+                  <input
+                    id="settings-member-color-text"
+                    type="text"
+                    value={
+                      memberAppearanceColor
+                    }
+                    onChange={(event) =>
+                      handleMemberAppearanceColorChange(
+                        event.target.value
+                      )
+                    }
+                    placeholder="#688F24"
+                    maxLength={7}
+                    className="settings-preferences-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={saveMemberAppearance}
+              disabled={
+                isSavingMemberAppearance ||
+                memberAppearanceColor ===
+                  (signedInMember.color ??
+                    "")
+              }
+            >
+              {isSavingMemberAppearance
+                ? "Saving..."
+                : "Save Member Color"}
+            </Button>
+          </div>
+        </Card>
+        )}
 
         <Card>
           <div className="space-y-5">

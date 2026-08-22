@@ -173,12 +173,20 @@ export class InMemoryAuthBackendAdapter
 
     if (
       currentMembership?.role !== "owner" &&
-      currentMembership?.role !== "admin"
+      currentMembership?.role !== "admin" &&
+      currentMembership?.memberId !==
+        request.localMemberId
     ) {
       throw new Error(
-        "Only a household admin can update member profiles."
+        "Members can update only their own household member profile."
       );
     }
+
+    const canManageMemberAccess =
+      currentMembership?.role ===
+        "owner" ||
+      currentMembership?.role ===
+        "admin";
 
     const memberships =
       this.store
@@ -218,8 +226,11 @@ export class InMemoryAuthBackendAdapter
     const now =
       new Date();
     const requestedRole =
-      request.role === "owner" ||
-      request.role === "admin"
+      canManageMemberAccess &&
+      (
+        request.role === "owner" ||
+        request.role === "admin"
+      )
         ? request.role
         : undefined;
     const storedRole =
@@ -245,9 +256,12 @@ export class InMemoryAuthBackendAdapter
       color:
         request.color,
       isActive:
-        request.isActive ??
-        (updatedMembership.status ===
-          "active"),
+        canManageMemberAccess
+          ? request.isActive ??
+            (updatedMembership.status ===
+              "active")
+          : updatedMembership.status ===
+            "active",
       createdAt:
         updatedMembership.createdAt ?? now,
       updatedAt:
