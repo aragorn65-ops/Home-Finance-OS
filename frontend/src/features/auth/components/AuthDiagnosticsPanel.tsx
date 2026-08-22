@@ -25,8 +25,8 @@ import {
   getApplicationDataHealthSummary,
 } from "../../startup/services/applicationBackup";
 import CoreSnapshotSyncPanel from "./CoreSnapshotSyncPanel";
-import HouseholdClaimPanel from "./HouseholdClaimPanel";
 import MigrationCheckpointPanel from "./MigrationCheckpointPanel";
+import TestSyncSetupPanel from "./TestSyncSetupPanel";
 import {
   formatMigrationCheckpointDate,
 } from "./migrationCheckpointLifecycle";
@@ -80,6 +80,37 @@ export default function AuthDiagnosticsPanel() {
       : null;
   const authenticatedLink =
     household?.authenticatedLink;
+  const backupSummary =
+    healthSummary
+      ? {
+          householdName:
+            healthSummary.householdName,
+          exportedAt: new Date()
+            .toISOString(),
+          backupVersion: 1,
+          storageSchemaVersion:
+            healthSummary.storageSchemaVersion,
+          themePreference:
+            healthSummary.themePreference,
+          accountCount:
+            healthSummary.accountCount,
+          transactionCount:
+            healthSummary.transactionCount,
+          expenseAllocationCount:
+            healthSummary.expenseAllocationCount,
+          settlementCount:
+            healthSummary.settlementCount,
+          settlementApplicationCount:
+            healthSummary.settlementApplicationCount,
+          savingsGoalCount:
+            healthSummary.savingsGoalCount,
+          savingsActivityCount:
+            healthSummary.savingsActivityCount,
+          providerBillCount:
+            healthSummary.providerBillCount,
+          passwordProtected: false,
+        }
+      : null;
   const [
     supabaseEmail,
     setSupabaseEmail,
@@ -812,48 +843,13 @@ export default function AuthDiagnosticsPanel() {
         </>
       )}
 
-      {session.status === "signed-in" &&
-        household &&
-        healthSummary &&
-        !authenticatedLink && (
-          <HouseholdClaimPanel
+      {household &&
+        backupSummary && (
+          <TestSyncSetupPanel
             household={household}
-            backupSummary={{
-              householdName:
-                healthSummary.householdName,
-              exportedAt: new Date()
-                .toISOString(),
-              backupVersion: 1,
-              storageSchemaVersion:
-                healthSummary.storageSchemaVersion,
-              themePreference:
-                healthSummary.themePreference,
-              accountCount:
-                healthSummary.accountCount,
-              transactionCount:
-                healthSummary.transactionCount,
-              expenseAllocationCount:
-                healthSummary.expenseAllocationCount,
-              settlementCount:
-                healthSummary.settlementCount,
-              settlementApplicationCount:
-                healthSummary.settlementApplicationCount,
-              savingsGoalCount:
-                healthSummary.savingsGoalCount,
-              savingsActivityCount:
-                healthSummary.savingsActivityCount,
-              providerBillCount:
-                healthSummary.providerBillCount,
-              passwordProtected: false,
-            }}
-            onClaimSuccess={() => {
+            backupSummary={backupSummary}
+            onStatusChange={() => {
               void refreshDiagnostics();
-            }}
-            onClaimError={(error) => {
-              console.error(
-                "Household claim error:",
-                error
-              );
             }}
           />
         )}

@@ -21,3 +21,7 @@ export {
 export {
   default as MigrationCheckpointPanel,
 } from "./MigrationCheckpointPanel";
+
+export {
+  default as TestSyncSetupPanel,
+} from "./TestSyncSetupPanel";
