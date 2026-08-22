@@ -574,8 +574,14 @@
   gap: var(--space-2);
 }
 
+.test-sync-setup__invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .test-sync-setup__actions button,
-.test-sync-setup__invite-form button {
+.test-sync-setup__invite-actions button {
   display: inline-flex;
   min-height: var(--control-height-sm);
   align-items: center;
@@ -590,19 +596,19 @@
 }
 
 .test-sync-setup__actions button:hover:not(:disabled),
-.test-sync-setup__invite-form button:hover:not(:disabled) {
+.test-sync-setup__invite-actions button:hover:not(:disabled) {
   border-color: var(--color-border-strong);
   background: var(--color-surface-hover);
 }
 
 .test-sync-setup__actions button:disabled,
-.test-sync-setup__invite-form button:disabled {
+.test-sync-setup__invite-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
 .test-sync-setup__actions button:focus-visible,
-.test-sync-setup__invite-form button:focus-visible,
+.test-sync-setup__invite-actions button:focus-visible,
 .test-sync-setup__form-grid input:focus-visible,
 .test-sync-setup__form-grid select:focus-visible {
   outline: none;

@@ -470,21 +470,37 @@ export default function TestSyncSetupPanel({
     ): Promise<void> => {
       event.preventDefault();
 
-      if (!remoteHouseholdId) {
-        setError(
-          "Create or link the cloud household before inviting a member."
-        );
-        return;
-      }
-
       const email =
         inviteForm.email.trim();
       const displayName =
         inviteForm.displayName.trim();
 
-      if (!displayName || !email) {
+      if (!displayName) {
         setError(
-          "Enter the member name and email before sending the invite."
+          "Enter the member name before sending the invite."
+        );
+        return;
+      }
+
+      if (!email) {
+        setError(
+          "Enter the member email before sending the invite."
+        );
+        return;
+      }
+
+      if (
+        session.status !== "signed-in"
+      ) {
+        setError(
+          "Sign in as the household owner before sending the invite."
+        );
+        return;
+      }
+
+      if (!remoteHouseholdId) {
+        setError(
+          "Create/link the cloud household first, then send the invite."
         );
         return;
       }
@@ -606,6 +622,71 @@ export default function TestSyncSetupPanel({
       } finally {
         setAction("");
       }
+    };
+
+  const handleAddLocalMember =
+    (): void => {
+      const displayName =
+        inviteForm.displayName.trim();
+
+      if (!displayName) {
+        setError(
+          "Enter the member name before adding the local member."
+        );
+        return;
+      }
+
+      setError("");
+      setMessage("");
+
+      const existingMember =
+        members.find(
+          (candidate) =>
+            candidate.displayName
+              .trim()
+              .toLowerCase() ===
+            displayName.toLowerCase()
+        );
+
+      if (existingMember) {
+        setMessage(
+          `${existingMember.displayName} already exists locally. You can send the invite when the cloud household is linked.`
+        );
+        return;
+      }
+
+      const result =
+        HouseholdMemberService.create({
+          displayName,
+          role:
+            inviteForm.role,
+          color: "",
+          isActive: true,
+        });
+
+      if (
+        !result.success ||
+        !result.data
+      ) {
+        const firstError =
+          result.errors
+            ? Object.values(
+                result.errors
+              )[0]
+            : "";
+
+        setError(
+          firstError ||
+            result.message ||
+            "Unable to create the local household member."
+        );
+        return;
+      }
+
+      refreshMembers();
+      setMessage(
+        `${result.data.displayName} added locally. Send invite after the cloud household is linked.`
+      );
     };
 
   const handleSaveSnapshot =
@@ -904,20 +985,29 @@ export default function TestSyncSetupPanel({
           </label>
         </div>
 
-        <button
-          type="submit"
-          disabled={
-            isBusy ||
-            session.status !== "signed-in" ||
-            !remoteHouseholdId
-          }
-        >
-          <UserPlus
-            size={16}
-            aria-hidden="true"
-          />
-          Add Member and Send Invite
-        </button>
+        <div className="test-sync-setup__invite-actions">
+          <button
+            type="button"
+            onClick={handleAddLocalMember}
+            disabled={isBusy}
+          >
+            <UserPlus
+              size={16}
+              aria-hidden="true"
+            />
+            Add Local Member
+          </button>
+          <button
+            type="submit"
+            disabled={isBusy}
+          >
+            <Mail
+              size={16}
+              aria-hidden="true"
+            />
+            Send Invite
+          </button>
+        </div>
       </form>
 
       <div className="test-sync-setup__diagnostics">
