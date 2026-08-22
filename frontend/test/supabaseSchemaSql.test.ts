@@ -424,7 +424,7 @@ test("Supabase household claim RPC accepts owner display name", () => {
   );
 });
 
-test("Supabase member profile RPC updates display names", () => {
+test("Supabase member profile RPC updates synced profile fields", () => {
   const schemaSql =
     readFileSync(
       join(
@@ -443,6 +443,14 @@ test("Supabase member profile RPC updates display names", () => {
   );
   assert.match(
     schemaSql,
+    /alter table public\.household_members\s+add column if not exists color text;/
+  );
+  assert.match(
+    schemaSql,
+    /member_color text default null/
+  );
+  assert.match(
+    schemaSql,
     /if not public\.is_household_admin\(target_household_id\) then/
   );
   assert.match(
@@ -451,11 +459,19 @@ test("Supabase member profile RPC updates display names", () => {
   );
   assert.match(
     schemaSql,
+    /color = coalesce\(normalized_color, member\.color\)/
+  );
+  assert.match(
+    schemaSql,
+    /status = coalesce\(normalized_status, member\.status\)/
+  );
+  assert.match(
+    schemaSql,
     /from public\.household_memberships membership[\s\S]+membership\.user_id = current_user_id/
   );
   assert.match(
     schemaSql,
-    /grant execute on function public\.update_household_member_profile\(\s*uuid,\s*text,\s*text\s*\) to authenticated;/
+    /grant execute on function public\.update_household_member_profile\(\s*uuid,\s*text,\s*text,\s*text,\s*text,\s*text\s*\) to authenticated;/
   );
 });
 

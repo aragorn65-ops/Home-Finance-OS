@@ -217,6 +217,18 @@ export class InMemoryAuthBackendAdapter
 
     const now =
       new Date();
+    const requestedRole =
+      request.role === "owner" ||
+      request.role === "admin"
+        ? request.role
+        : undefined;
+    const storedRole =
+      updatedMembership.role ===
+        "owner" ||
+      updatedMembership.role ===
+        "admin"
+        ? updatedMembership.role
+        : "member";
 
     return {
       id:
@@ -229,15 +241,13 @@ export class InMemoryAuthBackendAdapter
         updatedMembership.memberDisplayName ??
         request.displayName,
       role:
-        updatedMembership.role ===
-          "owner" ||
-        updatedMembership.role ===
-          "admin"
-          ? updatedMembership.role
-          : "member",
+        requestedRole ?? storedRole,
+      color:
+        request.color,
       isActive:
-        updatedMembership.status ===
-        "active",
+        request.isActive ??
+        (updatedMembership.status ===
+          "active"),
       createdAt:
         updatedMembership.createdAt ?? now,
       updatedAt:

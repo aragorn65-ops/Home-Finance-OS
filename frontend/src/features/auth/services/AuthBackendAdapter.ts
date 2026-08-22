@@ -69,6 +69,9 @@ export interface UpdateRemoteHouseholdMemberProfileRequest {
   householdId: string;
   localMemberId: string;
   displayName: string;
+  color?: string;
+  isActive?: boolean;
+  role?: HouseholdMembership["role"];
 }
 
 export interface AuthSessionSubscription {

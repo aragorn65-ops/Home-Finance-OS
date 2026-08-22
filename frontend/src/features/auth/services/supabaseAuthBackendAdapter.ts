@@ -422,6 +422,7 @@ interface SupabaseHouseholdMemberRow {
   local_record_id?: string | null;
   linked_user_id?: string | null;
   display_name: string;
+  color?: string | null;
   role: string;
   status: string;
   created_at?: string | null;
@@ -994,13 +995,10 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
-    const {
-      data,
-      error,
-    } = await (
-      await this.getClient()
-    )
-      .rpc(
+    const client =
+      await this.getClient();
+    let result =
+      await client.rpc(
         "update_household_member_profile",
         {
           target_household_id:
@@ -1009,8 +1007,44 @@ export class SupabaseAuthBackendAdapter
             request.localMemberId,
           member_display_name:
             displayName,
+          member_color:
+            request.color ?? null,
+          member_status:
+            typeof request.isActive ===
+            "boolean"
+              ? request.isActive
+                ? "active"
+                : "inactive"
+              : null,
+          member_role:
+            request.role ?? null,
         }
       ) as SupabaseHouseholdMemberRpcResult;
+
+    if (
+      result.error &&
+      isMissingSchemaCacheFunctionError(
+        result.error.message
+      )
+    ) {
+      result =
+        await client.rpc(
+          "update_household_member_profile",
+          {
+            target_household_id:
+              request.householdId,
+            local_member_id:
+              request.localMemberId,
+            member_display_name:
+              displayName,
+          }
+        ) as SupabaseHouseholdMemberRpcResult;
+    }
+
+    const {
+      data,
+      error,
+    } = result;
 
     if (error) {
       throw new Error(
@@ -1396,30 +1430,37 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
-    const {
-      data,
-      error,
-    } = await (
-      await this.getClient()
-    )
-      .from("household_members")
-      .select(
-        [
-          "id",
+    const client =
+      await this.getClient();
+    const memberColumns = [
+      "id",
+      "household_id",
+      "local_record_id",
+      "linked_user_id",
+      "display_name",
+      "color",
+      "role",
+      "status",
+      "created_at",
+      "updated_at",
+    ].join(",");
+    const legacyMemberColumns =
+      memberColumns
+        .split(",")
+        .filter(
+          (column) =>
+            column !== "color"
+        )
+        .join(",");
+
+    let result =
+      await client
+        .from("household_members")
+        .select(memberColumns)
+        .eq(
           "household_id",
-          "local_record_id",
-          "linked_user_id",
-          "display_name",
-          "role",
-          "status",
-          "created_at",
-          "updated_at",
-        ].join(",")
-      )
-      .eq(
-        "household_id",
-        householdId
-      ) as {
+          householdId
+        ) as {
         data:
           | SupabaseHouseholdMemberRow[]
           | null;
@@ -1427,6 +1468,35 @@ export class SupabaseAuthBackendAdapter
           | SupabaseAuthError
           | null;
       };
+
+    if (
+      result.error &&
+      isMissingColumnError(
+        result.error.message,
+        "color"
+      )
+    ) {
+      result =
+        await client
+          .from("household_members")
+          .select(legacyMemberColumns)
+          .eq(
+            "household_id",
+            householdId
+          ) as {
+          data:
+            | SupabaseHouseholdMemberRow[]
+            | null;
+          error:
+            | SupabaseAuthError
+            | null;
+        };
+    }
+
+    const {
+      data,
+      error,
+    } = result;
 
     if (error) {
       throw new Error(
@@ -3252,6 +3322,8 @@ function mapSupabaseHouseholdMember(
       undefined,
     displayName:
       row.display_name,
+    color:
+      row.color ?? undefined,
     role,
     isActive:
       row.status === "active",
@@ -4057,6 +4129,26 @@ function isMissingSchemaCacheFunctionError(
     ) &&
     message.includes(
       "schema cache"
+    )
+  );
+}
+
+function isMissingColumnError(
+  message: string,
+  columnName: string
+): boolean {
+  return (
+    message.includes(columnName) &&
+    (
+      message.includes(
+        "does not exist"
+      ) ||
+      message.includes(
+        "Could not find"
+      ) ||
+      message.includes(
+        "schema cache"
+      )
     )
   );
 }

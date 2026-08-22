@@ -33,6 +33,9 @@ import {
   saveLinkedHouseholdShell,
   saveHouseholdMembers,
 } from "../../features/household/services/householdStorage";
+import type {
+  HouseholdMemberRole,
+} from "../../features/household/models/HouseholdMember";
 import AppUnlockScreen from "../../features/security/components/AppUnlockScreen";
 import {
   getAppLockIdleTimeoutMinutes,
@@ -122,17 +125,13 @@ export default function AppShell() {
     shouldRepairMemberHouseholdLink ||
     shouldRepairMemberDisplayName ||
     shouldHydrateSparseMemberShell;
-  const shouldHydrateRemoteMemberAliases =
+  const shouldHydrateRemoteMemberProfiles =
     Boolean(
       household &&
       linkedRemoteHouseholdId &&
       session.status === "signed-in" &&
       membership?.status === "active" &&
-      household.members.length > 0 &&
-      household.members.some(
-        (member) =>
-          !member.remoteMemberId
-      )
+      household.members.length > 0
     );
 
   const [
@@ -461,7 +460,7 @@ export default function AppShell() {
     if (
       !household ||
       !linkedRemoteHouseholdId ||
-      !shouldHydrateRemoteMemberAliases ||
+      !shouldHydrateRemoteMemberProfiles ||
       !isProductionAuthEnabled ||
       !authRouteAccess.isAllowed ||
       session.status !== "signed-in" ||
@@ -522,10 +521,28 @@ export default function AppShell() {
                     .toLowerCase()
                 );
 
+              if (!remoteMember) {
+                return member;
+              }
+
+              const nextRole: HouseholdMemberRole =
+                remoteMember.role === "owner" ||
+                remoteMember.role === "admin"
+                  ? remoteMember.role
+                  : "member";
+              const nextColor =
+                remoteMember.color ??
+                member.color;
+
               if (
-                !remoteMember?.remoteMemberId ||
                 member.remoteMemberId ===
-                  remoteMember.remoteMemberId
+                  remoteMember.remoteMemberId &&
+                member.displayName ===
+                  remoteMember.displayName &&
+                member.role === nextRole &&
+                member.isActive ===
+                  remoteMember.isActive &&
+                member.color === nextColor
               ) {
                 return member;
               }
@@ -536,8 +553,16 @@ export default function AppShell() {
                 ...member,
                 remoteMemberId:
                   remoteMember.remoteMemberId,
+                displayName:
+                  remoteMember.displayName,
+                role:
+                  nextRole,
+                color:
+                  nextColor,
+                isActive:
+                  remoteMember.isActive,
                 updatedAt:
-                  new Date(),
+                  remoteMember.updatedAt,
               };
             }
           );
@@ -569,7 +594,7 @@ export default function AppShell() {
     linkedRemoteHouseholdId,
     membership,
     session.status,
-    shouldHydrateRemoteMemberAliases,
+    shouldHydrateRemoteMemberProfiles,
   ]);
 
   if (

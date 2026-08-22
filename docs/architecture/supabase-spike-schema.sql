@@ -21,6 +21,7 @@ create table if not exists public.household_members (
   household_id uuid not null references public.households(id) on delete cascade,
   local_record_id text,
   display_name text not null,
+  color text,
   role text not null,
   status text not null default 'active',
   linked_user_id uuid references auth.users(id),
@@ -30,6 +31,9 @@ create table if not exists public.household_members (
 
 alter table public.household_members
 add column if not exists local_record_id text;
+
+alter table public.household_members
+add column if not exists color text;
 
 create table if not exists public.household_memberships (
   id uuid primary key default gen_random_uuid(),
@@ -1478,10 +1482,22 @@ drop function if exists public.update_household_member_profile(
   text
 );
 
+drop function if exists public.update_household_member_profile(
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  text
+);
+
 create or replace function public.update_household_member_profile(
   target_household_id uuid,
   local_member_id text,
-  member_display_name text
+  member_display_name text,
+  member_color text default null,
+  member_status text default null,
+  member_role text default null
 )
 returns setof public.household_members
 language plpgsql
@@ -1491,6 +1507,9 @@ as $$
 declare
   current_user_id uuid := auth.uid();
   normalized_display_name text := trim(member_display_name);
+  normalized_color text := nullif(trim(coalesce(member_color, '')), '');
+  normalized_status text := nullif(lower(trim(coalesce(member_status, ''))), '');
+  normalized_role text := nullif(lower(trim(coalesce(member_role, ''))), '');
   updated_member_id uuid;
 begin
   if current_user_id is null then
@@ -1505,12 +1524,26 @@ begin
     raise exception 'Member display name is required.';
   end if;
 
+  if normalized_color is not null and normalized_color !~ '^#[0-9A-Fa-f]{6}$' then
+    raise exception 'Member color must be a hex color.';
+  end if;
+
+  if normalized_status is not null and normalized_status not in ('active', 'inactive') then
+    raise exception 'Member status is invalid.';
+  end if;
+
+  if normalized_role is not null and normalized_role not in ('owner', 'admin', 'member') then
+    raise exception 'Member role is invalid.';
+  end if;
+
   update public.household_members member
   set
     display_name = normalized_display_name,
+    color = coalesce(normalized_color, member.color),
+    status = coalesce(normalized_status, member.status),
+    role = coalesce(normalized_role, member.role),
     updated_at = now()
   where member.household_id = target_household_id
-    and member.status = 'active'
     and (
       member.id::text = nullif(local_member_id, '')
       or member.local_record_id = nullif(local_member_id, '')
@@ -1521,11 +1554,13 @@ begin
     update public.household_members member
     set
       display_name = normalized_display_name,
+      color = coalesce(normalized_color, member.color),
+      status = coalesce(normalized_status, member.status),
+      role = coalesce(normalized_role, member.role),
       updated_at = now()
     from public.household_memberships membership
     where member.id = membership.member_id
       and member.household_id = target_household_id
-      and member.status = 'active'
       and membership.household_id = target_household_id
       and membership.user_id = current_user_id
       and membership.status = 'active'
@@ -1547,11 +1582,17 @@ $$;
 revoke all on function public.update_household_member_profile(
   uuid,
   text,
+  text,
+  text,
+  text,
   text
 ) from public;
 
 grant execute on function public.update_household_member_profile(
   uuid,
+  text,
+  text,
+  text,
   text,
   text
 ) to authenticated;

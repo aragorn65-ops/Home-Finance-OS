@@ -131,6 +131,40 @@ export default function HouseholdMemberManager({
     );
   };
 
+  const syncMemberProfileToRemote = (
+    member: HouseholdMember,
+    form: HouseholdMemberFormData
+  ) => {
+    if (!remoteHouseholdId) {
+      return;
+    }
+
+    void getAuthBackendAdapter()
+      .updateRemoteHouseholdMemberProfile({
+        householdId:
+          remoteHouseholdId,
+        localMemberId:
+          member.remoteMemberId ??
+          member.id,
+        displayName:
+          form.displayName,
+        color:
+          form.color.trim() ||
+          undefined,
+        isActive:
+          form.isActive,
+        role:
+          form.role,
+      })
+      .catch((error) => {
+        setActionError(
+          error instanceof Error
+            ? error.message
+            : "Member saved locally, but Supabase profile update failed."
+        );
+      });
+  };
+
   const closeDialog = () => {
     setDialogMode(null);
     setSelectedMember(null);
@@ -177,6 +211,16 @@ export default function HouseholdMemberManager({
           );
 
     if (result.success) {
+      if (
+        dialogMode === "edit" &&
+        selectedMember
+      ) {
+        syncMemberProfileToRemote(
+          selectedMember,
+          form
+        );
+      }
+
       refreshMembers();
       closeDialog();
     }
@@ -215,6 +259,22 @@ export default function HouseholdMemberManager({
     }
 
     refreshMembers();
+
+    syncMemberProfileToRemote(
+      member,
+      {
+        displayName:
+          member.displayName,
+        email:
+          member.email,
+        role:
+          member.role,
+        color:
+          member.color ?? "",
+        isActive:
+          !member.isActive,
+      }
+    );
   };
 
   const handleInviteSubmit = async (

@@ -49,18 +49,6 @@ interface UseSettlementsOptions {
   localHouseholdId?: string;
 }
 
-function sortSettlements(
-  settlements: Settlement[]
-): Settlement[] {
-  return [
-    ...settlements,
-  ].sort(
-    (first, second) =>
-      second.settlementDate.getTime() -
-      first.settlementDate.getTime()
-  );
-}
-
 function mapRemoteSettlement(
   settlement: RemoteSettlement,
   localHouseholdId?: string
@@ -180,33 +168,6 @@ function createRemoteSettlementDraft(
     isActive:
       form.isActive,
   };
-}
-
-function mergeSettlements(
-  localSettlements: Settlement[],
-  remoteSettlements: Settlement[]
-): Settlement[] {
-  const settlementById =
-    new Map<string, Settlement>();
-
-  for (const settlement of [
-    ...remoteSettlements,
-    ...localSettlements,
-  ]) {
-    settlementById.set(
-      settlement.id,
-      settlement
-    );
-  }
-
-  return sortSettlements(
-    [
-      ...settlementById.values(),
-    ].filter(
-      (settlement) =>
-        settlement.isActive
-    )
-  );
 }
 
 export default function useSettlements(
@@ -338,16 +299,14 @@ export default function useSettlements(
           );
 
         persistRemoteSettlementRecords(
+          localHouseholdId,
           remoteSettlements,
           mappedRemoteSettlements,
           remoteApplications
         );
 
         setSettlements(
-          mergeSettlements(
-            loadSettlements(),
-            mappedRemoteSettlements
-          )
+          loadSettlements()
         );
 
         setMemberBalances(

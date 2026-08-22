@@ -12,10 +12,25 @@ import SettlementRepository from "../repositories/SettlementRepository";
 import SettlementApplicationRepository from "../repositories/SettlementApplicationRepository";
 
 export function persistRemoteSettlementRecords(
+  localHouseholdId: string,
   remoteSettlements: RemoteSettlement[],
   mappedSettlements: Settlement[],
   remoteApplications: RemoteSettlementApplication[]
 ): void {
+  SettlementRepository
+    .findByHouseholdId(
+      localHouseholdId
+    )
+    .forEach((settlement) => {
+      SettlementApplicationRepository
+        .deleteBySettlementId(
+          settlement.id
+        );
+      SettlementRepository.delete(
+        settlement.id
+      );
+    });
+
   const localSettlementIdByRemoteId =
     new Map<string, string>();
 
@@ -40,17 +55,6 @@ export function persistRemoteSettlementRecords(
           remoteSettlement.localRecordId,
           mappedSettlement.id
         );
-      }
-
-      if (
-        SettlementRepository.findById(
-          mappedSettlement.id
-        )
-      ) {
-        SettlementRepository.update(
-          mappedSettlement
-        );
-        return;
       }
 
       SettlementRepository.create(
