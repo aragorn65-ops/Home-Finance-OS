@@ -58,6 +58,7 @@ interface InviteDiagnosticRecord {
   email: string;
   role: HouseholdMember["role"];
   status:
+    | "ready"
     | "sent"
     | "failed";
   message: string;
@@ -628,6 +629,8 @@ export default function TestSyncSetupPanel({
     (): void => {
       const displayName =
         inviteForm.displayName.trim();
+      const email =
+        inviteForm.email.trim();
 
       if (!displayName) {
         setError(
@@ -649,8 +652,25 @@ export default function TestSyncSetupPanel({
         );
 
       if (existingMember) {
+        if (email) {
+          recordInviteDiagnostic({
+            memberId:
+              existingMember.id,
+            displayName:
+              existingMember.displayName,
+            email,
+            role:
+              existingMember.role,
+            status: "ready",
+            message:
+              "Email recorded locally; invite not sent yet.",
+            attemptedAt:
+              new Date().toISOString(),
+          });
+        }
+
         setMessage(
-          `${existingMember.displayName} already exists locally. You can send the invite when the cloud household is linked.`
+          `${existingMember.displayName} already exists locally. ${email ? "Email recorded for invite diagnostics." : "Enter an email before sending the invite."}`
         );
         return;
       }
@@ -684,8 +704,25 @@ export default function TestSyncSetupPanel({
       }
 
       refreshMembers();
+      if (email) {
+        recordInviteDiagnostic({
+          memberId:
+            result.data.id,
+          displayName:
+            result.data.displayName,
+          email,
+          role:
+            result.data.role,
+          status: "ready",
+          message:
+            "Email recorded locally; invite not sent yet.",
+          attemptedAt:
+            new Date().toISOString(),
+        });
+      }
+
       setMessage(
-        `${result.data.displayName} added locally. Send invite after the cloud household is linked.`
+        `${result.data.displayName} added locally. ${email ? "Email recorded for invite diagnostics." : "Enter an email before sending the invite."}`
       );
     };
 
