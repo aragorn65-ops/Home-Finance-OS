@@ -32,6 +32,12 @@ export function useHouseholdMembership(
   ] = useState<
     HouseholdMembership[]
   >([]);
+  const [
+    allActiveMemberships,
+    setAllActiveMemberships,
+  ] = useState<
+    HouseholdMembership[]
+  >([]);
 
   const [error, setError] =
     useState("");
@@ -46,6 +52,7 @@ export function useHouseholdMembership(
         "signed-in"
     ) {
       setMemberships([]);
+      setAllActiveMemberships([]);
       setError("");
       setIsLoading(false);
       return () => {
@@ -63,16 +70,22 @@ export function useHouseholdMembership(
           return;
         }
 
-        setMemberships(
+        const activeMemberships =
           nextMemberships.filter(
             (membership) =>
-              (
-                !householdId ||
-                membership.householdId ===
-                  householdId
-              ) &&
               membership.status ===
-                "active"
+              "active"
+          );
+
+        setAllActiveMemberships(
+          activeMemberships
+        );
+        setMemberships(
+          activeMemberships.filter(
+            (membership) =>
+              !householdId ||
+              membership.householdId ===
+                householdId
           )
         );
         setIsLoading(false);
@@ -83,6 +96,7 @@ export function useHouseholdMembership(
         }
 
         setMemberships([]);
+        setAllActiveMemberships([]);
         setIsLoading(false);
         setError(
           "Household membership could not be loaded."
@@ -100,14 +114,48 @@ export function useHouseholdMembership(
 
   const membership =
     useMemo(
-      () => memberships[0],
-      [memberships]
+      () => {
+        const scopedMembership =
+          memberships[0];
+
+        if (
+          scopedMembership &&
+          (
+            scopedMembership.role ===
+              "owner" ||
+            scopedMembership.role ===
+              "admin"
+          )
+        ) {
+          return scopedMembership;
+        }
+
+        const newestMembership =
+          [...allActiveMemberships].sort(
+            (
+              left,
+              right
+            ) =>
+              getMembershipTime(right) -
+              getMembershipTime(left)
+          )[0];
+
+        return (
+          newestMembership ??
+          scopedMembership
+        );
+      },
+      [
+        allActiveMemberships,
+        memberships,
+      ]
     );
 
   return {
     session,
     membership,
     memberships,
+    allActiveMemberships,
     error:
       sessionError || error,
     isLoading,
@@ -115,4 +163,15 @@ export function useHouseholdMembership(
     signIn,
     signOut,
   };
+}
+
+function getMembershipTime(
+  membership: HouseholdMembership
+): number {
+  return (
+    membership.acceptedAt ??
+    membership.invitedAt ??
+    membership.updatedAt ??
+    membership.createdAt
+  ).getTime();
 }

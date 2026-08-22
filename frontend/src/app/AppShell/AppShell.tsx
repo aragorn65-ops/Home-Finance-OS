@@ -78,6 +78,20 @@ export default function AppShell() {
   } = useHouseholdMembership(
     authHouseholdId
   );
+  const linkedRemoteHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId;
+  const shouldRepairMemberHouseholdLink =
+    Boolean(household) &&
+    Boolean(linkedRemoteHouseholdId) &&
+    session.status === "signed-in" &&
+    membership?.status === "active" &&
+    (
+      membership.role === "member" ||
+      membership.role === "viewer"
+    ) &&
+    membership.householdId !==
+      linkedRemoteHouseholdId;
 
   const [
     isLockEnabled,
@@ -269,10 +283,16 @@ export default function AppShell() {
 
   useEffect(() => {
     if (
-      household ||
+      (
+        household &&
+        !shouldRepairMemberHouseholdLink
+      ) ||
       !isProductionAuthEnabled ||
       !authRouteAccess.isAllowed ||
-      isCurrentSettingsPath ||
+      (
+        isCurrentSettingsPath &&
+        !shouldRepairMemberHouseholdLink
+      ) ||
       session.status !== "signed-in" ||
       !session.user ||
       !membership ||
@@ -341,6 +361,8 @@ export default function AppShell() {
                 membership.updatedAt ??
                 now,
             },
+            replaceExisting:
+              shouldRepairMemberHouseholdLink,
           });
 
         if (saved) {
@@ -370,6 +392,7 @@ export default function AppShell() {
     membership,
     session.status,
     session.user,
+    shouldRepairMemberHouseholdLink,
   ]);
 
   if (

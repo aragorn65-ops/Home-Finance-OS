@@ -152,6 +152,7 @@ export interface LinkedHouseholdShellInput {
   member: HouseholdMember;
   migrationId?: string;
   linkedAt?: Date;
+  replaceExisting?: boolean;
 }
 
 export function saveLinkedHouseholdShell(
@@ -160,7 +161,10 @@ export function saveLinkedHouseholdShell(
   const existing =
     loadHousehold();
 
-  if (existing) {
+  if (
+    existing &&
+    !input.replaceExisting
+  ) {
     return existing;
   }
 
