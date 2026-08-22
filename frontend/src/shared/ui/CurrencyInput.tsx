@@ -5,6 +5,8 @@ import {
   type InputHTMLAttributes,
 } from "react";
 
+import parseCurrencyInputValue from "../utils/parseCurrencyInputValue";
+
 export interface CurrencyInputProps
   extends Omit<
     InputHTMLAttributes<HTMLInputElement>,
@@ -25,25 +27,6 @@ function formatCurrencyInputValue(
   }
 
   return value.toFixed(2);
-}
-
-function parseCurrencyInputValue(
-  value: string
-): number {
-  if (value.trim() === "") {
-    return 0;
-  }
-
-  const parsedValue =
-    Number(value);
-
-  if (!Number.isFinite(parsedValue)) {
-    return 0;
-  }
-
-  return Math.round(
-    parsedValue * 100
-  ) / 100;
 }
 
 export default function CurrencyInput({
