@@ -57,6 +57,9 @@ import {
   normalizeTransactionCategory,
   transactionCategories,
 } from "../models/TransactionCategory";
+import {
+  normalizeTransactionFormMemberReferences,
+} from "../services/transactionFormMemberNormalization";
 
 type TransactionFormProps = {
   accounts: Account[];
@@ -848,39 +851,8 @@ function resolveMemberReference(
   );
 }
 
-function normalizeFormMemberReferences(
-  form: TransactionFormData,
-  members: HouseholdMember[]
-): TransactionFormData {
-  const normalizeMemberId = (
-    memberId: string
-  ): string => {
-    return (
-      resolveMemberReference(
-        members,
-        memberId
-      )?.id ?? memberId
-    );
-  };
-
-  return {
-    ...form,
-    paidByMemberId:
-      normalizeMemberId(
-        form.paidByMemberId
-      ),
-    allocations:
-      form.allocations.map(
-        (allocation) => ({
-          ...allocation,
-          memberId:
-            normalizeMemberId(
-              allocation.memberId
-            ),
-        })
-      ),
-  };
-}
+const normalizeFormMemberReferences =
+  normalizeTransactionFormMemberReferences;
 
 export default function TransactionForm({
   accounts,

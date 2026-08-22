@@ -15,6 +15,9 @@ import {
   defaultTransactionForm,
 } from "../src/features/transactions/models/TransactionForm.ts";
 import {
+  normalizeTransactionFormMemberReferences,
+} from "../src/features/transactions/services/transactionFormMemberNormalization.ts";
+import {
   HFOS_STORAGE_KEYS,
   saveStoredData,
 } from "../src/shared/storage/localStorageStore.ts";
@@ -454,6 +457,86 @@ test(
         (allocation) =>
           allocation.id
       )
+    );
+  }
+);
+
+test(
+  "transaction edit form recovers legacy payer member from split participants",
+  () => {
+    const now =
+      new Date(
+        "2026-08-06T00:00:00Z"
+      );
+
+    const form =
+      normalizeTransactionFormMemberReferences(
+        {
+          ...createSplitExpenseForm(),
+          paidByMemberId:
+            "legacy-owner-reference",
+          allocations: [
+            {
+              memberId:
+                "remote-member-rasha",
+              isIncluded: true,
+              allocatedAmount: 50,
+              personalAmount: 0,
+              personalItems: [],
+              notes: "",
+            },
+            {
+              memberId:
+                "legacy-owner-reference",
+              isIncluded: true,
+              allocatedAmount: 50,
+              personalAmount: 0,
+              personalItems: [],
+              notes: "",
+            },
+          ],
+        },
+        [
+          {
+            id:
+              payerMemberId,
+            householdId,
+            displayName:
+              "Dadi Boboy",
+            role: "owner",
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id:
+              participantMemberId,
+            remoteMemberId:
+              "remote-member-rasha",
+            householdId,
+            displayName:
+              "Rasha",
+            role: "member",
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ]
+      );
+
+    assert.equal(
+      form.paidByMemberId,
+      payerMemberId
+    );
+    assert.deepEqual(
+      form.allocations.map(
+        (allocation) =>
+          allocation.memberId
+      ),
+      [
+        participantMemberId,
+        payerMemberId,
+      ]
     );
   }
 );
