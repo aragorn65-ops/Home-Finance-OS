@@ -57,6 +57,7 @@ import useSavings from "../../savings/hooks/useSavings";
 import SettlementAllocationService from "../../settlements/services/SettlementAllocationService";
 import SettlementApplicationDetailsService from "../../settlements/services/SettlementApplicationDetailsService";
 import SettlementService from "../../settlements/services/SettlementService";
+import useSettlements from "../../settlements/hooks/useSettlements";
 import TransactionService from "../../transactions/services/TransactionService";
 import HouseholdExpenseContributionService from "../../transactions/services/HouseholdExpenseContributionService";
 import UtilityProviderBillService from "../../utilities/services/UtilityProviderBillService";
@@ -426,6 +427,24 @@ export default function DashboardPage() {
       membership?.role === "member" ||
       membership?.role === "viewer"
     );
+  const shouldLoadRemoteSettlements =
+    session.status === "signed-in" &&
+    Boolean(membership);
+
+  const {
+    settlements:
+      syncedSettlements,
+  } = useSettlements(
+    shouldLoadRemoteSettlements
+      ? authHouseholdId
+      : householdId,
+    {
+      remoteEnabled:
+        shouldLoadRemoteSettlements,
+      localHouseholdId:
+        householdId,
+    }
+  );
 
   const currency =
     household?.currency ?? "PHP";
@@ -600,7 +619,10 @@ export default function DashboardPage() {
                 householdId
               )
           : [],
-      [householdId]
+      [
+        householdId,
+        syncedSettlements,
+      ]
     );
 
   const monthlyOutstandingAllocations =
@@ -653,6 +675,7 @@ export default function DashboardPage() {
       [
         householdId,
         selectedMonth,
+        syncedSettlements,
       ]
     );
 
@@ -685,6 +708,7 @@ export default function DashboardPage() {
       [
         householdId,
         selectedMonth,
+        syncedSettlements,
       ]
     );
 
