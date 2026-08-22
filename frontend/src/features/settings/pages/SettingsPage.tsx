@@ -28,6 +28,7 @@ import {
 import {
   AuthDiagnosticsPanel,
   getAuthBackendAdapter,
+  saveRemoteCoreSnapshotForHousehold,
   useHouseholdMembership,
 } from "../../auth";
 import {
@@ -496,7 +497,8 @@ export default function SettingsPage() {
     setIsConfirmingTestDataReset(false);
   };
 
-  const handleConfirmTestDataReset = (): void => {
+  const handleConfirmTestDataReset =
+    async (): Promise<void> => {
     setTestDataResetError("");
     setIsClearingTestData(true);
 
@@ -511,6 +513,42 @@ export default function SettingsPage() {
       setIsClearingTestData(false);
 
       return;
+    }
+
+    const remoteHouseholdId =
+      household?.authenticatedLink
+        ?.remoteHouseholdId;
+
+    if (
+      remoteHouseholdId &&
+      session.status === "signed-in" &&
+      canManageHouseholdSettings
+    ) {
+      try {
+        await saveRemoteCoreSnapshotForHousehold(
+          getAuthBackendAdapter(),
+          {
+            householdId:
+              remoteHouseholdId,
+            localHouseholdId:
+              household.id,
+            accounts: [],
+            transactions: [],
+            expenseAllocations: [],
+            providerBills: [],
+          }
+        );
+      } catch (error) {
+        setTestDataResetError(
+          error instanceof Error
+            ? `Local data was cleared, but the linked cloud snapshot could not be cleared: ${error.message}`
+            : "Local data was cleared, but the linked cloud snapshot could not be cleared."
+        );
+
+        setIsClearingTestData(false);
+
+        return;
+      }
     }
 
     reloadAfterApplicationReset();
