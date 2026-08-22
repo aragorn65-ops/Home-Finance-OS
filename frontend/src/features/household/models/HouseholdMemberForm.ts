@@ -4,6 +4,7 @@ import type {
 
 export interface HouseholdMemberForm {
   displayName: string;
+  email?: string;
   role: HouseholdMemberRole;
   color: string;
   isActive: boolean;

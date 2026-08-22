@@ -193,6 +193,10 @@ export default class HouseholdMemberService {
 
       displayName:
         form.displayName.trim(),
+      email:
+        form.email?.trim()
+          .toLowerCase() ||
+        undefined,
 
       role:
         form.role,
@@ -354,6 +358,10 @@ export default class HouseholdMemberService {
 
         displayName:
           form.displayName.trim(),
+        email:
+          form.email?.trim()
+            .toLowerCase() ||
+          existing.email,
 
         role:
           form.role,

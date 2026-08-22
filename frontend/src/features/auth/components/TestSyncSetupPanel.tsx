@@ -554,6 +554,7 @@ export default function TestSyncSetupPanel({
           const result =
             HouseholdMemberService.create({
               displayName,
+              email,
               role:
                 inviteForm.role,
               color: "",
@@ -581,6 +582,35 @@ export default function TestSyncSetupPanel({
           member =
             result.data;
           refreshMembers();
+        } else if (
+          email &&
+          member.email !==
+            email.toLowerCase()
+        ) {
+          const updateResult =
+            HouseholdMemberService.update(
+              member.id,
+              {
+                displayName:
+                  member.displayName,
+                email,
+                role:
+                  member.role,
+                color:
+                  member.color ?? "",
+                isActive:
+                  member.isActive,
+              }
+            );
+
+          if (
+            updateResult.success &&
+            updateResult.data
+          ) {
+            member =
+              updateResult.data;
+            refreshMembers();
+          }
         }
 
         const membership =
@@ -682,6 +712,29 @@ export default function TestSyncSetupPanel({
         );
 
       if (existingMember) {
+        if (
+          email &&
+          existingMember.email !==
+            email.toLowerCase()
+        ) {
+          HouseholdMemberService.update(
+            existingMember.id,
+            {
+              displayName:
+                existingMember.displayName,
+              email,
+              role:
+                existingMember.role,
+              color:
+                existingMember.color ??
+                "",
+              isActive:
+                existingMember.isActive,
+            }
+          );
+          refreshMembers();
+        }
+
         if (email) {
           recordInviteDiagnostic({
             memberId:
@@ -708,6 +761,7 @@ export default function TestSyncSetupPanel({
       const result =
         HouseholdMemberService.create({
           displayName,
+          email,
           role:
             inviteForm.role,
           color: "",

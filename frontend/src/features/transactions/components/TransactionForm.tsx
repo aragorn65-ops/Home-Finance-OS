@@ -835,6 +835,57 @@ function formatAmount(
   );
 }
 
+function resolveMemberReference(
+  members: HouseholdMember[],
+  memberId: string
+): HouseholdMember | undefined {
+  const normalizedMemberId =
+    memberId.trim().toLowerCase();
+
+  return members.find(
+    (member) =>
+      member.id === memberId ||
+      member.email
+        ?.trim()
+        .toLowerCase() ===
+        normalizedMemberId
+  );
+}
+
+function normalizeFormMemberReferences(
+  form: TransactionFormData,
+  members: HouseholdMember[]
+): TransactionFormData {
+  const normalizeMemberId = (
+    memberId: string
+  ): string => {
+    return (
+      resolveMemberReference(
+        members,
+        memberId
+      )?.id ?? memberId
+    );
+  };
+
+  return {
+    ...form,
+    paidByMemberId:
+      normalizeMemberId(
+        form.paidByMemberId
+      ),
+    allocations:
+      form.allocations.map(
+        (allocation) => ({
+          ...allocation,
+          memberId:
+            normalizeMemberId(
+              allocation.memberId
+            ),
+        })
+      ),
+  };
+}
+
 export default function TransactionForm({
   accounts,
   members = [],
@@ -852,10 +903,9 @@ export default function TransactionForm({
 
   const selectedMember =
     initialValues?.paidByMemberId
-      ? members.find(
-          (member) =>
-            member.id ===
-            initialValues.paidByMemberId
+      ? resolveMemberReference(
+          members,
+          initialValues.paidByMemberId
         )
       : undefined;
 
@@ -972,42 +1022,45 @@ export default function TransactionForm({
 
     const nextForm =
       initialValues
-        ? {
-            ...initialValues,
+        ? normalizeFormMemberReferences(
+            {
+              ...initialValues,
 
-            allocations:
-              initialValues.allocations.map(
-                (allocation) => {
-                  const personalItems =
-                    normalizePersonalItems(
-                      allocation
-                    );
+              allocations:
+                initialValues.allocations.map(
+                  (allocation) => {
+                    const personalItems =
+                      normalizePersonalItems(
+                        allocation
+                      );
 
-                  return {
-                    ...allocation,
+                    return {
+                      ...allocation,
 
-                    personalItems,
+                      personalItems,
 
-                    personalAmount:
-                      calculatePersonalItemsTotal(
-                        personalItems
+                      personalAmount:
+                        calculatePersonalItemsTotal(
+                          personalItems
+                        ),
+                    };
+                  }
+                ),
+
+              attachments:
+                initialValues.attachments?.map(
+                  (attachment) => ({
+                    ...attachment,
+
+                    createdAt:
+                      new Date(
+                        attachment.createdAt
                       ),
-                  };
-                }
-              ),
-
-            attachments:
-              initialValues.attachments?.map(
-                (attachment) => ({
-                  ...attachment,
-
-                  createdAt:
-                    new Date(
-                      attachment.createdAt
-                    ),
-                })
-              ) ?? [],
-          }
+                  })
+                ) ?? [],
+            },
+            members
+          )
         : getDefaultFormValues(
             currency
           );
@@ -1018,6 +1071,7 @@ export default function TransactionForm({
   }, [
     initialValues,
     currency,
+    members,
   ]);
 
   useEffect(() => {
@@ -2901,10 +2955,9 @@ export default function TransactionForm({
                   index
                 ) => {
                   const member =
-                    members.find(
-                      (item) =>
-                        item.id ===
-                        allocation.memberId
+                    resolveMemberReference(
+                      members,
+                      allocation.memberId
                     );
 
                   return (

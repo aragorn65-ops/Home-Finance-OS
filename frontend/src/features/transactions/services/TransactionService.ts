@@ -61,6 +61,11 @@ interface NormalizedTransactionCurrency {
   exchangeRateProvider?: string;
 }
 
+interface InviteDiagnosticRecord {
+  memberId?: string;
+  email?: string;
+}
+
 export default class TransactionService {
   private static normalizeSourceAccountId(
     form: TransactionForm
@@ -86,6 +91,115 @@ export default class TransactionService {
       form.destinationAccountId.trim();
 
     return destinationAccountId || null;
+  }
+
+  private static normalizeMemberIdReference(
+    memberId: string,
+    householdId: string
+  ): string {
+    const value =
+      memberId.trim();
+
+    if (!value.includes("@")) {
+      return value;
+    }
+
+    const normalizedEmail =
+      value.toLowerCase();
+
+    const matchingMember =
+      HouseholdMemberService
+        .getMembers()
+        .find(
+          (member) =>
+            member.householdId ===
+              householdId &&
+            member.email
+              ?.trim()
+              .toLowerCase() ===
+              normalizedEmail
+        );
+
+    return (
+      matchingMember?.id ??
+      this.findDiagnosticMemberIdByEmail(
+        householdId,
+        normalizedEmail
+      ) ??
+      value
+    );
+  }
+
+  private static findDiagnosticMemberIdByEmail(
+    householdId: string,
+    email: string
+  ): string | undefined {
+    if (
+      typeof window === "undefined" ||
+      !window.localStorage
+    ) {
+      return undefined;
+    }
+
+    const storageKey =
+      `hfos:test-sync-invite-diagnostics:v1:${householdId}`;
+
+    try {
+      const rawValue =
+        window.localStorage.getItem(
+          storageKey
+        );
+
+      if (!rawValue) {
+        return undefined;
+      }
+
+      const records =
+        JSON.parse(rawValue) as
+          InviteDiagnosticRecord[];
+
+      if (!Array.isArray(records)) {
+        return undefined;
+      }
+
+      const match =
+        records.find(
+          (record) =>
+            record.email
+              ?.trim()
+              .toLowerCase() === email &&
+            record.memberId
+        );
+
+      return match?.memberId;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private static normalizeMemberReferences(
+    form: TransactionForm,
+    householdId: string
+  ): TransactionForm {
+    return {
+      ...form,
+      paidByMemberId:
+        this.normalizeMemberIdReference(
+          form.paidByMemberId,
+          householdId
+        ),
+      allocations:
+        form.allocations.map(
+          (allocation) => ({
+            ...allocation,
+            memberId:
+              this.normalizeMemberIdReference(
+                allocation.memberId,
+                householdId
+              ),
+          })
+        ),
+    };
   }
 
   private static normalizeCategoryForStorage(
@@ -487,9 +601,15 @@ export default class TransactionService {
     form: TransactionForm,
     householdId: string
   ): OperationResult<Transaction> {
+    const normalizedForm =
+      this.normalizeMemberReferences(
+        form,
+        householdId
+      );
+
     const validation =
       TransactionValidator.validate(
-        form
+        normalizedForm
       );
 
     if (!validation.isValid) {
@@ -503,7 +623,7 @@ export default class TransactionService {
 
     const memberErrors =
       this.validateMemberReferences(
-        form,
+        normalizedForm,
         householdId,
         {
           requireActiveMembers: true,
@@ -526,7 +646,7 @@ export default class TransactionService {
 
     const accountErrors =
       this.validateAccountReferences(
-        form,
+        normalizedForm,
         householdId
       );
 
@@ -549,12 +669,12 @@ export default class TransactionService {
 
     const currencyDetails =
       this.normalizeCurrencyDetails(
-        form,
+        normalizedForm,
         householdId
       );
 
     const recordedByMemberId =
-      form.paidByMemberId
+      normalizedForm.paidByMemberId
         .trim() ||
       undefined;
 
@@ -572,18 +692,18 @@ export default class TransactionService {
           recordedByMemberId,
 
         expenseSplitMethod:
-          form.type ===
+          normalizedForm.type ===
           "expense"
-            ? form.splitMethod
+            ? normalizedForm.splitMethod
             : undefined,
 
         visibility:
           this.resolveTransactionVisibility(
-            form
+            normalizedForm
           ),
 
         type:
-          form.type,
+          normalizedForm.type,
 
         amount:
           currencyDetails.amount,
@@ -619,37 +739,37 @@ export default class TransactionService {
 
         sourceAccountId:
           this.normalizeSourceAccountId(
-            form
+            normalizedForm
           ),
 
         destinationAccountId:
           this.normalizeDestinationAccountId(
-            form
+            normalizedForm
           ),
 
         category:
           this.normalizeCategoryForStorage(
-            form.category
+            normalizedForm.category
           ),
 
         description:
-          form.description.trim(),
+          normalizedForm.description.trim(),
 
         notes:
-          form.notes.trim(),
+          normalizedForm.notes.trim(),
 
         attachments:
           this.cloneAttachments(
-            form.attachments
+            normalizedForm.attachments
           ),
 
         transactionDate:
           new Date(
-            `${form.transactionDate}T00:00:00`
+            `${normalizedForm.transactionDate}T00:00:00`
           ),
 
         isActive:
-          form.isActive,
+          normalizedForm.isActive,
 
         createdAt: now,
         updatedAt: now,
@@ -711,7 +831,7 @@ export default class TransactionService {
     const allocationResult =
       this.createExpenseAllocations(
         createdTransaction,
-        form
+        normalizedForm
       );
 
     if (
@@ -793,9 +913,15 @@ export default class TransactionService {
       );
     }
 
+    const normalizedForm =
+      this.normalizeMemberReferences(
+        form,
+        existing.householdId
+      );
+
     const validation =
       TransactionValidator.validate(
-        form
+        normalizedForm
       );
 
     if (!validation.isValid) {
@@ -809,7 +935,7 @@ export default class TransactionService {
 
     const memberErrors =
       this.validateMemberReferences(
-        form,
+        normalizedForm,
         existing.householdId,
         {
           requireActiveMembers: false,
@@ -832,7 +958,7 @@ export default class TransactionService {
 
     const accountErrors =
       this.validateAccountReferences(
-        form,
+        normalizedForm,
         existing.householdId
       );
 
@@ -851,13 +977,13 @@ export default class TransactionService {
     }
 
     const selectedMemberId =
-      form.paidByMemberId
+      normalizedForm.paidByMemberId
         .trim() ||
       undefined;
 
     const currencyDetails =
       this.normalizeCurrencyDetails(
-        form,
+        normalizedForm,
         existing.householdId
       );
 
@@ -874,18 +1000,18 @@ export default class TransactionService {
           existing.paidByMemberId,
 
         expenseSplitMethod:
-          form.type ===
+          normalizedForm.type ===
           "expense"
-            ? form.splitMethod
+            ? normalizedForm.splitMethod
             : undefined,
 
         visibility:
           this.resolveTransactionVisibility(
-            form
+            normalizedForm
           ),
 
         type:
-          form.type,
+          normalizedForm.type,
 
         amount:
           currencyDetails.amount,
@@ -921,37 +1047,37 @@ export default class TransactionService {
 
         sourceAccountId:
           this.normalizeSourceAccountId(
-            form
+            normalizedForm
           ),
 
         destinationAccountId:
           this.normalizeDestinationAccountId(
-            form
+            normalizedForm
           ),
 
         category:
           this.normalizeCategoryForStorage(
-            form.category
+            normalizedForm.category
           ),
 
         description:
-          form.description.trim(),
+          normalizedForm.description.trim(),
 
         notes:
-          form.notes.trim(),
+          normalizedForm.notes.trim(),
 
         attachments:
           this.cloneAttachments(
-            form.attachments
+            normalizedForm.attachments
           ),
 
         transactionDate:
           new Date(
-            `${form.transactionDate}T00:00:00`
+            `${normalizedForm.transactionDate}T00:00:00`
           ),
 
         isActive:
-          form.isActive,
+          normalizedForm.isActive,
 
         updatedAt:
           new Date(),
@@ -1050,7 +1176,7 @@ export default class TransactionService {
     const allocationResult =
       this.replaceExpenseAllocations(
         savedTransaction,
-        form
+        normalizedForm
       );
 
     if (

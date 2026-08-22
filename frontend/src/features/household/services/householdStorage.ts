@@ -942,6 +942,9 @@ function isSerializedHouseholdMember(
     isOptionalString(
       value.userId
     ) &&
+    isOptionalString(
+      value.email
+    ) &&
     typeof value.displayName ===
       "string" &&
     isHouseholdMemberRole(

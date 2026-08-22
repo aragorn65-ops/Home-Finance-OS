@@ -68,6 +68,8 @@ function seedHousehold() {
         {
           id: participantMemberId,
           householdId,
+          email:
+            "rasha@example.com",
           displayName:
             "Former Participant",
           role: "member",
@@ -290,6 +292,77 @@ test(
     assert.equal(
       updateResult.data.description,
       "Updated groceries"
+    );
+  }
+);
+
+test(
+  "transaction create normalizes email member aliases before saving allocations",
+  () => {
+    seedHousehold();
+
+    const result =
+      TransactionService.create(
+        {
+          ...createSplitExpenseForm(),
+          paidByMemberId:
+            "rasha@example.com",
+          allocations: [
+            {
+              memberId:
+                payerMemberId,
+              isIncluded: true,
+              allocatedAmount: 50,
+              personalAmount: 0,
+              personalItems: [],
+              notes: "",
+            },
+            {
+              memberId:
+                "rasha@example.com",
+              isIncluded: true,
+              allocatedAmount: 50,
+              personalAmount: 0,
+              personalItems: [],
+              notes: "",
+            },
+          ],
+        },
+        householdId
+      );
+
+    assert.equal(
+      result.success,
+      true
+    );
+    assert.equal(
+      result.data.paidByMemberId,
+      participantMemberId
+    );
+
+    const allocations =
+      TransactionService
+        .getExpenseAllocations(
+          result.data.id
+        );
+
+    assert.equal(
+      allocations.some(
+        (allocation) =>
+          allocation.memberId ===
+            "rasha@example.com" ||
+          allocation.paidByMemberId ===
+            "rasha@example.com"
+      ),
+      false
+    );
+    assert.equal(
+      allocations.some(
+        (allocation) =>
+          allocation.memberId ===
+            participantMemberId
+      ),
+      true
     );
   }
 );

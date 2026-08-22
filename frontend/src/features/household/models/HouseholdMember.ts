@@ -14,6 +14,7 @@ export interface HouseholdMember {
    * an application account or invitation.
    */
   userId?: string;
+  email?: string;
 
   displayName: string;
   role: HouseholdMemberRole;

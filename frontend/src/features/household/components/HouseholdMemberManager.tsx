@@ -235,6 +235,31 @@ export default function HouseholdMemberManager({
     setInviteMessage("");
 
     try {
+      if (
+        inviteEmail.trim() &&
+        selectedMember.email !==
+          inviteEmail
+            .trim()
+            .toLowerCase()
+      ) {
+        HouseholdMemberService.update(
+          selectedMember.id,
+          {
+            displayName:
+              selectedMember.displayName,
+            email:
+              inviteEmail,
+            role:
+              selectedMember.role,
+            color:
+              selectedMember.color ?? "",
+            isActive:
+              selectedMember.isActive,
+          }
+        );
+        refreshMembers();
+      }
+
       const membership =
         await getAuthBackendAdapter()
           .inviteLinkedHouseholdMember({
