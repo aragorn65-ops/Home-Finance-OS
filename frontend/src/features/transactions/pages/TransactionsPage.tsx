@@ -270,24 +270,54 @@ export default function TransactionsPage() {
     household?.currency ?? "PHP";
 
   const accounts =
-    AccountService
-      .getActiveAccounts()
-      .filter(
-        (account) =>
-          account.householdId ===
-          household?.id
-      );
+    useMemo(
+      () =>
+        AccountService
+          .getActiveAccounts()
+          .filter(
+            (account) =>
+              account.householdId ===
+              household?.id
+          ),
+      [
+        household?.id,
+      ]
+    );
+
+  const memberSignature =
+    household?.members
+      .map(
+        (member) =>
+          [
+            member.id,
+            member.remoteMemberId ?? "",
+            member.email ?? "",
+            member.displayName,
+            member.role,
+            member.isActive
+              ? "active"
+              : "inactive",
+          ].join(":")
+      )
+      .join("|") ?? "";
 
   const members =
-    household
-      ? HouseholdMemberService
-          .getMembers()
-          .filter(
-            (member) =>
-              member.householdId ===
-              household.id
-          )
-      : [];
+    useMemo(
+      () =>
+        household
+          ? HouseholdMemberService
+              .getMembers()
+              .filter(
+                (member) =>
+                  member.householdId ===
+                  household.id
+              )
+          : [],
+      [
+        household?.id,
+        memberSignature,
+      ]
+    );
 
   const [
     dialogMode,
@@ -329,6 +359,22 @@ export default function TransactionsPage() {
       [
         selectedMonthValue,
         currency,
+      ]
+    );
+
+  const transactionFormInitialValues =
+    useMemo(
+      () =>
+        dialogMode === "edit" &&
+        selectedTransaction
+          ? mapTransactionToForm(
+              selectedTransaction
+            )
+          : createTransactionInitialValues,
+      [
+        createTransactionInitialValues,
+        dialogMode,
+        selectedTransaction,
       ]
     );
 
@@ -598,12 +644,7 @@ export default function TransactionsPage() {
             members={members}
             currency={currency}
             initialValues={
-              dialogMode === "edit" &&
-              selectedTransaction
-                ? mapTransactionToForm(
-                    selectedTransaction
-                  )
-                : createTransactionInitialValues
+              transactionFormInitialValues
             }
             submitLabel={
               dialogMode === "edit"
