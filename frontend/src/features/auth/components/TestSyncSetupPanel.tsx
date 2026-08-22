@@ -276,6 +276,10 @@ export default function TestSyncSetupPanel({
               ownerMember.id
         )
       : undefined;
+  const hasOwnerAccess =
+    ownerMembership?.role === "owner" ||
+    currentUserMembership?.role ===
+      "owner";
   const localCounts =
     getLocalCoreSnapshotCounts(
       household.id,
@@ -805,13 +809,13 @@ export default function TestSyncSetupPanel({
       label:
         "Owner membership",
       detail:
-        ownerMembership
-          ? `Owner member ${ownerMember?.displayName ?? ownerMembership.memberId} is active for this signed-in user.`
+        hasOwnerAccess
+          ? `Owner access is active for ${ownerMember?.displayName ?? currentUserMembership?.memberId ?? "the signed-in user"}.`
           : currentUserMembership
             ? `Signed-in user has ${currentUserMembership.role} membership; owner local id is ${ownerMember?.id ?? "missing"}.`
             : "No active membership visible for this signed-in user.",
       status:
-        ownerMembership
+        hasOwnerAccess
           ? "pass"
           : remoteHouseholdId
             ? "action"
