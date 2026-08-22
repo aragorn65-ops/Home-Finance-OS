@@ -368,6 +368,97 @@ test(
 );
 
 test(
+  "transaction update preserves allocation ids for receipt and date edits",
+  () => {
+    seedHousehold();
+
+    const createResult =
+      TransactionService.create(
+        createSplitExpenseForm(),
+        householdId
+      );
+
+    assert.equal(
+      createResult.success,
+      true
+    );
+
+    const originalAllocations =
+      TransactionService
+        .getExpenseAllocations(
+          createResult.data.id
+        );
+
+    const updateResult =
+      TransactionService.update(
+        createResult.data.id,
+        {
+          ...createSplitExpenseForm(),
+          transactionDate:
+            "2026-08-07",
+          attachments: [
+            {
+              id:
+                "receipt-upload-1",
+              category:
+                "receipt",
+              fileName:
+                "receipt.jpg",
+              mimeType:
+                "image/jpeg",
+              sizeBytes:
+                1024,
+              dataUrl:
+                "data:image/jpeg;base64,abc",
+              createdAt:
+                new Date(
+                  "2026-08-07T00:00:00Z"
+                ),
+            },
+          ],
+        }
+      );
+
+    assert.equal(
+      updateResult.success,
+      true
+    );
+    assert.equal(
+      [
+        updateResult.data.transactionDate
+          .getFullYear(),
+        String(
+          updateResult.data.transactionDate
+            .getMonth() + 1
+        ).padStart(2, "0"),
+        String(
+          updateResult.data.transactionDate
+            .getDate()
+        ).padStart(2, "0"),
+      ].join("-"),
+      "2026-08-07"
+    );
+
+    const updatedAllocations =
+      TransactionService
+        .getExpenseAllocations(
+          createResult.data.id
+        );
+
+    assert.deepEqual(
+      updatedAllocations.map(
+        (allocation) =>
+          allocation.id
+      ),
+      originalAllocations.map(
+        (allocation) =>
+          allocation.id
+      )
+    );
+  }
+);
+
+test(
   "member can view household transactions with attachments",
   () => {
     seedHousehold();

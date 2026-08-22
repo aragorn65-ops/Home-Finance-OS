@@ -153,7 +153,10 @@ export default class ExpenseAllocationService {
     }
 
     const allocations =
-      buildResult.data ?? [];
+      this.reuseExistingAllocationIds(
+        transactionId,
+        buildResult.data ?? []
+      );
 
     const savedAllocations =
       ExpenseAllocationRepository
@@ -178,6 +181,65 @@ export default class ExpenseAllocationService {
       savedAllocations,
       "Expense allocations updated successfully."
     );
+  }
+
+  private static reuseExistingAllocationIds(
+    transactionId: string,
+    allocations: ExpenseAllocation[]
+  ): ExpenseAllocation[] {
+    const existingAllocations =
+      ExpenseAllocationRepository
+        .findByTransactionId(
+          transactionId
+        );
+
+    if (existingAllocations.length === 0) {
+      return allocations;
+    }
+
+    const existingByMemberPair =
+      new Map<string, ExpenseAllocation>();
+
+    for (const allocation of existingAllocations) {
+      existingByMemberPair.set(
+        this.createMemberPairKey(
+          allocation.paidByMemberId,
+          allocation.memberId
+        ),
+        allocation
+      );
+    }
+
+    return allocations.map(
+      (allocation) => {
+        const existing =
+          existingByMemberPair.get(
+            this.createMemberPairKey(
+              allocation.paidByMemberId,
+              allocation.memberId
+            )
+          );
+
+        if (!existing) {
+          return allocation;
+        }
+
+        return {
+          ...allocation,
+          id:
+            existing.id,
+          createdAt:
+            existing.createdAt,
+        };
+      }
+    );
+  }
+
+  private static createMemberPairKey(
+    paidByMemberId: string,
+    memberId: string
+  ): string {
+    return `${paidByMemberId.trim()}->${memberId.trim()}`;
   }
 
   /**
