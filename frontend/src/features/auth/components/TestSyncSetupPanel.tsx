@@ -34,10 +34,12 @@ import {
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 import type {
   HouseholdMembership,
+  RemoteHouseholdCoreSnapshot,
 } from "../models";
 import {
   getAuthBackendAdapter,
   getLocalCoreSnapshotCounts,
+  loadRemoteCoreSnapshotForHousehold,
   restoreLinkedRemoteCoreSnapshot,
   saveCurrentBrowserCoreSnapshotForHousehold,
 } from "../services";
@@ -256,6 +258,12 @@ export default function TestSyncSetupPanel({
     snapshotMessage,
     setSnapshotMessage,
   ] = useState("");
+  const [
+    remoteSnapshot,
+    setRemoteSnapshot,
+  ] = useState<
+    RemoteHouseholdCoreSnapshot | undefined
+  >();
 
   const remoteHouseholdId =
     activeHousehold.authenticatedLink
@@ -320,6 +328,7 @@ export default function TestSyncSetupPanel({
         session.status !== "signed-in"
       ) {
         setMemberships([]);
+        setRemoteSnapshot(undefined);
         return;
       }
 
@@ -327,13 +336,23 @@ export default function TestSyncSetupPanel({
       setError("");
 
       try {
+        const adapter =
+          getAuthBackendAdapter();
         const nextMemberships =
-          await getAuthBackendAdapter()
-            .listMemberships();
+          await adapter.listMemberships();
 
         setMemberships(
           nextMemberships
         );
+
+        if (remoteHouseholdId) {
+          setRemoteSnapshot(
+            await loadRemoteCoreSnapshotForHousehold(
+              adapter,
+              remoteHouseholdId
+            )
+          );
+        }
       } catch (error) {
         setError(
           getErrorMessage(error)
@@ -342,9 +361,10 @@ export default function TestSyncSetupPanel({
         setAction("");
       }
     }, [
-      session.status,
-      session.user?.id,
-    ]);
+    session.status,
+    session.user?.id,
+    remoteHouseholdId,
+  ]);
 
   useEffect(() => {
     setActiveHousehold(household);
@@ -768,6 +788,7 @@ export default function TestSyncSetupPanel({
         setSnapshotMessage(
           `Saved this browser data to cloud: ${saved.accounts.length} accounts, ${saved.transactions.length} transactions, and ${saved.expenseAllocations?.length ?? 0} allocations.`
         );
+        setRemoteSnapshot(saved);
         onStatusChange?.();
       } catch (error) {
         setError(
@@ -823,6 +844,9 @@ export default function TestSyncSetupPanel({
 
         setSnapshotMessage(
           `Loaded cloud snapshot into this browser: ${result.accountCount} accounts and ${result.transactionCount} transactions.`
+        );
+        setRemoteSnapshot(
+          result.snapshot
         );
         onStatusChange?.();
         window.setTimeout(() => {
@@ -891,7 +915,7 @@ export default function TestSyncSetupPanel({
         "Cloud snapshot",
       detail:
         snapshotMessage ||
-        `${localCounts.accountCount} local accounts, ${localCounts.transactionCount} local transactions in this browser. Load cloud if another browser has newer data.`,
+        `This browser: ${localCounts.accountCount} accounts, ${localCounts.transactionCount} transactions. Cloud: ${remoteSnapshot ? `${remoteSnapshot.accounts.length} accounts, ${remoteSnapshot.transactions.length} transactions` : "not checked"}.`,
       status:
         snapshotMessage
           ? "pass"
