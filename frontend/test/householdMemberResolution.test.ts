@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   resolveHouseholdMemberReference,
+  resolveSingleUnmatchedMember,
 } from "../src/features/household/services/householdMemberResolution.ts";
 
 test("household member resolution accepts local, remote, and email aliases", () => {
@@ -36,4 +37,49 @@ test("household member resolution accepts local, remote, and email aliases", () 
       "Dadi Boboy"
     );
   }
+});
+
+test("household member resolution can identify the only unmatched active member", () => {
+  const owner = {
+    id: "member-owner-local",
+    householdId: "household-1",
+    remoteMemberId:
+      "remote-member-owner",
+    email: "owner@example.com",
+    displayName: "Household owner",
+    role: "owner" as const,
+    isActive: true,
+    createdAt:
+      new Date("2026-08-22T00:00:00Z"),
+    updatedAt:
+      new Date("2026-08-22T00:00:00Z"),
+  };
+  const rasha = {
+    id: "member-rasha-local",
+    householdId: "household-1",
+    remoteMemberId:
+      "remote-member-rasha",
+    email: "rasha@example.com",
+    displayName: "Rasha",
+    role: "member" as const,
+    isActive: true,
+    createdAt:
+      new Date("2026-08-22T00:00:00Z"),
+    updatedAt:
+      new Date("2026-08-22T00:00:00Z"),
+  };
+
+  assert.equal(
+    resolveSingleUnmatchedMember(
+      [
+        owner,
+        rasha,
+      ],
+      "legacy-owner-reference",
+      [
+        "remote-member-rasha",
+      ]
+    )?.displayName,
+    "Household owner"
+  );
 });

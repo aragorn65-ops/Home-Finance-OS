@@ -1,6 +1,9 @@
 import type { HouseholdMember } from "../models/HouseholdMember";
 
 import HouseholdMemberService from "./HouseholdMemberService";
+import {
+  loadHousehold,
+} from "./householdStorage";
 
 export function resolveHouseholdMemberReference(
   members: HouseholdMember[],
@@ -41,8 +44,86 @@ export function findHouseholdMemberByReference(
             householdId
       );
 
-  return resolveHouseholdMemberReference(
-    members,
-    memberId
+  const directMatch =
+    resolveHouseholdMemberReference(
+      members,
+      memberId
+    );
+
+  if (directMatch) {
+    return directMatch;
+  }
+
+  const household =
+    loadHousehold();
+  const value =
+    memberId.trim();
+  const ownerMemberId =
+    household?.id === householdId ||
+    !householdId
+      ? household?.authenticatedLink
+          ?.ownerMemberId
+      : undefined;
+  const isOwnerAlias =
+    value === "member-001" ||
+    (
+      ownerMemberId &&
+      value === ownerMemberId
+    );
+
+  if (!isOwnerAlias) {
+    return undefined;
+  }
+
+  return members.find(
+    (member) =>
+      member.role === "owner" &&
+      member.isActive
   );
+}
+
+export function resolveSingleUnmatchedMember(
+  members: HouseholdMember[],
+  unresolvedMemberId: string,
+  knownMemberIds: string[]
+): HouseholdMember | undefined {
+  if (
+    resolveHouseholdMemberReference(
+      members,
+      unresolvedMemberId
+    )
+  ) {
+    return undefined;
+  }
+
+  const knownMembers =
+    knownMemberIds
+      .map((memberId) =>
+        resolveHouseholdMemberReference(
+          members,
+          memberId
+        )
+      )
+      .filter(
+        (
+          member
+        ): member is HouseholdMember =>
+          Boolean(member)
+      );
+  const knownLocalIds =
+    new Set(
+      knownMembers.map(
+        (member) => member.id
+      )
+    );
+  const candidates =
+    members.filter(
+      (member) =>
+        member.isActive &&
+        !knownLocalIds.has(member.id)
+    );
+
+  return candidates.length === 1
+    ? candidates[0]
+    : undefined;
 }

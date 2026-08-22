@@ -2,7 +2,9 @@ import type { Transaction } from "../models/Transaction";
 
 import {
   findHouseholdMemberByReference,
+  resolveSingleUnmatchedMember,
 } from "../../household/services/householdMemberResolution";
+import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
 import TransactionService from "../services/TransactionService";
 import resolveTransactionMemberId from "../services/transactionMemberResolution";
@@ -52,6 +54,15 @@ export default function TransactionDetails({
               allocation.isIncluded
           )
       : [];
+
+  const householdMembers =
+    HouseholdMemberService
+      .getMembers()
+      .filter(
+        (member) =>
+          member.householdId ===
+          transaction.householdId
+      );
 
   const formattedTransactionDate =
     transaction.transactionDate
@@ -227,6 +238,20 @@ export default function TransactionDetails({
                   findHouseholdMemberByReference(
                     allocation.memberId,
                     transaction.householdId
+                  ) ??
+                  resolveSingleUnmatchedMember(
+                    householdMembers,
+                    allocation.memberId,
+                    allocations
+                      .filter(
+                        (item) =>
+                          item.id !==
+                          allocation.id
+                      )
+                      .map(
+                        (item) =>
+                          item.memberId
+                      )
                   );
 
                 const personalItems =
