@@ -45,6 +45,8 @@ function mapMemberToForm(
   return {
     displayName:
       member.displayName,
+    email:
+      member.email,
 
     role:
       member.role,

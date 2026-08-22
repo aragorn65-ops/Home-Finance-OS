@@ -10,6 +10,7 @@ import type {
 
 interface AuthSessionButtonProps {
   session: AuthSession;
+  displayName?: string;
   error?: string;
   onSignIn: () => void;
   onSignOut: () => void;
@@ -17,6 +18,7 @@ interface AuthSessionButtonProps {
 
 export default function AuthSessionButton({
   session,
+  displayName,
   error,
   onSignIn,
   onSignOut,
@@ -31,13 +33,18 @@ export default function AuthSessionButton({
     session.status === "signed-in" &&
     session.user
   ) {
+    const label =
+      displayName?.trim() ||
+      session.user.displayName ||
+      session.user.email;
+
     return (
       <button
         type="button"
         className="app-header__auth-button"
         title={
           error ||
-          `Signed in as ${session.user.email}`
+          `Signed in as ${label}`
         }
         aria-label="Sign out"
         onClick={onSignOut}
@@ -47,11 +54,7 @@ export default function AuthSessionButton({
           aria-hidden="true"
         />
         <span>
-          {
-            session.user
-              .displayName ??
-            session.user.email
-          }
+          {label}
         </span>
         <LogOut
           size={16}

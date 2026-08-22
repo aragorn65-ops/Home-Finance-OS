@@ -33,6 +33,7 @@ export interface HouseholdClaimDraft {
   householdName: string;
   backupSummary: ApplicationBackupSummary;
   ownerMemberId: string;
+  ownerDisplayName?: string;
   claimedHouseholdId?: string;
 }
 
@@ -62,6 +63,12 @@ export interface InviteLinkedHouseholdMemberRequest {
   email: string;
   role: HouseholdMembership["role"];
   redirectTo?: string;
+}
+
+export interface UpdateRemoteHouseholdMemberProfileRequest {
+  householdId: string;
+  localMemberId: string;
+  displayName: string;
 }
 
 export interface AuthSessionSubscription {
@@ -116,6 +123,10 @@ export interface AuthBackendAdapter {
   inviteLinkedHouseholdMember(
     request: InviteLinkedHouseholdMemberRequest
   ): Promise<HouseholdMembership>;
+
+  updateRemoteHouseholdMemberProfile(
+    request: UpdateRemoteHouseholdMemberProfileRequest
+  ): Promise<HouseholdMember>;
 
   createHouseholdClaimDraft(
     draft: HouseholdClaimDraft

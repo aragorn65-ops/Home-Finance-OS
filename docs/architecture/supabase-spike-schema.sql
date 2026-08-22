@@ -1313,12 +1313,21 @@ on public.migration_upload_manifests
 for select
 using (owner_user_id = auth.uid());
 
+drop function if exists public.claim_household_from_backup(
+  text,
+  text,
+  text,
+  text,
+  jsonb
+);
+
 create or replace function public.claim_household_from_backup(
   draft_household_name text,
   draft_country text default 'PH',
   draft_currency text default 'PHP',
   draft_timezone text default 'Asia/Manila',
-  draft_backup_summary jsonb default '{}'::jsonb
+  draft_backup_summary jsonb default '{}'::jsonb,
+  owner_display_name text default null
 )
 returns table (
   household_id uuid,
@@ -1377,11 +1386,11 @@ begin
     created_at,
     updated_at
   )
-  values (
-    created_household_id,
-    'Household owner',
-    'owner',
-    'active',
+    values (
+      created_household_id,
+      coalesce(nullif(trim(owner_display_name), ''), 'Household owner'),
+      'owner',
+      'active',
     current_user_id,
     created_timestamp,
     created_timestamp
@@ -1450,7 +1459,8 @@ revoke all on function public.claim_household_from_backup(
   text,
   text,
   text,
-  jsonb
+  jsonb,
+  text
 ) from public;
 
 grant execute on function public.claim_household_from_backup(
@@ -1458,7 +1468,75 @@ grant execute on function public.claim_household_from_backup(
   text,
   text,
   text,
-  jsonb
+  jsonb,
+  text
+) to authenticated;
+
+drop function if exists public.update_household_member_profile(
+  uuid,
+  text,
+  text
+);
+
+create or replace function public.update_household_member_profile(
+  target_household_id uuid,
+  local_member_id text,
+  member_display_name text
+)
+returns setof public.household_members
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  normalized_display_name text := trim(member_display_name);
+  updated_member_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in before updating household member profiles.';
+  end if;
+
+  if not public.is_household_admin(target_household_id) then
+    raise exception 'Owner or admin membership is required to update household member profiles.';
+  end if;
+
+  if normalized_display_name = '' then
+    raise exception 'Member display name is required.';
+  end if;
+
+  update public.household_members member
+  set
+    display_name = normalized_display_name,
+    updated_at = now()
+  where member.household_id = target_household_id
+    and member.status = 'active'
+    and (
+      member.id::text = nullif(local_member_id, '')
+      or member.local_record_id = nullif(local_member_id, '')
+    )
+  returning member.id into updated_member_id;
+
+  if updated_member_id is null then
+    raise exception 'Household member was not found.';
+  end if;
+
+  return query
+  select member.*
+  from public.household_members member
+  where member.id = updated_member_id;
+end;
+$$;
+
+revoke all on function public.update_household_member_profile(
+  uuid,
+  text,
+  text
+) from public;
+
+grant execute on function public.update_household_member_profile(
+  uuid,
+  text,
+  text
 ) to authenticated;
 
 drop function if exists public.invite_household_member(

@@ -6,6 +6,7 @@ import type {
   HouseholdClaimResult,
   InviteLinkedHouseholdMemberRequest,
   RemoteHouseholdPreferencesInput,
+  UpdateRemoteHouseholdMemberProfileRequest,
 } from "./AuthBackendAdapter";
 import type {
   AuthSession,
@@ -87,6 +88,7 @@ interface SupabaseAuthClient {
     | SupabaseSettlementMutationRpcResult
     | SupabaseSettlementDeleteRpcResult
     | SupabaseInviteMemberRpcResult
+    | SupabaseHouseholdMemberRpcResult
   >;
   channel?(
     topic: string
@@ -402,6 +404,16 @@ interface SupabaseHouseholdRow {
   id: string;
   name: string;
   status: string;
+}
+
+interface SupabaseHouseholdMemberRpcResult {
+  data:
+    | SupabaseHouseholdMemberRow
+    | SupabaseHouseholdMemberRow[]
+    | null;
+  error:
+    | SupabaseAuthError
+    | null;
 }
 
 interface SupabaseHouseholdMemberRow {
@@ -970,6 +982,60 @@ export class SupabaseAuthBackendAdapter
     return membership;
   }
 
+  async updateRemoteHouseholdMemberProfile(
+    request: UpdateRemoteHouseholdMemberProfileRequest
+  ): Promise<HouseholdMember> {
+    const displayName =
+      request.displayName.trim();
+
+    if (!displayName) {
+      throw new Error(
+        "Enter a member name before updating the remote profile."
+      );
+    }
+
+    const {
+      data,
+      error,
+    } = await (
+      await this.getClient()
+    )
+      .rpc(
+        "update_household_member_profile",
+        {
+          target_household_id:
+            request.householdId,
+          local_member_id:
+            request.localMemberId,
+          member_display_name:
+            displayName,
+        }
+      ) as SupabaseHouseholdMemberRpcResult;
+
+    if (error) {
+      throw new Error(
+        `Supabase member profile update failed: ${error.message}`
+      );
+    }
+
+    const row =
+      Array.isArray(data)
+        ? data[0]
+        : data;
+    const member =
+      row
+        ? mapSupabaseHouseholdMember(row)
+        : undefined;
+
+    if (!member) {
+      throw new Error(
+        "Supabase member profile update returned no member."
+      );
+    }
+
+    return member;
+  }
+
   async listHouseholdDiagnostics(
     householdIds: string[]
   ): Promise<SupabaseHouseholdDiagnostic[]> {
@@ -1176,29 +1242,52 @@ export class SupabaseAuthBackendAdapter
       );
     }
 
+    const timezone =
+      Intl.DateTimeFormat()
+        .resolvedOptions()
+        .timeZone;
+    const claimParameters = {
+      draft_household_name:
+        draft.householdName,
+      draft_country:
+        "PH",
+      draft_currency:
+        "PHP",
+      draft_timezone:
+        timezone,
+      draft_backup_summary:
+        draft.backupSummary,
+    };
+    const claimWithOwnerName =
+      await (
+        await this.getClient()
+      )
+        .rpc(
+          "claim_household_from_backup",
+          {
+            ...claimParameters,
+            owner_display_name:
+              draft.ownerDisplayName ??
+              "Household owner",
+          }
+        ) as SupabaseHouseholdClaimRpcResult;
+    const claimResult =
+      claimWithOwnerName.error &&
+      isRpcSignatureError(
+        claimWithOwnerName.error
+      )
+        ? await (
+            await this.getClient()
+          )
+            .rpc(
+              "claim_household_from_backup",
+              claimParameters
+            ) as SupabaseHouseholdClaimRpcResult
+        : claimWithOwnerName;
     const {
       data,
       error,
-    } = await (
-      await this.getClient()
-    )
-      .rpc(
-        "claim_household_from_backup",
-        {
-          draft_household_name:
-            draft.householdName,
-          draft_country:
-            "PH",
-          draft_currency:
-            "PHP",
-          draft_timezone:
-            Intl.DateTimeFormat()
-              .resolvedOptions()
-              .timeZone,
-          draft_backup_summary:
-            draft.backupSummary,
-        }
-      ) as SupabaseHouseholdClaimRpcResult;
+    } = claimResult;
 
     if (error) {
       throw new Error(
@@ -4738,6 +4827,25 @@ function createSupabaseAdapterConfig():
     anonKey:
       viteEnv?.VITE_SUPABASE_ANON_KEY,
   };
+}
+
+function isRpcSignatureError(
+  error: SupabaseAuthError
+): boolean {
+  const message =
+    error.message.toLowerCase();
+
+  return (
+    message.includes(
+      "could not find the function"
+    ) ||
+    message.includes(
+      "schema cache"
+    ) ||
+    message.includes(
+      "owner_display_name"
+    )
+  );
 }
 
 function createNoopSubscription():

@@ -616,6 +616,8 @@ test(
             "Casa Test",
           ownerMemberId:
             "local-owner",
+          ownerDisplayName:
+            "Dadi Boboy",
           backupSummary,
         });
 
@@ -638,6 +640,8 @@ test(
                 .timeZone,
             draft_backup_summary:
               backupSummary,
+            owner_display_name:
+              "Dadi Boboy",
           },
         },
       ]

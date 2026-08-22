@@ -189,6 +189,40 @@ export default function HouseholdMemberForm({
 
       <div className="space-y-2">
         <label
+          htmlFor="household-member-email"
+          className="text-sm font-medium text-foreground"
+        >
+          Member Email
+        </label>
+
+        <input
+          id="household-member-email"
+          type="email"
+          value={form.email ?? ""}
+          onChange={(event) =>
+            updateField(
+              "email",
+              event.target.value
+            )
+          }
+          placeholder="member@example.com"
+          autoComplete="email"
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+        />
+
+        <p className="text-xs text-muted-foreground">
+          Used to match the signed-in Supabase account to this member.
+        </p>
+
+        {errors.email && (
+          <p className="text-sm text-destructive">
+            {errors.email}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label
           htmlFor="household-member-role"
           className="text-sm font-medium text-foreground"
         >

@@ -75,6 +75,19 @@ export class DisabledAuthBackendAdapter
     );
   }
 
+  async updateRemoteHouseholdMemberProfile(
+    request: {
+      householdId: string;
+      localMemberId: string;
+      displayName: string;
+    }
+  ): Promise<HouseholdMember> {
+    void request.displayName;
+    throw new Error(
+      `Remote member profile updates are disabled for ${request.householdId}.`
+    );
+  }
+
   async createHouseholdClaimDraft(
     draft: HouseholdClaimDraft
   ): Promise<HouseholdClaimResult> {

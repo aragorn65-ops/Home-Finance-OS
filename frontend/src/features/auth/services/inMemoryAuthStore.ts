@@ -510,11 +510,13 @@ export function createMembership({
   userId,
   memberId,
   role,
+  memberDisplayName,
 }: {
   householdId: string;
   userId: string;
   memberId: string;
   role: AuthHouseholdRole;
+  memberDisplayName?: string;
 }): HouseholdMembership {
   const now = new Date();
 
@@ -524,6 +526,7 @@ export function createMembership({
     householdId,
     userId,
     memberId,
+    memberDisplayName,
     role,
     status: "active",
     acceptedAt: now,

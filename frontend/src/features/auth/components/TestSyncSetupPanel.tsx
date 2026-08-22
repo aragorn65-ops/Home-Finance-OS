@@ -30,6 +30,7 @@ import type {
 } from "../../household/services/householdStorage";
 import {
   linkHouseholdToAuthenticatedTenant,
+  saveHouseholdMembers,
 } from "../../household/services/householdStorage";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 import type {
@@ -242,10 +243,22 @@ export default function TestSyncSetupPanel({
     | "claim"
     | "invite"
     | "load"
+    | "owner"
     | "snapshot"
     | "refresh"
     | ""
   >("");
+  const [
+    ownerDisplayName,
+    setOwnerDisplayName,
+  ] = useState(
+    () =>
+      members.find(
+        (member) =>
+          member.role === "owner" &&
+          member.isActive
+      )?.displayName ?? ""
+  );
   const [
     message,
     setMessage,
@@ -378,6 +391,15 @@ export default function TestSyncSetupPanel({
   ]);
 
   useEffect(() => {
+    setOwnerDisplayName(
+      ownerMember?.displayName ?? ""
+    );
+  }, [
+    ownerMember?.id,
+    ownerMember?.displayName,
+  ]);
+
+  useEffect(() => {
     void refreshCloudDiagnostics();
   }, [
     refreshCloudDiagnostics,
@@ -451,9 +473,11 @@ export default function TestSyncSetupPanel({
               householdName:
                 household.householdName,
               backupSummary,
-              ownerMemberId:
-                ownerMember.id,
-            });
+            ownerMemberId:
+              ownerMember.id,
+            ownerDisplayName:
+              ownerMember.displayName,
+          });
 
         const linkedHousehold =
           linkHouseholdToAuthenticatedTenant({
@@ -680,6 +704,85 @@ export default function TestSyncSetupPanel({
             new Date().toISOString(),
         });
         setError(errorMessage);
+      } finally {
+        setAction("");
+      }
+    };
+
+  const handleSaveOwnerName =
+    async (): Promise<void> => {
+      const displayName =
+        ownerDisplayName.trim();
+
+      if (!ownerMember) {
+        setError(
+          "Create an owner member before saving the owner name."
+        );
+        return;
+      }
+
+      if (!displayName) {
+        setError(
+          "Enter the owner display name before saving."
+        );
+        return;
+      }
+
+      setAction("owner");
+      setError("");
+      setMessage("");
+
+      try {
+        const updatedOwner = {
+          ...ownerMember,
+          displayName,
+          updatedAt:
+            new Date(),
+        };
+        const nextMembers =
+          members.map((member) =>
+            member.id === ownerMember.id
+              ? updatedOwner
+              : member
+          );
+
+        if (
+          !saveHouseholdMembers(
+            nextMembers
+          )
+        ) {
+          throw new Error(
+            "Owner name could not be saved locally."
+          );
+        }
+
+        setMembers(nextMembers);
+
+        if (
+          remoteHouseholdId &&
+          session.status ===
+            "signed-in"
+        ) {
+          await getAuthBackendAdapter()
+            .updateRemoteHouseholdMemberProfile({
+              householdId:
+                remoteHouseholdId,
+              localMemberId:
+                ownerMember.remoteMemberId ??
+                ownerMember.id,
+              displayName,
+            });
+          await refreshCloudDiagnostics();
+        }
+
+        setMessage(
+          `Owner display name saved as ${displayName}.`
+        );
+        onStatusChange?.();
+      } catch (error) {
+        setError(
+          getErrorMessage(error)
+        );
       } finally {
         setAction("");
       }
@@ -1103,6 +1206,55 @@ export default function TestSyncSetupPanel({
           Save This Browser to Cloud
         </button>
       </div>
+
+      <form
+        className="test-sync-setup__invite-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSaveOwnerName();
+        }}
+      >
+        <div>
+          <h4>
+            Owner Display Name
+          </h4>
+          <p>
+            This is the name used for the owner in dashboards, transactions, settlements, and member summaries.
+          </p>
+        </div>
+
+        <div className="test-sync-setup__form-grid">
+          <label>
+            Owner name
+            <input
+              value={ownerDisplayName}
+              onChange={(event) => {
+                setOwnerDisplayName(
+                  event.target.value
+                );
+              }}
+              placeholder="Dadi Buboy"
+              disabled={isBusy}
+            />
+          </label>
+        </div>
+
+        <div className="test-sync-setup__invite-actions">
+          <button
+            type="submit"
+            disabled={
+              isBusy ||
+              !ownerMember
+            }
+          >
+            <Save
+              size={16}
+              aria-hidden="true"
+            />
+            Save Owner Name
+          </button>
+        </div>
+      </form>
 
       <form
         className="test-sync-setup__invite-form"

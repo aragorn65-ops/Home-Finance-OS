@@ -8,6 +8,7 @@ import type {
   HouseholdClaimResult,
   InviteLinkedHouseholdMemberRequest,
   RemoteHouseholdPreferencesInput,
+  UpdateRemoteHouseholdMemberProfileRequest,
 } from "./AuthBackendAdapter";
 import {
   createMembership,
@@ -154,10 +155,94 @@ export class InMemoryAuthBackendAdapter
           createId("user"),
         memberId:
           request.localMemberId,
+        memberDisplayName:
+          request.displayName,
         role:
           request.role,
       })
     );
+  }
+
+  async updateRemoteHouseholdMemberProfile(
+    request: UpdateRemoteHouseholdMemberProfileRequest
+  ): Promise<HouseholdMember> {
+    const currentMembership =
+      this.getActiveMembership(
+        request.householdId
+      );
+
+    if (
+      currentMembership?.role !== "owner" &&
+      currentMembership?.role !== "admin"
+    ) {
+      throw new Error(
+        "Only a household admin can update member profiles."
+      );
+    }
+
+    const memberships =
+      this.store
+        .listMemberships(
+          request.householdId
+        )
+        .map((membership) =>
+          membership.memberId ===
+          request.localMemberId
+            ? {
+                ...membership,
+                memberDisplayName:
+                  request.displayName,
+                updatedAt:
+                  new Date(),
+              }
+            : membership
+        );
+
+    const updatedMembership =
+      memberships.find(
+        (membership) =>
+          membership.memberId ===
+          request.localMemberId
+      );
+
+    if (!updatedMembership) {
+      throw new Error(
+        "Remote household member was not found."
+      );
+    }
+
+    this.store.saveMembership(
+      updatedMembership
+    );
+
+    const now =
+      new Date();
+
+    return {
+      id:
+        updatedMembership.memberId,
+      householdId:
+        updatedMembership.householdId,
+      userId:
+        updatedMembership.userId,
+      displayName:
+        updatedMembership.memberDisplayName ??
+        request.displayName,
+      role:
+        updatedMembership.role ===
+          "owner" ||
+        updatedMembership.role ===
+          "admin"
+          ? updatedMembership.role
+          : "member",
+      isActive:
+        updatedMembership.status ===
+        "active",
+      createdAt:
+        updatedMembership.createdAt ?? now,
+      updatedAt:
+        updatedMembership.updatedAt ?? now,
+    };
   }
 
   async createHouseholdClaimDraft(
@@ -194,6 +279,8 @@ export class InMemoryAuthBackendAdapter
             session.user.id,
           memberId:
             draft.ownerMemberId,
+          memberDisplayName:
+            draft.ownerDisplayName,
           role: "owner",
         })
       );

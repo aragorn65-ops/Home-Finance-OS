@@ -85,6 +85,10 @@ export default function HouseholdClaimPanel({
             ownerMember?.id ||
             householdMembers[0]?.id ||
             "",
+          ownerDisplayName:
+            ownerMember?.displayName ||
+            householdMembers[0]
+              ?.displayName,
         };
 
         // Submit claim

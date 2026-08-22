@@ -346,6 +346,64 @@ test("Supabase member invite RPC links local members to auth users", () => {
   );
 });
 
+test("Supabase household claim RPC accepts owner display name", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /drop function if exists public\.claim_household_from_backup\(\s*text,\s*text,\s*text,\s*text,\s*jsonb\s*\);/
+  );
+  assert.match(
+    schemaSql,
+    /create or replace function public\.claim_household_from_backup\([\s\S]+owner_display_name text default null/
+  );
+  assert.match(
+    schemaSql,
+    /coalesce\(nullif\(trim\(owner_display_name\), ''\), 'Household owner'\)/
+  );
+});
+
+test("Supabase member profile RPC updates display names", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /create or replace function public\.update_household_member_profile\(\s*target_household_id uuid,\s*local_member_id text,\s*member_display_name text/
+  );
+  assert.match(
+    schemaSql,
+    /if not public\.is_household_admin\(target_household_id\) then/
+  );
+  assert.match(
+    schemaSql,
+    /display_name = normalized_display_name/
+  );
+  assert.match(
+    schemaSql,
+    /grant execute on function public\.update_household_member_profile\(\s*uuid,\s*text,\s*text\s*\) to authenticated;/
+  );
+});
+
 test("Supabase settlement RPCs persist settlement attachments", () => {
   const schemaSql =
     readFileSync(

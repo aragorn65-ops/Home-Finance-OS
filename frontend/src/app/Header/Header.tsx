@@ -12,11 +12,14 @@ import {
 
 import {
   AuthSessionButton,
-  useAuthSession,
+  useHouseholdMembership,
 } from "../../features/auth";
 import {
   isAuthFeatureEnabled,
 } from "../../config/auth";
+import {
+  loadHousehold,
+} from "../../features/household/services/householdStorage";
 
 interface HeaderProps {
   isMenuOpen?: boolean;
@@ -30,10 +33,44 @@ export default function Header({
   onLock,
 }: HeaderProps) {
   const navigate = useNavigate();
+  const household =
+    loadHousehold();
+  const authHouseholdId =
+    household?.authenticatedLink
+      ?.remoteHouseholdId ??
+    household?.id ??
+    "";
   const authSession =
-    useAuthSession();
+    useHouseholdMembership(
+      authHouseholdId
+    );
   const showAuthSession =
     isAuthFeatureEnabled();
+  const signedInEmail =
+    authSession.session.user?.email
+      ?.trim()
+      .toLowerCase();
+  const signedInMember =
+    household?.members.find(
+      (member) =>
+        member.id ===
+          authSession.membership
+            ?.memberId ||
+        member.remoteMemberId ===
+          authSession.membership
+            ?.memberId ||
+        (
+          signedInEmail &&
+          member.email
+            ?.trim()
+            .toLowerCase() ===
+            signedInEmail
+        )
+    );
+  const signedInDisplayName =
+    signedInMember?.displayName ??
+    authSession.membership
+      ?.memberDisplayName;
 
   return (
     <header className="app-header">
@@ -104,6 +141,9 @@ export default function Header({
           <AuthSessionButton
             session={
               authSession.session
+            }
+            displayName={
+              signedInDisplayName
             }
             error={authSession.error}
             onSignIn={
