@@ -92,6 +92,35 @@ export default function AppShell() {
     ) &&
     membership.householdId !==
       linkedRemoteHouseholdId;
+  const localMembershipMember =
+    household?.members.find(
+      (member) =>
+        member.id ===
+        membership?.memberId
+    );
+  const shouldRepairMemberDisplayName =
+    Boolean(
+      household &&
+      membership?.memberDisplayName &&
+      localMembershipMember &&
+      localMembershipMember.displayName !==
+        membership.memberDisplayName
+    );
+  const shouldHydrateSparseMemberShell =
+    Boolean(
+      household &&
+      session.status === "signed-in" &&
+      membership?.status === "active" &&
+      (
+        membership.role === "member" ||
+        membership.role === "viewer"
+      ) &&
+      household.members.length <= 1
+    );
+  const shouldRepairMemberHouseholdShell =
+    shouldRepairMemberHouseholdLink ||
+    shouldRepairMemberDisplayName ||
+    shouldHydrateSparseMemberShell;
 
   const [
     isLockEnabled,
@@ -285,13 +314,13 @@ export default function AppShell() {
     if (
       (
         household &&
-        !shouldRepairMemberHouseholdLink
+        !shouldRepairMemberHouseholdShell
       ) ||
       !isProductionAuthEnabled ||
       !authRouteAccess.isAllowed ||
       (
         isCurrentSettingsPath &&
-        !shouldRepairMemberHouseholdLink
+        !shouldRepairMemberHouseholdShell
       ) ||
       session.status !== "signed-in" ||
       !session.user ||
@@ -309,17 +338,30 @@ export default function AppShell() {
     const signedInUser =
       session.user;
 
-    void getAuthBackendAdapter()
+    const adapter =
+      getAuthBackendAdapter();
+
+    void adapter
       .loadRemoteHousehold(
         membership.householdId
       )
-      .then((remoteHousehold) => {
+      .then(async (remoteHousehold) => {
         if (!isActive) {
           return;
         }
 
         const now =
           new Date();
+        const remoteMembers =
+          await adapter.listRemoteHouseholdMembers(
+            membership.householdId
+          );
+        const currentMember =
+          remoteMembers.find(
+            (member) =>
+              member.id ===
+              membership.memberId
+          );
         const saved =
           saveLinkedHouseholdShell({
             id:
@@ -346,6 +388,7 @@ export default function AppShell() {
               userId:
                 signedInUser.id,
               displayName:
+                currentMember?.displayName ??
                 membership.memberDisplayName ??
                 signedInUser.displayName ??
                 signedInUser.email ??
@@ -363,8 +406,12 @@ export default function AppShell() {
                 membership.updatedAt ??
                 now,
             },
+            members:
+              remoteMembers.length > 0
+                ? remoteMembers
+                : undefined,
             replaceExisting:
-              shouldRepairMemberHouseholdLink,
+              shouldRepairMemberHouseholdShell,
           });
 
         if (saved) {
@@ -394,7 +441,7 @@ export default function AppShell() {
     membership,
     session.status,
     session.user,
-    shouldRepairMemberHouseholdLink,
+    shouldRepairMemberHouseholdShell,
   ]);
 
   if (

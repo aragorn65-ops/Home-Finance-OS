@@ -1,4 +1,7 @@
 import type {
+  HouseholdMember,
+} from "../../household/models/HouseholdMember";
+import type {
   AuthBackendAdapter,
   HouseholdClaimDraft,
   HouseholdClaimResult,
@@ -109,6 +112,11 @@ export class DisabledAuthBackendAdapter
     throw new Error(
       `Remote household persistence is disabled for ${householdId}.`
     );
+  }
+
+  async listRemoteHouseholdMembers():
+    Promise<HouseholdMember[]> {
+    return [];
   }
 
   async saveRemoteHouseholdPreferences(

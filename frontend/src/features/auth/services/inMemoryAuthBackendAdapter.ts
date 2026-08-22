@@ -1,4 +1,7 @@
 import type {
+  HouseholdMember,
+} from "../../household/models/HouseholdMember";
+import type {
   AuthBackendAdapter,
   AuthSessionSubscription,
   HouseholdClaimDraft,
@@ -351,6 +354,37 @@ export class InMemoryAuthBackendAdapter
     }
 
     return household;
+  }
+
+  async listRemoteHouseholdMembers(
+    householdId: string
+  ): Promise<HouseholdMember[]> {
+    const now = new Date();
+
+    return this.store
+      .listMemberships(householdId)
+      .map((membership) => ({
+        id:
+          membership.memberId,
+        householdId:
+          membership.householdId,
+        userId:
+          membership.userId,
+        displayName:
+          membership.memberDisplayName ??
+          membership.memberId,
+        role:
+          membership.role === "owner" ||
+          membership.role === "admin"
+            ? membership.role
+            : "member",
+        isActive:
+          membership.status === "active",
+        createdAt:
+          membership.createdAt ?? now,
+        updatedAt:
+          membership.updatedAt ?? now,
+      }));
   }
 
   async saveRemoteHouseholdPreferences(

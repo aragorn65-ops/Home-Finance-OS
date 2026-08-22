@@ -41,6 +41,9 @@ import type {
 import type {
   UtilityProviderBill,
 } from "../../utilities/models/UtilityProviderBill";
+import type {
+  HouseholdMember,
+} from "../../household/models/HouseholdMember";
 
 interface SupabaseAuthClient {
   auth: {
@@ -399,6 +402,18 @@ interface SupabaseHouseholdRow {
   id: string;
   name: string;
   status: string;
+}
+
+interface SupabaseHouseholdMemberRow {
+  id: string;
+  household_id: string;
+  local_record_id?: string | null;
+  linked_user_id?: string | null;
+  display_name: string;
+  role: string;
+  status: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 interface SupabaseAccountRow {
@@ -1274,6 +1289,70 @@ export class SupabaseAuthBackendAdapter
       result,
       "load"
     );
+  }
+
+  async listRemoteHouseholdMembers(
+    householdId: string
+  ): Promise<HouseholdMember[]> {
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    const user =
+      await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error(
+        "Sign in before loading household members."
+      );
+    }
+
+    const {
+      data,
+      error,
+    } = await (
+      await this.getClient()
+    )
+      .from("household_members")
+      .select(
+        [
+          "id",
+          "household_id",
+          "local_record_id",
+          "linked_user_id",
+          "display_name",
+          "role",
+          "status",
+          "created_at",
+          "updated_at",
+        ].join(",")
+      )
+      .eq(
+        "household_id",
+        householdId
+      ) as {
+        data:
+          | SupabaseHouseholdMemberRow[]
+          | null;
+        error:
+          | SupabaseAuthError
+          | null;
+      };
+
+    if (error) {
+      throw new Error(
+        `Supabase household member lookup failed: ${error.message}`
+      );
+    }
+
+    return (data ?? [])
+      .map(mapSupabaseHouseholdMember)
+      .filter(
+        (
+          member
+        ): member is HouseholdMember =>
+          Boolean(member)
+      );
   }
 
   async saveRemoteHouseholdPreferences(
@@ -3041,6 +3120,50 @@ function mapSupabaseMembership(
       mapOptionalSupabaseDate(
         row.removed_at
       ),
+    createdAt:
+      mapSupabaseDate(
+        row.created_at ??
+          undefined
+      ),
+    updatedAt:
+      mapSupabaseDate(
+        row.updated_at ??
+          row.created_at ??
+          undefined
+      ),
+  };
+}
+
+function mapSupabaseHouseholdMember(
+  row: SupabaseHouseholdMemberRow
+): HouseholdMember | undefined {
+  const role =
+    row.role === "owner" ||
+    row.role === "admin"
+      ? row.role
+      : "member";
+
+  if (
+    !row.household_id ||
+    !row.display_name
+  ) {
+    return undefined;
+  }
+
+  return {
+    id:
+      row.local_record_id ??
+      row.id,
+    householdId:
+      row.household_id,
+    userId:
+      row.linked_user_id ??
+      undefined,
+    displayName:
+      row.display_name,
+    role,
+    isActive:
+      row.status === "active",
     createdAt:
       mapSupabaseDate(
         row.created_at ??

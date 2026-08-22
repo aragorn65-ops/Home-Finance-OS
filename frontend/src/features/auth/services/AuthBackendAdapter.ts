@@ -1,4 +1,7 @@
 import type {
+  HouseholdMember,
+} from "../../household/models/HouseholdMember";
+import type {
   ApplicationBackupSummary,
 } from "../../startup/services/applicationBackup";
 import type {
@@ -121,6 +124,10 @@ export interface AuthBackendAdapter {
   loadRemoteHousehold(
     householdId: string
   ): Promise<RemoteHousehold>;
+
+  listRemoteHouseholdMembers(
+    householdId: string
+  ): Promise<HouseholdMember[]>;
 
   saveRemoteHouseholdPreferences(
     input: RemoteHouseholdPreferencesInput

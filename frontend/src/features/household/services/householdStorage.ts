@@ -150,6 +150,7 @@ export interface LinkedHouseholdShellInput {
   ownerMemberId: string;
   linkedByUserId: string;
   member: HouseholdMember;
+  members?: HouseholdMember[];
   migrationId?: string;
   linkedAt?: Date;
   replaceExisting?: boolean;
@@ -200,9 +201,19 @@ export function saveLinkedHouseholdShell(
       linkedAt:
         linkedAt.toISOString(),
     },
-    members: [
-      cloneMember(input.member),
-    ],
+    members:
+      (
+        input.members &&
+        input.members.length > 0
+      )
+        ? input.members.map(
+            cloneMember
+          )
+        : [
+            cloneMember(
+              input.member
+            ),
+          ],
     createdAt: now,
     updatedAt: now,
   };
