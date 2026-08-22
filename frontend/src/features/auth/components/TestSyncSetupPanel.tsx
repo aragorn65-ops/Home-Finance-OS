@@ -10,6 +10,7 @@ import type {
 import {
   CheckCircle2,
   Cloud,
+  CloudDownload,
   Mail,
   Save,
   UserPlus,
@@ -37,11 +38,15 @@ import type {
 import {
   getAuthBackendAdapter,
   getLocalCoreSnapshotCounts,
+  restoreLinkedRemoteCoreSnapshot,
   saveCurrentBrowserCoreSnapshotForHousehold,
 } from "../services";
 import {
   useAuthSession,
 } from "../hooks";
+import {
+  browserCoreSnapshotLocalWriter,
+} from "../services/browserCoreSnapshotLocalWriter";
 import {
   browserCoreSnapshotRecordSource,
 } from "../services/browserCoreSnapshotRecordSource";
@@ -234,6 +239,7 @@ export default function TestSyncSetupPanel({
   ] = useState<
     | "claim"
     | "invite"
+    | "load"
     | "snapshot"
     | "refresh"
     | ""
@@ -734,7 +740,7 @@ export default function TestSyncSetupPanel({
     async (): Promise<void> => {
       if (!remoteHouseholdId) {
         setError(
-          "Create or link the cloud household before saving the clean cloud snapshot."
+          "Create or link the cloud household before saving this browser data to cloud."
         );
         return;
       }
@@ -760,9 +766,68 @@ export default function TestSyncSetupPanel({
           );
 
         setSnapshotMessage(
-          `Saved ${saved.accounts.length} accounts, ${saved.transactions.length} transactions, and ${saved.expenseAllocations?.length ?? 0} allocations.`
+          `Saved this browser data to cloud: ${saved.accounts.length} accounts, ${saved.transactions.length} transactions, and ${saved.expenseAllocations?.length ?? 0} allocations.`
         );
         onStatusChange?.();
+      } catch (error) {
+        setError(
+          getErrorMessage(error)
+        );
+      } finally {
+        setAction("");
+      }
+    };
+
+  const handleLoadCloudSnapshot =
+    async (): Promise<void> => {
+      if (!remoteHouseholdId) {
+        setError(
+          "Create or link the cloud household before loading the cloud snapshot."
+        );
+        return;
+      }
+
+      setAction("load");
+      setError("");
+      setMessage("");
+      setSnapshotMessage("");
+
+      try {
+        const result =
+          await restoreLinkedRemoteCoreSnapshot({
+            authEnabled: true,
+            household: {
+              id:
+                household.id,
+              authenticatedLink: {
+                remoteHouseholdId,
+                ownerMemberId:
+                  activeHousehold
+                    .authenticatedLink
+                    ?.ownerMemberId,
+              },
+            },
+            adapter:
+              getAuthBackendAdapter(),
+            writer:
+              browserCoreSnapshotLocalWriter,
+          });
+
+        if (
+          result.status !== "restored"
+        ) {
+          throw new Error(
+            `Cloud snapshot was not loaded: ${result.reason}.`
+          );
+        }
+
+        setSnapshotMessage(
+          `Loaded cloud snapshot into this browser: ${result.accountCount} accounts and ${result.transactionCount} transactions.`
+        );
+        onStatusChange?.();
+        window.setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } catch (error) {
         setError(
           getErrorMessage(error)
@@ -823,10 +888,10 @@ export default function TestSyncSetupPanel({
     },
     {
       label:
-        "Clean cloud snapshot",
+        "Cloud snapshot",
       detail:
         snapshotMessage ||
-        `${localCounts.accountCount} local accounts, ${localCounts.transactionCount} local transactions ready to save.`,
+        `${localCounts.accountCount} local accounts, ${localCounts.transactionCount} local transactions in this browser. Load cloud if another browser has newer data.`,
       status:
         snapshotMessage
           ? "pass"
@@ -928,6 +993,23 @@ export default function TestSyncSetupPanel({
         <button
           type="button"
           onClick={() => {
+            void handleLoadCloudSnapshot();
+          }}
+          disabled={
+            isBusy ||
+            session.status !== "signed-in" ||
+            !remoteHouseholdId
+          }
+        >
+          <CloudDownload
+            size={16}
+            aria-hidden="true"
+          />
+          Load Cloud Snapshot
+        </button>
+        <button
+          type="button"
+          onClick={() => {
             void handleSaveSnapshot();
           }}
           disabled={
@@ -940,7 +1022,7 @@ export default function TestSyncSetupPanel({
             size={16}
             aria-hidden="true"
           />
-          Save Clean Cloud Snapshot
+          Save This Browser to Cloud
         </button>
       </div>
 
