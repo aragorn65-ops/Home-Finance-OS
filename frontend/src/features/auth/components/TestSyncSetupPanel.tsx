@@ -763,13 +763,24 @@ export default function TestSyncSetupPanel({
           session.status ===
             "signed-in"
         ) {
+          const remoteOwnerMemberId =
+            ownerMembership?.memberId ??
+            (
+              currentUserMembership?.role ===
+              "owner"
+                ? currentUserMembership
+                    .memberId
+                : undefined
+            ) ??
+            ownerMember.remoteMemberId ??
+            ownerMember.id;
+
           await getAuthBackendAdapter()
             .updateRemoteHouseholdMemberProfile({
               householdId:
                 remoteHouseholdId,
               localMemberId:
-                ownerMember.remoteMemberId ??
-                ownerMember.id,
+                remoteOwnerMemberId,
               displayName,
             });
           await refreshCloudDiagnostics();

@@ -400,6 +400,10 @@ test("Supabase member profile RPC updates display names", () => {
   );
   assert.match(
     schemaSql,
+    /from public\.household_memberships membership[\s\S]+membership\.user_id = current_user_id/
+  );
+  assert.match(
+    schemaSql,
     /grant execute on function public\.update_household_member_profile\(\s*uuid,\s*text,\s*text\s*\) to authenticated;/
   );
 });

@@ -1489,10 +1489,11 @@ security definer
 set search_path = public
 as $$
 declare
+  current_user_id uuid := auth.uid();
   normalized_display_name text := trim(member_display_name);
   updated_member_id uuid;
 begin
-  if auth.uid() is null then
+  if current_user_id is null then
     raise exception 'Sign in before updating household member profiles.';
   end if;
 
@@ -1515,6 +1516,22 @@ begin
       or member.local_record_id = nullif(local_member_id, '')
     )
   returning member.id into updated_member_id;
+
+  if updated_member_id is null then
+    update public.household_members member
+    set
+      display_name = normalized_display_name,
+      updated_at = now()
+    from public.household_memberships membership
+    where member.id = membership.member_id
+      and member.household_id = target_household_id
+      and member.status = 'active'
+      and membership.household_id = target_household_id
+      and membership.user_id = current_user_id
+      and membership.status = 'active'
+      and membership.role in ('owner', 'admin')
+    returning member.id into updated_member_id;
+  end if;
 
   if updated_member_id is null then
     raise exception 'Household member was not found.';
