@@ -591,11 +591,11 @@ test("Supabase settlement read policies allow household transparency", () => {
 
   assert.match(
     schemaSql,
-    /create policy "active members can read household settlements"[\s\S]+?using \(\s*public\.is_household_active_member\(household_id\)\s*\);/
+    /create policy "active members can read household settlements"[\s\S]+?using \(\s*public\.is_active_household_member\(household_id\)\s*\);/
   );
   assert.match(
     schemaSql,
-    /create policy "active members can read household settlement applications"[\s\S]+?using \(\s*public\.is_household_active_member\(household_id\)\s*\);/
+    /create policy "active members can read household settlement applications"[\s\S]+?using \(\s*public\.is_active_household_member\(household_id\)\s*\);/
   );
 });
 

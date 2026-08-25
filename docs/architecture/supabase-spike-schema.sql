@@ -630,7 +630,7 @@ create policy "active members can read household settlements"
 on public.settlements
 for select
 using (
-  public.is_household_active_member(household_id)
+  public.is_active_household_member(household_id)
 );
 
 drop policy if exists "active members can read household settlement applications"
@@ -640,7 +640,7 @@ create policy "active members can read household settlement applications"
 on public.settlement_applications
 for select
 using (
-  public.is_household_active_member(household_id)
+  public.is_active_household_member(household_id)
 );
 
 drop policy if exists "active members can read household savings goals"
