@@ -53,27 +53,9 @@ function mapRemoteSettlement(
   settlement: RemoteSettlement,
   localHouseholdId?: string
 ): Settlement {
-  const localSettlement =
-    settlement.localRecordId
-      ? SettlementService
-          .getSettlementById(
-            settlement.localRecordId
-          )
-      : undefined;
-
-  if (
-    localSettlement &&
-    (
-      !localHouseholdId ||
-      localSettlement.householdId ===
-        localHouseholdId
-    )
-  ) {
-    return localSettlement;
-  }
-
   return {
     id:
+      settlement.localRecordId ??
       settlement.id,
     householdId:
       localHouseholdId ??
@@ -360,16 +342,36 @@ export default function useSettlements(
     const adapter =
       getAuthBackendAdapter() as
         AuthSettlementObserver;
+    let reloadTimeout:
+      ReturnType<typeof setTimeout> | undefined;
     const subscription =
       adapter
         .subscribeToSettlementChanges?.(
           householdId,
           () => {
-            void loadRemoteSettlements();
+            if (reloadTimeout) {
+              globalThis.clearTimeout(
+                reloadTimeout
+              );
+            }
+
+            reloadTimeout =
+              globalThis.setTimeout(
+                () => {
+                  void loadRemoteSettlements();
+                },
+                250
+              );
           }
         );
 
     return () => {
+      if (reloadTimeout) {
+        globalThis.clearTimeout(
+          reloadTimeout
+        );
+      }
+
       subscription?.unsubscribe();
     };
   }, [

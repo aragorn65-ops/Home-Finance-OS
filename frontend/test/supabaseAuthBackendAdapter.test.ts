@@ -3927,9 +3927,8 @@ test(
       | (() => void)
       | undefined;
     let channelTopic = "";
-    let channelFilter:
-      | Record<string, unknown>
-      | undefined;
+    const channelFilters:
+      Record<string, unknown>[] = [];
     let removeChannelCount = 0;
     let changeCount = 0;
 
@@ -3944,8 +3943,9 @@ test(
           type,
           "postgres_changes"
         );
-        channelFilter =
-          filter;
+        channelFilters.push(
+          filter
+        );
         callback =
           onChange;
 
@@ -4001,15 +4001,25 @@ test(
       "hfos-settlements-household-1"
     );
     assert.deepEqual(
-      channelFilter,
-      {
-        event: "*",
-        schema: "public",
-        table:
-          "settlements",
-        filter:
-          "household_id=eq.household-1",
-      }
+      channelFilters,
+      [
+        {
+          event: "*",
+          schema: "public",
+          table:
+            "settlements",
+          filter:
+            "household_id=eq.household-1",
+        },
+        {
+          event: "*",
+          schema: "public",
+          table:
+            "settlement_applications",
+          filter:
+            "household_id=eq.household-1",
+        },
+      ]
     );
 
     subscription.unsubscribe();

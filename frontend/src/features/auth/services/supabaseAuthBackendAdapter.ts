@@ -2707,6 +2707,22 @@ export class SupabaseAuthBackendAdapter
                 }
               }
             )
+            .on(
+              "postgres_changes",
+              {
+                event: "*",
+                schema: "public",
+                table:
+                  "settlement_applications",
+                filter:
+                  `household_id=eq.${householdId}`,
+              },
+              () => {
+                if (!isDisposed) {
+                  onChange();
+                }
+              }
+            )
             .subscribe();
         });
 
