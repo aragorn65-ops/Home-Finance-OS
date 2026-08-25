@@ -576,6 +576,29 @@ test("Supabase settlement update lets involved members revise records", () => {
   );
 });
 
+test("Supabase settlement read policies allow household transparency", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+
+  assert.match(
+    schemaSql,
+    /create policy "active members can read household settlements"[\s\S]+?using \(\s*public\.is_household_active_member\(household_id\)\s*\);/
+  );
+  assert.match(
+    schemaSql,
+    /create policy "active members can read household settlement applications"[\s\S]+?using \(\s*public\.is_household_active_member\(household_id\)\s*\);/
+  );
+});
+
 test("Supabase settlement applications resolve local allocation ids", () => {
   const schemaSql =
     readFileSync(

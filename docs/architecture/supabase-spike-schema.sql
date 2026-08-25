@@ -630,11 +630,7 @@ create policy "active members can read household settlements"
 on public.settlements
 for select
 using (
-  public.is_household_admin(household_id)
-  or public.current_household_member_id(household_id) in (
-    from_member_id,
-    to_member_id
-  )
+  public.is_household_active_member(household_id)
 );
 
 drop policy if exists "active members can read household settlement applications"
@@ -644,19 +640,7 @@ create policy "active members can read household settlement applications"
 on public.settlement_applications
 for select
 using (
-  exists (
-    select 1
-    from public.settlements settlement
-    where settlement.id = settlement_applications.settlement_id
-      and settlement.household_id = settlement_applications.household_id
-      and (
-        public.is_household_admin(settlement.household_id)
-        or public.current_household_member_id(settlement.household_id) in (
-          settlement.from_member_id,
-          settlement.to_member_id
-        )
-      )
-  )
+  public.is_household_active_member(household_id)
 );
 
 drop policy if exists "active members can read household savings goals"

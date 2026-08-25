@@ -19,6 +19,7 @@ import {
   Link,
 } from "react-router-dom";
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -50,6 +51,7 @@ import {
   loadHousehold,
 } from "../../household/services/householdStorage";
 import {
+  coreSnapshotRestoredEvent,
   useHouseholdMembership,
 } from "../../auth";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
@@ -406,6 +408,31 @@ function settlementBelongsToMonth(
 }
 
 export default function DashboardPage() {
+  const [
+    coreSnapshotRefreshVersion,
+    setCoreSnapshotRefreshVersion,
+  ] = useState(0);
+
+  useEffect(() => {
+    const refreshDashboardData = () => {
+      setCoreSnapshotRefreshVersion(
+        (current) => current + 1
+      );
+    };
+
+    window.addEventListener(
+      coreSnapshotRestoredEvent,
+      refreshDashboardData
+    );
+
+    return () => {
+      window.removeEventListener(
+        coreSnapshotRestoredEvent,
+        refreshDashboardData
+      );
+    };
+  }, []);
+
   const household =
     loadHousehold();
 
@@ -479,7 +506,7 @@ export default function DashboardPage() {
               transaction.householdId ===
               householdId
           ),
-      [householdId]
+      [householdId, coreSnapshotRefreshVersion]
     );
 
   const monthlyExpenseTransactions =
