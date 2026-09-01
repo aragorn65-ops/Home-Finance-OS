@@ -11,6 +11,13 @@ import type {
   StoredAttachment,
 } from "../../../shared/models/StoredAttachment";
 import createAttachmentMetadataRecords from "../../../shared/utils/createAttachmentMetadataRecords";
+import {
+  normalizeTransactionCategory,
+} from "../../transactions/models/TransactionCategory";
+import type {
+  Transaction,
+} from "../../transactions/models/Transaction";
+import TransactionService from "../../transactions/services/TransactionService";
 
 import type {
   UtilityBillForm,
@@ -366,17 +373,27 @@ export default class UtilityProviderBillService {
       );
     }
 
-    const transactionForm =
-      buildPaidUtilityForm(
+    const existingTransaction =
+      findExistingPaymentTransaction(
         providerBill,
         payment
       );
 
     const saveResult =
-      await UtilityBillPersistenceService.save(
-        transactionForm,
-        providerBill.calculationSnapshot
-      );
+      existingTransaction
+        ? OperationResults.success<
+            Transaction
+          >(
+            existingTransaction,
+            "Existing utility payment transaction linked."
+          )
+        : await UtilityBillPersistenceService.save(
+            buildPaidUtilityForm(
+              providerBill,
+              payment
+            ),
+            providerBill.calculationSnapshot
+          );
 
     if (!saveResult.success) {
       return OperationResults.failure<
@@ -416,6 +433,22 @@ export default class UtilityProviderBillService {
       UtilityProviderBillRepository.update(
         updatedProviderBill
       );
+
+    const snapshotResult =
+      await UtilityBillPersistenceService
+        .saveCurrentSnapshot(
+          "Provider bill marked paid and saved to cloud."
+        );
+
+    if (!snapshotResult.success) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        snapshotResult.errors,
+        snapshotResult.message ??
+          "Provider bill was marked paid locally, but the cloud snapshot was not saved."
+      );
+    }
 
     return OperationResults.success(
       savedProviderBill,
@@ -672,6 +705,91 @@ function cloneCalculation(
   };
 }
 
+function findExistingPaymentTransaction(
+  providerBill: UtilityProviderBill,
+  payment: {
+    paidByMemberId: string;
+    sourceAccountId: string;
+    paidAt: string;
+  }
+): Transaction | undefined {
+  const household =
+    loadHousehold();
+
+  if (!household) {
+    return undefined;
+  }
+
+  const paidAt =
+    parseDateInput(
+      payment.paidAt
+    );
+
+  if (
+    Number.isNaN(
+      paidAt.getTime()
+    )
+  ) {
+    return undefined;
+  }
+
+  const paidAtKey =
+    formatDateKey(paidAt);
+  const utilityCategory =
+    normalizeTransactionCategory(
+      providerBill.utilityType
+    );
+  const billAmountCents =
+    toCents(
+      providerBill.totalBillAmount
+    );
+  const paidByMemberId =
+    payment.paidByMemberId.trim();
+  const sourceAccountId =
+    payment.sourceAccountId.trim();
+
+  return TransactionService
+    .getActiveTransactions()
+    .find((transaction) => {
+      if (
+        transaction.householdId !==
+          household.id ||
+        transaction.type !==
+          "expense" ||
+        normalizeTransactionCategory(
+          transaction.category
+        ) !== utilityCategory ||
+        toCents(transaction.amount) !==
+          billAmountCents ||
+        formatDateKey(
+          transaction.transactionDate
+        ) !== paidAtKey
+      ) {
+        return false;
+      }
+
+      if (
+        paidByMemberId &&
+        transaction.paidByMemberId &&
+        transaction.paidByMemberId !==
+          paidByMemberId
+      ) {
+        return false;
+      }
+
+      if (
+        sourceAccountId &&
+        transaction.sourceAccountId &&
+        transaction.sourceAccountId !==
+          sourceAccountId
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+}
+
 function parseDateInput(
   value: string
 ): Date {
@@ -713,6 +831,14 @@ function getMonthKey(
   return `${date.getFullYear()}-${String(
     date.getMonth() + 1
   ).padStart(2, "0")}`;
+}
+
+function formatDateKey(
+  value: Date
+): string {
+  return value
+    .toISOString()
+    .slice(0, 10);
 }
 
 function toCents(

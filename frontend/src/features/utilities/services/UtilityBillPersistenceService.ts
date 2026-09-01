@@ -133,14 +133,15 @@ export default class UtilityBillPersistenceService {
       );
     }
 
-    return this.persistLinkedCoreSnapshot(
+    return this.persistTransactionSnapshot(
       result
     );
   }
 
-  private static async persistLinkedCoreSnapshot(
-    result: OperationResult<Transaction>
-  ): Promise<OperationResult<Transaction>> {
+  static async saveCurrentSnapshot(
+    successMessage =
+      "Utility snapshot saved to cloud."
+  ): Promise<OperationResult<boolean>> {
     try {
       await saveLinkedRemoteCoreSnapshot({
         authEnabled:
@@ -154,20 +155,43 @@ export default class UtilityBillPersistenceService {
       });
 
       return OperationResults.success(
-        result.data as Transaction,
-        "Utility bill saved to Transactions and Settlements."
+        true,
+        successMessage
       );
     } catch (error) {
       return OperationResults.failure<
-        Transaction
+        boolean
       >(
         {
           cloud:
             getErrorMessage(error),
         },
-        "Cloud utility transaction snapshot was not saved."
+        "Cloud utility snapshot was not saved."
       );
     }
+  }
+
+  private static async persistTransactionSnapshot(
+    result: OperationResult<Transaction>
+  ): Promise<OperationResult<Transaction>> {
+    const snapshotResult =
+      await this.saveCurrentSnapshot(
+        "Utility bill saved to Transactions and Settlements."
+      );
+
+    if (snapshotResult.success) {
+      return OperationResults.success(
+        result.data as Transaction,
+        snapshotResult.message
+      );
+    }
+
+    return OperationResults.failure<
+      Transaction
+    >(
+      snapshotResult.errors,
+      "Cloud utility transaction snapshot was not saved."
+    );
   }
 
   /**
