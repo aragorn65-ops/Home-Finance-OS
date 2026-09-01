@@ -1321,6 +1321,11 @@ export default function SettlementsPage() {
                 formAllocationOptions
               }
               currency={currency}
+              preferredFromMemberId={
+                localMemberId ||
+                membership?.memberId ||
+                ""
+              }
               initialValues={
                 dialogMode === "edit" &&
                 selectedSettlement

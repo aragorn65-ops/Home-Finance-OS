@@ -54,6 +54,7 @@ type SettlementFormProps = {
   allocationOptions:
     SettlementAllocationOption[];
 
+  preferredFromMemberId?: string;
   initialValues?: SettlementFormData;
   submitLabel?: string;
 
@@ -294,8 +295,17 @@ function generateSettlementReference(
 
 function getDefaultFormValues(
   householdId: string,
-  members: HouseholdMember[]
+  members: HouseholdMember[],
+  preferredFromMemberId = "",
+  allocationOptions:
+    SettlementAllocationOption[] = []
 ): SettlementFormData {
+  const preferredMember =
+    members.find(
+      (member) =>
+        member.id ===
+        preferredFromMemberId
+    );
   const owner =
     members.find(
       (member) =>
@@ -303,11 +313,21 @@ function getDefaultFormValues(
     );
 
   const defaultFromMemberId =
+    preferredMember?.id ??
     owner?.id ??
     members[0]?.id ??
     "";
 
+  const defaultObligation =
+    allocationOptions.find(
+      (option) =>
+        option.fromMemberId ===
+          defaultFromMemberId &&
+        option.outstandingAmount > 0
+    );
+
   const defaultToMemberId =
+    defaultObligation?.toMemberId ??
     members.find(
       (member) =>
         member.id !==
@@ -418,6 +438,7 @@ export default function SettlementForm({
 
   allocationOptions,
 
+  preferredFromMemberId = "",
   initialValues,
   submitLabel = "Save Settlement",
 
@@ -444,7 +465,9 @@ export default function SettlementForm({
       initialValues ??
         getDefaultFormValues(
           householdId,
-          activeMembers
+          activeMembers,
+          preferredFromMemberId,
+          allocationOptions
         )
     );
 
@@ -523,8 +546,20 @@ export default function SettlementForm({
         initialValues?.toMemberId ?? "",
         initialValues?.amount ?? "",
         initialValues?.referenceNumber ?? "",
+        preferredFromMemberId,
         activeMembers
           .map((member) => member.id)
+          .join("|"),
+        allocationOptions
+          .map(
+            (option) =>
+              [
+                option.expenseAllocationId,
+                option.fromMemberId,
+                option.toMemberId,
+                option.outstandingAmount,
+              ].join(":")
+          )
           .join("|"),
       ].join("::");
 
@@ -562,7 +597,9 @@ export default function SettlementForm({
           }
         : getDefaultFormValues(
             householdId,
-            activeMembers
+            activeMembers,
+            preferredFromMemberId,
+            allocationOptions
           );
 
     setForm({
@@ -585,6 +622,8 @@ export default function SettlementForm({
     initialValues,
     householdId,
     activeMembers,
+    preferredFromMemberId,
+    allocationOptions,
   ]);
 
   const eligibleAllocationOptions =
