@@ -1427,17 +1427,43 @@ export default class TransactionService {
     }
 
     for (const providerBill of linkedProviderBills) {
-      UtilityProviderBillRepository.update({
-        ...providerBill,
-        status: "unpaid",
-        paidByMemberId: "",
-        sourceAccountId: "",
-        paidAt: null,
-        paymentReferenceNumber: "",
-        paymentAttachments: [],
-        transactionId: "",
-        updatedAt: new Date(),
-      });
+      const replacementTransaction =
+        this.findPaidReplacementUtilityTransaction(
+          existing
+        );
+
+      if (replacementTransaction) {
+        UtilityProviderBillRepository.update({
+          ...providerBill,
+          status: "paid",
+          paidByMemberId:
+            replacementTransaction
+              .paidByMemberId ?? "",
+          sourceAccountId:
+            replacementTransaction
+              .sourceAccountId ?? "",
+          paidAt:
+            new Date(
+              replacementTransaction
+                .transactionDate
+            ),
+          transactionId:
+            replacementTransaction.id,
+          updatedAt: new Date(),
+        });
+      } else {
+        UtilityProviderBillRepository.update({
+          ...providerBill,
+          status: "unpaid",
+          paidByMemberId: "",
+          sourceAccountId: "",
+          paidAt: null,
+          paymentReferenceNumber: "",
+          paymentAttachments: [],
+          transactionId: "",
+          updatedAt: new Date(),
+        });
+      }
     }
 
     return OperationResults.success(
@@ -1465,6 +1491,55 @@ export default class TransactionService {
     return OperationResults.success(
       restoredProviderBills
     );
+  }
+
+  private static findPaidReplacementUtilityTransaction(
+    transactionToDelete: Transaction
+  ): Transaction | undefined {
+    const transactionDateKey =
+      transactionToDelete.transactionDate
+        .toISOString()
+        .slice(0, 10);
+    const transactionCategory =
+      normalizeTransactionCategory(
+        transactionToDelete.category
+      );
+    const transactionAmount =
+      roundCurrencyAmount(
+        transactionToDelete.amount
+      );
+
+    return TransactionRepository
+      .findAll()
+      .find((candidate) => {
+        if (
+          candidate.id ===
+            transactionToDelete.id ||
+          !candidate.isActive ||
+          candidate.householdId !==
+            transactionToDelete.householdId ||
+          candidate.type !==
+            "expense" ||
+          normalizeTransactionCategory(
+            candidate.category
+          ) !== transactionCategory ||
+          roundCurrencyAmount(
+            candidate.amount
+          ) !== transactionAmount ||
+          candidate.transactionDate
+            .toISOString()
+            .slice(0, 10) !==
+            transactionDateKey
+        ) {
+          return false;
+        }
+
+        return (
+          this.getExpensePaymentStatus(
+            candidate.id
+          ) === "paid"
+        );
+      });
   }
 
   /**

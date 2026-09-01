@@ -17,8 +17,11 @@ import type {
 import type {
   UtilityProviderBill,
 } from "../src/features/utilities/models/UtilityProviderBill";
+import ExpenseAllocationRepository from "../src/features/transactions/repositories/ExpenseAllocationRepository";
 import TransactionRepository from "../src/features/transactions/repositories/TransactionRepository";
 import TransactionService from "../src/features/transactions/services/TransactionService";
+import SettlementApplicationRepository from "../src/features/settlements/repositories/SettlementApplicationRepository";
+import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository";
 import UtilityProviderBillRepository from "../src/features/utilities/repositories/UtilityProviderBillRepository";
 import UtilityProviderBillService from "../src/features/utilities/services/UtilityProviderBillService";
 import {
@@ -388,6 +391,192 @@ test("transaction delete preparation detaches linked provider bills", () => {
   assert.equal(
     restoredProviderBill?.transactionId,
     transactionId
+  );
+});
+
+test("transaction delete preparation relinks provider bill to paid duplicate", () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-delete-relink-provider-bill";
+  const staleTransactionId =
+    "stale-water-payment-transaction";
+  const paidTransactionId =
+    "paid-water-payment-transaction";
+  const now =
+    new Date(
+      "2026-07-13T00:00:00"
+    );
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Relink Provider Bill",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [],
+        createdAt:
+          "2026-07-01T00:00:00.000Z",
+        updatedAt:
+          "2026-07-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  TransactionRepository.replaceForHousehold(
+    householdId,
+    [
+      createTransaction({
+        id:
+          staleTransactionId,
+        householdId,
+        amount:
+          1409.2,
+      }),
+      createTransaction({
+        id:
+          paidTransactionId,
+        householdId,
+        amount:
+          1409.2,
+        sourceAccountId:
+          "cash",
+      }),
+    ]
+  );
+  ExpenseAllocationRepository.createMany([
+    {
+      id:
+        "paid-water-allocation",
+      transactionId:
+        paidTransactionId,
+      paidByMemberId:
+        "member-owner",
+      memberId:
+        "member-rasha",
+      isIncluded:
+        true,
+      allocatedAmount:
+        1409.2,
+      personalAmount:
+        0,
+      personalItems: [],
+      notes:
+        "",
+      createdAt:
+        now,
+      updatedAt:
+        now,
+    },
+  ]);
+  SettlementRepository.create({
+    id:
+      "water-settlement",
+    householdId,
+    fromMemberId:
+      "member-rasha",
+    toMemberId:
+      "member-owner",
+    amount:
+      1409.2,
+    settlementDate:
+      now,
+    sourceAccountId:
+      "cash",
+    destinationAccountId:
+      "",
+    applicationMethod:
+      "manual",
+    referenceNumber:
+      "WATER-SETTLED",
+    notes:
+      "",
+    attachments: [],
+    isActive:
+      true,
+    createdAt:
+      now,
+    updatedAt:
+      now,
+  });
+  SettlementApplicationRepository.createMany([
+    {
+      id:
+        "water-settlement-application",
+      settlementId:
+        "water-settlement",
+      expenseAllocationId:
+        "paid-water-allocation",
+      appliedAmount:
+        1409.2,
+      createdAt:
+        now,
+      updatedAt:
+        now,
+    },
+  ]);
+
+  UtilityProviderBillRepository.create(
+    createProviderBill({
+      id:
+        "water-provider-bill-relink",
+      householdId,
+      utilityType:
+        "water",
+      unit:
+        "m3",
+      providerName:
+        "Maynilad",
+      status:
+        "paid",
+      paidByMemberId:
+        "member-owner",
+      sourceAccountId:
+        "cash",
+      paidAt:
+        now,
+      paymentReferenceNumber:
+        "OLD-LINK",
+      transactionId:
+        staleTransactionId,
+    })
+  );
+
+  const detachResult =
+    TransactionService
+      .detachUtilityProviderBillsForTransaction(
+        staleTransactionId
+      );
+
+  assert.equal(
+    detachResult.success,
+    true
+  );
+
+  const providerBill =
+    UtilityProviderBillRepository.findById(
+      "water-provider-bill-relink"
+    );
+
+  assert.equal(
+    providerBill?.status,
+    "paid"
+  );
+  assert.equal(
+    providerBill?.transactionId,
+    paidTransactionId
+  );
+  assert.equal(
+    providerBill?.sourceAccountId,
+    "cash"
   );
 });
 
