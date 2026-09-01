@@ -2691,6 +2691,34 @@ begin
       id text
     )
   )
+  update public.utility_provider_bills remote_provider_bill
+  set
+    status = 'unpaid',
+    paid_by_member_id = null,
+    source_account_id = null,
+    paid_at = null,
+    payment_reference_number = null,
+    payment_attachments = '[]'::jsonb,
+    transaction_id = null,
+    updated_at = snapshot_timestamp,
+    updated_by_user_id = current_user_id
+  from public.transactions remote_transaction
+  where remote_provider_bill.household_id = target_household_id
+    and remote_provider_bill.transaction_id = remote_transaction.id
+    and remote_transaction.household_id = target_household_id
+    and remote_transaction.local_record_id is not null
+    and not exists (
+      select 1
+      from transaction_payload
+      where transaction_payload.id = remote_transaction.local_record_id
+    );
+
+  with transaction_payload as (
+    select transaction_record.id
+    from jsonb_to_recordset(coalesce(core_transactions, '[]'::jsonb)) as transaction_record(
+      id text
+    )
+  )
   delete from public.transactions remote_transaction
   where remote_transaction.household_id = target_household_id
     and remote_transaction.local_record_id is not null

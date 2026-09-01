@@ -125,10 +125,67 @@ export default function useTransactions() {
   const remove = (
     id: string
   ): Promise<OperationResult<boolean>> => {
+    return removeAndPersist(id);
+  };
+
+  const removeAndPersist = async (
+    id: string
+  ): Promise<OperationResult<boolean>> => {
+    const detachResult =
+      TransactionService
+        .detachUtilityProviderBillsForTransaction(
+          id
+        );
+
+    if (!detachResult.success) {
+      return OperationResults.failure<
+        boolean
+      >(
+        detachResult.errors,
+        detachResult.message
+      );
+    }
+
+    const detachedProviderBills =
+      detachResult.data ?? [];
+
+    if (
+      detachedProviderBills.length > 0
+    ) {
+      refresh();
+
+      const detachSnapshotResult =
+        await persistLinkedCoreSnapshot(
+          OperationResults.success(
+            true
+          )
+        );
+
+      if (
+        !detachSnapshotResult.success
+      ) {
+        TransactionService
+          .restoreUtilityProviderBills(
+            detachedProviderBills
+          );
+        refresh();
+
+        return detachSnapshotResult;
+      }
+    }
+
     const result =
       TransactionService.delete(id);
 
     if (result.success) {
+      refresh();
+    } else if (
+      detachedProviderBills.length > 0
+    ) {
+      TransactionService
+        .restoreUtilityProviderBills(
+          detachedProviderBills
+        );
       refresh();
     }
 

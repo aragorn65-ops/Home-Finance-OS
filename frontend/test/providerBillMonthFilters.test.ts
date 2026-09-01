@@ -12,8 +12,13 @@ import {
   defaultUtilityBillForm,
 } from "../src/features/utilities/models/UtilityBillForm";
 import type {
+  Transaction,
+} from "../src/features/transactions/models/Transaction";
+import type {
   UtilityProviderBill,
 } from "../src/features/utilities/models/UtilityProviderBill";
+import TransactionRepository from "../src/features/transactions/repositories/TransactionRepository";
+import TransactionService from "../src/features/transactions/services/TransactionService";
 import UtilityProviderBillRepository from "../src/features/utilities/repositories/UtilityProviderBillRepository";
 import UtilityProviderBillService from "../src/features/utilities/services/UtilityProviderBillService";
 import {
@@ -159,6 +164,72 @@ function createProviderBill(
   };
 }
 
+function createTransaction(
+  overrides: Partial<Transaction>
+): Transaction {
+  return {
+    id:
+      overrides.id ?? "transaction-1",
+    householdId:
+      overrides.householdId ??
+      "household-1",
+    createdByMemberId:
+      "member-1",
+    paidByMemberId:
+      "member-1",
+    expenseSplitMethod:
+      "equal",
+    visibility:
+      "household",
+    type:
+      "expense",
+    amount:
+      1000,
+    enteredAmount:
+      1000,
+    enteredCurrency:
+      "PHP",
+    baseCurrency:
+      "PHP",
+    baseAmount:
+      1000,
+    exchangeRate:
+      1,
+    exchangeRateEffectiveDate:
+      new Date(
+        "2026-07-13T00:00:00"
+      ),
+    exchangeRateSource:
+      "manual",
+    sourceAccountId:
+      null,
+    destinationAccountId:
+      null,
+    category:
+      "Water",
+    description:
+      "Water utility bill",
+    notes:
+      "",
+    attachments: [],
+    transactionDate:
+      new Date(
+        "2026-07-13T00:00:00"
+      ),
+    isActive:
+      true,
+    createdAt:
+      new Date(
+        "2026-07-13T00:00:00"
+      ),
+    updatedAt:
+      new Date(
+        "2026-07-13T00:00:00"
+      ),
+    ...overrides,
+  };
+}
+
 test("provider payment summary only includes payments from the selected month", () => {
   const julyPayment =
     createProviderBill({
@@ -190,6 +261,133 @@ test("provider payment summary only includes payments from the selected month", 
     [
       "august-payment",
     ]
+  );
+});
+
+test("transaction delete preparation detaches linked provider bills", () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-delete-linked-provider-bill";
+  const transactionId =
+    "water-payment-transaction";
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Delete Linked Provider Bill",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [],
+        createdAt:
+          "2026-07-01T00:00:00.000Z",
+        updatedAt:
+          "2026-07-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  TransactionRepository.replaceForHousehold(
+    householdId,
+    [
+      createTransaction({
+        id:
+          transactionId,
+        householdId,
+      }),
+    ]
+  );
+
+  UtilityProviderBillRepository.create(
+    createProviderBill({
+      id:
+        "water-provider-bill",
+      householdId,
+      utilityType:
+        "water",
+      unit:
+        "m3",
+      providerName:
+        "Maynilad",
+      status:
+        "paid",
+      paidByMemberId:
+        "member-1",
+      sourceAccountId:
+        "cash",
+      paidAt:
+        new Date(
+          "2026-07-13T00:00:00"
+        ),
+      paymentReferenceNumber:
+        "WATER-PAID",
+      transactionId,
+    })
+  );
+
+  const detachResult =
+    TransactionService
+      .detachUtilityProviderBillsForTransaction(
+        transactionId
+      );
+
+  assert.equal(
+    detachResult.success,
+    true
+  );
+  assert.equal(
+    detachResult.data?.length,
+    1
+  );
+
+  const detachedProviderBill =
+    UtilityProviderBillRepository.findById(
+      "water-provider-bill"
+    );
+
+  assert.equal(
+    detachedProviderBill?.status,
+    "unpaid"
+  );
+  assert.equal(
+    detachedProviderBill?.transactionId,
+    ""
+  );
+  assert.equal(
+    detachedProviderBill?.paidAt,
+    null
+  );
+
+  const restoreResult =
+    TransactionService.restoreUtilityProviderBills(
+      detachResult.data ?? []
+    );
+
+  assert.equal(
+    restoreResult.success,
+    true
+  );
+
+  const restoredProviderBill =
+    UtilityProviderBillRepository.findById(
+      "water-provider-bill"
+    );
+
+  assert.equal(
+    restoredProviderBill?.status,
+    "paid"
+  );
+  assert.equal(
+    restoredProviderBill?.transactionId,
+    transactionId
   );
 });
 

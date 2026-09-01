@@ -24,6 +24,10 @@ import {
 } from "../../household/services/householdStorage";
 
 import AllocationPaymentService from "../../settlements/services/AllocationPaymentService";
+import type {
+  UtilityProviderBill,
+} from "../../utilities/models/UtilityProviderBill";
+import UtilityProviderBillRepository from "../../utilities/repositories/UtilityProviderBillRepository";
 
 import ExpenseAllocationService from "./ExpenseAllocationService";
 
@@ -1376,6 +1380,90 @@ export default class TransactionService {
     return OperationResults.success(
       true,
       "Transaction deleted successfully."
+    );
+  }
+
+  /**
+   * Reopens utility provider bills that still point to a
+   * transaction which is about to be deleted.
+   */
+  static detachUtilityProviderBillsForTransaction(
+    transactionId: string
+  ): OperationResult<UtilityProviderBill[]> {
+    const existing =
+      TransactionRepository.findById(
+        transactionId
+      );
+
+    if (!existing) {
+      return OperationResults.failure<
+        UtilityProviderBill[]
+      >(
+        {
+          general:
+            "Transaction not found.",
+        },
+        "Unable to prepare linked utility bills."
+      );
+    }
+
+    const linkedProviderBills =
+      UtilityProviderBillRepository
+        .findActiveByHouseholdId(
+          existing.householdId
+        )
+        .filter(
+          (providerBill) =>
+            providerBill.transactionId ===
+            transactionId
+        );
+
+    if (
+      linkedProviderBills.length === 0
+    ) {
+      return OperationResults.success(
+        []
+      );
+    }
+
+    for (const providerBill of linkedProviderBills) {
+      UtilityProviderBillRepository.update({
+        ...providerBill,
+        status: "unpaid",
+        paidByMemberId: "",
+        sourceAccountId: "",
+        paidAt: null,
+        paymentReferenceNumber: "",
+        paymentAttachments: [],
+        transactionId: "",
+        updatedAt: new Date(),
+      });
+    }
+
+    return OperationResults.success(
+      linkedProviderBills
+    );
+  }
+
+  static restoreUtilityProviderBills(
+    providerBills: UtilityProviderBill[]
+  ): OperationResult<UtilityProviderBill[]> {
+    const restoredProviderBills: UtilityProviderBill[] =
+      [];
+
+    for (const providerBill of providerBills) {
+      const restoredProviderBill =
+        UtilityProviderBillRepository.update(
+          providerBill
+        );
+
+      restoredProviderBills.push(
+        restoredProviderBill
+      );
+    }
+
+    return OperationResults.success(
+      restoredProviderBills
     );
   }
 

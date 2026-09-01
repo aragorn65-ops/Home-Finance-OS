@@ -183,6 +183,61 @@ test("Supabase core snapshot save RPC clears settlement applications before dele
   );
 });
 
+test("Supabase core snapshot save RPC detaches utility bills before deleted transactions", () => {
+  const schemaSql =
+    readFileSync(
+      join(
+        process.cwd(),
+        "..",
+        "docs",
+        "architecture",
+        "supabase-spike-schema.sql"
+      ),
+      "utf8"
+    );
+  const functionStart =
+    schemaSql.indexOf(
+      "create or replace function public.save_household_core_snapshot"
+    );
+  const functionEnd =
+    schemaSql.indexOf(
+      "revoke all on function public.save_household_core_snapshot",
+      functionStart
+    );
+  const functionSql =
+    schemaSql.slice(
+      functionStart,
+      functionEnd
+    );
+  const providerBillDetachIndex =
+    functionSql.indexOf(
+      "update public.utility_provider_bills remote_provider_bill"
+    );
+  const transactionDeleteIndex =
+    functionSql.indexOf(
+      "delete from public.transactions remote_transaction"
+    );
+
+  assert.ok(
+    providerBillDetachIndex > -1
+  );
+  assert.ok(
+    transactionDeleteIndex > -1
+  );
+  assert.ok(
+    providerBillDetachIndex <
+      transactionDeleteIndex
+  );
+  assert.match(
+    functionSql,
+    /remote_provider_bill\.transaction_id = remote_transaction\.id/
+  );
+  assert.match(
+    functionSql,
+    /transaction_id = null/
+  );
+});
+
 test("Supabase core snapshot save RPC persists utility provider bills", () => {
   const schemaSql =
     readFileSync(
