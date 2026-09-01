@@ -963,7 +963,7 @@ export default function UtilitiesPage() {
                 selectedMonth
               )
             }
-            submitLabel="Save Provider Bill"
+            submitLabel="Save Unpaid Bill"
             onSubmit={handleSave}
           />
         )}
@@ -1352,6 +1352,18 @@ function ProviderBillPaymentControls({
 
       {!isReadOnly && (
       <>
+      <div>
+        <h4 className="text-sm font-semibold text-slate-900">
+          Record Payment
+        </h4>
+
+        <p className="mt-1 text-sm text-slate-500">
+          Use this when the saved bill has actually been
+          paid. Marking paid creates the utility
+          transaction and settlement balances.
+        </p>
+      </div>
+
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
         <label className="text-sm font-medium text-slate-700">
           Paid By
@@ -1493,7 +1505,7 @@ function ProviderBillPaymentControls({
           >
             {isMarkingPaid
               ? "Marking..."
-              : "Mark Paid"}
+              : "Mark Bill Paid"}
           </button>
         </div>
 

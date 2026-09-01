@@ -15,11 +15,6 @@ import FormValidationAlert from "../../../shared/ui/FormValidationAlert";
 import openAttachmentPreview, {
   hasAttachmentPreviewData,
 } from "../../../shared/utils/openAttachmentPreview";
-import {
-  getAccountVisibilityLabel,
-  isAccountVisibleForMember,
-} from "../../accounts/services/accountVisibility";
-
 import type {
   UtilityApplianceUsageForm,
   UtilityBillForm as UtilityBillFormData,
@@ -204,7 +199,6 @@ function readFileAsDataUrl(
 
 export default function UtilityBillForm({
   members,
-  accounts = [],
   initialValue,
   defaultDate,
   submitLabel = "Save Utility Bill",
@@ -291,24 +285,6 @@ export default function UtilityBillForm({
         ),
       [members]
     );
-
-  const availableAccounts =
-    useMemo(() => {
-      if (!form.paidByMemberId) {
-        return [];
-      }
-
-      return accounts.filter(
-        (account) =>
-          isAccountVisibleForMember(
-            account,
-            form.paidByMemberId
-          )
-      );
-    }, [
-      accounts,
-      form.paidByMemberId,
-    ]);
 
   const derivedWaterRatePerUnit =
     form.utilityType === "water" &&
@@ -830,7 +806,7 @@ export default function UtilityBillForm({
           )}
 
           <UtilityEntryTabButton
-            label="Files & Payment"
+            label="Files"
             isActive={activeTab === "files"}
             onClick={() => setActiveTab("files")}
           />
@@ -1554,7 +1530,6 @@ export default function UtilityBillForm({
       )}
 
       {activeTab === "files" && (
-      <>
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-6">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -1738,195 +1713,6 @@ export default function UtilityBillForm({
           </p>
         )}
       </section>
-
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <header className="mb-6">
-          <h2 className="text-xl font-semibold text-slate-900">
-            Payment Details
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Leave these blank while the bill is unpaid.
-            Add the payer, account, and receipt after a
-            member pays the provider.
-          </p>
-        </header>
-
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          <Field label="Paid By">
-            <select
-              className={inputClassName}
-              value={
-                form.paidByMemberId
-              }
-              onChange={(event) => {
-                const paidByMemberId =
-                  event.target.value;
-
-                setForm(
-                  (current) => ({
-                    ...current,
-
-                    paidByMemberId,
-                    sourceAccountId: "",
-                  })
-                );
-
-                clearPreview();
-              }}
-            >
-              <option value="">
-                Select payer
-              </option>
-
-              {members.map(
-                (member) => (
-                  <option
-                    key={member.id}
-                    value={member.id}
-                  >
-                    {member.name}
-                  </option>
-                )
-              )}
-            </select>
-          </Field>
-
-          <Field
-            label="Payment Account"
-            helper="Optional."
-          >
-            <select
-              className={`${inputClassName} disabled:cursor-not-allowed disabled:opacity-60`}
-              value={
-                form.sourceAccountId
-              }
-              disabled={
-                !form.paidByMemberId
-              }
-              onChange={(event) =>
-                updateField(
-                  "sourceAccountId",
-                  event.target.value
-                )
-              }
-            >
-              <option value="">
-                {form.paidByMemberId
-                  ? "No account"
-                  : "Select payer first"}
-              </option>
-
-              {availableAccounts.map(
-                (account) => (
-                  <option
-                    key={account.id}
-                    value={account.id}
-                  >
-                    {account.name} -{" "}
-                    {getAccountVisibilityLabel(
-                      account
-                    )}
-                  </option>
-                )
-              )}
-            </select>
-          </Field>
-
-          <Field label="Transaction Date">
-            <input
-              className={inputClassName}
-              type="date"
-              value={
-                form.transactionDate
-              }
-              onChange={(event) =>
-                updateField(
-                  "transactionDate",
-                  event.target.value
-                )
-              }
-            />
-          </Field>
-
-          <Field label="Visibility">
-            <select
-              className={inputClassName}
-              value={form.visibility}
-              onChange={(event) =>
-                updateField(
-                  "visibility",
-                  event.target
-                    .value as UtilityBillFormData["visibility"]
-                )
-              }
-            >
-              <option value="household">
-                Household
-              </option>
-
-              <option value="participants">
-                Participants
-              </option>
-
-              <option value="private">
-                Private
-              </option>
-            </select>
-          </Field>
-
-          <Field label="Description">
-            <input
-              className={inputClassName}
-              type="text"
-              value={
-                form.description
-              }
-              onChange={(event) =>
-                updateField(
-                  "description",
-                  event.target.value
-                )
-              }
-              placeholder="Electricity utility bill"
-            />
-          </Field>
-
-          <div className="flex items-end">
-            <label className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(event) =>
-                  updateField(
-                    "isActive",
-                    event.target.checked
-                  )
-                }
-              />
-
-              Active transaction
-            </label>
-          </div>
-
-          <div className="md:col-span-2 lg:col-span-3">
-            <Field label="Notes">
-              <textarea
-                className={`${inputClassName} min-h-24`}
-                value={form.notes}
-                onChange={(event) =>
-                  updateField(
-                    "notes",
-                    event.target.value
-                  )
-                }
-                placeholder="Optional bill or payment notes"
-              />
-            </Field>
-          </div>
-        </div>
-      </section>
-      </>
       )}
 
       {activeTab === "review" &&
@@ -1989,7 +1775,7 @@ export default function UtilityBillForm({
             calculatePreview
           }
         >
-          Calculate Shares
+          Calculate Bill Shares
         </button>
 
         {onSubmit && (
