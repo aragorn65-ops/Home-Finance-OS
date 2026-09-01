@@ -28,6 +28,11 @@ import type {
 
 import UtilityProviderBillRepository from "../repositories/UtilityProviderBillRepository";
 
+export interface UtilityProviderBillDuplicateMatch {
+  providerBill: UtilityProviderBill;
+  reasons: string[];
+}
+
 export default class UtilityProviderBillService {
   static getActiveProviderBills():
     UtilityProviderBill[] {
@@ -74,6 +79,112 @@ export default class UtilityProviderBillService {
         (left, right) =>
           (right.paidAt?.getTime() ?? 0) -
           (left.paidAt?.getTime() ?? 0)
+      );
+  }
+
+  static findPotentialDuplicates(
+    form: UtilityBillForm
+  ): UtilityProviderBillDuplicateMatch[] {
+    const household =
+      loadHousehold();
+
+    if (!household) {
+      return [];
+    }
+
+    const normalizedProvider =
+      normalizeProviderName(
+        form.providerName
+      );
+    const billingMonth =
+      getMonthKey(form.billingDate);
+    const amountCents =
+      toCents(form.totalBillAmount);
+
+    if (
+      !billingMonth ||
+      amountCents <= 0
+    ) {
+      return [];
+    }
+
+    return UtilityProviderBillRepository
+      .findActiveByHouseholdId(
+        household.id
+      )
+      .map((providerBill) => {
+        const reasons: string[] =
+          [];
+        const sameProvider =
+          normalizedProvider.length >
+            0 &&
+          normalizeProviderName(
+            providerBill.providerName
+          ) === normalizedProvider;
+        const sameFallbackProvider =
+          normalizedProvider.length ===
+            0 &&
+          providerBill.utilityType ===
+            form.utilityType;
+        const sameAmount =
+          toCents(
+            providerBill.totalBillAmount
+          ) === amountCents;
+        const sameBillingMonth =
+          getMonthKey(
+            providerBill.billingDate
+          ) === billingMonth;
+
+        if (
+          providerBill.utilityType ===
+          form.utilityType
+        ) {
+          reasons.push(
+            "same utility type"
+          );
+        }
+
+        if (
+          sameProvider ||
+          sameFallbackProvider
+        ) {
+          reasons.push(
+            "same provider"
+          );
+        }
+
+        if (sameBillingMonth) {
+          reasons.push(
+            "same billing month"
+          );
+        }
+
+        if (sameAmount) {
+          reasons.push(
+            "same bill amount"
+          );
+        }
+
+        const isDuplicate =
+          (
+            sameProvider ||
+            sameFallbackProvider
+          ) &&
+          sameBillingMonth &&
+          sameAmount;
+
+        return isDuplicate
+          ? {
+              providerBill,
+              reasons,
+            }
+          : undefined;
+      })
+      .filter(
+        (
+          match
+        ): match is UtilityProviderBillDuplicateMatch =>
+          match !== undefined
       );
   }
 
@@ -572,6 +683,44 @@ function parseDateInput(
   )
     ? new Date()
     : date;
+}
+
+function normalizeProviderName(
+  value: string
+): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function getMonthKey(
+  value: string | Date
+): string {
+  const date =
+    value instanceof Date
+      ? value
+      : parseDateInput(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "";
+  }
+
+  return `${date.getFullYear()}-${String(
+    date.getMonth() + 1
+  ).padStart(2, "0")}`;
+}
+
+function toCents(
+  amount: number
+): number {
+  return Math.round(
+    amount * 100
+  );
 }
 
 function isValidDate(

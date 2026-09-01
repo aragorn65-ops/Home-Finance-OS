@@ -1,9 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import {
+  createStorageEnvelope,
+  installBrowserStorage,
+} from "./storageTestUtils.ts";
+import {
+  HFOS_STORAGE_KEYS,
+} from "../src/shared/storage/localStorageStore.ts";
+import {
+  defaultUtilityBillForm,
+} from "../src/features/utilities/models/UtilityBillForm";
 import type {
   UtilityProviderBill,
 } from "../src/features/utilities/models/UtilityProviderBill";
+import UtilityProviderBillRepository from "../src/features/utilities/repositories/UtilityProviderBillRepository";
+import UtilityProviderBillService from "../src/features/utilities/services/UtilityProviderBillService";
 import {
   getProviderBillsPaidInMonth,
 } from "../src/features/utilities/services/providerBillMonthFilters";
@@ -178,5 +190,167 @@ test("provider payment summary only includes payments from the selected month", 
     [
       "august-payment",
     ]
+  );
+});
+
+test("provider bill duplicate check finds a misdated paid bill by billing month", () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-utility-duplicate";
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Utility Duplicate",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [],
+        createdAt:
+          "2026-07-01T00:00:00.000Z",
+        updatedAt:
+          "2026-07-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  UtilityProviderBillRepository.create(
+    createProviderBill({
+      id:
+        "july-bill-paid-in-september",
+      householdId,
+      providerName:
+        "Maynilad",
+      utilityType:
+        "water",
+      unit:
+        "m3",
+      billingDate:
+        new Date(
+          "2026-07-15T00:00:00"
+        ),
+      totalBillAmount:
+        4253.45,
+      status:
+        "paid",
+      paidAt:
+        new Date(
+          "2026-09-01T00:00:00"
+        ),
+    })
+  );
+
+  const matches =
+    UtilityProviderBillService
+      .findPotentialDuplicates({
+        ...defaultUtilityBillForm,
+        utilityType:
+          "water",
+        unit:
+          "m3",
+        providerName:
+          " Maynilad ",
+        billingDate:
+          "2026-07-01",
+        totalBillAmount:
+          4253.45,
+      });
+
+  assert.deepEqual(
+    matches.map(
+      (match) =>
+        match.providerBill.id
+    ),
+    [
+      "july-bill-paid-in-september",
+    ]
+  );
+  assert.deepEqual(
+    matches[0]?.reasons,
+    [
+      "same utility type",
+      "same provider",
+      "same billing month",
+      "same bill amount",
+    ]
+  );
+});
+
+test("provider bill duplicate check allows another billing month", () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-utility-not-duplicate";
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Utility Not Duplicate",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [],
+        createdAt:
+          "2026-07-01T00:00:00.000Z",
+        updatedAt:
+          "2026-07-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  UtilityProviderBillRepository.create(
+    createProviderBill({
+      id:
+        "july-water-bill",
+      householdId,
+      providerName:
+        "Maynilad",
+      utilityType:
+        "water",
+      unit:
+        "m3",
+      billingDate:
+        new Date(
+          "2026-07-15T00:00:00"
+        ),
+      totalBillAmount:
+        4253.45,
+    })
+  );
+
+  const matches =
+    UtilityProviderBillService
+      .findPotentialDuplicates({
+        ...defaultUtilityBillForm,
+        utilityType:
+          "water",
+        unit:
+          "m3",
+        providerName:
+          "Maynilad",
+        billingDate:
+          "2026-08-01",
+        totalBillAmount:
+          4253.45,
+      });
+
+  assert.equal(
+    matches.length,
+    0
   );
 });

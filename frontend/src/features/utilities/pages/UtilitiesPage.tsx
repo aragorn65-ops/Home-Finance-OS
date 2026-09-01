@@ -16,6 +16,7 @@ import openAttachmentPreview, {
 import useReportingMonth from "../../../shared/hooks/useReportingMonth";
 import {
   formatDateInput,
+  isSameMonth,
   parseMonthInput,
 } from "../../../shared/utils/monthSelection";
 
@@ -47,10 +48,14 @@ import UtilityProviderBillService from "../services/UtilityProviderBillService";
 import {
   getProviderBillsPaidInMonth,
 } from "../services/providerBillMonthFilters";
+import TransactionService from "../../transactions/services/TransactionService";
 
 import type {
   UtilityProviderBill,
 } from "../models/UtilityProviderBill";
+import type {
+  Transaction,
+} from "../../transactions/models/Transaction";
 
 interface ProviderPaymentForm {
   paidByMemberId: string;
@@ -199,6 +204,36 @@ export default function UtilitiesPage() {
       paidProviderBills,
       selectedMonth
     );
+  const providerBillTransactionIds =
+    new Set(
+      [
+        ...providerBills,
+        ...paidProviderBills,
+      ]
+        .map(
+          (providerBill) =>
+            providerBill.transactionId
+        )
+        .filter(Boolean)
+    );
+  const utilityTransactionsWithoutProviderBill =
+    TransactionService
+      .getActiveTransactions()
+      .filter(
+        (transaction) =>
+          transaction.householdId ===
+            household?.id &&
+          isSameMonth(
+            transaction.transactionDate,
+            selectedMonth
+          ) &&
+          isUtilityTransaction(
+            transaction
+          ) &&
+          !providerBillTransactionIds.has(
+            transaction.id
+          )
+      );
 
   const showNotification = (): void => {
     window.requestAnimationFrame(
@@ -265,12 +300,31 @@ export default function UtilitiesPage() {
       providerBillId
     );
 
+    const providerBill =
+      providerBills.find(
+        (bill) =>
+          bill.id === providerBillId
+      );
+    const paymentForm =
+      getProviderPaymentForm(
+        providerBillId
+      );
+
+    if (
+      providerBill &&
+      !confirmProviderBillPaymentDate(
+        providerBill,
+        paymentForm.paidAt
+      )
+    ) {
+      setMarkingPaidProviderBillId("");
+      return;
+    }
+
     const result =
       await UtilityProviderBillService.markPaid(
         providerBillId,
-        getProviderPaymentForm(
-          providerBillId
-        )
+        paymentForm
       );
 
     if (!result.success) {
@@ -573,6 +627,24 @@ export default function UtilitiesPage() {
     setSaveMessage("");
     setSaveError("");
 
+    const duplicateMatches =
+      UtilityProviderBillService
+        .findPotentialDuplicates(
+          form
+        );
+
+    if (
+      duplicateMatches.length > 0 &&
+      !confirmDuplicateProviderBill(
+        duplicateMatches
+      )
+    ) {
+      setSaveMessage(
+        "Provider bill was not saved because a possible duplicate was found."
+      );
+      return;
+    }
+
     const result =
       UtilityProviderBillService.createUnpaid(
         form,
@@ -847,6 +919,16 @@ export default function UtilitiesPage() {
           />
         )}
 
+        {utilityTransactionsWithoutProviderBill.length >
+          0 && (
+          <TransactionOnlyUtilitySummary
+            transactions={
+              utilityTransactionsWithoutProviderBill
+            }
+            memberNames={memberNames}
+          />
+        )}
+
         {memberOptions.length === 0 ? (
           <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
             <h2 className="font-semibold text-amber-900">
@@ -990,6 +1072,85 @@ function ProviderPaymentsSummary({
   );
 }
 
+function TransactionOnlyUtilitySummary({
+  transactions,
+  memberNames,
+}: {
+  transactions: Transaction[];
+  memberNames: Record<string, string>;
+}) {
+  return (
+    <section className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+      <div>
+        <h2 className="font-semibold text-amber-900">
+          Utility Transactions Without Provider Bills
+        </h2>
+
+        <p className="mt-1 text-sm text-amber-800">
+          These utility expenses are in Transactions but do
+          not have a linked Utilities provider-bill record.
+        </p>
+      </div>
+
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="text-xs uppercase text-amber-700">
+            <tr>
+              <th className="py-2 pr-3">
+                Date
+              </th>
+              <th className="py-2 pr-3">
+                Utility
+              </th>
+              <th className="py-2 pr-3">
+                Paid By
+              </th>
+              <th className="py-2 pr-3 text-right">
+                Amount
+              </th>
+              <th className="py-2">
+                Status
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-amber-200 text-amber-950">
+            {transactions.map(
+              (transaction) => (
+                <tr key={transaction.id}>
+                  <td className="py-3 pr-3">
+                    {transaction.transactionDate.toLocaleDateString()}
+                  </td>
+                  <td className="py-3 pr-3 font-medium">
+                    {transaction.description ||
+                      transaction.category}
+                  </td>
+                  <td className="py-3 pr-3">
+                    {transaction.paidByMemberId
+                      ? memberNames[
+                          transaction
+                            .paidByMemberId
+                        ] ?? "Household member"
+                      : "Not recorded"}
+                  </td>
+                  <td className="py-3 pr-3 text-right font-semibold">
+                    {formatCurrency(
+                      transaction.amount
+                    )}
+                  </td>
+                  <td className="py-3">
+                    Transaction only
+                  </td>
+                </tr>
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function getProviderFallbackLabel(
   providerBill: UtilityProviderBill
 ): string {
@@ -1007,6 +1168,97 @@ function getProviderFallbackLabel(
   }
 
   return "Internet provider";
+}
+
+function isUtilityTransaction(
+  transaction: Transaction
+): boolean {
+  if (
+    transaction.type !== "expense"
+  ) {
+    return false;
+  }
+
+  const category =
+    transaction.category
+      .trim()
+      .toLowerCase();
+
+  return (
+    category === "electricity" ||
+    category === "water" ||
+    category === "internet"
+  );
+}
+
+function confirmDuplicateProviderBill(
+  matches: ReturnType<
+    typeof UtilityProviderBillService.findPotentialDuplicates
+  >
+): boolean {
+  const matchLines =
+    matches
+      .slice(0, 3)
+      .map((match) => {
+        const providerBill =
+          match.providerBill;
+
+        return [
+          providerBill.providerName ||
+            getProviderFallbackLabel(
+              providerBill
+            ),
+          getMonthLabel(
+            providerBill.billingDate
+          ),
+          formatCurrency(
+            providerBill.totalBillAmount
+          ),
+          providerBill.status,
+        ].join(" - ");
+      })
+      .join("\n");
+
+  return window.confirm(
+    [
+      "Possible duplicate utility bill found.",
+      "",
+      matchLines,
+      "",
+      "Cancel to review the existing bill. OK to save anyway.",
+    ].join("\n")
+  );
+}
+
+function confirmProviderBillPaymentDate(
+  providerBill: UtilityProviderBill,
+  paidAt: string
+): boolean {
+  const paymentDate =
+    parseDateInput(paidAt);
+
+  if (
+    Number.isNaN(
+      paymentDate.getTime()
+    ) ||
+    isSameMonth(
+      providerBill.billingDate,
+      paymentDate
+    )
+  ) {
+    return true;
+  }
+
+  return window.confirm(
+    [
+      "Payment date month differs from the bill month.",
+      "",
+      `Bill month: ${getMonthLabel(providerBill.billingDate)}`,
+      `Payment month: ${getMonthLabel(paymentDate)}`,
+      "",
+      "Cancel to fix the date. OK to mark paid anyway.",
+    ].join("\n")
+  );
 }
 
 interface ProviderBillPaymentControlsProps {
@@ -1583,6 +1835,31 @@ function createAttachmentId(): string {
   return `payment-receipt-${Date.now()}-${Math.random()
     .toString(36)
     .slice(2)}`;
+}
+
+function parseDateInput(
+  value: string
+): Date {
+  const date =
+    new Date(`${value}T00:00:00`);
+
+  return Number.isNaN(
+    date.getTime()
+  )
+    ? new Date("")
+    : date;
+}
+
+function getMonthLabel(
+  date: Date
+): string {
+  return new Intl.DateTimeFormat(
+    "en",
+    {
+      month: "long",
+      year: "numeric",
+    }
+  ).format(date);
 }
 
 function formatCurrency(

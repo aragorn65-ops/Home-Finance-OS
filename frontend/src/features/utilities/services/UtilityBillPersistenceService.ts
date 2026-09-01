@@ -20,8 +20,10 @@ import {
 } from "../../../config/auth";
 import {
   getAuthBackendAdapter,
+} from "../../auth/services/createAuthBackendAdapter";
+import {
   saveLinkedRemoteCoreSnapshot,
-} from "../../auth";
+} from "../../auth/services/coreSnapshotSync";
 import {
   browserCoreSnapshotRecordSource,
 } from "../../auth/services/browserCoreSnapshotRecordSource";
