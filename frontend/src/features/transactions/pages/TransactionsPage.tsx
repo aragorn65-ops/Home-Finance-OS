@@ -501,8 +501,8 @@ export default function TransactionsPage() {
         Object.values(errors)[0];
 
       setDeleteError(
-        result.message ??
-          firstError ??
+        firstError ??
+          result.message ??
           "Unable to delete the transaction."
       );
       setIsDeletingTransaction(false);
