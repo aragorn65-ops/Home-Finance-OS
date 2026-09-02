@@ -7,6 +7,10 @@ import type { Transaction } from "../models/Transaction";
 
 import TransactionListItem from "./TransactionListItem";
 
+type ProviderPaymentStatus =
+  | "paid"
+  | "unpaid";
+
 type TransactionListProps = {
   transactions: Transaction[];
   accounts: Account[];
@@ -14,6 +18,10 @@ type TransactionListProps = {
   paymentStatusByTransactionId: Record<
     string,
     AllocationPaymentStatus | undefined
+  >;
+  providerPaymentStatusByTransactionId?: Record<
+    string,
+    ProviderPaymentStatus | undefined
   >;
   onView?: (transaction: Transaction) => void;
   onEdit?: (transaction: Transaction) => void;
@@ -25,6 +33,7 @@ export default function TransactionList({
   accounts,
   currency,
   paymentStatusByTransactionId,
+  providerPaymentStatusByTransactionId = {},
   onView,
   onEdit,
   onDelete,
@@ -76,6 +85,11 @@ export default function TransactionList({
           transaction={transaction}
           paymentStatus={
             paymentStatusByTransactionId[
+              transaction.id
+            ]
+          }
+          providerPaymentStatus={
+            providerPaymentStatusByTransactionId[
               transaction.id
             ]
           }

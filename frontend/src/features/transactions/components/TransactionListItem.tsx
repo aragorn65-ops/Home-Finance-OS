@@ -6,9 +6,14 @@ import {
 
 import type { AllocationPaymentStatus } from "../models/ExpenseAllocation";
 
+type ProviderPaymentStatus =
+  | "paid"
+  | "unpaid";
+
 type TransactionListItemProps = {
   transaction: Transaction;
   paymentStatus?: AllocationPaymentStatus;
+  providerPaymentStatus?: ProviderPaymentStatus;
   sourceAccountName?: string;
   destinationAccountName?: string;
   currency?: string;
@@ -36,7 +41,9 @@ function getTypeLabel(
 }
 
 function getPaymentStatusLabel(
-  status: AllocationPaymentStatus
+  status:
+    | AllocationPaymentStatus
+    | ProviderPaymentStatus
 ): string {
   switch (status) {
     case "partially-paid":
@@ -52,7 +59,9 @@ function getPaymentStatusLabel(
 }
 
 function getPaymentStatusClasses(
-  status: AllocationPaymentStatus
+  status:
+    | AllocationPaymentStatus
+    | ProviderPaymentStatus
 ): string {
   switch (status) {
     case "paid":
@@ -94,6 +103,7 @@ function getAccountSummary(
 export default function TransactionListItem({
   transaction,
   paymentStatus,
+  providerPaymentStatus,
   sourceAccountName,
   destinationAccountName,
   currency,
@@ -123,6 +133,9 @@ export default function TransactionListItem({
     sourceAccountName,
     destinationAccountName
   );
+  const visiblePaymentStatus =
+    providerPaymentStatus ??
+    paymentStatus;
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border bg-white p-4 md:flex-row md:items-center md:justify-between">
@@ -132,14 +145,14 @@ export default function TransactionListItem({
             {getTypeLabel(transaction.type)}
           </span>
 
-          {paymentStatus && (
+          {visiblePaymentStatus && (
             <span
               className={`rounded-full px-2.5 py-1 text-xs font-medium ${getPaymentStatusClasses(
-                paymentStatus
+                visiblePaymentStatus
               )}`}
             >
               {getPaymentStatusLabel(
-                paymentStatus
+                visiblePaymentStatus
               )}
             </span>
           )}

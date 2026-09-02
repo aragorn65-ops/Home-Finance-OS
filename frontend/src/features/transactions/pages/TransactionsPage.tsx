@@ -32,6 +32,7 @@ import {
 } from "../../household/services/householdStorage";
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+import UtilityProviderBillService from "../../utilities/services/UtilityProviderBillService";
 
 import TransactionDeleteConfirmation from "../components/TransactionDeleteConfirmation";
 import TransactionDetails from "../components/TransactionDetails";
@@ -576,6 +577,35 @@ export default function TransactionsPage() {
       {}
     );
 
+  const providerPaymentStatusByTransactionId =
+    [
+      ...UtilityProviderBillService
+        .getActiveProviderBills(),
+      ...UtilityProviderBillService
+        .getPaidProviderBills(),
+    ].reduce<
+      Record<
+        string,
+        "paid" | "unpaid" | undefined
+      >
+    >(
+      (
+        statuses,
+        providerBill
+      ) => {
+        if (
+          providerBill.transactionId
+        ) {
+          statuses[
+            providerBill.transactionId
+          ] = providerBill.status;
+        }
+
+        return statuses;
+      },
+      {}
+    );
+
   const isFormDialogOpen =
     !isReadOnlyMember &&
     (
@@ -608,6 +638,9 @@ export default function TransactionsPage() {
           currency={currency}
           paymentStatusByTransactionId={
             paymentStatusByTransactionId
+          }
+          providerPaymentStatusByTransactionId={
+            providerPaymentStatusByTransactionId
           }
           onView={
             handleViewTransaction
