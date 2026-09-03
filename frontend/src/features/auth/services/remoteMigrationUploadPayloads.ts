@@ -8,6 +8,9 @@ import type {
   ExpenseAllocation,
 } from "../../transactions/models/ExpenseAllocation";
 import createAttachmentMetadataRecords from "../../../shared/utils/createAttachmentMetadataRecords";
+import {
+  formatDateInput,
+} from "../../../shared/utils/monthSelection";
 import type {
   RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadRecord,
@@ -102,8 +105,10 @@ function createAccountUploadRecord(
       account.exchangeRate,
     exchangeRateEffectiveDate:
       account.exchangeRateEffectiveDate
-        ?.toISOString()
-        .slice(0, 10),
+        ? formatDateInput(
+            account.exchangeRateEffectiveDate
+          )
+        : undefined,
     exchangeRateSource:
       account.exchangeRateSource,
     exchangeRateProvider:
@@ -126,8 +131,10 @@ function createAccountUploadRecord(
       account.minimumPayment,
     paymentDueDate:
       account.paymentDueDate
-        ?.toISOString()
-        .slice(0, 10),
+        ? formatDateInput(
+            account.paymentDueDate
+          )
+        : undefined,
     isActive:
       account.isActive,
     createdAt:
@@ -167,8 +174,10 @@ function createTransactionUploadRecord(
       transaction.exchangeRate,
     exchangeRateEffectiveDate:
       transaction.exchangeRateEffectiveDate
-        ?.toISOString()
-        .slice(0, 10),
+        ? formatDateInput(
+            transaction.exchangeRateEffectiveDate
+          )
+        : undefined,
     exchangeRateSource:
       transaction.exchangeRateSource,
     exchangeRateProvider:
@@ -188,9 +197,9 @@ function createTransactionUploadRecord(
         transaction.attachments ?? []
       ),
     transactionDate:
-      transaction.transactionDate
-        .toISOString()
-        .slice(0, 10),
+      formatDateInput(
+        transaction.transactionDate
+      ),
     isActive:
       transaction.isActive,
     createdAt:

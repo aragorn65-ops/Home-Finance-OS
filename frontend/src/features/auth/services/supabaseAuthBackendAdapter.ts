@@ -45,6 +45,9 @@ import type {
 import type {
   HouseholdMember,
 } from "../../household/models/HouseholdMember";
+import {
+  formatDateInput,
+} from "../../../shared/utils/monthSelection";
 
 interface SupabaseAuthClient {
   auth: {
@@ -4047,9 +4050,7 @@ function mapUtilityProviderBill(
 function formatDateOnly(
   date: Date
 ): string {
-  return date
-    .toISOString()
-    .slice(0, 10);
+  return formatDateInput(date);
 }
 
 function createRemoteHouseholdResult(

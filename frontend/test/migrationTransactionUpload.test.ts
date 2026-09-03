@@ -264,3 +264,81 @@ test(
     );
   }
 );
+
+test(
+  "transaction upload payload preserves local calendar dates",
+  () => {
+    const transaction: Transaction = {
+      id:
+        "transaction-september-1",
+      householdId:
+        "household-1",
+      createdByMemberId:
+        "member-local-1",
+      paidByMemberId:
+        "member-local-1",
+      expenseSplitMethod:
+        "none",
+      visibility:
+        "household",
+      type:
+        "expense",
+      amount:
+        4253.45,
+      enteredAmount:
+        4253.45,
+      enteredCurrency:
+        "PHP",
+      baseCurrency:
+        "PHP",
+      baseAmount:
+        4253.45,
+      exchangeRate:
+        1,
+      exchangeRateEffectiveDate:
+        new Date(2026, 8, 1),
+      exchangeRateSource:
+        "manual",
+      sourceAccountId:
+        "account-1",
+      destinationAccountId:
+        null,
+      category:
+        "Water",
+      description:
+        "Water utility bill",
+      notes:
+        "",
+      attachments: [],
+      transactionDate:
+        new Date(2026, 8, 1),
+      isActive:
+        true,
+      createdAt:
+        new Date(
+          "2026-09-01T12:00:00Z"
+        ),
+      updatedAt:
+        new Date(
+          "2026-09-01T13:00:00Z"
+        ),
+    };
+
+    const payload =
+      createMigrationTransactionUploadPayload(
+        [transaction],
+        "household-1"
+      );
+
+    assert.equal(
+      payload.transactions[0]
+        ?.transactionDate,
+      "2026-09-01"
+    );
+    assert.equal(
+      payload.transactions[0]
+        ?.exchangeRateEffectiveDate,
+      "2026-09-01"
+    );
+  }
+);
