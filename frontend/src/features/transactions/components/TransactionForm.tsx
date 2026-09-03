@@ -3134,6 +3134,23 @@ export default function TransactionForm({
                               )
                             )}
 
+                            {allocation.personalItems
+                              .length > 0 && (
+                              <div className="flex justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleAddPersonalItem(
+                                      allocation.memberId
+                                    )
+                                  }
+                                  className="rounded-md border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
+                                >
+                                  Add Another Personal Item
+                                </button>
+                              </div>
+                            )}
+
                             <div className="flex items-center justify-between border-t pt-3 text-sm">
                               <span className="text-muted-foreground">
                                 Personal Subtotal
