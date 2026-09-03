@@ -57,11 +57,13 @@ import SettlementService from "../services/SettlementService";
 import SettlementAllocationService from "../services/SettlementAllocationService";
 
 import SettlementApplicationDetailsService from "../services/SettlementApplicationDetailsService";
+import SettlementOverpaymentCreditService from "../services/SettlementOverpaymentCreditService";
 
 import type { Settlement } from "../models/Settlement";
 import type { SettlementAllocationOption } from "../models/SettlementAllocationOption";
 import type { MemberSettlementBalance } from "../models/MemberSettlementBalance";
 import type { MemberSettlementObligation } from "../models/MemberSettlementObligation";
+import type { SettlementOverpaymentCredit } from "../models/SettlementOverpaymentCredit";
 
 import type {
   SettlementForm as SettlementFormData,
@@ -342,6 +344,93 @@ function totalObligations(
         total + obligation.amount,
       0
     )
+  );
+}
+
+function totalOverpaymentCredits(
+  credits: SettlementOverpaymentCredit[]
+): number {
+  return roundCurrency(
+    credits.reduce(
+      (total, credit) =>
+        total + credit.amount,
+      0
+    )
+  );
+}
+
+function OverpaymentCreditSummary({
+  credits,
+  currency,
+  getMemberName,
+}: {
+  credits: SettlementOverpaymentCredit[];
+  currency?: string;
+  getMemberName: (memberId: string) => string;
+}) {
+  if (credits.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="rounded-lg border bg-white p-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">
+            Open Overpayment Credits
+          </h2>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Extra settlement payments kept separate from unpaid expense balances.
+          </p>
+        </div>
+
+        <p className="text-2xl font-semibold text-foreground">
+          {formatCurrency(
+            totalOverpaymentCredits(
+              credits
+            ),
+            currency
+          )}
+        </p>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {credits.map((credit) => (
+          <div
+            key={
+              credit.settlementId
+            }
+            className="flex flex-col gap-2 rounded-md border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p className="font-medium text-foreground">
+                {getMemberName(
+                  credit.creditMemberId
+                )}{" "}
+                has credit with{" "}
+                {getMemberName(
+                  credit.counterpartyMemberId
+                )}
+              </p>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                From settlement on{" "}
+                {credit.settlementDate
+                  .toLocaleDateString()}
+              </p>
+            </div>
+
+            <p className="text-lg font-semibold text-foreground">
+              {formatCurrency(
+                credit.amount,
+                currency
+              )}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -1132,6 +1221,21 @@ export default function SettlementsPage() {
       ]
     );
 
+  const overpaymentCredits =
+    useMemo(
+      () =>
+        household
+          ? SettlementOverpaymentCreditService
+              .getOpenCredits(
+                household.id
+              )
+          : [],
+      [
+        household,
+        settlements,
+      ]
+    );
+
   const formAllocationOptions =
     household
       ? dialogMode === "edit" &&
@@ -1232,6 +1336,16 @@ export default function SettlementsPage() {
             currentMonthOutstandingAllocations
           }
           currency={currency}
+        />
+
+        <OverpaymentCreditSummary
+          credits={
+            overpaymentCredits
+          }
+          currency={currency}
+          getMemberName={
+            getMemberName
+          }
         />
 
         <WhoOwesWhomSummary

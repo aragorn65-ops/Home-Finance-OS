@@ -106,6 +106,23 @@ export default function SettlementListItem({
       sourceAccountName,
       destinationAccountName
     );
+  const appliedTotal =
+    applicationDetails.reduce(
+      (total, application) =>
+        total +
+        application.appliedAmount,
+      0
+    );
+  const overpaymentAmount =
+    Math.max(
+      Math.round(
+        (
+          settlement.amount -
+          appliedTotal
+        ) * 100
+      ) / 100,
+      0
+    );
 
   return (
     <div className="settlement-history-card grid gap-3 rounded-lg border px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
@@ -129,6 +146,17 @@ export default function SettlementListItem({
         <p className="settlement-history-card__text text-sm">
           {accountSummary}
         </p>
+
+        {overpaymentAmount > 0 && (
+          <p className="mt-1 text-sm font-medium text-primary">
+            Includes{" "}
+            {formatCurrency(
+              overpaymentAmount,
+              currency
+            )}{" "}
+            overpayment credit
+          </p>
+        )}
 
         {settlement.referenceNumber && (
           <p className="settlement-history-card__text text-xs">

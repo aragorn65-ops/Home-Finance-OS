@@ -273,13 +273,13 @@ export default class SettlementValidator {
       );
 
     if (
-      !this.amountsMatch(
+      this.amountExceeds(
         applicationTotal,
         settlementAmount
       )
     ) {
       errors.applications =
-        "Manual application amounts must equal the settlement amount.";
+        "Manual application amounts cannot exceed the settlement amount.";
     }
   }
 
@@ -322,17 +322,13 @@ export default class SettlementValidator {
     }
   }
 
-  /**
-   * Compares currency amounts using
-   * cent-level precision.
-   */
-  private static amountsMatch(
-    firstAmount: number,
-    secondAmount: number
+  private static amountExceeds(
+    amount: number,
+    limit: number
   ): boolean {
     return (
-      Math.round(firstAmount * 100) ===
-      Math.round(secondAmount * 100)
+      Math.round(amount * 100) >
+      Math.round(limit * 100)
     );
   }
 }

@@ -758,49 +758,27 @@ export default function SettlementForm({
       form.applications,
     ]);
 
-  const manualSelectedOutstandingTotal =
-    useMemo(() => {
-      const selectedAllocationIds =
-        new Set(
-          form.applications
-            .filter(
-              (application) =>
-                application.isSelected
-            )
-            .map(
-              (application) =>
-                application.expenseAllocationId
-            )
-        );
-
-      const total =
-        eligibleAllocationOptions.reduce(
-          (
-            currentTotal,
-            option
-          ) =>
-            selectedAllocationIds.has(
-              option.expenseAllocationId
-            )
-              ? currentTotal +
-                option.outstandingAmount
-              : currentTotal,
-          0
-        );
-
-      return roundCurrency(total);
-    }, [
-      eligibleAllocationOptions,
-      form.applications,
-    ]);
-
-  const manualAmountExceedsSelectedOutstanding =
+  const manualOverpaymentAmount =
     form.applicationMethod ===
       "manual" &&
-    manualSelectedOutstandingTotal > 0 &&
+    form.amount > 0 &&
+    manualApplicationTotal > 0 &&
     amountExceeds(
       form.amount,
-      manualSelectedOutstandingTotal
+      manualApplicationTotal
+    )
+      ? roundCurrency(
+          form.amount -
+            manualApplicationTotal
+        )
+      : 0;
+
+  const manualApplicationTotalExceedsSettlement =
+    form.applicationMethod ===
+      "manual" &&
+    amountExceeds(
+      manualApplicationTotal,
+      form.amount
     );
 
   const clearErrors = (
@@ -1373,17 +1351,10 @@ export default function SettlementForm({
             : [],
       };
 
-    if (
-      submissionForm.applicationMethod ===
-        "manual" &&
-      amountExceeds(
-        submissionForm.amount,
-        manualSelectedOutstandingTotal
-      )
-    ) {
+    if (manualApplicationTotalExceedsSettlement) {
       const nextErrors = {
         applications:
-          "Settlement amount cannot exceed the selected outstanding allocations. Record the extra amount separately as an overpayment credit.",
+          "Manual application amounts cannot exceed the settlement amount.",
       };
 
       setErrors(nextErrors);
@@ -2061,11 +2032,21 @@ export default function SettlementForm({
               </span>
             </div>
 
-            {manualAmountExceedsSelectedOutstanding && (
-              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                Settlement amount exceeds the selected outstanding allocations.
-                Record any extra payment as an overpayment credit separately.
-              </p>
+            {manualOverpaymentAmount > 0 && (
+              <div className="rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-foreground">
+                <p className="font-medium">
+                  Overpayment credit will be recorded
+                </p>
+
+                <p className="mt-1 text-muted-foreground">
+                  {formatAmount(
+                    manualOverpaymentAmount,
+                    currency
+                  )}{" "}
+                  is above the selected outstanding allocations
+                  and will remain visible as member credit.
+                </p>
+              </div>
             )}
           </div>
         )}

@@ -5,6 +5,7 @@ import SettlementService from "../src/features/settlements/services/SettlementSe
 import AllocationPaymentService from "../src/features/settlements/services/AllocationPaymentService.ts";
 import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository.ts";
 import SettlementApplicationRepository from "../src/features/settlements/repositories/SettlementApplicationRepository.ts";
+import SettlementOverpaymentCreditService from "../src/features/settlements/services/SettlementOverpaymentCreditService.ts";
 import {
   recalculateManualSettlementApplications,
 } from "../src/features/settlements/services/manualSettlementApplications.ts";
@@ -402,5 +403,74 @@ test("manual settlement rejects applying more than an allocation outstanding amo
       .getPaymentDetails(groceries)
       .paidAmount,
     0
+  );
+});
+
+test("manual settlement records overpayment credit when payment exceeds applied allocations", () => {
+  seedPartialSettlementFixture();
+
+  const result =
+    SettlementService.create({
+      householdId,
+      fromMemberId: payerMemberId,
+      toMemberId: receiverMemberId,
+      amount: 3500,
+      settlementDate: "2026-08-06",
+      sourceAccountId: "",
+      destinationAccountId: "",
+      applicationMethod: "manual",
+      applications: [
+        {
+          expenseAllocationId:
+            "allocation-groceries",
+          isSelected: true,
+          appliedAmount: 3000,
+        },
+      ],
+      referenceNumber: "",
+      notes: "",
+      attachments: [],
+      isActive: true,
+    });
+
+  assert.equal(
+    result.success,
+    true
+  );
+
+  const settlement =
+    result.data;
+
+  assert.ok(settlement);
+
+  assert.equal(
+    settlement.amount,
+    3500
+  );
+
+  const credits =
+    SettlementOverpaymentCreditService
+      .getOpenCredits(
+        householdId
+      );
+
+  assert.equal(
+    credits.length,
+    1
+  );
+
+  assert.equal(
+    credits[0]?.creditMemberId,
+    payerMemberId
+  );
+
+  assert.equal(
+    credits[0]?.counterpartyMemberId,
+    receiverMemberId
+  );
+
+  assert.equal(
+    credits[0]?.amount,
+    500
   );
 });

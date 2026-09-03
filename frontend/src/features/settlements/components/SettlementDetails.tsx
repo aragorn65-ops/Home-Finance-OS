@@ -145,6 +145,16 @@ export default function SettlementDetails({
         application.appliedAmount,
       0
     );
+  const overpaymentAmount =
+    Math.max(
+      Math.round(
+        (
+          settlement.amount -
+          appliedTotal
+        ) * 100
+      ) / 100,
+      0
+    );
 
   return (
     <div className="space-y-6 rounded-lg border bg-white p-6">
@@ -294,6 +304,47 @@ export default function SettlementDetails({
           </dd>
         </div>
       </dl>
+
+      <section className="grid gap-3 rounded-lg border bg-muted/30 p-4 text-sm sm:grid-cols-3">
+        <div>
+          <p className="text-muted-foreground">
+            Paid Amount
+          </p>
+
+          <p className="mt-1 font-semibold text-foreground">
+            {formatAmount(
+              settlement.amount,
+              currency
+            )}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-muted-foreground">
+            Applied to Outstanding
+          </p>
+
+          <p className="mt-1 font-semibold text-foreground">
+            {formatAmount(
+              appliedTotal,
+              currency
+            )}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-muted-foreground">
+            Overpayment Credit
+          </p>
+
+          <p className="mt-1 font-semibold text-foreground">
+            {formatAmount(
+              overpaymentAmount,
+              currency
+            )}
+          </p>
+        </div>
+      </section>
 
       <section className="space-y-4 border-t pt-5">
         <div className="flex flex-wrap items-center justify-between gap-3">

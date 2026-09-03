@@ -633,13 +633,13 @@ export default class SettlementApplicationService {
     }
 
     if (
-      appliedTotalCents !==
+      appliedTotalCents >
       this.toCents(settlementAmount)
     ) {
       return OperationResults.failure<boolean>(
         {
           applications:
-            "Manual application amounts must equal the settlement amount.",
+            "Manual application amounts cannot exceed the settlement amount.",
         },
         "Unable to validate manual settlement applications."
       );
