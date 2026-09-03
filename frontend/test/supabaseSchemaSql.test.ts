@@ -267,6 +267,18 @@ test("Supabase core snapshot save RPC persists utility provider bills", () => {
     schemaSql,
     /'provider_bills',|snapshot\.provider_bills/
   );
+  assert.match(
+    schemaSql,
+    /when nullif\(provider_bill_record\."paidByMemberId", ''\) is null then null[\s\S]+else coalesce\(paid_by_member\.id, current_member_id\)/
+  );
+  assert.match(
+    schemaSql,
+    /'paidByMemberId', coalesce\(paid_by_member\.local_record_id, paid_by_member\.id::text, transaction_paid_by_member\.local_record_id, transaction_paid_by_member\.id::text, ''\)/
+  );
+  assert.match(
+    schemaSql,
+    /left join public\.household_members transaction_paid_by_member[\s\S]+transaction_paid_by_member\.id = linked_transaction\.paid_by_member_id/
+  );
 });
 
 test("Supabase core snapshot RPC preserves transaction member ids", () => {

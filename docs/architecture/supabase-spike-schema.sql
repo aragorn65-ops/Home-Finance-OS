@@ -3156,7 +3156,10 @@ begin
     coalesce(provider_bill_record."memberShareSnapshot", '[]'::jsonb),
     coalesce(provider_bill_record."billAttachments", '[]'::jsonb),
     coalesce(provider_bill_record."paymentAttachments", '[]'::jsonb),
-    paid_by_member.id,
+    case
+      when nullif(provider_bill_record."paidByMemberId", '') is null then null
+      else coalesce(paid_by_member.id, current_member_id)
+    end,
     source_account.id,
     nullif(provider_bill_record."paidAt", '')::timestamptz,
     nullif(provider_bill_record."paymentReferenceNumber", ''),
@@ -3431,7 +3434,7 @@ begin
             'memberShareSnapshot', remote_provider_bill.member_share_snapshot,
             'billAttachments', remote_provider_bill.bill_attachments,
             'paymentAttachments', remote_provider_bill.payment_attachments,
-            'paidByMemberId', coalesce(paid_by_member.local_record_id, paid_by_member.id::text, ''),
+            'paidByMemberId', coalesce(paid_by_member.local_record_id, paid_by_member.id::text, transaction_paid_by_member.local_record_id, transaction_paid_by_member.id::text, ''),
             'sourceAccountId', coalesce(source_account.local_record_id, ''),
             'paidAt', remote_provider_bill.paid_at,
             'paymentReferenceNumber', coalesce(remote_provider_bill.payment_reference_number, ''),
@@ -3452,6 +3455,8 @@ begin
           on source_account.id = remote_provider_bill.source_account_id
         left join public.transactions linked_transaction
           on linked_transaction.id = remote_provider_bill.transaction_id
+        left join public.household_members transaction_paid_by_member
+          on transaction_paid_by_member.id = linked_transaction.paid_by_member_id
         where remote_provider_bill.household_id = target_household_id
       ),
       '[]'::jsonb
