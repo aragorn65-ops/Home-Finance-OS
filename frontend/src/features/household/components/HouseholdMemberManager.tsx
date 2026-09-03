@@ -111,6 +111,11 @@ export default function HouseholdMemberManager({
   ] = useState("");
 
   const [
+    actionMessage,
+    setActionMessage,
+  ] = useState("");
+
+  const [
     inviteEmail,
     setInviteEmail,
   ] = useState("");
@@ -123,6 +128,11 @@ export default function HouseholdMemberManager({
   const [
     isInviting,
     setIsInviting,
+  ] = useState(false);
+
+  const [
+    sendInviteOnAdd,
+    setSendInviteOnAdd,
   ] = useState(false);
 
   const refreshMembers = () => {
@@ -170,10 +180,12 @@ export default function HouseholdMemberManager({
     setSelectedMember(null);
     setInviteEmail("");
     setInviteMessage("");
+    setSendInviteOnAdd(false);
   };
 
   const handleAddMember = () => {
     setActionError("");
+    setActionMessage("");
     setSelectedMember(null);
     setDialogMode("create");
   };
@@ -182,6 +194,7 @@ export default function HouseholdMemberManager({
     member: HouseholdMember
   ) => {
     setActionError("");
+    setActionMessage("");
     setSelectedMember(member);
     setDialogMode("edit");
   };
@@ -190,10 +203,40 @@ export default function HouseholdMemberManager({
     member: HouseholdMember
   ) => {
     setActionError("");
+    setActionMessage("");
     setInviteMessage("");
     setInviteEmail("");
     setSelectedMember(member);
     setDialogMode("invite");
+  };
+
+  const sendLinkedMemberInvite = async (
+    member: HouseholdMember,
+    email: string
+  ) => {
+    if (!remoteHouseholdId) {
+      throw new Error(
+        "Link this household to Supabase before inviting members."
+      );
+    }
+
+    const membership =
+      await getAuthBackendAdapter()
+        .inviteLinkedHouseholdMember({
+          householdId:
+            remoteHouseholdId,
+          localMemberId:
+            member.id,
+          displayName:
+            member.displayName,
+          email,
+          role:
+            member.role,
+          redirectTo:
+            `${window.location.origin}/app/settings`,
+        });
+
+    return `Magic link sent. ${member.displayName} is linked as ${membership.role}.`;
   };
 
   const handleSubmit = (
@@ -218,6 +261,50 @@ export default function HouseholdMemberManager({
         syncMemberProfileToRemote(
           selectedMember,
           form
+        );
+      }
+
+      if (
+        dialogMode === "create" &&
+        sendInviteOnAdd &&
+        result.data
+      ) {
+        const email =
+          result.data.email?.trim();
+
+        if (!email) {
+          setActionMessage(
+            `${result.data.displayName} was added locally. Add an email before sending an invite.`
+          );
+        } else {
+          setIsInviting(true);
+
+          void sendLinkedMemberInvite(
+            result.data,
+            email
+          )
+            .then((message) => {
+              setActionMessage(
+                message
+              );
+            })
+            .catch((error) => {
+              setActionError(
+                error instanceof Error
+                  ? `${result.data?.displayName ?? "Member"} was added locally, but invite failed: ${error.message}`
+                  : `${result.data?.displayName ?? "Member"} was added locally, but invite failed.`
+              );
+            })
+            .finally(() => {
+              setIsInviting(false);
+            });
+        }
+      } else if (
+        dialogMode === "create" &&
+        result.data
+      ) {
+        setActionMessage(
+          `${result.data.displayName} was added locally.`
         );
       }
 
@@ -319,28 +406,14 @@ export default function HouseholdMemberManager({
               selectedMember.isActive,
           }
         );
-        refreshMembers();
-      }
-
-      const membership =
-        await getAuthBackendAdapter()
-          .inviteLinkedHouseholdMember({
-            householdId:
-              remoteHouseholdId,
-            localMemberId:
-              selectedMember.id,
-            displayName:
-              selectedMember.displayName,
-            email:
-              inviteEmail,
-            role:
-              selectedMember.role,
-            redirectTo:
-              `${window.location.origin}/app/settings`,
-          });
+      refreshMembers();
+    }
 
       setInviteMessage(
-        `Magic link sent. ${selectedMember.displayName} is linked as ${membership.role}.`
+        await sendLinkedMemberInvite(
+          selectedMember,
+          inviteEmail
+        )
       );
     }
     catch (error) {
@@ -383,6 +456,12 @@ export default function HouseholdMemberManager({
         {actionError && (
           <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {actionError}
+          </div>
+        )}
+
+        {actionMessage && (
+          <div className="rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
+            {actionMessage}
           </div>
         )}
 
@@ -602,6 +681,19 @@ export default function HouseholdMemberManager({
               }
               onSubmit={handleSubmit}
               onCancel={closeDialog}
+              showInviteOption={
+                dialogMode === "create"
+              }
+              sendInviteOnSave={
+                sendInviteOnAdd
+              }
+              inviteOptionDisabled={
+                !remoteHouseholdId ||
+                isInviting
+              }
+              onSendInviteOnSaveChange={
+                setSendInviteOnAdd
+              }
             />
           )}
         </DialogBody>

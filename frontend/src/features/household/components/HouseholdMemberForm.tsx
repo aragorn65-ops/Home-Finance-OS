@@ -23,6 +23,12 @@ interface HouseholdMemberFormProps {
   initialValues?: HouseholdMemberFormData;
   isOwner?: boolean;
   submitLabel?: string;
+  sendInviteOnSave?: boolean;
+  showInviteOption?: boolean;
+  inviteOptionDisabled?: boolean;
+  onSendInviteOnSaveChange?: (
+    value: boolean
+  ) => void;
 
   onSubmit: (
     form: HouseholdMemberFormData
@@ -35,6 +41,10 @@ export default function HouseholdMemberForm({
   initialValues,
   isOwner = false,
   submitLabel = "Save Member",
+  sendInviteOnSave = false,
+  showInviteOption = false,
+  inviteOptionDisabled = false,
+  onSendInviteOnSaveChange,
   onSubmit,
   onCancel,
 }: HouseholdMemberFormProps) {
@@ -351,6 +361,35 @@ export default function HouseholdMemberForm({
         <p className="text-sm text-destructive">
           {errors.isActive}
         </p>
+      )}
+
+      {showInviteOption && (
+        <label className="flex items-start gap-3 rounded-md border p-3">
+          <input
+            type="checkbox"
+            checked={sendInviteOnSave}
+            disabled={
+              inviteOptionDisabled
+            }
+            onChange={(event) =>
+              onSendInviteOnSaveChange?.(
+                event.target.checked
+              )
+            }
+            className="mt-0.5 h-4 w-4 rounded border"
+          />
+
+          <span>
+            <span className="block text-sm font-medium text-foreground">
+              Send invite after adding
+            </span>
+
+            <span className="block text-xs text-muted-foreground">
+              Leave this off to add the member now
+              and send the app invite later.
+            </span>
+          </span>
+        </label>
       )}
 
       <div className="flex justify-end gap-3 border-t pt-5">
