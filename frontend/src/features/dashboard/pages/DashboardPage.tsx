@@ -55,6 +55,9 @@ import {
   useHouseholdMembership,
 } from "../../auth";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+import {
+  resolveHouseholdMemberReference,
+} from "../../household/services/householdMemberResolution";
 import useSavings from "../../savings/hooks/useSavings";
 import SettlementAllocationService from "../../settlements/services/SettlementAllocationService";
 import SettlementApplicationDetailsService from "../../settlements/services/SettlementApplicationDetailsService";
@@ -198,12 +201,23 @@ function getCategoryTotals(
 }
 
 function getMemberName(
-  memberId: string
+  memberId: string,
+  householdId: string
 ): string {
+  const resolvedMember =
+    resolveHouseholdMemberReference(
+      HouseholdMemberService.getMembers()
+        .filter(
+          (member) =>
+            member.householdId ===
+            householdId
+        ),
+      memberId
+    );
+
   return (
-    HouseholdMemberService
-      .getMemberById(memberId)
-      ?.displayName ?? "Member"
+    resolvedMember?.displayName ??
+    "Member"
   );
 }
 
@@ -892,7 +906,8 @@ export default function DashboardPage() {
                     <p className="settlement-preview__route">
                       <span>
                         {getMemberName(
-                          preview.fromMemberId
+                          preview.fromMemberId,
+                          householdId
                         )}
                       </span>
                       <ArrowRight
@@ -901,7 +916,8 @@ export default function DashboardPage() {
                       />
                       <span>
                         {getMemberName(
-                          preview.toMemberId
+                          preview.toMemberId,
+                          householdId
                         )}
                       </span>
                     </p>
