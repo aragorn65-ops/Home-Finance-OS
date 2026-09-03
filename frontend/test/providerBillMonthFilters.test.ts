@@ -284,6 +284,121 @@ test("provider payment summary only includes payments from the selected month", 
   );
 });
 
+test("saving an unpaid provider bill persists it for reload", async () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-unpaid-provider-bill";
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Unpaid Provider Bill",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [],
+        createdAt:
+          "2026-07-01T00:00:00.000Z",
+        updatedAt:
+          "2026-07-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  const result =
+    await UtilityProviderBillService
+      .createUnpaid(
+        {
+          ...defaultUtilityBillForm,
+          utilityType:
+            "water",
+          unit:
+            "m3",
+          providerName:
+            "Manila Water",
+          billingDate:
+            "2026-07-13",
+          dueDate:
+            "2026-07-25",
+          totalBillAmount:
+            1409.2,
+          ratePerUnit:
+            1,
+        },
+        {
+          ...createProviderBill({
+            householdId,
+            providerName:
+              "Manila Water",
+            utilityType:
+              "water",
+            unit:
+              "m3",
+          }).calculationSnapshot,
+          utilityType:
+            "water",
+          unit:
+            "m3",
+          totalBillAmount:
+            1409.2,
+          ratePerUnit:
+            1,
+          sharedRemainderAmount:
+            1409.2,
+          totalMemberShares:
+            1409.2,
+          memberShares: [
+            {
+              memberId:
+                "member-1",
+              sharesRemainder:
+                true,
+              submeterConsumption:
+                0,
+              submeterChargeAmount:
+                0,
+              applianceConsumption:
+                0,
+              applianceChargeAmount:
+                0,
+              fixedCompensationAmount:
+                0,
+              directUsageAmount:
+                0,
+              equalSharedAmount:
+                1409.2,
+              finalShareAmount:
+                1409.2,
+            },
+          ],
+        }
+      );
+
+  assert.equal(
+    result.success,
+    true
+  );
+  assert.deepEqual(
+    UtilityProviderBillService
+      .getActiveProviderBills()
+      .map(
+        (providerBill) =>
+          providerBill.providerName
+      ),
+    [
+      "Manila Water",
+    ]
+  );
+});
+
 test("transaction delete preparation detaches linked provider bills", () => {
   const { localStorage } =
     installBrowserStorage();

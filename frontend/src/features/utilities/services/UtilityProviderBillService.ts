@@ -195,10 +195,10 @@ export default class UtilityProviderBillService {
       );
   }
 
-  static createUnpaid(
+  static async createUnpaid(
     form: UtilityBillForm,
     calculation: UtilityBillShareResult
-  ): OperationResult<UtilityProviderBill> {
+  ): Promise<OperationResult<UtilityProviderBill>> {
     const household =
       loadHousehold();
 
@@ -303,6 +303,21 @@ export default class UtilityProviderBillService {
       UtilityProviderBillRepository.create(
         providerBill
       );
+
+    const snapshotResult =
+      await UtilityBillPersistenceService
+        .saveCurrentSnapshot(
+          "Provider bill saved as unpaid and saved to cloud."
+        );
+
+    if (!snapshotResult.success) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        snapshotResult.errors,
+        "Provider bill was saved locally, but the cloud snapshot was not saved. Refresh may restore older cloud data."
+      );
+    }
 
     return OperationResults.success(
       savedProviderBill,

@@ -633,10 +633,10 @@ export default function UtilitiesPage() {
     );
   };
 
-  const handleSave = (
+  const handleSave = async (
     form: UtilityBillFormData,
     calculation: UtilityBillShareResult
-  ): void => {
+  ): Promise<void> => {
     if (isReadOnlyMember) {
       setSaveError(
         "Member access is read-only for utilities."
@@ -666,7 +666,7 @@ export default function UtilitiesPage() {
     }
 
     const result =
-      UtilityProviderBillService.createUnpaid(
+      await UtilityProviderBillService.createUnpaid(
         form,
         calculation
       );
