@@ -405,6 +405,75 @@ export default function UtilitiesPage() {
     setMarkingPaidProviderBillId("");
   };
 
+  const handleRepairProviderBillPaidBy =
+    async (
+      providerBillId: string
+    ): Promise<void> => {
+      if (
+        isReadOnlyMember ||
+        markingPaidProviderBillId
+      ) {
+        return;
+      }
+
+      setSaveMessage("");
+      setSaveError("");
+      setMarkingPaidProviderBillId(
+        providerBillId
+      );
+
+      const result =
+        await UtilityProviderBillService
+          .repairPaidByMember(
+            providerBillId,
+            signedInMember?.id ?? ""
+          );
+
+      if (!result.success) {
+        const errors =
+          result.errors ?? {};
+        const firstError =
+          Object.values(errors)[0];
+
+        setSaveError(
+          firstError ??
+            result.message ??
+            "Unable to repair the provider bill payer."
+        );
+        setValidationAlertErrors(
+          Object.keys(errors).length > 0
+            ? errors
+            : {
+                general:
+                  result.message ??
+                  "Unable to repair the provider bill payer.",
+              }
+        );
+        setIsValidationAlertOpen(true);
+        showNotification();
+        setMarkingPaidProviderBillId("");
+
+        return;
+      }
+
+      setSaveMessage(
+        result.message ??
+          "Provider bill payer repaired."
+      );
+      setValidationAlertErrors({});
+      setIsValidationAlertOpen(false);
+      setProviderBills(
+        UtilityProviderBillService
+          .getActiveProviderBills()
+      );
+      setPaidProviderBills(
+        UtilityProviderBillService
+          .getPaidProviderBills()
+      );
+      showNotification();
+      setMarkingPaidProviderBillId("");
+    };
+
   const handlePaymentReceiptChange = (
     providerBillId: string,
     event:
@@ -936,6 +1005,15 @@ export default function UtilitiesPage() {
               paidProviderBillsForSelectedMonth
             }
             memberNames={memberNames}
+            canRepairPaidBy={
+              !isReadOnlyMember
+            }
+            repairingProviderBillId={
+              markingPaidProviderBillId
+            }
+            onRepairPaidBy={
+              handleRepairProviderBillPaidBy
+            }
           />
         )}
 
@@ -995,9 +1073,17 @@ export default function UtilitiesPage() {
 function ProviderPaymentsSummary({
   providerBills,
   memberNames,
+  canRepairPaidBy,
+  repairingProviderBillId,
+  onRepairPaidBy,
 }: {
   providerBills: UtilityProviderBill[];
   memberNames: Record<string, string>;
+  canRepairPaidBy: boolean;
+  repairingProviderBillId: string;
+  onRepairPaidBy: (
+    providerBillId: string
+  ) => void;
 }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -1042,48 +1128,82 @@ function ProviderPaymentsSummary({
 
           <tbody className="divide-y divide-slate-200 text-slate-700">
             {providerBills.map(
-              (providerBill) => (
-                <tr key={providerBill.id}>
-                  <td className="py-3 pr-3">
-                    {providerBill.paidAt
-                      ? providerBill.paidAt.toLocaleDateString()
-                      : "Paid"}
-                  </td>
-                  <td className="py-3 pr-3 font-medium text-slate-900">
-                    {providerBill.providerName ||
-                      getProviderFallbackLabel(
-                        providerBill
+              (providerBill) => {
+                const paidByName =
+                  memberNames[
+                    providerBill.paidByMemberId
+                  ];
+                const canRepairThisBill =
+                  canRepairPaidBy &&
+                  !paidByName;
+
+                return (
+                  <tr key={providerBill.id}>
+                    <td className="py-3 pr-3">
+                      {providerBill.paidAt
+                        ? providerBill.paidAt.toLocaleDateString()
+                        : "Paid"}
+                    </td>
+                    <td className="py-3 pr-3 font-medium text-slate-900">
+                      {providerBill.providerName ||
+                        getProviderFallbackLabel(
+                          providerBill
+                        )}
+                    </td>
+                    <td className="py-3 pr-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>
+                          {paidByName ??
+                            "Household member"}
+                        </span>
+
+                        {canRepairThisBill && (
+                          <button
+                            type="button"
+                            className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={
+                              repairingProviderBillId ===
+                              providerBill.id
+                            }
+                            onClick={() =>
+                              onRepairPaidBy(
+                                providerBill.id
+                              )
+                            }
+                          >
+                            {repairingProviderBillId ===
+                            providerBill.id
+                              ? "Repairing..."
+                              : "Repair"}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 pr-3 text-right font-semibold text-slate-900">
+                      {formatCurrency(
+                        providerBill.totalBillAmount
                       )}
-                  </td>
-                  <td className="py-3 pr-3">
-                    {memberNames[
-                      providerBill.paidByMemberId
-                    ] ?? "Household member"}
-                  </td>
-                  <td className="py-3 pr-3 text-right font-semibold text-slate-900">
-                    {formatCurrency(
-                      providerBill.totalBillAmount
-                    )}
-                  </td>
-                  <td className="py-3 pr-3">
-                    {providerBill.paymentReferenceNumber ||
-                      "None"}
-                  </td>
-                  <td className="py-3 pr-3">
-                    <AttachmentPreviewList
-                      attachments={
-                        providerBill
-                          .paymentAttachments
-                      }
-                      emptyLabel="No receipt"
-                    />
-                  </td>
-                  <td className="py-3">
-                    {providerBill.transactionId ||
-                      "Created"}
-                  </td>
-                </tr>
-              )
+                    </td>
+                    <td className="py-3 pr-3">
+                      {providerBill.paymentReferenceNumber ||
+                        "None"}
+                    </td>
+                    <td className="py-3 pr-3">
+                      <AttachmentPreviewList
+                        attachments={
+                          providerBill
+                            .paymentAttachments
+                        }
+                        emptyLabel="No receipt"
+                      />
+                    </td>
+                    <td className="py-3">
+                      {providerBill.transactionId ||
+                        "Created"}
+                    </td>
+                  </tr>
+                );
+              }
             )}
           </tbody>
         </table>

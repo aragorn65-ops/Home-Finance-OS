@@ -527,6 +527,95 @@ export default class UtilityProviderBillService {
     );
   }
 
+  static async repairPaidByMember(
+    providerBillId: string,
+    fallbackMemberId: string
+  ): Promise<OperationResult<UtilityProviderBill>> {
+    const providerBill =
+      UtilityProviderBillRepository.findById(
+        providerBillId
+      );
+
+    if (!providerBill) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          providerBill:
+            "Select a valid provider bill.",
+        },
+        "Provider bill was not found."
+      );
+    }
+
+    if (providerBill.status !== "paid") {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          providerBill:
+            "Only paid provider bills can repair payment member details.",
+        },
+        "Provider bill payer was not repaired."
+      );
+    }
+
+    const linkedTransaction =
+      providerBill.transactionId
+        ? TransactionService
+            .getTransactionById(
+              providerBill.transactionId
+            )
+        : undefined;
+    const repairedMemberId =
+      linkedTransaction?.paidByMemberId ??
+      fallbackMemberId.trim();
+
+    if (!repairedMemberId) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        {
+          paidByMemberId:
+            "Select or sign in as the member who paid this provider bill.",
+        },
+        "Provider bill payer was not repaired."
+      );
+    }
+
+    const savedProviderBill =
+      UtilityProviderBillRepository.update(
+        {
+          ...providerBill,
+          paidByMemberId:
+            repairedMemberId,
+          updatedAt:
+            new Date(),
+        }
+      );
+
+    const snapshotResult =
+      await UtilityBillPersistenceService
+        .saveCurrentSnapshot(
+          "Provider bill payer repaired and saved to cloud."
+        );
+
+    if (!snapshotResult.success) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        snapshotResult.errors,
+        snapshotResult.message ??
+          "Provider bill payer was repaired locally, but the cloud snapshot was not saved."
+      );
+    }
+
+    return OperationResults.success(
+      savedProviderBill,
+      "Provider bill payer repaired."
+    );
+  }
+
   static async deleteUnpaid(
     providerBillId: string
   ): Promise<OperationResult<UtilityProviderBill>> {

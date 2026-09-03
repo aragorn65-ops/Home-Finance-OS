@@ -595,6 +595,106 @@ test("deleting an unpaid provider bill removes it from reloadable bills", async 
   );
 });
 
+test("repairing a paid provider bill restores the paid-by member from the linked transaction", async () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-repair-provider-bill-payer";
+  const transactionId =
+    "paid-provider-payment-transaction";
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Repair Provider Bill Payer",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [],
+        createdAt:
+          "2026-07-01T00:00:00.000Z",
+        updatedAt:
+          "2026-07-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  TransactionRepository.replaceForHousehold(
+    householdId,
+    [
+      createTransaction({
+        id:
+          transactionId,
+        householdId,
+        paidByMemberId:
+          "member-dadi",
+        amount:
+          1409.2,
+        category:
+          "Water",
+        description:
+          "Water utility bill",
+        transactionDate:
+          new Date(
+            "2026-07-13T00:00:00"
+          ),
+      }),
+    ]
+  );
+
+  UtilityProviderBillRepository.create(
+    createProviderBill({
+      id:
+        "repair-paid-water-bill",
+      householdId,
+      providerName:
+        "Manila Water",
+      utilityType:
+        "water",
+      unit:
+        "m3",
+      status:
+        "paid",
+      paidByMemberId:
+        "",
+      paidAt:
+        new Date(
+          "2026-07-13T00:00:00"
+        ),
+      transactionId,
+    })
+  );
+
+  const result =
+    await UtilityProviderBillService
+      .repairPaidByMember(
+        "repair-paid-water-bill",
+        "member-rasha"
+      );
+
+  assert.equal(
+    result.success,
+    true
+  );
+  assert.equal(
+    UtilityProviderBillService
+      .getPaidProviderBills()
+      .find(
+        (providerBill) =>
+          providerBill.id ===
+          "repair-paid-water-bill"
+      )?.paidByMemberId,
+    "member-dadi"
+  );
+});
+
 test("transaction delete preparation detaches linked provider bills", () => {
   const { localStorage } =
     installBrowserStorage();
