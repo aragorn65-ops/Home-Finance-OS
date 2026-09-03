@@ -30,6 +30,47 @@ export function resolveHouseholdMemberReference(
   );
 }
 
+export function createHouseholdMemberNameLookup(
+  members: HouseholdMember[],
+  ownerMemberId?: string
+): Record<string, string> {
+  const lookup: Record<string, string> =
+    {};
+
+  members.forEach((member) => {
+    [
+      member.id,
+      member.remoteMemberId,
+      member.email,
+      member.email
+        ?.trim()
+        .toLowerCase(),
+    ].forEach((alias) => {
+      const key =
+        alias?.trim();
+
+      if (key) {
+        lookup[key] =
+          member.displayName;
+      }
+    });
+
+    if (
+      member.role === "owner" &&
+      (
+        member.id === ownerMemberId ||
+        member.remoteMemberId ===
+          ownerMemberId
+      )
+    ) {
+      lookup["member-001"] =
+        member.displayName;
+    }
+  });
+
+  return lookup;
+}
+
 export function findHouseholdMemberByReference(
   memberId: string,
   householdId?: string

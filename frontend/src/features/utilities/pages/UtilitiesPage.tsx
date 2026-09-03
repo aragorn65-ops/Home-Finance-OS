@@ -33,6 +33,9 @@ import {
   loadHousehold,
 } from "../../household/services/householdStorage";
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+import {
+  createHouseholdMemberNameLookup,
+} from "../../household/services/householdMemberResolution";
 
 import UtilityBillForm from "../components/UtilityBillForm";
 
@@ -189,13 +192,10 @@ export default function UtilitiesPage() {
     );
 
   const memberNames =
-    Object.fromEntries(
-      memberOptions.map(
-        (member) => [
-          member.id,
-          member.name,
-        ]
-      )
+    createHouseholdMemberNameLookup(
+      activeMembers,
+      household?.authenticatedLink
+        ?.ownerMemberId
     );
 
   const accountOptions =
