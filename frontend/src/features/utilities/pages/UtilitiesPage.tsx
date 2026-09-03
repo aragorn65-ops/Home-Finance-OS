@@ -157,6 +157,25 @@ export default function UtilitiesPage() {
 
   const activeMembers =
     HouseholdMemberService.getActiveMembers();
+  const signedInEmail =
+    session.user?.email
+      ?.trim()
+      .toLowerCase();
+  const signedInMember =
+    activeMembers.find(
+      (member) =>
+        member.id ===
+          membership?.memberId ||
+        member.remoteMemberId ===
+          membership?.memberId ||
+        (
+          signedInEmail &&
+          member.email
+            ?.trim()
+            .toLowerCase() ===
+            signedInEmail
+        )
+    );
 
   const activeAccounts =
     AccountService.getActiveAccounts();
@@ -253,7 +272,8 @@ export default function UtilitiesPage() {
     providerPaymentForms[
       providerBillId
     ] ?? {
-      paidByMemberId: "",
+      paidByMemberId:
+        signedInMember?.id ?? "",
       sourceAccountId: "",
       paidAt:
         formatDateInput(new Date()),

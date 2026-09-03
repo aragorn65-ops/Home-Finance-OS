@@ -590,6 +590,10 @@ export default function SettlementsPage() {
   const canRecordSettlement =
     canManageSettlementRecords ||
     membership?.role === "member";
+  const signedInEmail =
+    session.user?.email
+      ?.trim()
+      .toLowerCase();
 
   const localMemberId =
     useMemo(
@@ -600,14 +604,31 @@ export default function SettlementsPage() {
             (member) =>
               member.householdId ===
                 householdId &&
-              Boolean(
-                session.user?.id
-              ) &&
-              member.userId ===
-                session.user?.id
+              (
+                (
+                  Boolean(
+                    session.user?.id
+                  ) &&
+                  member.userId ===
+                    session.user?.id
+                ) ||
+                member.id ===
+                  membership?.memberId ||
+                member.remoteMemberId ===
+                  membership?.memberId ||
+                (
+                  signedInEmail &&
+                  member.email
+                    ?.trim()
+                    .toLowerCase() ===
+                    signedInEmail
+                )
+              )
           )?.id ?? "",
       [
         householdId,
+        membership?.memberId,
+        signedInEmail,
         session.user?.id,
       ]
     );
