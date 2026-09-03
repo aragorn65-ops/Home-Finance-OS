@@ -233,6 +233,23 @@ function createTransaction(
   };
 }
 
+function formatLocalDateKey(
+  date: Date
+): string {
+  const year =
+    date.getFullYear();
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 test("provider payment summary only includes payments from the selected month", () => {
   const julyPayment =
     createProviderBill({
@@ -577,6 +594,196 @@ test("transaction delete preparation relinks provider bill to paid duplicate", (
   assert.equal(
     providerBill?.sourceAccountId,
     "cash"
+  );
+});
+
+test("transaction date edits move linked paid provider bills to the corrected payment month", () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-edit-linked-provider-bill-date";
+  const transactionId =
+    "linked-electric-payment-transaction";
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Edit Linked Provider Bill Date",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [
+          {
+            id:
+              "member-1",
+            householdId,
+            displayName:
+              "Dadi Buboy",
+            role:
+              "owner",
+            isActive:
+              true,
+            createdAt:
+              "2026-08-01T00:00:00.000Z",
+            updatedAt:
+              "2026-08-01T00:00:00.000Z",
+          },
+        ],
+        createdAt:
+          "2026-08-01T00:00:00.000Z",
+        updatedAt:
+          "2026-08-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  TransactionRepository.replaceForHousehold(
+    householdId,
+    [
+      createTransaction({
+        id:
+          transactionId,
+        householdId,
+        category:
+          "Electricity",
+        description:
+          "Meralco utility bill",
+        transactionDate:
+          new Date(
+            "2026-08-28T00:00:00"
+          ),
+        exchangeRateEffectiveDate:
+          new Date(
+            "2026-08-28T00:00:00"
+          ),
+      }),
+    ]
+  );
+
+  UtilityProviderBillRepository.create(
+    createProviderBill({
+      id:
+        "meralco-provider-bill",
+      householdId,
+      utilityType:
+        "electricity",
+      unit:
+        "kWh",
+      providerName:
+        "Meralco",
+      status:
+        "paid",
+      paidByMemberId:
+        "member-1",
+      sourceAccountId:
+        "",
+      paidAt:
+        new Date(
+          "2026-08-28T00:00:00"
+        ),
+      transactionId,
+    })
+  );
+
+  const result =
+    TransactionService.update(
+      transactionId,
+      {
+        type: "expense",
+        amount: 1000,
+        enteredAmount: 1000,
+        enteredCurrency: "PHP",
+        baseAmount: 1000,
+        exchangeRate: 1,
+        exchangeRateEffectiveDate:
+          "2026-09-02",
+        exchangeRateSource: "manual",
+        exchangeRateProvider: "",
+        paidByMemberId: "member-1",
+        visibility: "household",
+        sourceAccountId: "",
+        destinationAccountId: "",
+        category: "Electricity",
+        description:
+          "Meralco utility bill",
+        notes: "",
+        transactionDate:
+          "2026-09-02",
+        splitMethod: "none",
+        allocations: [],
+        attachments: [],
+        isActive: true,
+      }
+    );
+
+  assert.equal(
+    result.success,
+    true
+  );
+
+  const updatedTransaction =
+    TransactionRepository.findById(
+      transactionId
+    );
+  const updatedProviderBill =
+    UtilityProviderBillRepository.findById(
+      "meralco-provider-bill"
+    );
+
+  assert.equal(
+    updatedTransaction
+      ?.transactionDate
+      ? formatLocalDateKey(
+          updatedTransaction
+            .transactionDate
+        )
+      : "",
+    "2026-09-02"
+  );
+  assert.equal(
+    updatedProviderBill
+      ?.paidAt
+      ? formatLocalDateKey(
+          updatedProviderBill
+            .paidAt
+        )
+      : "",
+    "2026-09-02"
+  );
+
+  assert.equal(
+    getProviderBillsPaidInMonth(
+      updatedProviderBill
+        ? [updatedProviderBill]
+        : [],
+      new Date(
+        "2026-08-01T00:00:00"
+      )
+    ).length,
+    0
+  );
+  assert.deepEqual(
+    getProviderBillsPaidInMonth(
+      updatedProviderBill
+        ? [updatedProviderBill]
+        : [],
+      new Date(
+        "2026-09-01T00:00:00"
+      )
+    ).map(
+      (providerBill) =>
+        providerBill.id
+    ),
+    [
+      "meralco-provider-bill",
+    ]
   );
 });
 

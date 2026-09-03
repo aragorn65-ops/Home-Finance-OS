@@ -1182,6 +1182,12 @@ export default class TransactionService {
       );
     }
 
+    const linkedProviderBills =
+      this.syncLinkedProviderBillsForTransactionEdit(
+        existing,
+        savedTransaction
+      );
+
     const allocationResult =
       this.replaceExpenseAllocations(
         savedTransaction,
@@ -1191,6 +1197,10 @@ export default class TransactionService {
     if (
       !allocationResult.success
     ) {
+      this.restoreUtilityProviderBills(
+        linkedProviderBills
+      );
+
       const restoredTransaction =
         TransactionRepository.update(
           existing.id,
@@ -1491,6 +1501,81 @@ export default class TransactionService {
     return OperationResults.success(
       restoredProviderBills
     );
+  }
+
+  private static syncLinkedProviderBillsForTransactionEdit(
+    existingTransaction: Transaction,
+    updatedTransaction: Transaction
+  ): UtilityProviderBill[] {
+    const linkedProviderBills =
+      UtilityProviderBillRepository
+        .findActiveByHouseholdId(
+          existingTransaction.householdId
+        )
+        .filter(
+          (providerBill) =>
+            providerBill.transactionId ===
+            existingTransaction.id
+        );
+
+    for (const providerBill of linkedProviderBills) {
+      UtilityProviderBillRepository.update({
+        ...providerBill,
+        status:
+          updatedTransaction.type ===
+            "expense" &&
+          updatedTransaction.isActive
+            ? "paid"
+            : "unpaid",
+        paidByMemberId:
+          updatedTransaction.type ===
+            "expense" &&
+          updatedTransaction.isActive
+            ? updatedTransaction
+                .paidByMemberId ?? ""
+            : "",
+        sourceAccountId:
+          updatedTransaction.type ===
+            "expense" &&
+          updatedTransaction.isActive
+            ? updatedTransaction
+                .sourceAccountId ?? ""
+            : "",
+        paidAt:
+          updatedTransaction.type ===
+            "expense" &&
+          updatedTransaction.isActive
+            ? new Date(
+                updatedTransaction
+                  .transactionDate
+              )
+            : null,
+        paymentReferenceNumber:
+          updatedTransaction.type ===
+            "expense" &&
+          updatedTransaction.isActive
+            ? providerBill
+                .paymentReferenceNumber
+            : "",
+        paymentAttachments:
+          updatedTransaction.type ===
+            "expense" &&
+          updatedTransaction.isActive
+            ? providerBill
+                .paymentAttachments
+            : [],
+        transactionId:
+          updatedTransaction.type ===
+            "expense" &&
+          updatedTransaction.isActive
+            ? updatedTransaction.id
+            : "",
+        updatedAt:
+          new Date(),
+      });
+    }
+
+    return linkedProviderBills;
   }
 
   private static findPaidReplacementUtilityTransaction(
