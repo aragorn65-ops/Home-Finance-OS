@@ -3,6 +3,8 @@ import test from "node:test";
 
 import SettlementService from "../src/features/settlements/services/SettlementService.ts";
 import AllocationPaymentService from "../src/features/settlements/services/AllocationPaymentService.ts";
+import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository.ts";
+import SettlementApplicationRepository from "../src/features/settlements/repositories/SettlementApplicationRepository.ts";
 import {
   recalculateManualSettlementApplications,
 } from "../src/features/settlements/services/manualSettlementApplications.ts";
@@ -141,6 +143,20 @@ function seedPartialSettlementFixture() {
       updatedAt: now,
     }
   );
+
+  SettlementApplicationRepository
+    .findAll()
+    .forEach((application) => {
+      SettlementApplicationRepository
+        .delete(application.id);
+    });
+
+  SettlementRepository
+    .findAll()
+    .forEach((settlement) => {
+      SettlementRepository
+        .delete(settlement.id);
+    });
 
   saveStoredData(
     HFOS_STORAGE_KEYS.transactions,
@@ -334,5 +350,57 @@ test("manual settlement records full and partial applications for one payment", 
       .getPaymentDetails(electricity)
       .paymentStatus,
     "partially-paid"
+  );
+});
+
+test("manual settlement rejects applying more than an allocation outstanding amount", () => {
+  seedPartialSettlementFixture();
+
+  const result =
+    SettlementService.create({
+      householdId,
+      fromMemberId: payerMemberId,
+      toMemberId: receiverMemberId,
+      amount: 3500,
+      settlementDate: "2026-08-06",
+      sourceAccountId: "",
+      destinationAccountId: "",
+      applicationMethod: "manual",
+      applications: [
+        {
+          expenseAllocationId:
+            "allocation-groceries",
+          isSelected: true,
+          appliedAmount: 3500,
+        },
+      ],
+      referenceNumber: "",
+      notes: "",
+      attachments: [],
+      isActive: true,
+    });
+
+  assert.equal(
+    result.success,
+    false
+  );
+
+  assert.equal(
+    result.errors?.applications,
+    "An applied amount cannot exceed the allocation's outstanding amount."
+  );
+
+  const groceries =
+    ExpenseAllocationRepository.findById(
+      "allocation-groceries"
+    );
+
+  assert.ok(groceries);
+
+  assert.equal(
+    AllocationPaymentService
+      .getPaymentDetails(groceries)
+      .paidAmount,
+    0
   );
 });

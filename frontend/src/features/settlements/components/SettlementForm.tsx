@@ -363,6 +363,25 @@ function formatAmount(
   );
 }
 
+function roundCurrency(
+  amount: number
+): number {
+  return (
+    Math.round(amount * 100) /
+    100
+  );
+}
+
+function amountExceeds(
+  amount: number,
+  limit: number
+): boolean {
+  return (
+    Math.round(amount * 100) >
+    Math.round(limit * 100)
+  );
+}
+
 function getPaymentStatusLabel(
   status:
     SettlementAllocationOption["paymentStatus"]
@@ -733,12 +752,56 @@ export default function SettlementForm({
         );
 
       return (
-        Math.round(total * 100) /
-        100
+        roundCurrency(total)
       );
     }, [
       form.applications,
     ]);
+
+  const manualSelectedOutstandingTotal =
+    useMemo(() => {
+      const selectedAllocationIds =
+        new Set(
+          form.applications
+            .filter(
+              (application) =>
+                application.isSelected
+            )
+            .map(
+              (application) =>
+                application.expenseAllocationId
+            )
+        );
+
+      const total =
+        eligibleAllocationOptions.reduce(
+          (
+            currentTotal,
+            option
+          ) =>
+            selectedAllocationIds.has(
+              option.expenseAllocationId
+            )
+              ? currentTotal +
+                option.outstandingAmount
+              : currentTotal,
+          0
+        );
+
+      return roundCurrency(total);
+    }, [
+      eligibleAllocationOptions,
+      form.applications,
+    ]);
+
+  const manualAmountExceedsSelectedOutstanding =
+    form.applicationMethod ===
+      "manual" &&
+    manualSelectedOutstandingTotal > 0 &&
+    amountExceeds(
+      form.amount,
+      manualSelectedOutstandingTotal
+    );
 
   const clearErrors = (
     fields: string[]
@@ -1071,13 +1134,19 @@ export default function SettlementForm({
 
   const handleApplicationAmountChange = (
     expenseAllocationId: string,
-    amount: number
+    amount: number,
+    outstandingAmount: number
   ) => {
     updateApplication(
       expenseAllocationId,
       {
         appliedAmount:
-          amount,
+          roundCurrency(
+            Math.min(
+              Math.max(amount, 0),
+              outstandingAmount
+            )
+          ),
       }
     );
   };
@@ -1303,6 +1372,32 @@ export default function SettlementForm({
               )
             : [],
       };
+
+    if (
+      submissionForm.applicationMethod ===
+        "manual" &&
+      amountExceeds(
+        submissionForm.amount,
+        manualSelectedOutstandingTotal
+      )
+    ) {
+      const nextErrors = {
+        applications:
+          "Settlement amount cannot exceed the selected outstanding allocations. Record the extra amount separately as an overpayment credit.",
+      };
+
+      setErrors(nextErrors);
+      setMessage(
+        "Please correct the settlement validation errors."
+      );
+      showValidationAlert(
+        nextErrors,
+        "Please correct the settlement validation errors."
+      );
+      setIsSubmitting(false);
+
+      return;
+    }
 
     const result =
       await onSubmit(
@@ -1921,7 +2016,8 @@ export default function SettlementForm({
                               onValueChange={(nextValue) =>
                                 handleApplicationAmountChange(
                                   option.expenseAllocationId,
-                                  nextValue
+                                  nextValue,
+                                  option.outstandingAmount
                                 )
                               }
                               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
@@ -1964,6 +2060,13 @@ export default function SettlementForm({
                 )}
               </span>
             </div>
+
+            {manualAmountExceedsSelectedOutstanding && (
+              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                Settlement amount exceeds the selected outstanding allocations.
+                Record any extra payment as an overpayment credit separately.
+              </p>
+            )}
           </div>
         )}
 
