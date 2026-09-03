@@ -527,6 +527,74 @@ test("marking a provider bill paid keeps it out of unpaid bills after reload", a
   );
 });
 
+test("deleting an unpaid provider bill removes it from reloadable bills", async () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-delete-unpaid-provider-bill";
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Delete Unpaid Provider Bill",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [],
+        createdAt:
+          "2026-07-01T00:00:00.000Z",
+        updatedAt:
+          "2026-07-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  UtilityProviderBillRepository.create(
+    createProviderBill({
+      id:
+        "delete-unpaid-water-bill",
+      householdId,
+      providerName:
+        "Manila Water",
+      utilityType:
+        "water",
+      unit:
+        "m3",
+      status:
+        "unpaid",
+      paidAt:
+        null,
+    })
+  );
+
+  const result =
+    await UtilityProviderBillService
+      .deleteUnpaid(
+        "delete-unpaid-water-bill"
+      );
+
+  assert.equal(
+    result.success,
+    true
+  );
+  assert.deepEqual(
+    UtilityProviderBillService
+      .getActiveProviderBills()
+      .map(
+        (providerBill) =>
+          providerBill.id
+      ),
+    []
+  );
+});
+
 test("transaction delete preparation detaches linked provider bills", () => {
   const { localStorage } =
     installBrowserStorage();

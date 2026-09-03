@@ -527,9 +527,9 @@ export default class UtilityProviderBillService {
     );
   }
 
-  static deleteUnpaid(
+  static async deleteUnpaid(
     providerBillId: string
-  ): OperationResult<UtilityProviderBill> {
+  ): Promise<OperationResult<UtilityProviderBill>> {
     const providerBill =
       UtilityProviderBillRepository.findById(
         providerBillId
@@ -571,6 +571,21 @@ export default class UtilityProviderBillService {
       UtilityProviderBillRepository.update(
         updatedProviderBill
       );
+
+    const snapshotResult =
+      await UtilityBillPersistenceService
+        .saveCurrentSnapshot(
+          "Unpaid provider bill deleted and saved to cloud."
+        );
+
+    if (!snapshotResult.success) {
+      return OperationResults.failure<
+        UtilityProviderBill
+      >(
+        snapshotResult.errors,
+        "Provider bill was deleted locally, but the cloud snapshot was not saved. Refresh may restore older cloud data."
+      );
+    }
 
     return OperationResults.success(
       savedProviderBill,

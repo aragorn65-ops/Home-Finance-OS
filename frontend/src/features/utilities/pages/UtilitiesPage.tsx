@@ -593,9 +593,9 @@ export default function UtilitiesPage() {
     );
   };
 
-  const handleDeleteProviderBill = (
+  const handleDeleteProviderBill = async (
     providerBill: UtilityProviderBill
-  ): void => {
+  ): Promise<void> => {
     if (isReadOnlyMember) {
       return;
     }
@@ -610,7 +610,7 @@ export default function UtilitiesPage() {
     }
 
     const result =
-      UtilityProviderBillService.deleteUnpaid(
+      await UtilityProviderBillService.deleteUnpaid(
         providerBill.id
       );
 
