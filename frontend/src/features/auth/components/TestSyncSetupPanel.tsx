@@ -305,10 +305,50 @@ export default function TestSyncSetupPanel({
               ownerMember.id
         )
       : undefined;
+  const signedInEmail =
+    session.user?.email
+      ?.trim()
+      .toLowerCase();
+  const currentLocalMember =
+    members.find(
+      (member) =>
+        member.id ===
+          currentUserMembership?.memberId ||
+        member.remoteMemberId ===
+          currentUserMembership?.memberId ||
+        (
+          signedInEmail &&
+          member.email
+            ?.trim()
+            .toLowerCase() ===
+            signedInEmail
+        )
+    );
+  const currentDisplayName =
+    currentLocalMember?.displayName ??
+    currentUserMembership
+      ?.memberDisplayName ??
+    session.user?.displayName ??
+    session.user?.email ??
+    "current user";
   const hasOwnerAccess =
     ownerMembership?.role === "owner" ||
     currentUserMembership?.role ===
       "owner";
+  const canManageCloudSetup =
+    session.status === "signed-in" &&
+    (
+      !remoteHouseholdId ||
+      currentUserMembership?.role ===
+        "owner" ||
+      currentUserMembership?.role ===
+        "admin" ||
+      hasOwnerAccess
+    );
+  const isMemberCloudSession =
+    session.status === "signed-in" &&
+    Boolean(currentUserMembership) &&
+    !canManageCloudSetup;
   const localCounts =
     getLocalCoreSnapshotCounts(
       household.id,
@@ -941,6 +981,13 @@ export default function TestSyncSetupPanel({
 
   const handleSaveSnapshot =
     async (): Promise<void> => {
+      if (!canManageCloudSetup) {
+        setError(
+          "Only a household admin can save the core household snapshot. Member settlement changes sync separately."
+        );
+        return;
+      }
+
       if (!remoteHouseholdId) {
         setError(
           "Create or link the cloud household before saving this browser data to cloud."
@@ -1058,7 +1105,9 @@ export default function TestSyncSetupPanel({
         "Owner session",
       detail:
         session.status === "signed-in"
-          ? `Signed in as ${session.user?.email ?? "current user"}`
+          ? currentUserMembership
+            ? `Signed in as ${currentDisplayName} (${currentUserMembership.role})`
+            : `Signed in as ${currentDisplayName}`
           : "Sign in before touching cloud setup.",
       status:
         session.status === "signed-in"
@@ -1084,7 +1133,7 @@ export default function TestSyncSetupPanel({
         hasOwnerAccess
           ? `Owner access is active for ${ownerMember?.displayName ?? currentUserMembership?.memberId ?? "the signed-in user"}.`
           : currentUserMembership
-            ? `Signed-in user has ${currentUserMembership.role} membership; owner local id is ${ownerMember?.id ?? "missing"}.`
+            ? `Signed-in user has ${currentUserMembership.role} membership. Core snapshot saves are admin-only.`
             : "No active membership visible for this signed-in user.",
       status:
         hasOwnerAccess
@@ -1098,7 +1147,11 @@ export default function TestSyncSetupPanel({
         "Cloud snapshot",
       detail:
         snapshotMessage ||
-        `This browser: ${localCounts.accountCount} accounts, ${localCounts.transactionCount} transactions. Cloud: ${remoteSnapshot ? `${remoteSnapshot.accounts.length} accounts, ${remoteSnapshot.transactions.length} transactions` : "not checked"}.`,
+        (
+          isMemberCloudSession
+            ? `Member browser can load cloud data and save member actions. This browser: ${localCounts.accountCount} accounts, ${localCounts.transactionCount} transactions. Cloud: ${remoteSnapshot ? `${remoteSnapshot.accounts.length} accounts, ${remoteSnapshot.transactions.length} transactions` : "not checked"}.`
+            : `This browser: ${localCounts.accountCount} accounts, ${localCounts.transactionCount} transactions. Cloud: ${remoteSnapshot ? `${remoteSnapshot.accounts.length} accounts, ${remoteSnapshot.transactions.length} transactions` : "not checked"}.`
+        ),
       status:
         snapshotMessage
           ? "pass"
@@ -1116,7 +1169,9 @@ export default function TestSyncSetupPanel({
             Test Sync Setup
           </h3>
           <p>
-            Use this admin path before entering July and August sample data.
+            {canManageCloudSetup
+              ? "Use this admin path before entering July and August sample data."
+              : "Member browsers load cloud data here; household snapshot saves remain admin-only."}
           </p>
         </div>
         <span>
@@ -1164,23 +1219,25 @@ export default function TestSyncSetupPanel({
       </div>
 
       <div className="test-sync-setup__actions">
-        <button
-          type="button"
-          onClick={() => {
-            void handleClaimHousehold();
-          }}
-          disabled={
-            isBusy ||
-            session.status !== "signed-in" ||
-            Boolean(remoteHouseholdId)
-          }
-        >
-          <Cloud
-            size={16}
-            aria-hidden="true"
-          />
-          Create/Link Cloud Household
-        </button>
+        {canManageCloudSetup && (
+          <button
+            type="button"
+            onClick={() => {
+              void handleClaimHousehold();
+            }}
+            disabled={
+              isBusy ||
+              session.status !== "signed-in" ||
+              Boolean(remoteHouseholdId)
+            }
+          >
+            <Cloud
+              size={16}
+              aria-hidden="true"
+            />
+            Create/Link Cloud Household
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -1214,25 +1271,28 @@ export default function TestSyncSetupPanel({
           />
           Load Cloud Snapshot
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            void handleSaveSnapshot();
-          }}
-          disabled={
-            isBusy ||
-            session.status !== "signed-in" ||
-            !remoteHouseholdId
-          }
-        >
-          <Save
-            size={16}
-            aria-hidden="true"
-          />
-          Save This Browser to Cloud
-        </button>
+        {canManageCloudSetup && (
+          <button
+            type="button"
+            onClick={() => {
+              void handleSaveSnapshot();
+            }}
+            disabled={
+              isBusy ||
+              session.status !== "signed-in" ||
+              !remoteHouseholdId
+            }
+          >
+            <Save
+              size={16}
+              aria-hidden="true"
+            />
+            Save This Browser to Cloud
+          </button>
+        )}
       </div>
 
+      {canManageCloudSetup && (
       <form
         className="test-sync-setup__invite-form"
         onSubmit={(event) => {
@@ -1281,7 +1341,9 @@ export default function TestSyncSetupPanel({
           </button>
         </div>
       </form>
+      )}
 
+      {canManageCloudSetup && (
       <form
         className="test-sync-setup__invite-form"
         onSubmit={(event) => {
@@ -1410,6 +1472,7 @@ export default function TestSyncSetupPanel({
           </button>
         </div>
       </form>
+      )}
 
       <div className="test-sync-setup__diagnostics">
         <div>

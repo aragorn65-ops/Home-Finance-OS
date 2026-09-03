@@ -125,13 +125,24 @@ export default function SettingsPage() {
   const canViewAuthDiagnostics =
     isProductionAuthEnabled ||
     canManageHouseholdSettings;
+  const signedInEmail =
+    session.user?.email
+      ?.trim()
+      .toLowerCase();
   const signedInMember =
     household?.members.find(
       (member) =>
         member.id ===
           membership?.memberId ||
         member.remoteMemberId ===
-          membership?.memberId
+          membership?.memberId ||
+        (
+          signedInEmail &&
+          member.email
+            ?.trim()
+            .toLowerCase() ===
+            signedInEmail
+        )
     );
 
   const backupFileInputRef =

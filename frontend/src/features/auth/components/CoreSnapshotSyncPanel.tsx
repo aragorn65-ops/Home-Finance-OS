@@ -81,15 +81,23 @@ export default function CoreSnapshotSyncPanel() {
       localHouseholdId,
       browserCoreSnapshotRecordSource
     );
-  const canUseCloudSnapshot =
+  const canSaveCloudSnapshot =
     membership?.role === "owner" ||
     membership?.role === "admin";
+  const canLoadCloudSnapshot =
+    Boolean(membership);
   const isBusy =
     action !== "";
-  const isDisabled =
+  const isSaveDisabled =
     !household ||
     !cloudHouseholdId ||
-    !canUseCloudSnapshot ||
+    !canSaveCloudSnapshot ||
+    isMembershipLoading ||
+    isBusy;
+  const isLoadDisabled =
+    !household ||
+    !cloudHouseholdId ||
+    !canLoadCloudSnapshot ||
     isMembershipLoading ||
     isBusy;
 
@@ -251,29 +259,31 @@ export default function CoreSnapshotSyncPanel() {
       </dl>
 
       <div className="core-snapshot-panel__actions">
-        <button
-          type="button"
-          onClick={() => {
-            void handleSave();
-          }}
-          disabled={isDisabled}
-          title="Save core snapshot"
-        >
-          <CloudUpload
-            size={16}
-            aria-hidden="true"
-          />
-          {action === "save"
-            ? "Saving..."
-            : "Save Snapshot"}
-        </button>
+        {canSaveCloudSnapshot && (
+          <button
+            type="button"
+            onClick={() => {
+              void handleSave();
+            }}
+            disabled={isSaveDisabled}
+            title="Save core snapshot"
+          >
+            <CloudUpload
+              size={16}
+              aria-hidden="true"
+            />
+            {action === "save"
+              ? "Saving..."
+              : "Save Snapshot"}
+          </button>
+        )}
 
         <button
           type="button"
           onClick={() => {
             void handleLoad();
           }}
-          disabled={isDisabled}
+          disabled={isLoadDisabled}
           title="Load core snapshot"
         >
           <CloudDownload
