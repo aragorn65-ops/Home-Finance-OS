@@ -58,6 +58,7 @@ import HouseholdMemberService from "../../household/services/HouseholdMemberServ
 import useSavings from "../../savings/hooks/useSavings";
 import SettlementAllocationService from "../../settlements/services/SettlementAllocationService";
 import SettlementApplicationDetailsService from "../../settlements/services/SettlementApplicationDetailsService";
+import SettlementOverpaymentCreditService from "../../settlements/services/SettlementOverpaymentCreditService";
 import SettlementService from "../../settlements/services/SettlementService";
 import useSettlements from "../../settlements/hooks/useSettlements";
 import TransactionService from "../../transactions/services/TransactionService";
@@ -648,14 +649,31 @@ export default function DashboardPage() {
           : [],
       [
         householdId,
+        transactions,
         syncedSettlements,
+      ]
+    );
+
+  const creditAdjustedOutstandingAllocations =
+    useMemo(
+      () =>
+        householdId
+          ? SettlementOverpaymentCreditService
+              .applyCreditOffsetsToAllocations(
+                householdId,
+                outstandingAllocations
+              )
+          : [],
+      [
+        householdId,
+        outstandingAllocations,
       ]
     );
 
   const monthlyOutstandingAllocations =
     useMemo(
       () =>
-        outstandingAllocations.filter(
+        creditAdjustedOutstandingAllocations.filter(
           (allocation) =>
             isSameMonth(
               allocation.transactionDate,
@@ -663,7 +681,7 @@ export default function DashboardPage() {
             )
         ),
       [
-        outstandingAllocations,
+        creditAdjustedOutstandingAllocations,
         selectedMonth,
       ]
     );

@@ -7,17 +7,10 @@ import type {
   MemberSettlementObligation,
 } from "../models/MemberSettlementObligation";
 
-import type {
-  ExpenseAllocation,
-} from "../../transactions/models/ExpenseAllocation";
-
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 
-import TransactionRepository from "../../transactions/repositories/TransactionRepository";
-
-import ExpenseAllocationRepository from "../../transactions/repositories/ExpenseAllocationRepository";
-
-import AllocationPaymentService from "./AllocationPaymentService";
+import SettlementAllocationService from "./SettlementAllocationService";
+import SettlementOverpaymentCreditService from "./SettlementOverpaymentCreditService";
 
 export default class SettlementBalanceService {
   /**
@@ -126,9 +119,14 @@ export default class SettlementBalanceService {
     householdId: string
   ): MemberSettlementObligation[] {
     const allocations =
-      this.getEligibleAllocations(
-        householdId
-      );
+      SettlementOverpaymentCreditService
+        .applyCreditOffsetsToAllocations(
+          householdId,
+          SettlementAllocationService
+            .getOutstandingAllocations(
+              householdId
+            )
+        );
 
     const obligations =
       new Map<
@@ -137,23 +135,19 @@ export default class SettlementBalanceService {
       >();
 
     for (const allocation of allocations) {
-      const paymentDetails =
-        AllocationPaymentService.getPaymentDetails(
-          allocation
-        );
-
       if (
-        paymentDetails.isSelfAllocation ||
-        paymentDetails.outstandingAmount <= 0
+        allocation.fromMemberId ===
+          allocation.toMemberId ||
+        allocation.outstandingAmount <= 0
       ) {
         continue;
       }
 
       const fromMemberId =
-        allocation.memberId;
+        allocation.fromMemberId;
 
       const toMemberId =
-        allocation.paidByMemberId;
+        allocation.toMemberId;
 
       const obligationKey =
         this.createObligationKey(
@@ -175,7 +169,7 @@ export default class SettlementBalanceService {
             amount:
               this.roundCurrency(
                 existing.amount +
-                  paymentDetails.outstandingAmount
+                  allocation.outstandingAmount
               ),
 
             allocationCount:
@@ -193,7 +187,7 @@ export default class SettlementBalanceService {
           toMemberId,
 
           amount:
-            paymentDetails.outstandingAmount,
+            allocation.outstandingAmount,
 
           allocationCount: 1,
         }
@@ -241,41 +235,6 @@ export default class SettlementBalanceService {
       );
 
     return obligation?.amount ?? 0;
-  }
-
-  /**
-   * Returns active, included allocations belonging
-   * to active expense transactions in the household.
-   */
-  private static getEligibleAllocations(
-    householdId: string
-  ): ExpenseAllocation[] {
-    const activeExpenseTransactionIds =
-      new Set(
-        TransactionRepository.findAll()
-          .filter(
-            (transaction) =>
-              transaction.householdId ===
-                householdId &&
-              transaction.type ===
-                "expense" &&
-              transaction.isActive
-          )
-          .map(
-            (transaction) =>
-              transaction.id
-          )
-      );
-
-    return ExpenseAllocationRepository.findAll()
-      .filter(
-        (allocation) =>
-          activeExpenseTransactionIds.has(
-            allocation.transactionId
-          ) &&
-          allocation.isIncluded &&
-          allocation.allocatedAmount > 0
-      );
   }
 
   /**

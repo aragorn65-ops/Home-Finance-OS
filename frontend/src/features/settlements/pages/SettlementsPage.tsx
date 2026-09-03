@@ -1126,10 +1126,26 @@ export default function SettlementsPage() {
       [household, settlements]
     );
 
+  const creditAdjustedOutstandingAllocations =
+    useMemo(
+      () =>
+        household
+          ? SettlementOverpaymentCreditService
+              .applyCreditOffsetsToAllocations(
+                household.id,
+                outstandingAllocations
+              )
+          : [],
+      [
+        household,
+        outstandingAllocations,
+      ]
+    );
+
   const currentMonthOutstandingAllocations =
     useMemo(
       () =>
-        outstandingAllocations.filter(
+        creditAdjustedOutstandingAllocations.filter(
           (allocation) =>
             isSameMonth(
               allocation.transactionDate,
@@ -1137,7 +1153,7 @@ export default function SettlementsPage() {
             )
         ),
       [
-        outstandingAllocations,
+        creditAdjustedOutstandingAllocations,
         selectedMonth,
       ]
     );
@@ -1145,13 +1161,13 @@ export default function SettlementsPage() {
   const previousOutstandingAllocations =
     useMemo(
       () =>
-        outstandingAllocations.filter(
+        creditAdjustedOutstandingAllocations.filter(
           (allocation) =>
             allocation.transactionDate <
             selectedMonth
         ),
       [
-        outstandingAllocations,
+        creditAdjustedOutstandingAllocations,
         selectedMonth,
       ]
     );
@@ -1226,13 +1242,15 @@ export default function SettlementsPage() {
       () =>
         household
           ? SettlementOverpaymentCreditService
-              .getOpenCredits(
-                household.id
+              .getRemainingOpenCredits(
+                household.id,
+                outstandingAllocations
               )
           : [],
       [
         household,
         settlements,
+        outstandingAllocations,
       ]
     );
 
@@ -1245,7 +1263,7 @@ export default function SettlementsPage() {
               household.id,
               selectedSettlement.id
             )
-        : outstandingAllocations
+        : creditAdjustedOutstandingAllocations
       : [];
 
   const selectedApplicationDetails =

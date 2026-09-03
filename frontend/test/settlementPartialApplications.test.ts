@@ -6,10 +6,12 @@ import AllocationPaymentService from "../src/features/settlements/services/Alloc
 import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository.ts";
 import SettlementApplicationRepository from "../src/features/settlements/repositories/SettlementApplicationRepository.ts";
 import SettlementOverpaymentCreditService from "../src/features/settlements/services/SettlementOverpaymentCreditService.ts";
+import SettlementAllocationService from "../src/features/settlements/services/SettlementAllocationService.ts";
 import {
   recalculateManualSettlementApplications,
 } from "../src/features/settlements/services/manualSettlementApplications.ts";
 import ExpenseAllocationRepository from "../src/features/transactions/repositories/ExpenseAllocationRepository.ts";
+import TransactionRepository from "../src/features/transactions/repositories/TransactionRepository.ts";
 import {
   HFOS_STORAGE_KEYS,
   saveStoredData,
@@ -472,5 +474,141 @@ test("manual settlement records overpayment credit when payment exceeds applied 
   assert.equal(
     credits[0]?.amount,
     500
+  );
+});
+
+test("overpayment credit offsets later obligations without changing allocation records", () => {
+  seedPartialSettlementFixture();
+
+  const result =
+    SettlementService.create({
+      householdId,
+      fromMemberId: payerMemberId,
+      toMemberId: receiverMemberId,
+      amount: 3500,
+      settlementDate: "2026-08-06",
+      sourceAccountId: "",
+      destinationAccountId: "",
+      applicationMethod: "manual",
+      applications: [
+        {
+          expenseAllocationId:
+            "allocation-groceries",
+          isSelected: true,
+          appliedAmount: 3000,
+        },
+      ],
+      referenceNumber: "",
+      notes: "",
+      attachments: [],
+      isActive: true,
+    });
+
+  assert.equal(
+    result.success,
+    true
+  );
+
+  const now =
+    new Date(
+      "2026-08-08T00:00:00.000Z"
+    );
+
+  const futureTransaction =
+    TransactionRepository.create({
+      id: "transaction-future-water",
+      householdId,
+      paidByMemberId:
+        receiverMemberId,
+      expenseSplitMethod: "exact",
+      visibility: "household",
+      type: "expense",
+      amount: 700,
+      sourceAccountId: null,
+      destinationAccountId: null,
+      category: "Utilities",
+      description: "Future water",
+      notes: "",
+      transactionDate: now,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+  assert.ok(futureTransaction);
+
+  const futureAllocations =
+    ExpenseAllocationRepository
+      .createMany([
+        {
+          id: "allocation-future-water",
+          transactionId:
+            "transaction-future-water",
+          paidByMemberId:
+            receiverMemberId,
+          memberId: payerMemberId,
+          isIncluded: true,
+          allocatedAmount: 700,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+
+  assert.ok(futureAllocations);
+
+  const rawFutureAllocation =
+    ExpenseAllocationRepository.findById(
+      "allocation-future-water"
+    );
+
+  assert.ok(rawFutureAllocation);
+
+  assert.equal(
+    AllocationPaymentService
+      .getPaymentDetails(
+        rawFutureAllocation
+      )
+      .outstandingAmount,
+    700
+  );
+
+  const adjustedAllocations =
+    SettlementOverpaymentCreditService
+      .applyCreditOffsetsToAllocations(
+        householdId,
+        SettlementAllocationService
+          .getOutstandingAllocations(
+            householdId
+          )
+      );
+
+  const adjustedFutureAllocation =
+    adjustedAllocations.find(
+      (allocation) =>
+        allocation.expenseAllocationId ===
+        "allocation-future-water"
+    );
+
+  assert.ok(adjustedFutureAllocation);
+
+  assert.equal(
+    adjustedFutureAllocation
+      .outstandingAmount,
+    200
+  );
+
+  const remainingCredits =
+    SettlementOverpaymentCreditService
+      .getRemainingOpenCredits(
+        householdId,
+        SettlementAllocationService
+          .getOutstandingAllocations(
+            householdId
+          )
+      );
+
+  assert.deepEqual(
+    remainingCredits,
+    []
   );
 });
