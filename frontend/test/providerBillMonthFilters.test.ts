@@ -399,6 +399,134 @@ test("saving an unpaid provider bill persists it for reload", async () => {
   );
 });
 
+test("marking a provider bill paid keeps it out of unpaid bills after reload", async () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-provider-bill-paid-loop";
+  const transactionId =
+    "paid-water-transaction";
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Provider Bill Paid Loop",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [],
+        createdAt:
+          "2026-07-01T00:00:00.000Z",
+        updatedAt:
+          "2026-07-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  TransactionRepository.replaceForHousehold(
+    householdId,
+    [
+      createTransaction({
+        id:
+          transactionId,
+        householdId,
+        paidByMemberId:
+          "member-1",
+        amount:
+          1409.2,
+        category:
+          "Water",
+        description:
+          "Water utility bill",
+        transactionDate:
+          new Date(
+            "2026-07-13T00:00:00"
+          ),
+      }),
+    ]
+  );
+
+  UtilityProviderBillRepository.create(
+    createProviderBill({
+      id:
+        "paid-loop-water-bill",
+      householdId,
+      providerName:
+        "Manila Water",
+      utilityType:
+        "water",
+      unit:
+        "m3",
+      billingDate:
+        new Date(
+          "2026-07-13T00:00:00"
+        ),
+      totalBillAmount:
+        1409.2,
+      status:
+        "unpaid",
+      paidAt:
+        null,
+    })
+  );
+
+  const result =
+    await UtilityProviderBillService
+      .markPaid(
+        "paid-loop-water-bill",
+        {
+          paidByMemberId:
+            "member-1",
+          sourceAccountId:
+            "",
+          paidAt:
+            "2026-07-13",
+          referenceNumber:
+            "",
+          paymentAttachments: [],
+        }
+      );
+
+  assert.equal(
+    result.success,
+    true
+  );
+  assert.deepEqual(
+    UtilityProviderBillService
+      .getActiveProviderBills()
+      .map(
+        (providerBill) =>
+          providerBill.id
+      ),
+    []
+  );
+  assert.deepEqual(
+    UtilityProviderBillService
+      .getPaidProviderBills()
+      .map(
+        (providerBill) => [
+          providerBill.id,
+          providerBill.status,
+          providerBill.transactionId,
+        ]
+      ),
+    [
+      [
+        "paid-loop-water-bill",
+        "paid",
+        transactionId,
+      ],
+    ]
+  );
+});
+
 test("transaction delete preparation detaches linked provider bills", () => {
   const { localStorage } =
     installBrowserStorage();
