@@ -729,6 +729,17 @@ export default function UtilityBillForm({
       return calculation;
     };
 
+  const handleReviewTabClick =
+    (): void => {
+      if (previewResult) {
+        setActiveTab("review");
+
+        return;
+      }
+
+      calculatePreview();
+    };
+
   const handleSubmit = (): void => {
     const calculation =
       calculatePreview();
@@ -814,7 +825,7 @@ export default function UtilityBillForm({
           <UtilityEntryTabButton
             label="Review"
             isActive={activeTab === "review"}
-            onClick={() => setActiveTab("review")}
+            onClick={handleReviewTabClick}
           />
         </div>
       </div>
@@ -1757,8 +1768,9 @@ export default function UtilityBillForm({
         </section>
       )}
 
-      <div className="sticky bottom-0 z-20 flex flex-wrap justify-end gap-3 rounded-xl border bg-card/95 p-3 shadow-lg backdrop-blur">
-        {onCancel && (
+      {activeTab !== "review" &&
+        onCancel && (
+        <div className="sticky bottom-0 z-20 flex flex-wrap justify-end gap-3 rounded-xl border bg-card/95 p-3 shadow-lg backdrop-blur">
           <button
             className={secondaryButtonClassName}
             type="button"
@@ -1766,35 +1778,39 @@ export default function UtilityBillForm({
           >
             Cancel
           </button>
-        )}
-
-        <button
-          className={secondaryButtonClassName}
-          type="button"
-          onClick={
-            calculatePreview
-          }
-        >
-          Calculate Bill Shares
-        </button>
-
-        {onSubmit && (
-          <button
-            className={primaryButtonClassName}
-            type="button"
-            onClick={handleSubmit}
-          >
-            {submitLabel}
-          </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {activeTab === "review" &&
         previewResult && (
-        <UtilityBillSharePreview
-          result={previewResult}
-          memberNames={memberNames}
-        />
+        <>
+          <UtilityBillSharePreview
+            result={previewResult}
+            memberNames={memberNames}
+          />
+
+          <div className="flex flex-wrap justify-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            {onCancel && (
+              <button
+                className={secondaryButtonClassName}
+                type="button"
+                onClick={onCancel}
+              >
+                Cancel
+              </button>
+            )}
+
+            {onSubmit && (
+              <button
+                className={primaryButtonClassName}
+                type="button"
+                onClick={handleSubmit}
+              >
+                {submitLabel}
+              </button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
@@ -2082,7 +2098,7 @@ const inputClassName =
   "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
 
 const primaryButtonClassName =
-  "min-h-11 min-w-48 rounded-lg bg-[#dbeafe] px-6 py-2 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-[#9fbce2] focus:outline-none focus:ring-2 focus:ring-blue-500/30";
+  "min-h-11 min-w-48 rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30";
 
 const secondaryButtonClassName =
   "min-h-11 min-w-48 rounded-lg border bg-background px-6 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500/20";
