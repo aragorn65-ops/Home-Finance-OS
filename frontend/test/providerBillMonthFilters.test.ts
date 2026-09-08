@@ -865,6 +865,64 @@ test("monthly member contributions include unpaid utility provider bill shares",
   );
 });
 
+for (const ownerReference of [
+  "member-dadi", "remote-dadi", "member-001", "linked-owner", "DADI@example.com",
+]) {
+  test(`member contributions resolve owner reference ${ownerReference}`, () => {
+    const { localStorage } = installBrowserStorage();
+    const householdId = `contribution-mapping-${ownerReference}`;
+    const now = new Date("2026-07-13T00:00:00");
+    localStorage.setItem(HFOS_STORAGE_KEYS.household, JSON.stringify(
+      createStorageEnvelope({
+        id: householdId,
+        householdName: "Contribution mapping",
+        country: "PH", currency: "PHP", timezone: "Asia/Manila",
+        authenticatedLink: {
+          ownerMemberId: "linked-owner", remoteHouseholdId: householdId,
+          migrationId: "test-migration", linkedByUserId: "test-user", linkedAt: now.toISOString(),
+        },
+        members: [
+          { id: "member-dadi", remoteMemberId: "remote-dadi", email: "dadi@example.com",
+            householdId, displayName: "Dadi Buboy", role: "owner", isActive: true,
+            createdAt: now, updatedAt: now },
+          { id: "member-rasha", remoteMemberId: "remote-rasha",
+            householdId, displayName: "Rasha", role: "member", isActive: true,
+            createdAt: now, updatedAt: now },
+          { id: "foreign-member", householdId: "another-household",
+            displayName: "Other member", role: "member", isActive: true,
+            createdAt: now, updatedAt: now },
+        ],
+        createdAt: now, updatedAt: now,
+      })
+    ));
+    TransactionRepository.replaceForHousehold(householdId, [
+      createTransaction({ id: `${householdId}-shared`, householdId, amount: 1000 }),
+      createTransaction({ id: `${householdId}-legacy`, householdId, amount: 100,
+        paidByMemberId: ownerReference }),
+    ]);
+    ExpenseAllocationRepository.createMany([
+      { id: "dadi-share", memberId: ownerReference, allocatedAmount: 600 },
+      { id: "rasha-share", memberId: "remote-rasha", allocatedAmount: 400 },
+      { id: "foreign-share", memberId: "foreign-member", allocatedAmount: 999 },
+      { id: "unresolved-share", memberId: "unknown", allocatedAmount: 999 },
+    ].map((allocation) => ({
+      ...allocation, id: `${householdId}-${allocation.id}`,
+      transactionId: `${householdId}-shared`, paidByMemberId: ownerReference,
+      isIncluded: true, createdAt: now, updatedAt: now,
+    })));
+    const bill = createProviderBill({ id: `${householdId}-unpaid`, householdId });
+    bill.memberShareSnapshot[0].memberId = ownerReference;
+    UtilityProviderBillRepository.create(bill);
+
+    const summary = HouseholdExpenseContributionService.getMonthlySummary(householdId, now);
+    assert.equal(summary.totalAmount, 2100);
+    assert.deepEqual(summary.memberContributions.map((member) => [
+      member.memberName, member.amount, member.expenseCount,
+    ]), [["Dadi Buboy", 1700, 3], ["Rasha", 400, 1]]);
+    assert.equal(TransactionService.getTotalExpenses(now), 1100);
+  });
+}
+
 test("transaction delete preparation detaches linked provider bills", () => {
   const { localStorage } =
     installBrowserStorage();

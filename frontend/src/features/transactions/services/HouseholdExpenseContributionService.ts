@@ -4,7 +4,7 @@ import {
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 import {
-  resolveHouseholdMemberReference,
+  findHouseholdMemberByReference,
 } from "../../household/services/householdMemberResolution";
 import UtilityProviderBillRepository from "../../utilities/repositories/UtilityProviderBillRepository";
 
@@ -94,7 +94,8 @@ export default class HouseholdExpenseContributionService {
         this.addAllocatedExpense(
           contributionsByMemberId,
           expense.id,
-          allocations
+          allocations,
+          householdId
         );
 
         continue;
@@ -124,9 +125,9 @@ export default class HouseholdExpenseContributionService {
     for (const providerBill of unpaidProviderBills) {
       for (const memberShare of providerBill.memberShareSnapshot) {
         const member =
-          resolveHouseholdMemberReference(
-            activeMembers,
-            memberShare.memberId
+          findHouseholdMemberByReference(
+            memberShare.memberId,
+            householdId
           );
 
         if (!member) {
@@ -243,12 +244,19 @@ export default class HouseholdExpenseContributionService {
       }
     >,
     expenseId: string,
-    allocations: ExpenseAllocation[]
+    allocations: ExpenseAllocation[],
+    householdId: string
   ): void {
     for (const allocation of allocations) {
+      const member =
+        findHouseholdMemberByReference(
+          allocation.memberId,
+          householdId
+        );
+
       const contribution =
         contributionsByMemberId.get(
-          allocation.memberId
+          member?.id ?? ""
         );
 
       if (!contribution) {
@@ -291,9 +299,15 @@ export default class HouseholdExpenseContributionService {
       return;
     }
 
+    const member =
+      findHouseholdMemberByReference(
+        paidByMemberId,
+        expense.householdId
+      );
+
     const contribution =
       contributionsByMemberId.get(
-        paidByMemberId
+        member?.id ?? ""
       );
 
     if (!contribution) {
