@@ -738,9 +738,6 @@ export default function DashboardPage() {
       ]
     );
 
-  const sharedMonthlyExpenses =
-    expenseContributionSummary.totalAmount;
-
   const effectiveRemittanceRate =
     lockedExpenseCurrency ===
     remittanceCurrency
@@ -816,7 +813,7 @@ export default function DashboardPage() {
         <MetricCard
           label="Total Expenses"
           value={formatCurrency(
-            sharedMonthlyExpenses,
+            monthlyExpenses,
             lockedExpenseCurrency
           )}
           subtitle={`This month in ${lockedExpenseCurrency}`}
@@ -1027,9 +1024,7 @@ export default function DashboardPage() {
                 )}
 
                 <div className="category-total">
-                  <span>
-                    Transaction subtotal
-                  </span>
+                  <span>Total</span>
                   <strong>
                     {formatCurrency(
                       monthlyExpenses,
@@ -1379,7 +1374,7 @@ export default function DashboardPage() {
               <span>Locked dashboard totals</span>
               <strong>
                 {formatCurrency(
-                  sharedMonthlyExpenses,
+                  monthlyExpenses,
                   lockedExpenseCurrency
                 )}
               </strong>
@@ -1472,7 +1467,7 @@ export default function DashboardPage() {
                   {hasRemittanceRate
                     ? formatCurrency(
                         roundCurrencyAmount(
-                          sharedMonthlyExpenses *
+                          monthlyExpenses *
                             effectiveRemittanceRate
                         ),
                         remittanceCurrency
@@ -1489,7 +1484,7 @@ export default function DashboardPage() {
                   {hasRemittanceRate
                     ? formatCurrency(
                         roundUpToNearestHundred(
-                          sharedMonthlyExpenses *
+                          monthlyExpenses *
                             effectiveRemittanceRate
                         ),
                         remittanceCurrency

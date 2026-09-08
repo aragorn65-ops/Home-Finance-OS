@@ -645,6 +645,11 @@ export default function AnalyticsPage() {
       ]
     );
 
+  const totalExpenses =
+    TransactionService.getTotalExpenses(
+      selectedMonth
+    );
+
   const categoryTotals =
     useMemo(
       () =>
@@ -732,9 +737,6 @@ export default function AnalyticsPage() {
       )
       .length;
 
-  const sharedMonthlyExpenses =
-    expenseContributionSummary.totalAmount;
-
   const contributionPieBackground =
     getContributionPieBackground(
       expenseContributionSummary
@@ -767,10 +769,10 @@ export default function AnalyticsPage() {
           <AnalyticsMetric
             label="Household Expenses"
             value={formatCurrency(
-              sharedMonthlyExpenses,
+              totalExpenses,
               currency
             )}
-            subtitle="Member share total"
+            subtitle="Selected month"
             icon={ReceiptText}
             tone="negative"
           />
