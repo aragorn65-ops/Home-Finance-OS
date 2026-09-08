@@ -7,6 +7,20 @@ import {
 } from "node:path";
 import test from "node:test";
 
+test("snapshot save rejects removing applied expense allocations before any data mutation", () => {
+  const schema = readFileSync(join(process.cwd(), "..", "docs", "architecture", "supabase-spike-schema.sql"), "utf8");
+  const start = schema.indexOf("create or replace function public.save_household_core_snapshot(");
+  const end = schema.indexOf("revoke all on function public.save_household_core_snapshot", start);
+  const definition = schema.slice(start, end).trim();
+  const guard = definition.indexOf("Snapshot was not saved because it would remove expense shares with recorded settlements.");
+  assert.ok(guard > 0);
+  assert.ok(guard < definition.indexOf("delete from public.utility_provider_bills"));
+  assert.match(definition.slice(0, guard), /payment_link\.household_id = target_household_id/);
+  assert.match(definition.slice(0, guard), /incoming ->> 'id' = allocation\.local_record_id/);
+  const repair = readFileSync(join(process.cwd(), "..", "docs", "architecture", "supabase-preserve-settlement-links.sql"), "utf8");
+  assert.ok(repair.replace(/\r\n/g, "\n").includes(definition.replace(/\r\n/g, "\n")));
+});
+
 test("Supabase grants active members access to settlement applications", () => {
   const schemaSql = readFileSync(join(
     process.cwd(), "..", "docs", "architecture", "supabase-spike-schema.sql"

@@ -1,18 +1,7 @@
-import {
-  isSameMonth,
-} from "../../../shared/utils/monthSelection";
-
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
-
-import ExpenseAllocationService from "./ExpenseAllocationService";
-import TransactionService from "./TransactionService";
-
-import type {
-  ExpenseAllocation,
-} from "../models/ExpenseAllocation";
-import type {
-  Transaction,
-} from "../models/Transaction";
+import { findHouseholdMemberByReference } from "../../household/services/householdMemberResolution";
+import { roundCurrencyAmount } from "../../../shared/utils/currencyConversion";
+import MonthlyExpenseReportingService from "./MonthlyExpenseReportingService";
 
 export interface MemberHouseholdExpenseContribution {
   memberId: string;
@@ -24,240 +13,41 @@ export interface MemberHouseholdExpenseContribution {
 
 export interface HouseholdExpenseContributionSummary {
   totalAmount: number;
-  memberContributions:
-    MemberHouseholdExpenseContribution[];
+  memberContributions: MemberHouseholdExpenseContribution[];
+  unassignedAmount?: number;
 }
 
 export default class HouseholdExpenseContributionService {
-  static getMonthlySummary(
-    householdId: string,
-    selectedMonth: Date
-  ): HouseholdExpenseContributionSummary {
-    const activeMembers =
-      HouseholdMemberService
-        .getActiveMembers()
-        .filter(
-          (member) =>
-            member.householdId ===
-            householdId
-        );
+  static getMonthlySummary(householdId: string, selectedMonth: Date): HouseholdExpenseContributionSummary {
+    const members = HouseholdMemberService.getMembers().filter((member) => member.householdId === householdId);
+    const expenses = MonthlyExpenseReportingService.getMonthlyExpenses(householdId, selectedMonth);
+    const totals = new Map(members.map((member) => [member.id, { amount: 0, expenseIds: new Set<string>() }]));
 
-    const contributionsByMemberId =
-      new Map<
-        string,
-        {
-          amount: number;
-          expenseIds: Set<string>;
-        }
-      >(
-        activeMembers.map(
-          (member) => [
-            member.id,
-            {
-              amount: 0,
-              expenseIds: new Set<string>(),
-            },
-          ]
-        )
-      );
-
-    const householdExpenses =
-      TransactionService
-        .getTransactions()
-        .filter(
-          (transaction) =>
-            this.isHouseholdExpenseForMonth(
-              transaction,
-              householdId,
-              selectedMonth
-            )
-        );
-
-    for (const expense of householdExpenses) {
-      const allocations =
-        ExpenseAllocationService
-          .getByTransactionId(
-            expense.id
-          )
-          .filter(
-            (allocation) =>
-              allocation.isIncluded &&
-              allocation.allocatedAmount >
-                0
-          );
-
-      if (allocations.length > 0) {
-        this.addAllocatedExpense(
-          contributionsByMemberId,
-          expense.id,
-          allocations
-        );
-
-        continue;
+    for (const expense of expenses) {
+      for (const share of expense.shares) {
+        if (share.amount <= 0) continue;
+        const member = findHouseholdMemberByReference(share.memberId, householdId);
+        const total = member ? totals.get(member.id) : undefined;
+        if (!total) continue;
+        total.amount = roundCurrencyAmount(total.amount + share.amount);
+        total.expenseIds.add(expense.id);
       }
-
-      this.addLegacyExpense(
-        contributionsByMemberId,
-        expense
-      );
     }
 
-    const totalAmount =
-      this.roundCurrency(
-        Array.from(
-          contributionsByMemberId.values()
-        ).reduce(
-          (total, contribution) =>
-            total + contribution.amount,
-          0
-        )
-      );
-
-    const memberContributions =
-      activeMembers
-        .map((member) => {
-          const contribution =
-            contributionsByMemberId.get(
-              member.id
-            );
-
-          const amount =
-            this.roundCurrency(
-              contribution?.amount ?? 0
-            );
-
-          return {
-            memberId:
-              member.id,
-            memberName:
-              member.displayName,
-            amount,
-            percentage:
-              totalAmount > 0
-                ? Math.round(
-                    (amount /
-                      totalAmount) *
-                      100
-                  )
-                : 0,
-            expenseCount:
-              contribution?.expenseIds
-                .size ?? 0,
-          };
-        })
-        .sort(
-          (first, second) =>
-            second.amount - first.amount
-        );
+    const totalAmount = roundCurrencyAmount(expenses.reduce((sum, expense) => sum + expense.amount, 0));
+    const memberContributions = members.filter((member) => member.isActive || (totals.get(member.id)?.amount ?? 0) > 0)
+      .map((member) => {
+        const total = totals.get(member.id)!;
+        return {
+          memberId: member.id, memberName: member.displayName, amount: total.amount,
+          percentage: totalAmount > 0 ? Math.round(total.amount / totalAmount * 100) : 0,
+          expenseCount: total.expenseIds.size,
+        };
+      }).sort((a, b) => b.amount - a.amount);
 
     return {
-      totalAmount,
-      memberContributions,
+      totalAmount, memberContributions,
+      unassignedAmount: roundCurrencyAmount(totalAmount - memberContributions.reduce((sum, member) => sum + member.amount, 0)),
     };
-  }
-
-  private static isHouseholdExpenseForMonth(
-    transaction: Transaction,
-    householdId: string,
-    selectedMonth: Date
-  ): boolean {
-    return (
-      transaction.householdId ===
-        householdId &&
-      transaction.isActive &&
-      transaction.type === "expense" &&
-      transaction.visibility !==
-        "private" &&
-      isSameMonth(
-        transaction.transactionDate,
-        selectedMonth
-      )
-    );
-  }
-
-  private static addAllocatedExpense(
-    contributionsByMemberId: Map<
-      string,
-      {
-        amount: number;
-        expenseIds: Set<string>;
-      }
-    >,
-    expenseId: string,
-    allocations: ExpenseAllocation[]
-  ): void {
-    for (const allocation of allocations) {
-      const contribution =
-        contributionsByMemberId.get(
-          allocation.memberId
-        );
-
-      if (!contribution) {
-        continue;
-      }
-
-      contribution.amount =
-        this.roundCurrency(
-          contribution.amount +
-            allocation.allocatedAmount
-        );
-
-      contribution.expenseIds.add(
-        expenseId
-      );
-    }
-  }
-
-  private static addLegacyExpense(
-    contributionsByMemberId: Map<
-      string,
-      {
-        amount: number;
-        expenseIds: Set<string>;
-      }
-    >,
-    expense: Transaction
-  ): void {
-    if (
-      expense.expenseSplitMethod ===
-      "none"
-    ) {
-      return;
-    }
-
-    const paidByMemberId =
-      expense.paidByMemberId;
-
-    if (!paidByMemberId) {
-      return;
-    }
-
-    const contribution =
-      contributionsByMemberId.get(
-        paidByMemberId
-      );
-
-    if (!contribution) {
-      return;
-    }
-
-    contribution.amount =
-      this.roundCurrency(
-        contribution.amount +
-          expense.amount
-      );
-
-    contribution.expenseIds.add(
-      expense.id
-    );
-  }
-
-  private static roundCurrency(
-    amount: number
-  ): number {
-    return (
-      Math.round(amount * 100) /
-      100
-    );
   }
 }

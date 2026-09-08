@@ -20,6 +20,12 @@ import type {
 import ExpenseAllocationRepository from "../src/features/transactions/repositories/ExpenseAllocationRepository";
 import TransactionRepository from "../src/features/transactions/repositories/TransactionRepository";
 import TransactionService from "../src/features/transactions/services/TransactionService";
+import MonthlyExpenseReportingService from "../src/features/transactions/services/MonthlyExpenseReportingService";
+import HouseholdExpenseContributionService from "../src/features/transactions/services/HouseholdExpenseContributionService";
+import SettlementService from "../src/features/settlements/services/SettlementService";
+import SettlementAllocationService from "../src/features/settlements/services/SettlementAllocationService";
+import SettlementOverpaymentCreditService from "../src/features/settlements/services/SettlementOverpaymentCreditService";
+import { persistRemoteSettlementRecords } from "../src/features/settlements/services/remoteSettlementSync";
 import SettlementApplicationRepository from "../src/features/settlements/repositories/SettlementApplicationRepository";
 import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository";
 import UtilityProviderBillRepository from "../src/features/utilities/repositories/UtilityProviderBillRepository";
@@ -232,6 +238,110 @@ function createTransaction(
     ...overrides,
   };
 }
+
+test("July expense shares stay fixed through utility payment, settlements, credit carryover and cloud reload", () => {
+  const { localStorage } = installBrowserStorage();
+  const householdId = "fresh-july-flow";
+  const july = new Date("2026-07-13T00:00:00");
+  const august = new Date("2026-08-03T00:00:00");
+  const memberIds = ["dadi", "rasha", "lyn"];
+  localStorage.setItem(HFOS_STORAGE_KEYS.household, JSON.stringify(createStorageEnvelope({
+    id: householdId, householdName: "Fresh test", country: "PH", currency: "PHP", timezone: "Asia/Manila",
+    members: memberIds.map((id, index) => ({
+      id, householdId, remoteMemberId: "remote-" + id, displayName: ["Dadi Buboy", "Rasha", "Lyn"][index],
+      role: index === 0 ? "owner" : "member", isActive: true, createdAt: july, updatedAt: july,
+    })),
+    createdAt: july, updatedAt: july,
+  })));
+  const groceries = createTransaction({ id: "july-groceries", householdId, amount: 900, paidByMemberId: "dadi" });
+  TransactionRepository.replaceForHousehold(householdId, [groceries]);
+  const allocations = (transactionId: string, amount: number) => memberIds.map((memberId) => ({
+    id: transactionId + "-" + memberId, transactionId, paidByMemberId: "dadi", memberId,
+    isIncluded: true, allocatedAmount: amount, createdAt: july, updatedAt: july,
+  }));
+  ExpenseAllocationRepository.createMany(allocations(groceries.id, 300));
+  const bill = createProviderBill({ id: "july-unpaid", householdId, totalBillAmount: 600 });
+  bill.memberShareSnapshot = memberIds.map((memberId) => ({
+    ...bill.memberShareSnapshot[0], memberId: "remote-" + memberId, finalShareAmount: 200,
+  }));
+  UtilityProviderBillRepository.create(bill);
+  const total = (date: Date) => MonthlyExpenseReportingService.getMonthlyExpenses(householdId, date)
+    .reduce((sum, item) => sum + item.amount, 0);
+  const assertJuly = () => {
+    assert.equal(total(july), 1500);
+    const report = HouseholdExpenseContributionService.getMonthlySummary(householdId, july);
+    assert.equal(report.totalAmount, 1500);
+    assert.equal(report.unassignedAmount, 0);
+    assert.deepEqual(report.memberContributions.map((member) => [member.memberName, member.amount]),
+      [["Dadi Buboy", 500], ["Rasha", 500], ["Lyn", 500]]);
+  };
+  assertJuly();
+  assert.equal(UtilityProviderBillRepository.findById(bill.id)?.status, "unpaid");
+  const payment = createTransaction({ id: "july-utility-payment", householdId, amount: 600, paidByMemberId: "dadi" });
+  TransactionRepository.replaceForHousehold(householdId, [groceries, payment]);
+  ExpenseAllocationRepository.createMany(allocations(payment.id, 200));
+  UtilityProviderBillRepository.update({ ...bill, status: "paid", paidAt: july, transactionId: payment.id });
+  assertJuly();
+
+  const settle = (member: string, amount: number, links: Array<[string, number]>) => {
+    const result = SettlementService.create({
+      householdId, fromMemberId: member, toMemberId: "dadi", amount, settlementDate: "2026-07-20",
+      sourceAccountId: "", destinationAccountId: "", applicationMethod: "manual",
+      applications: links.map(([expenseAllocationId, appliedAmount]) => ({ expenseAllocationId, appliedAmount, isSelected: true })),
+      referenceNumber: "", notes: "", attachments: [], isActive: true,
+    });
+    assert.equal(result.success, true, JSON.stringify(result));
+    return result.data!;
+  };
+  const partial = settle("rasha", 100, [[groceries.id + "-rasha", 100]]);
+  assert.equal(SettlementOverpaymentCreditService.getTotalOpenCredit(householdId), 0);
+  const excess = settle("rasha", 450, [[groceries.id + "-rasha", 200], [payment.id + "-rasha", 200]]);
+  settle("lyn", 500, [[groceries.id + "-lyn", 300], [payment.id + "-lyn", 200]]);
+  assert.equal(SettlementOverpaymentCreditService.getTotalOpenCredit(householdId), 50);
+  assert.equal(SettlementAllocationService.getOutstandingAllocations(householdId).length, 0);
+  assertJuly();
+
+  const augustExpense = createTransaction({ id: "august-expense", householdId, amount: 300,
+    paidByMemberId: "dadi", transactionDate: august });
+  TransactionRepository.replaceForHousehold(householdId, [groceries, payment, augustExpense]);
+  ExpenseAllocationRepository.createMany(allocations(augustExpense.id, 100));
+  const offset = () => SettlementOverpaymentCreditService.applyCreditOffsetsToAllocations(
+    householdId, SettlementAllocationService.getOutstandingAllocations(householdId));
+  assert.deepEqual(offset().map((item) => [item.fromMemberId, item.outstandingAmount]).sort(),
+    [["lyn", 100], ["rasha", 50]]);
+  assert.equal(SettlementOverpaymentCreditService.getRemainingOpenCredits(householdId,
+    SettlementAllocationService.getOutstandingAllocations(householdId)).length, 0);
+  assert.equal(total(august), 300);
+  assert.equal(HouseholdExpenseContributionService.getMonthlySummary(householdId, august).totalAmount, 300);
+  assertJuly();
+
+  const settlements = SettlementRepository.findByHouseholdId(householdId);
+  const applications = SettlementApplicationRepository.findAll();
+  persistRemoteSettlementRecords(householdId,
+    settlements.map((settlement) => ({ ...settlement, id: "remote-" + settlement.id, localRecordId: settlement.id })),
+    settlements,
+    applications.map((application) => ({ ...application, householdId, id: "remote-" + application.id,
+      localRecordId: application.id, settlementId: "remote-" + application.settlementId })));
+  assertJuly();
+  assert.equal(SettlementApplicationRepository.getAppliedAmountBySettlementId(partial.id), 100);
+  assert.equal(SettlementApplicationRepository.getAppliedAmountBySettlementId(excess.id), 400);
+  assert.equal(SettlementOverpaymentCreditService.getTotalOpenCredit(householdId), 50);
+  assert.deepEqual(offset().map((item) => [item.fromMemberId, item.outstandingAmount]).sort(),
+    [["lyn", 100], ["rasha", 50]]);
+
+  const ownerShare = ExpenseAllocationRepository.findById(groceries.id + "-dadi")!;
+  const changeOwnerReference = (memberId: string) => ExpenseAllocationRepository.replaceByTransactionId(
+    groceries.id, ExpenseAllocationRepository.findByTransactionId(groceries.id).map((allocation) =>
+      allocation.id === ownerShare.id ? { ...allocation, memberId } : allocation));
+  changeOwnerReference("member-001");
+  assertJuly();
+  changeOwnerReference("unmapped-member");
+  const unresolved = HouseholdExpenseContributionService.getMonthlySummary(householdId, july);
+  assert.equal(unresolved.totalAmount, 1500);
+  assert.equal(unresolved.unassignedAmount, 300);
+  changeOwnerReference(ownerShare.memberId);
+  assertJuly();
+});
 
 function formatLocalDateKey(
   date: Date

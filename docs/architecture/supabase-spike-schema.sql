@@ -2643,6 +2643,25 @@ begin
     raise exception 'Core provider bill snapshot must be an array.';
   end if;
 
+  -- A stale or edited expense snapshot must not erase payment history.
+  -- Explicit clearing deletes settlements first, so it has no application links here.
+  if exists (
+    select 1
+    from public.settlement_applications payment_link
+    join public.expense_allocations allocation
+      on allocation.id = payment_link.expense_allocation_id
+      and allocation.household_id = target_household_id
+    where payment_link.household_id = target_household_id
+      and allocation.local_record_id is not null
+      and not exists (
+        select 1
+        from jsonb_array_elements(coalesce(core_expense_allocations, '[]'::jsonb)) incoming
+        where incoming ->> 'id' = allocation.local_record_id
+      )
+  ) then
+    raise exception 'Snapshot was not saved because it would remove expense shares with recorded settlements. Reload cloud data before editing. Settlement history was preserved.';
+  end if;
+
   with provider_bill_payload as (
     select provider_bill_record.id
     from jsonb_to_recordset(coalesce(core_provider_bills, '[]'::jsonb)) as provider_bill_record(

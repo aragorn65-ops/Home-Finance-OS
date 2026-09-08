@@ -2,6 +2,7 @@ import SettlementRepository from "../repositories/SettlementRepository";
 import SettlementApplicationRepository from "../repositories/SettlementApplicationRepository";
 
 import type { SettlementOverpaymentCredit } from "../models/SettlementOverpaymentCredit";
+import { findHouseholdMemberByReference } from "../../household/services/householdMemberResolution";
 
 export interface CreditOffsetEligibleAllocation {
   fromMemberId: string;
@@ -24,7 +25,9 @@ export default class SettlementOverpaymentCreditService {
             settlement.id
           );
 
-        if (applications.length === 0) {
+        if (applications.length === 0 || applications.some((application) =>
+          !Number.isFinite(application.appliedAmount) || application.appliedAmount <= 0
+        )) {
           return undefined;
         }
 
@@ -269,11 +272,13 @@ export default class SettlementOverpaymentCreditService {
     credit: SettlementOverpaymentCredit,
     allocation: CreditOffsetEligibleAllocation
   ): boolean {
+    const resolveMemberId = (memberId: string) =>
+      findHouseholdMemberByReference(memberId, credit.householdId)?.id ?? memberId;
     return (
-      credit.creditMemberId ===
-        allocation.fromMemberId &&
-      credit.counterpartyMemberId ===
-        allocation.toMemberId &&
+      resolveMemberId(credit.creditMemberId) ===
+        resolveMemberId(allocation.fromMemberId) &&
+      resolveMemberId(credit.counterpartyMemberId) ===
+        resolveMemberId(allocation.toMemberId) &&
       allocation.transactionDate.getTime() >
         credit.settlementDate.getTime()
     );
