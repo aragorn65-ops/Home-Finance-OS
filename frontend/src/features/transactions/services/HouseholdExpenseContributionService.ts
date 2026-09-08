@@ -3,10 +3,6 @@ import {
 } from "../../../shared/utils/monthSelection";
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
-import {
-  findHouseholdMemberByReference,
-} from "../../household/services/householdMemberResolution";
-import MonthlyExpenseReportingService from "./MonthlyExpenseReportingService";
 
 import ExpenseAllocationService from "./ExpenseAllocationService";
 import TransactionService from "./TransactionService";
@@ -94,8 +90,7 @@ export default class HouseholdExpenseContributionService {
         this.addAllocatedExpense(
           contributionsByMemberId,
           expense.id,
-          allocations,
-          householdId
+          allocations
         );
 
         continue;
@@ -105,52 +100,6 @@ export default class HouseholdExpenseContributionService {
         contributionsByMemberId,
         expense
       );
-    }
-
-    const unpaidProviderBills =
-      MonthlyExpenseReportingService.getUnrecordedUnpaidBills(
-        householdId,
-        selectedMonth
-      );
-
-    for (const providerBill of unpaidProviderBills) {
-      for (const memberShare of providerBill.memberShareSnapshot) {
-        const member =
-          findHouseholdMemberByReference(
-            memberShare.memberId,
-            householdId
-          );
-
-        if (!member) {
-          continue;
-        }
-
-        const contribution =
-          contributionsByMemberId.get(
-            member.id
-          );
-
-        if (!contribution) {
-          continue;
-        }
-
-        if (
-          memberShare.finalShareAmount <=
-          0
-        ) {
-          continue;
-        }
-
-        contribution.amount =
-          this.roundCurrency(
-            contribution.amount +
-              memberShare.finalShareAmount
-          );
-
-        contribution.expenseIds.add(
-          providerBill.id
-        );
-      }
     }
 
     const totalAmount =
@@ -235,19 +184,12 @@ export default class HouseholdExpenseContributionService {
       }
     >,
     expenseId: string,
-    allocations: ExpenseAllocation[],
-    householdId: string
+    allocations: ExpenseAllocation[]
   ): void {
     for (const allocation of allocations) {
-      const member =
-        findHouseholdMemberByReference(
-          allocation.memberId,
-          householdId
-        );
-
       const contribution =
         contributionsByMemberId.get(
-          member?.id ?? ""
+          allocation.memberId
         );
 
       if (!contribution) {
@@ -290,15 +232,9 @@ export default class HouseholdExpenseContributionService {
       return;
     }
 
-    const member =
-      findHouseholdMemberByReference(
-        paidByMemberId,
-        expense.householdId
-      );
-
     const contribution =
       contributionsByMemberId.get(
-        member?.id ?? ""
+        paidByMemberId
       );
 
     if (!contribution) {

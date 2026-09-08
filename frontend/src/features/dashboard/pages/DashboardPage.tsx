@@ -65,7 +65,6 @@ import SettlementOverpaymentCreditService from "../../settlements/services/Settl
 import SettlementService from "../../settlements/services/SettlementService";
 import useSettlements from "../../settlements/hooks/useSettlements";
 import TransactionService from "../../transactions/services/TransactionService";
-import MonthlyExpenseReportingService, { type MonthlyExpenseRecord } from "../../transactions/services/MonthlyExpenseReportingService";
 import HouseholdExpenseContributionService from "../../transactions/services/HouseholdExpenseContributionService";
 import UtilityProviderBillService from "../../utilities/services/UtilityProviderBillService";
 
@@ -145,7 +144,7 @@ function MetricCard({
 }
 
 function getCategoryTotals(
-  transactions: MonthlyExpenseRecord[],
+  transactions: Transaction[],
   selectedMonth: Date
 ): CategoryTotal[] {
   const expenses =
@@ -587,17 +586,10 @@ export default function DashboardPage() {
     setIsRemittanceToolOpen,
   ] = useState(false);
 
-  const monthlyExpenseRecords = useMemo(
-    () => householdId ? MonthlyExpenseReportingService.getMonthlyExpenses(
-      householdId, parseMonthInput(selectedMonthValue)
-    ) : [],
-    [householdId, selectedMonthValue, coreSnapshotRefreshVersion]
-  );
-
   const monthlyExpenses =
     useMemo(
       () => {
-        return monthlyExpenseRecords
+        return monthlyExpenseTransactions
           .reduce(
             (total, transaction) =>
               total +
@@ -606,7 +598,7 @@ export default function DashboardPage() {
           );
       },
       [
-        monthlyExpenseRecords,
+        monthlyExpenseTransactions,
       ]
     );
 
@@ -650,12 +642,12 @@ export default function DashboardPage() {
           );
 
         return getCategoryTotals(
-          monthlyExpenseRecords,
+          transactions,
           referenceMonth
         );
       },
       [
-        monthlyExpenseRecords,
+        transactions,
         selectedMonthValue,
       ]
     );

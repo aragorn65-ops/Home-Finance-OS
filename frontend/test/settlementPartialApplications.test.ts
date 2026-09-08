@@ -477,44 +477,6 @@ test("manual settlement records overpayment credit when payment exceeds applied 
   );
 });
 
-test("missing settlement applications do not manufacture overpayment credit", () => {
-  seedPartialSettlementFixture();
-  const result = SettlementService.create({
-    householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
-    amount: 3500, settlementDate: "2026-09-03",
-    sourceAccountId: "", destinationAccountId: "", applicationMethod: "manual",
-    applications: [{ expenseAllocationId: "allocation-groceries", isSelected: true, appliedAmount: 3000 }],
-    referenceNumber: "SET-20260903-143935", notes: "", attachments: [], isActive: true,
-  });
-  assert.equal(result.success, true);
-  const verifiedSettlement = result.data;
-  assert.ok(verifiedSettlement);
-  SettlementRepository.create({
-    ...verifiedSettlement, id: "missing-applications", referenceNumber: "REGULAR-SETTLEMENT",
-    amount: 28401.1,
-  });
-  SettlementRepository.create({
-    ...verifiedSettlement, id: "fully-applied", referenceNumber: "FULLY-APPLIED", amount: 100,
-  });
-  SettlementApplicationRepository.createMany([{
-    id: "fully-applied-link", settlementId: "fully-applied",
-    expenseAllocationId: "allocation-electricity", appliedAmount: 100,
-    createdAt: verifiedSettlement.createdAt, updatedAt: verifiedSettlement.updatedAt,
-  }]);
-
-  const credits = SettlementOverpaymentCreditService.getOpenCredits(householdId);
-  assert.deepEqual(credits.map((credit) => [credit.settlementId, credit.amount]),
-    [[verifiedSettlement.id, 500]]);
-  const futureObligations = [{
-    fromMemberId: payerMemberId, toMemberId: receiverMemberId,
-    transactionDate: new Date("2026-09-05T00:00:00"), outstandingAmount: 1000,
-  }];
-  assert.equal(SettlementOverpaymentCreditService.applyCreditOffsetsToAllocations(
-    householdId, futureObligations
-  )[0].outstandingAmount, 500);
-  assert.equal(SettlementRepository.findById("missing-applications")?.amount, 28401.1);
-});
-
 test("overpayment credit offsets later obligations without changing allocation records", () => {
   seedPartialSettlementFixture();
 

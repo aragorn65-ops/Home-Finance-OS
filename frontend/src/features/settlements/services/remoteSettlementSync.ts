@@ -17,21 +17,11 @@ export function persistRemoteSettlementRecords(
   mappedSettlements: Settlement[],
   remoteApplications: RemoteSettlementApplication[]
 ): void {
-  const existingApplicationsBySettlementId =
-    new Map<string, SettlementApplication[]>();
-
   SettlementRepository
     .findByHouseholdId(
       localHouseholdId
     )
     .forEach((settlement) => {
-      existingApplicationsBySettlementId.set(
-        settlement.id,
-        SettlementApplicationRepository.findBySettlementId(
-          settlement.id
-        )
-      );
-
       SettlementApplicationRepository
         .deleteBySettlementId(
           settlement.id
@@ -121,20 +111,12 @@ export function persistRemoteSettlementRecords(
 
   mappedSettlements.forEach(
     (settlement) => {
-      const remoteSettlementApplications =
-        applicationsBySettlementId.get(
-          settlement.id
-        );
-      const preservedApplications =
-        existingApplicationsBySettlementId.get(
-          settlement.id
-        ) ?? [];
-
       SettlementApplicationRepository
         .replaceBySettlementId(
           settlement.id,
-          remoteSettlementApplications ??
-            preservedApplications
+          applicationsBySettlementId.get(
+            settlement.id
+          ) ?? []
         );
     }
   );

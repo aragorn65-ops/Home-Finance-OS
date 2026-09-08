@@ -19,19 +19,11 @@ export default class SettlementOverpaymentCreditService {
         householdId
       )
       .map((settlement) => {
-        const applications =
-          SettlementApplicationRepository.findBySettlementId(settlement.id);
-
-        // Missing application history is not evidence that the whole payment was excess.
-        if (applications.length === 0 || applications.some(
-          (application) => !Number.isFinite(application.appliedAmount) ||
-            application.appliedAmount <= 0
-        )) {
-          return undefined;
-        }
-
         const appliedAmount =
-          applications.reduce((total, application) => total + application.appliedAmount, 0);
+          SettlementApplicationRepository
+            .getAppliedAmountBySettlementId(
+              settlement.id
+            );
         const overpaymentAmount =
           this.roundCurrency(
             settlement.amount -

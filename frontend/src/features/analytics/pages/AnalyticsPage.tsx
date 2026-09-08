@@ -38,7 +38,6 @@ import SettlementAllocationService from "../../settlements/services/SettlementAl
 import useSavings from "../../savings/hooks/useSavings";
 import HouseholdExpenseContributionService from "../../transactions/services/HouseholdExpenseContributionService";
 import TransactionService from "../../transactions/services/TransactionService";
-import MonthlyExpenseReportingService, { type MonthlyExpenseRecord } from "../../transactions/services/MonthlyExpenseReportingService";
 
 import {
   normalizeTransactionCategory,
@@ -70,15 +69,6 @@ interface SettlementPairSummary {
   count: number;
   categories: CategoryTotal[];
 }
-
-const contributionChartColors = [
-  "#2563eb",
-  "#16a34a",
-  "#f59e0b",
-  "#dc2626",
-  "#7c3aed",
-  "#0891b2",
-];
 
 function AnalyticsMetric({
   label,
@@ -116,7 +106,7 @@ function AnalyticsMetric({
 }
 
 function getCategoryTotals(
-  transactions: MonthlyExpenseRecord[],
+  transactions: Transaction[],
   selectedMonth: Date
 ): CategoryTotal[] {
   const monthlyExpenses =
@@ -173,7 +163,7 @@ function getCategoryTotals(
 }
 
 function getUtilityTotals(
-  transactions: MonthlyExpenseRecord[],
+  transactions: Transaction[],
   selectedMonth: Date
 ): CategoryTotal[] {
   const utilityCategories = [
@@ -291,49 +281,6 @@ function getMemberName(
       .getMemberById(memberId)
       ?.displayName ?? "Member"
   );
-}
-
-function getContributionPieBackground(
-  contributions: Array<{ amount: number }>
-): string {
-  const total =
-    contributions.reduce(
-      (sum, contribution) =>
-        sum +
-        Math.max(0, contribution.amount),
-      0
-    );
-
-  if (total <= 0) {
-    return "var(--color-surface-muted)";
-  }
-
-  let cursor = 0;
-  const stops: string[] = [];
-
-  contributions.forEach(
-    (contribution, index) => {
-      if (contribution.amount <= 0) {
-        return;
-      }
-
-      const start = cursor;
-      cursor +=
-        (contribution.amount / total) *
-        100;
-      const color =
-        contributionChartColors[
-          index %
-            contributionChartColors.length
-        ];
-
-      stops.push(
-        `${color} ${start}% ${cursor}%`
-      );
-    }
-  );
-
-  return `conic-gradient(${stops.join(", ")})`;
 }
 
 function getSettlementSummaries(
@@ -646,22 +593,20 @@ export default function AnalyticsPage() {
       ]
     );
 
-  const monthlyExpenseRecords = householdId
-    ? MonthlyExpenseReportingService.getMonthlyExpenses(householdId, selectedMonth)
-    : [];
-  const totalExpenses = roundCurrency(monthlyExpenseRecords.reduce(
-    (total, expense) => total + expense.amount, 0
-  ));
+  const totalExpenses =
+    TransactionService.getTotalExpenses(
+      selectedMonth
+    );
 
   const categoryTotals =
     useMemo(
       () =>
         getCategoryTotals(
-          monthlyExpenseRecords,
+          transactions,
           selectedMonth
         ),
       [
-        monthlyExpenseRecords,
+        transactions,
         selectedMonth,
       ]
     );
@@ -696,11 +641,11 @@ export default function AnalyticsPage() {
     useMemo(
       () =>
         getUtilityTotals(
-          monthlyExpenseRecords,
+          transactions,
           selectedMonth
         ),
       [
-        monthlyExpenseRecords,
+        transactions,
         selectedMonth,
       ]
     );
@@ -739,12 +684,6 @@ export default function AnalyticsPage() {
           contribution.amount > 0
       )
       .length;
-
-  const contributionPieBackground =
-    getContributionPieBackground(
-      expenseContributionSummary
-        .memberContributions
-    );
 
   return (
     <>
@@ -841,71 +780,6 @@ export default function AnalyticsPage() {
                       currency
                     )}
                   </strong>
-                </div>
-
-                <div className="analytics-contribution-chart">
-                  <div
-                    className="analytics-contribution-pie"
-                    style={{
-                      background:
-                        contributionPieBackground,
-                    }}
-                    role="img"
-                    aria-label="Member expense contribution percentage chart"
-                  >
-                    <span>
-                      {contributingMemberCount}
-                    </span>
-                  </div>
-
-                  <div className="analytics-contribution-legend">
-                    {expenseContributionSummary
-                      .memberContributions
-                      .map(
-                        (
-                          contribution,
-                          index
-                        ) => (
-                          <div
-                            key={
-                              contribution.memberId
-                            }
-                            className="analytics-contribution-legend__item"
-                          >
-                            <span
-                              className="analytics-contribution-legend__swatch"
-                              style={{
-                                backgroundColor:
-                                  contributionChartColors[
-                                    index %
-                                      contributionChartColors.length
-                                  ],
-                              }}
-                              aria-hidden="true"
-                            />
-
-                            <div>
-                              <strong>
-                                {
-                                  contribution.memberName
-                                }
-                              </strong>
-
-                              <p>
-                                {
-                                  contribution.percentage
-                                }
-                                % -{" "}
-                                {formatCurrency(
-                                  contribution.amount,
-                                  currency
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        )
-                      )}
-                  </div>
                 </div>
 
                 {expenseContributionSummary
