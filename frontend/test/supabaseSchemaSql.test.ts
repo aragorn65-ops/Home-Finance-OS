@@ -7,6 +7,19 @@ import {
 } from "node:path";
 import test from "node:test";
 
+test("Supabase grants active members access to settlement applications", () => {
+  const schemaSql = readFileSync(join(
+    process.cwd(), "..", "docs", "architecture", "supabase-spike-schema.sql"
+  ), "utf8");
+
+  assert.match(schemaSql,
+    /grant execute on function public\.is_active_household_member\(uuid\) to authenticated/);
+  assert.match(schemaSql,
+    /grant select on table public\.settlement_applications to authenticated/);
+  assert.match(schemaSql,
+    /create policy "active members can read household settlement applications"[\s\S]+to authenticated[\s\S]+public\.is_active_household_member\(household_id\)/);
+});
+
 test("Supabase household preference RPC references the active membership helper", () => {
   const schemaSql =
     readFileSync(

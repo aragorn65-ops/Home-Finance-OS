@@ -476,6 +476,9 @@ as $$
   );
 $$;
 
+revoke all on function public.is_active_household_member(uuid) from public;
+grant execute on function public.is_active_household_member(uuid) to authenticated;
+
 create or replace function public.is_household_owner(target_household_id uuid)
 returns boolean
 language sql
@@ -636,9 +639,12 @@ using (
 drop policy if exists "active members can read household settlement applications"
 on public.settlement_applications;
 
+grant select on table public.settlement_applications to authenticated;
+
 create policy "active members can read household settlement applications"
 on public.settlement_applications
 for select
+to authenticated
 using (
   public.is_active_household_member(household_id)
 );

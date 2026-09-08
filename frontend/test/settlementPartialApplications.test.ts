@@ -477,6 +477,31 @@ test("manual settlement records overpayment credit when payment exceeds applied 
   );
 });
 
+test("a settlement without application links is not classified as overpayment", () => {
+  seedPartialSettlementFixture();
+  const now = new Date("2026-09-03T06:39:35.000Z");
+
+  SettlementRepository.create({
+    id: "settlement-with-missing-links",
+    householdId,
+    fromMemberId: payerMemberId,
+    toMemberId: receiverMemberId,
+    amount: 28901.1,
+    settlementDate: now,
+    applicationMethod: "oldest-first",
+    referenceNumber: "REGULAR-SETTLEMENT",
+    attachments: [],
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  assert.deepEqual(
+    SettlementOverpaymentCreditService.getOpenCredits(householdId),
+    []
+  );
+});
+
 test("overpayment credit offsets later obligations without changing allocation records", () => {
   seedPartialSettlementFixture();
 

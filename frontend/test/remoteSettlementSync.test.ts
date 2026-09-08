@@ -114,3 +114,62 @@ test(
     );
   }
 );
+
+test(
+  "remote settlement sync preserves local applications when cloud applications are unavailable",
+  () => {
+    const { localStorage } = installBrowserStorage();
+    const householdId = "household-member-settlement-sync";
+    const now = new Date("2026-09-03T06:39:35.000Z");
+
+    localStorage.setItem(HFOS_STORAGE_KEYS.household, JSON.stringify(
+      createStorageEnvelope({
+        id: householdId,
+        householdName: "Member Settlement Sync",
+        country: "PH",
+        currency: "PHP",
+        timezone: "Asia/Manila",
+        members: [],
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      })
+    ));
+
+    const settlement = {
+      id: "settlement-with-applications",
+      householdId,
+      fromMemberId: "member-rasha",
+      toMemberId: "member-owner",
+      amount: 1000,
+      settlementDate: now,
+      applicationMethod: "manual" as const,
+      referenceNumber: "SET-20260903-143935",
+      attachments: [],
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    SettlementRepository.create(settlement);
+    SettlementApplicationRepository.create({
+      id: "local-payment-link",
+      settlementId: settlement.id,
+      expenseAllocationId: "allocation-august",
+      appliedAmount: 900,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    persistRemoteSettlementRecords(
+      householdId,
+      [{ ...settlement, id: "remote-settlement", localRecordId: settlement.id }],
+      [settlement],
+      []
+    );
+
+    assert.deepEqual(
+      SettlementApplicationRepository.findBySettlementId(settlement.id)
+        .map((application) => [application.expenseAllocationId, application.appliedAmount]),
+      [["allocation-august", 900]]
+    );
+  }
+);
