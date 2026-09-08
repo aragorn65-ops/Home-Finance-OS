@@ -6,7 +6,7 @@ import HouseholdMemberService from "../../household/services/HouseholdMemberServ
 import {
   findHouseholdMemberByReference,
 } from "../../household/services/householdMemberResolution";
-import UtilityProviderBillRepository from "../../utilities/repositories/UtilityProviderBillRepository";
+import MonthlyExpenseReportingService from "./MonthlyExpenseReportingService";
 
 import ExpenseAllocationService from "./ExpenseAllocationService";
 import TransactionService from "./TransactionService";
@@ -108,19 +108,10 @@ export default class HouseholdExpenseContributionService {
     }
 
     const unpaidProviderBills =
-      UtilityProviderBillRepository
-        .findActiveByHouseholdId(
-          householdId
-        )
-        .filter(
-          (providerBill) =>
-            providerBill.status ===
-              "unpaid" &&
-            isSameMonth(
-              providerBill.billingDate,
-              selectedMonth
-            )
-        );
+      MonthlyExpenseReportingService.getUnrecordedUnpaidBills(
+        householdId,
+        selectedMonth
+      );
 
     for (const providerBill of unpaidProviderBills) {
       for (const memberShare of providerBill.memberShareSnapshot) {

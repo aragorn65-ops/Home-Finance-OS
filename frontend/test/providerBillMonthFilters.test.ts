@@ -21,6 +21,7 @@ import ExpenseAllocationRepository from "../src/features/transactions/repositori
 import TransactionRepository from "../src/features/transactions/repositories/TransactionRepository";
 import TransactionService from "../src/features/transactions/services/TransactionService";
 import HouseholdExpenseContributionService from "../src/features/transactions/services/HouseholdExpenseContributionService";
+import MonthlyExpenseReportingService from "../src/features/transactions/services/MonthlyExpenseReportingService";
 import SettlementApplicationRepository from "../src/features/settlements/repositories/SettlementApplicationRepository";
 import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository";
 import UtilityProviderBillRepository from "../src/features/utilities/repositories/UtilityProviderBillRepository";
@@ -863,6 +864,47 @@ test("monthly member contributions include unpaid utility provider bill shares",
       ],
     ]
   );
+});
+
+test("monthly expense reporting includes unpaid bills without changing payment status or counting linked bills twice", () => {
+  const { localStorage } = installBrowserStorage();
+  const householdId = "accrued-expense-reporting";
+  const month = new Date("2026-07-01T00:00:00");
+  localStorage.setItem(HFOS_STORAGE_KEYS.household, JSON.stringify(createStorageEnvelope({
+    id: householdId, householdName: "Expense reporting", country: "PH",
+    currency: "PHP", timezone: "Asia/Manila", members: [],
+    createdAt: month, updatedAt: month,
+  })));
+  const existing = createTransaction({ id: "existing-expense", householdId, amount: 7169.36 });
+  const payment = createTransaction({ id: "bill-payment", householdId, amount: 1392.98 });
+  TransactionRepository.replaceForHousehold(householdId, [existing,
+    createTransaction({ id: "excluded-income", householdId, type: "income", amount: 999 }),
+    createTransaction({ id: "excluded-inactive", householdId, isActive: false, amount: 999 }),
+  ]);
+  const bill = createProviderBill({
+    id: "accrued-water", householdId, utilityType: "water", totalBillAmount: 1392.98,
+  });
+  UtilityProviderBillRepository.replaceForHousehold(householdId, [bill,
+    createProviderBill({ id: "inactive-bill", householdId, isActive: false }),
+    createProviderBill({ id: "next-month-bill", householdId,
+      billingDate: new Date("2026-08-01T00:00:00") }),
+  ]);
+  const total = () => Math.round(MonthlyExpenseReportingService.getMonthlyExpenses(householdId, month)
+    .reduce((sum, expense) => sum + expense.amount, 0) * 100) / 100;
+
+  assert.equal(total(), 8562.34);
+  assert.equal(UtilityProviderBillRepository.findById(bill.id)?.status, "unpaid");
+  assert.equal(UtilityProviderBillRepository.findById(bill.id)?.paidAt, null);
+  assert.equal(MonthlyExpenseReportingService.getMonthlyExpenses("unrelated-household", month).length, 0);
+
+  TransactionRepository.replaceForHousehold(householdId, [existing, payment]);
+  UtilityProviderBillRepository.update({ ...bill, status: "paid", paidAt: month, transactionId: payment.id });
+  assert.equal(total(), 8562.34);
+  assert.equal(MonthlyExpenseReportingService.getUnrecordedUnpaidBills(householdId, month).length, 0);
+
+  UtilityProviderBillRepository.update({ ...bill, transactionId: payment.id });
+  assert.equal(total(), 8562.34);
+  assert.equal(UtilityProviderBillRepository.findById(bill.id)?.status, "unpaid");
 });
 
 for (const ownerReference of [

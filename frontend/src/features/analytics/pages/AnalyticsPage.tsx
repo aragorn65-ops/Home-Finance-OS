@@ -38,6 +38,7 @@ import SettlementAllocationService from "../../settlements/services/SettlementAl
 import useSavings from "../../savings/hooks/useSavings";
 import HouseholdExpenseContributionService from "../../transactions/services/HouseholdExpenseContributionService";
 import TransactionService from "../../transactions/services/TransactionService";
+import MonthlyExpenseReportingService, { type MonthlyExpenseRecord } from "../../transactions/services/MonthlyExpenseReportingService";
 
 import {
   normalizeTransactionCategory,
@@ -115,7 +116,7 @@ function AnalyticsMetric({
 }
 
 function getCategoryTotals(
-  transactions: Transaction[],
+  transactions: MonthlyExpenseRecord[],
   selectedMonth: Date
 ): CategoryTotal[] {
   const monthlyExpenses =
@@ -172,7 +173,7 @@ function getCategoryTotals(
 }
 
 function getUtilityTotals(
-  transactions: Transaction[],
+  transactions: MonthlyExpenseRecord[],
   selectedMonth: Date
 ): CategoryTotal[] {
   const utilityCategories = [
@@ -645,20 +646,22 @@ export default function AnalyticsPage() {
       ]
     );
 
-  const totalExpenses =
-    TransactionService.getTotalExpenses(
-      selectedMonth
-    );
+  const monthlyExpenseRecords = householdId
+    ? MonthlyExpenseReportingService.getMonthlyExpenses(householdId, selectedMonth)
+    : [];
+  const totalExpenses = roundCurrency(monthlyExpenseRecords.reduce(
+    (total, expense) => total + expense.amount, 0
+  ));
 
   const categoryTotals =
     useMemo(
       () =>
         getCategoryTotals(
-          transactions,
+          monthlyExpenseRecords,
           selectedMonth
         ),
       [
-        transactions,
+        monthlyExpenseRecords,
         selectedMonth,
       ]
     );
@@ -693,11 +696,11 @@ export default function AnalyticsPage() {
     useMemo(
       () =>
         getUtilityTotals(
-          transactions,
+          monthlyExpenseRecords,
           selectedMonth
         ),
       [
-        transactions,
+        monthlyExpenseRecords,
         selectedMonth,
       ]
     );
