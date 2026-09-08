@@ -70,6 +70,15 @@ interface SettlementPairSummary {
   categories: CategoryTotal[];
 }
 
+const contributionChartColors = [
+  "#2563eb",
+  "#16a34a",
+  "#f59e0b",
+  "#dc2626",
+  "#7c3aed",
+  "#0891b2",
+];
+
 function AnalyticsMetric({
   label,
   value,
@@ -281,6 +290,49 @@ function getMemberName(
       .getMemberById(memberId)
       ?.displayName ?? "Member"
   );
+}
+
+function getContributionPieBackground(
+  contributions: Array<{ amount: number }>
+): string {
+  const total =
+    contributions.reduce(
+      (sum, contribution) =>
+        sum +
+        Math.max(0, contribution.amount),
+      0
+    );
+
+  if (total <= 0) {
+    return "var(--color-surface-muted)";
+  }
+
+  let cursor = 0;
+  const stops: string[] = [];
+
+  contributions.forEach(
+    (contribution, index) => {
+      if (contribution.amount <= 0) {
+        return;
+      }
+
+      const start = cursor;
+      cursor +=
+        (contribution.amount / total) *
+        100;
+      const color =
+        contributionChartColors[
+          index %
+            contributionChartColors.length
+        ];
+
+      stops.push(
+        `${color} ${start}% ${cursor}%`
+      );
+    }
+  );
+
+  return `conic-gradient(${stops.join(", ")})`;
 }
 
 function getSettlementSummaries(
@@ -593,11 +645,6 @@ export default function AnalyticsPage() {
       ]
     );
 
-  const totalExpenses =
-    TransactionService.getTotalExpenses(
-      selectedMonth
-    );
-
   const categoryTotals =
     useMemo(
       () =>
@@ -685,6 +732,15 @@ export default function AnalyticsPage() {
       )
       .length;
 
+  const sharedMonthlyExpenses =
+    expenseContributionSummary.totalAmount;
+
+  const contributionPieBackground =
+    getContributionPieBackground(
+      expenseContributionSummary
+        .memberContributions
+    );
+
   return (
     <>
       <PageHeader
@@ -711,10 +767,10 @@ export default function AnalyticsPage() {
           <AnalyticsMetric
             label="Household Expenses"
             value={formatCurrency(
-              totalExpenses,
+              sharedMonthlyExpenses,
               currency
             )}
-            subtitle="Selected month"
+            subtitle="Member share total"
             icon={ReceiptText}
             tone="negative"
           />
@@ -780,6 +836,71 @@ export default function AnalyticsPage() {
                       currency
                     )}
                   </strong>
+                </div>
+
+                <div className="analytics-contribution-chart">
+                  <div
+                    className="analytics-contribution-pie"
+                    style={{
+                      background:
+                        contributionPieBackground,
+                    }}
+                    role="img"
+                    aria-label="Member expense contribution percentage chart"
+                  >
+                    <span>
+                      {contributingMemberCount}
+                    </span>
+                  </div>
+
+                  <div className="analytics-contribution-legend">
+                    {expenseContributionSummary
+                      .memberContributions
+                      .map(
+                        (
+                          contribution,
+                          index
+                        ) => (
+                          <div
+                            key={
+                              contribution.memberId
+                            }
+                            className="analytics-contribution-legend__item"
+                          >
+                            <span
+                              className="analytics-contribution-legend__swatch"
+                              style={{
+                                backgroundColor:
+                                  contributionChartColors[
+                                    index %
+                                      contributionChartColors.length
+                                  ],
+                              }}
+                              aria-hidden="true"
+                            />
+
+                            <div>
+                              <strong>
+                                {
+                                  contribution.memberName
+                                }
+                              </strong>
+
+                              <p>
+                                {
+                                  contribution.percentage
+                                }
+                                % -{" "}
+                                {formatCurrency(
+                                  contribution.amount,
+                                  currency
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      )}
+                  </div>
                 </div>
 
                 {expenseContributionSummary
