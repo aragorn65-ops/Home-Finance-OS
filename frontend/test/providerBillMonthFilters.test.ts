@@ -20,6 +20,7 @@ import type {
 import ExpenseAllocationRepository from "../src/features/transactions/repositories/ExpenseAllocationRepository";
 import TransactionRepository from "../src/features/transactions/repositories/TransactionRepository";
 import TransactionService from "../src/features/transactions/services/TransactionService";
+import HouseholdExpenseContributionService from "../src/features/transactions/services/HouseholdExpenseContributionService";
 import SettlementApplicationRepository from "../src/features/settlements/repositories/SettlementApplicationRepository";
 import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository";
 import UtilityProviderBillRepository from "../src/features/utilities/repositories/UtilityProviderBillRepository";
@@ -692,6 +693,175 @@ test("repairing a paid provider bill restores the paid-by member from the linked
           "repair-paid-water-bill"
       )?.paidByMemberId,
     "member-dadi"
+  );
+});
+
+test("monthly member contributions include unpaid utility provider bill shares", () => {
+  const { localStorage } =
+    installBrowserStorage();
+  const householdId =
+    "household-unpaid-provider-contributions";
+
+  localStorage.setItem(
+    HFOS_STORAGE_KEYS.household,
+    JSON.stringify(
+      createStorageEnvelope({
+        id:
+          householdId,
+        householdName:
+          "Unpaid Provider Contributions",
+        country:
+          "PH",
+        currency:
+          "PHP",
+        timezone:
+          "Asia/Manila",
+        members: [
+          {
+            id:
+              "member-dadi",
+            householdId,
+            displayName:
+              "Dadi Boboy",
+            role:
+              "owner",
+            isActive:
+              true,
+            createdAt:
+              "2026-07-01T00:00:00.000Z",
+            updatedAt:
+              "2026-07-01T00:00:00.000Z",
+          },
+          {
+            id:
+              "member-rasha",
+            householdId,
+            remoteMemberId:
+              "remote-member-rasha",
+            displayName:
+              "Rasha",
+            role:
+              "member",
+            isActive:
+              true,
+            createdAt:
+              "2026-07-01T00:00:00.000Z",
+            updatedAt:
+              "2026-07-01T00:00:00.000Z",
+          },
+        ],
+        createdAt:
+          "2026-07-01T00:00:00.000Z",
+        updatedAt:
+          "2026-07-01T00:00:00.000Z",
+      })
+    )
+  );
+
+  UtilityProviderBillRepository.create(
+    createProviderBill({
+      id:
+        "unpaid-manila-water",
+      householdId,
+      providerName:
+        "Manila Water",
+      utilityType:
+        "water",
+      unit:
+        "m3",
+      billingDate:
+        new Date(
+          "2026-07-13T00:00:00"
+        ),
+      totalBillAmount:
+        1409.2,
+      status:
+        "unpaid",
+      paidAt:
+        null,
+      memberShareSnapshot: [
+        {
+          memberId:
+            "member-dadi",
+          sharesRemainder:
+            true,
+          submeterConsumption:
+            0,
+          submeterChargeAmount:
+            0,
+          applianceConsumption:
+            0,
+          applianceChargeAmount:
+            0,
+          fixedCompensationAmount:
+            0,
+          directUsageAmount:
+            0,
+          equalSharedAmount:
+            704.6,
+          finalShareAmount:
+            704.6,
+        },
+        {
+          memberId:
+            "remote-member-rasha",
+          sharesRemainder:
+            true,
+          submeterConsumption:
+            0,
+          submeterChargeAmount:
+            0,
+          applianceConsumption:
+            0,
+          applianceChargeAmount:
+            0,
+          fixedCompensationAmount:
+            0,
+          directUsageAmount:
+            0,
+          equalSharedAmount:
+            704.6,
+          finalShareAmount:
+            704.6,
+        },
+      ],
+    })
+  );
+
+  const summary =
+    HouseholdExpenseContributionService
+      .getMonthlySummary(
+        householdId,
+        new Date("2026-07-01T00:00:00")
+      );
+
+  assert.equal(
+    summary.totalAmount,
+    1409.2
+  );
+  assert.deepEqual(
+    summary.memberContributions.map(
+      (contribution) => [
+        contribution.memberName,
+        contribution.amount,
+        contribution.percentage,
+        contribution.expenseCount,
+      ]
+    ),
+    [
+      [
+        "Dadi Boboy",
+        704.6,
+        50,
+        1,
+      ],
+      [
+        "Rasha",
+        704.6,
+        50,
+        1,
+      ],
+    ]
   );
 });
 

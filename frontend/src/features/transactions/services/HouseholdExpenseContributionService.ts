@@ -3,6 +3,10 @@ import {
 } from "../../../shared/utils/monthSelection";
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+import {
+  resolveHouseholdMemberReference,
+} from "../../household/services/householdMemberResolution";
+import UtilityProviderBillRepository from "../../utilities/repositories/UtilityProviderBillRepository";
 
 import ExpenseAllocationService from "./ExpenseAllocationService";
 import TransactionService from "./TransactionService";
@@ -100,6 +104,61 @@ export default class HouseholdExpenseContributionService {
         contributionsByMemberId,
         expense
       );
+    }
+
+    const unpaidProviderBills =
+      UtilityProviderBillRepository
+        .findActiveByHouseholdId(
+          householdId
+        )
+        .filter(
+          (providerBill) =>
+            providerBill.status ===
+              "unpaid" &&
+            isSameMonth(
+              providerBill.billingDate,
+              selectedMonth
+            )
+        );
+
+    for (const providerBill of unpaidProviderBills) {
+      for (const memberShare of providerBill.memberShareSnapshot) {
+        const member =
+          resolveHouseholdMemberReference(
+            activeMembers,
+            memberShare.memberId
+          );
+
+        if (!member) {
+          continue;
+        }
+
+        const contribution =
+          contributionsByMemberId.get(
+            member.id
+          );
+
+        if (!contribution) {
+          continue;
+        }
+
+        if (
+          memberShare.finalShareAmount <=
+          0
+        ) {
+          continue;
+        }
+
+        contribution.amount =
+          this.roundCurrency(
+            contribution.amount +
+              memberShare.finalShareAmount
+          );
+
+        contribution.expenseIds.add(
+          providerBill.id
+        );
+      }
     }
 
     const totalAmount =
