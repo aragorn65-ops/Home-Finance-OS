@@ -324,12 +324,44 @@
 
 .settlement-preview__route {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
   margin: 0;
   color: var(--color-text-strong);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.settlement-preview__heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-danger);
+  text-transform: uppercase;
+}
+
+.settlement-preview__heading svg { color: var(--color-success); }
+
+.settlement-preview__member {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settlement-preview__avatar {
+  display: inline-flex;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .settlement-preview__meta {
@@ -343,24 +375,45 @@
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-top: var(--space-2);
+  margin-left: 42px;
 }
 
 .settlement-preview__items span {
   display: inline-flex;
   align-items: center;
-  border-radius: var(--radius-full);
+  border-radius: 6px;
   background: var(--color-danger-background);
   border: 1px solid var(--color-danger-border);
   color: var(--color-danger-text);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
-  line-height: 1;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
   padding: 0.25rem 0.5rem;
+}
+
+.settlement-preview__items span[data-category="groceries"] {
+  color: var(--color-success);
+  background: var(--color-success-background);
+  border-color: var(--color-success-border);
+}
+
+.settlement-preview__items span[data-category="water"] {
+  color: var(--color-brand-600);
+  background: color-mix(in srgb, var(--color-brand-600) 12%, var(--color-surface));
+  border-color: transparent;
+}
+
+.settlement-preview__items span[data-category="internet"] {
+  color: #a855f7;
+  background: color-mix(in srgb, #a855f7 12%, var(--color-surface));
+  border-color: transparent;
 }
 
 .settlement-preview strong {
   color: var(--color-danger);
-  font-size: var(--font-size-sm);
+  font-size: 24px;
+  white-space: nowrap;
 }
 
 .category-row {

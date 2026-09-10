@@ -3,6 +3,7 @@ import "./DashboardPage.css";
 import {
   ArrowRight,
   ArrowRightLeft,
+  Banknote,
   CalendarDays,
   CheckCircle2,
   HandCoins,
@@ -54,9 +55,8 @@ import {
   coreSnapshotRestoredEvent,
   useHouseholdMembership,
 } from "../../auth";
-import HouseholdMemberService from "../../household/services/HouseholdMemberService";
 import {
-  resolveHouseholdMemberReference,
+  findHouseholdMemberByReference,
 } from "../../household/services/householdMemberResolution";
 import useSavings from "../../savings/hooks/useSavings";
 import SettlementAllocationService from "../../settlements/services/SettlementAllocationService";
@@ -75,7 +75,7 @@ import type {
 import {
   normalizeTransactionCategory,
 } from "../../transactions/models/TransactionCategory";
-import type { SettlementAllocationOption } from "../../settlements/models/SettlementAllocationOption";
+import { getSettlementPreviews } from "../services/settlementPreviews";
 import type { Settlement } from "../../settlements/models/Settlement";
 
 interface MetricCardProps {
@@ -92,19 +92,6 @@ interface CategoryTotal {
   percentage: number;
 }
 
-interface SettlementPreviewItem {
-  category: string;
-  amount: number;
-  count: number;
-}
-
-interface SettlementPreview {
-  fromMemberId: string;
-  toMemberId: string;
-  amount: number;
-  allocationCount: number;
-  items: SettlementPreviewItem[];
-}
 
 function MetricCard({
   label,
@@ -201,33 +188,25 @@ function getCategoryTotals(
     .slice(0, 5);
 }
 
-function getMemberName(
-  memberId: string,
-  householdId: string
-): string {
-  const resolvedMember =
-    resolveHouseholdMemberReference(
-      HouseholdMemberService.getMembers()
-        .filter(
-          (member) =>
-            member.householdId ===
-            householdId
-        ),
-      memberId
-    );
-
-  return (
-    resolvedMember?.displayName ??
-    "Member"
-  );
-}
-
 function roundCurrency(
   amount: number
 ): number {
   return (
     Math.round(amount * 100) /
     100
+  );
+}
+
+function SettlementMember({ memberId, householdId }: { memberId: string; householdId: string }) {
+  const member = findHouseholdMemberByReference(memberId, householdId);
+  const name = member?.displayName ?? "Member";
+  return (
+    <span className="settlement-preview__member">
+      <span className="settlement-preview__avatar" style={{ backgroundColor: member?.color || "#6366f1" }} aria-hidden="true">
+        {name.trim().charAt(0).toUpperCase()}
+      </span>
+      <span>{name}</span>
+    </span>
   );
 }
 
@@ -279,123 +258,6 @@ function getTransactionReportingCurrency(
       );
 }
 
-function getSettlementPreviews(
-  allocations: SettlementAllocationOption[]
-): SettlementPreview[] {
-  const previews = new Map<
-    string,
-    SettlementPreview
-  >();
-
-  for (const allocation of allocations) {
-    if (
-      allocation.outstandingAmount <= 0
-    ) {
-      continue;
-    }
-
-    const previewKey =
-      `${allocation.fromMemberId}::${allocation.toMemberId}`;
-
-    const category =
-      normalizeTransactionCategory(
-        allocation.category
-      );
-
-    const existing =
-      previews.get(previewKey);
-
-    if (!existing) {
-      previews.set(
-        previewKey,
-        {
-          fromMemberId:
-            allocation.fromMemberId,
-
-          toMemberId:
-            allocation.toMemberId,
-
-          amount:
-            allocation.outstandingAmount,
-
-          allocationCount: 1,
-
-          items: [
-            {
-              category,
-              amount:
-                allocation.outstandingAmount,
-              count: 1,
-            },
-          ],
-        }
-      );
-
-      continue;
-    }
-
-    const itemIndex =
-      existing.items.findIndex(
-        (item) =>
-          item.category === category
-      );
-
-    const nextItems =
-      [...existing.items];
-
-    if (itemIndex >= 0) {
-      nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-
-        amount:
-          roundCurrency(
-            nextItems[itemIndex].amount +
-              allocation.outstandingAmount
-          ),
-
-        count:
-          nextItems[itemIndex].count + 1,
-      };
-    } else {
-      nextItems.push({
-        category,
-        amount:
-          allocation.outstandingAmount,
-        count: 1,
-      });
-    }
-
-    previews.set(
-      previewKey,
-      {
-        ...existing,
-
-        amount:
-          roundCurrency(
-            existing.amount +
-              allocation.outstandingAmount
-          ),
-
-        allocationCount:
-          existing.allocationCount + 1,
-
-        items:
-          nextItems.sort(
-            (first, second) =>
-              second.amount -
-              first.amount
-          ),
-      }
-    );
-  }
-
-  return Array.from(
-    previews.values()
-  ).sort(
-    (first, second) =>
-      second.amount - first.amount
-  );
-}
 
 function settlementBelongsToMonth(
   settlement: Settlement,
@@ -710,9 +572,10 @@ export default function DashboardPage() {
     useMemo(
       () =>
         getSettlementPreviews(
-          monthlyOutstandingAllocations
+          monthlyOutstandingAllocations,
+          (id) => findHouseholdMemberByReference(id, householdId)?.id ?? id
         ),
-      [monthlyOutstandingAllocations]
+      [monthlyOutstandingAllocations, householdId]
     );
 
   const totalOutstanding =
@@ -889,7 +752,7 @@ export default function DashboardPage() {
       ) : (
         <section className="dashboard-panel dashboard-panel--alert">
           <div className="dashboard-panel__header">
-            <h2>Outstanding Settlements</h2>
+            <h2 className="settlement-preview__heading"><Banknote size={18} aria-hidden="true" /> Outstanding Settlements</h2>
 
             <Link to="/app/settlements">
               View all
@@ -909,41 +772,24 @@ export default function DashboardPage() {
                 >
                   <div>
                     <p className="settlement-preview__route">
-                      <span>
-                        {getMemberName(
-                          preview.fromMemberId,
-                          householdId
-                        )}
-                      </span>
+                      <SettlementMember memberId={preview.fromMemberId} householdId={householdId} />
                       <ArrowRight
                         size={14}
                         aria-hidden="true"
                       />
-                      <span>
-                        {getMemberName(
-                          preview.toMemberId,
-                          householdId
-                        )}
-                      </span>
-                    </p>
-
-                    <p className="settlement-preview__meta">
-                      {preview.allocationCount} open item
-                      {preview.allocationCount ===
-                      1
-                        ? ""
-                        : "s"}
+                      <SettlementMember memberId={preview.toMemberId} householdId={householdId} />
                     </p>
 
                     <div className="settlement-preview__items">
                       {preview.items
                         .map((item) => (
                           <span
+                            data-category={item.category.toLowerCase()}
                             key={
                               item.category
                             }
                           >
-                            {item.category}:{" "}
+                            {item.category} - {" "}
                             {formatCurrency(
                               item.amount,
                               lockedExpenseCurrency
