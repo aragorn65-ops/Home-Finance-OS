@@ -1,7 +1,9 @@
 import {
   useMemo,
+  useEffect,
   useState,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import "./TransactionsPage.css";
 
@@ -342,6 +344,23 @@ export default function TransactionsPage() {
     isDeletingTransaction,
     setIsDeletingTransaction,
   ] = useState(false);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedEditId = searchParams.get("edit");
+  useEffect(() => {
+    if (!requestedEditId || isReadOnlyMember || !household?.id) return;
+    const transaction = TransactionService.getTransactions().find(
+      (record) => record.id === requestedEditId && record.householdId === household.id
+    );
+    if (!transaction) return;
+    setSelectedTransaction(transaction);
+    setDialogMode("edit");
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete("edit");
+      return next;
+    }, { replace: true });
+  }, [requestedEditId, isReadOnlyMember, household?.id, setSearchParams]);
 
   const createTransactionInitialValues =
     useMemo(

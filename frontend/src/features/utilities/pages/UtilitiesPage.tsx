@@ -3,6 +3,8 @@ import {
   useState,
   type ChangeEvent,
 } from "react";
+import { Link } from "react-router-dom";
+import { Pencil } from "lucide-react";
 
 import PageHeader from "../../../shared/ui/PageHeader";
 import Input from "../../../shared/ui/Input";
@@ -1200,6 +1202,15 @@ function ProviderPaymentsSummary({
                     <td className="py-3">
                       {providerBill.transactionId ||
                         "Created"}
+                      {canRepairPaidBy && providerBill.transactionId && (
+                        <Link
+                          className="mt-2 flex items-center gap-2 font-semibold underline"
+                          to={`/app/transactions?edit=${encodeURIComponent(providerBill.transactionId)}`}
+                        >
+                          <Pencil size={16} aria-hidden="true" />
+                          Edit Payment
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 );
