@@ -28,6 +28,7 @@ import type { Transaction } from "../models/Transaction";
 import type { TransactionForm } from "../models/TransactionForm";
 
 import TransactionService from "../services/TransactionService";
+import deleteDuplicateTransaction from "../services/deleteDuplicateTransaction";
 
 function getErrorMessage(
   error: unknown
@@ -123,8 +124,13 @@ export default function useTransactions() {
    * after a successful operation.
    */
   const remove = (
-    id: string
+    id: string,
+    deleteLinkedBill = false
   ): Promise<OperationResult<boolean>> => {
+    if (deleteLinkedBill) {
+      return deleteDuplicateTransaction(id, () => persistLinkedCoreSnapshot(OperationResults.success(true)))
+        .finally(refresh);
+    }
     return removeAndPersist(id);
   };
 

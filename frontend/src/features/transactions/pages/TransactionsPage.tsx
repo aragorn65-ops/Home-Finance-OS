@@ -498,7 +498,8 @@ export default function TransactionsPage() {
   };
 
   const handleDeleteConfirm = async (
-    transaction: Transaction
+    transaction: Transaction,
+    deleteLinkedBill = false
   ) => {
     if (isReadOnlyMember) {
       return;
@@ -511,7 +512,7 @@ export default function TransactionsPage() {
     setIsDeletingTransaction(true);
 
     const result =
-      await remove(transaction.id);
+      await remove(transaction.id, deleteLinkedBill);
 
     if (!result.success) {
       const errors =

@@ -1,4 +1,6 @@
 import type { Transaction } from "../models/Transaction";
+import { useState } from "react";
+import UtilityProviderBillRepository from "../../utilities/repositories/UtilityProviderBillRepository";
 import formatCurrency from "../../../shared/utils/formatCurrency";
 import {
   normalizeTransactionCategory,
@@ -10,7 +12,8 @@ type TransactionDeleteConfirmationProps = {
   errorMessage?: string;
   currency?: string;
   onConfirm: (
-    transaction: Transaction
+    transaction: Transaction,
+    deleteLinkedBill?: boolean
   ) => void | Promise<void>;
   onCancel: () => void;
 };
@@ -41,6 +44,10 @@ export default function TransactionDeleteConfirmation({
   onConfirm,
   onCancel,
 }: TransactionDeleteConfirmationProps) {
+  const [deleteLinkedBill, setDeleteLinkedBill] = useState(false);
+  const linkedBills = UtilityProviderBillRepository.findAll().filter(
+    (bill) => bill.householdId === transaction.householdId && bill.transactionId === transaction.id
+  );
   const transactionType = getTransactionTypeLabel(
     transaction.type
   );
@@ -95,6 +102,22 @@ export default function TransactionDeleteConfirmation({
         </p>
       </div>
 
+      {linkedBills.length > 0 && (
+        <div className="space-y-2">
+          <label className="flex items-start gap-2">
+            <input type="checkbox" checked={deleteLinkedBill} disabled={isDeleting}
+              onChange={(event) => setDeleteLinkedBill(event.target.checked)} />
+            Delete linked provider bill too (duplicate entry)
+          </label>
+          <p className="text-sm text-muted-foreground">
+            {linkedBills.map((bill) => bill.providerName).join(", ")}
+            {deleteLinkedBill
+              ? ": the linked bill, its attachments, and this transaction's expense shares will be removed. Other entries are retained. Recorded settlement links block deletion."
+              : ": the provider bill is retained when removing only its payment transaction."}
+          </p>
+        </div>
+      )}
+
       {errorMessage && (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {errorMessage}
@@ -115,7 +138,8 @@ export default function TransactionDeleteConfirmation({
           type="button"
           onClick={() => {
             void onConfirm(
-              transaction
+              transaction,
+              deleteLinkedBill
             );
           }}
           disabled={isDeleting}

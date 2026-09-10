@@ -20,6 +20,9 @@ import type {
 import ExpenseAllocationRepository from "../src/features/transactions/repositories/ExpenseAllocationRepository";
 import TransactionRepository from "../src/features/transactions/repositories/TransactionRepository";
 import TransactionService from "../src/features/transactions/services/TransactionService";
+import deleteDuplicateTransaction from "../src/features/transactions/services/deleteDuplicateTransaction";
+import AccountRepository from "../src/features/accounts/repositories/AccountRepository";
+import { OperationResults } from "../src/shared/types/index";
 import MonthlyExpenseReportingService from "../src/features/transactions/services/MonthlyExpenseReportingService";
 import HouseholdExpenseContributionService from "../src/features/transactions/services/HouseholdExpenseContributionService";
 import SettlementService from "../src/features/settlements/services/SettlementService";
@@ -33,6 +36,42 @@ import UtilityProviderBillService from "../src/features/utilities/services/Utili
 import {
   getProviderBillsPaidInMonth,
 } from "../src/features/utilities/services/providerBillMonthFilters";
+
+test("duplicate deletion removes only September bill, reverses its balance and restores on cloud failure", async () => {
+  const { localStorage } = installBrowserStorage();
+  const householdId = "duplicate-delete-test";
+  const now = new Date("2026-09-03T00:00:00Z");
+  localStorage.setItem(HFOS_STORAGE_KEYS.household, JSON.stringify(createStorageEnvelope({ id: householdId, householdName: "Duplicate test", country: "PH", currency: "PHP", timezone: "Asia/Manila", members: [], createdAt: now.toISOString(), updatedAt: now.toISOString() })));
+  AccountRepository.replaceForHousehold(householdId, [{ id: "duplicate-cash", householdId, ownerMemberId: "member-1", visibility: "household", name: "Cash", accountClass: "asset", type: "cash", currency: "PHP", openingBalance: 5000, currentBalance: 2002, isActive: true, createdAt: now, updatedAt: now }]);
+  const july = createTransaction({ id: "keep-july", householdId, amount: 1499, enteredAmount: 1499, baseAmount: 1499, sourceAccountId: "duplicate-cash" });
+  const september = createTransaction({ ...july, id: "remove-september", transactionDate: now });
+  TransactionRepository.replaceForHousehold(householdId, [july, september]);
+  const allocation = { id: "duplicate-share", transactionId: september.id, memberId: "lyn", paidByMemberId: "member-1", isIncluded: true, allocatedAmount: 499.66, createdAt: now, updatedAt: now };
+  ExpenseAllocationRepository.replaceForHousehold(householdId, [allocation]);
+  const bills = [july, september].map((transaction) => createProviderBill({ id: `bill-${transaction.id}`, householdId, providerName: "Globe", transactionId: transaction.id, status: "paid" }));
+  UtilityProviderBillRepository.replaceForHousehold(householdId, bills);
+  const read = () => ({ accounts: AccountRepository.findAll(), transactions: TransactionRepository.findAll(), allocations: ExpenseAllocationRepository.findAll(), bills: UtilityProviderBillRepository.findAll() });
+  const before = read();
+  const failed = await deleteDuplicateTransaction(september.id, async () => OperationResults.failure({ cloud: "Rejected" }));
+  assert.equal(failed.success, false);
+  assert.deepEqual(read(), before);
+  SettlementApplicationRepository.create({ id: "duplicate-application", settlementId: "preserved-payment", expenseAllocationId: allocation.id, appliedAmount: 20, createdAt: now, updatedAt: now });
+  const blocked = await deleteDuplicateTransaction(september.id, async () => { throw new Error("Must not save"); });
+  assert.equal(blocked.success, false);
+  assert.match(blocked.errors?.settlements ?? "", /recorded settlement/);
+  assert.deepEqual(read(), before);
+  SettlementApplicationRepository.delete("duplicate-application");
+  const result = await deleteDuplicateTransaction(september.id, async () => {
+    assert.equal(TransactionRepository.findById(september.id), undefined);
+    assert.equal(UtilityProviderBillRepository.findById(`bill-${september.id}`), undefined);
+    assert.deepEqual(ExpenseAllocationRepository.findByTransactionId(september.id), []);
+    return OperationResults.success(true);
+  });
+  assert.equal(result.success, true);
+  assert.deepEqual(TransactionRepository.findById(july.id), july);
+  assert.deepEqual(UtilityProviderBillRepository.findById(`bill-${july.id}`), bills[0]);
+  assert.equal(AccountRepository.findById("duplicate-cash")?.currentBalance, 3501);
+});
 
 function createProviderBill(
   overrides: Partial<UtilityProviderBill>
