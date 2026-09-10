@@ -26,6 +26,25 @@ const payerMemberId = "member-payer";
 const receiverMemberId =
   "member-receiver";
 
+test("manual groceries payment keeps priority over earlier electricity and preserves partial amounts", () => {
+  const base = { fromMemberId: payerMemberId, toMemberId: receiverMemberId, description: "", paidAmount: 0, paymentStatus: "unpaid" as const };
+  const electricity = { ...base, expenseAllocationId: "electricity", transactionId: "electricity", transactionDate: new Date("2026-07-01"), category: "Electricity", allocatedAmount: 4499.91, outstandingAmount: 4499.91 };
+  const groceries = { ...base, expenseAllocationId: "groceries", transactionId: "groceries", transactionDate: new Date("2026-07-10"), category: "Groceries", allocatedAmount: 4814.13, outstandingAmount: 4814.13 };
+  const current = [
+    { expenseAllocationId: "groceries", isSelected: true, appliedAmount: 4814.13 },
+    { expenseAllocationId: "electricity", isSelected: true, appliedAmount: 0 },
+  ];
+  for (const options of [[electricity, groceries], [groceries, electricity]]) {
+    const result = recalculateManualSettlementApplications(options, current, 5000);
+    assert.equal(result.find((row) => row.expenseAllocationId === "groceries")?.appliedAmount, 4814.13);
+    assert.equal(result.find((row) => row.expenseAllocationId === "electricity")?.appliedAmount, 185.87);
+    assert.equal(Math.round((4499.91 - 185.87) * 100) / 100, 4314.04);
+    assert.deepEqual(recalculateManualSettlementApplications(options, result, 5000), result);
+    // Lowering the payment must surface validation, not silently redirect a manual allocation.
+    assert.deepEqual(recalculateManualSettlementApplications(options, result, 4000), result);
+  }
+});
+
 test("manual application recalculation applies remainder to the next checked allocation", () => {
   const applications =
     recalculateManualSettlementApplications(

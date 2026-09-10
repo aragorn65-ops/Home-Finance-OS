@@ -24,9 +24,16 @@ export function recalculateManualSettlementApplications(
       )
     );
 
+  // Reserve explicit manual amounts before allocating any remainder, regardless of date order.
+  const reservedAmount = options.reduce((total, option) => {
+    const current = currentByAllocationId.get(option.expenseAllocationId);
+    return total + (current?.isSelected
+      ? Math.min(Math.max(current.appliedAmount, 0), option.outstandingAmount)
+      : 0);
+  }, 0);
   let remainingAmount =
     Math.max(
-      roundCurrency(settlementAmount),
+      roundCurrency(settlementAmount - reservedAmount),
       0
     );
 
@@ -47,23 +54,20 @@ export function recalculateManualSettlementApplications(
 
     const appliedAmount =
       roundCurrency(
-        Math.min(
+        current.appliedAmount > 0 ? Math.min(current.appliedAmount, option.outstandingAmount) : Math.min(
           option.outstandingAmount,
           remainingAmount
         )
       );
 
-    remainingAmount =
-      roundCurrency(
-        remainingAmount -
-          appliedAmount
-      );
+    if (current.appliedAmount <= 0) {
+      remainingAmount = roundCurrency(remainingAmount - appliedAmount);
+    }
 
     return {
       expenseAllocationId:
         option.expenseAllocationId,
-      isSelected:
-        appliedAmount > 0,
+      isSelected: true,
       appliedAmount,
     };
   });
