@@ -168,6 +168,16 @@ export default function TransactionDetails({
           </dd>
         </div>
 
+        <div className="min-w-0 sm:col-span-2">
+          <dt className="text-sm font-medium text-muted-foreground">
+            Notes
+          </dt>
+
+          <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">
+            {transaction.notes?.trim() ? transaction.notes : "No notes"}
+          </dd>
+        </div>
+
         {showEnteredIncome && (
           <>
             <div>
