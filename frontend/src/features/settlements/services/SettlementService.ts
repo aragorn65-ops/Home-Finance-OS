@@ -492,6 +492,29 @@ export default class SettlementService {
           existing.id
         );
 
+    const unchangedApplications = form.applicationMethod === "oldest-first" || (
+      form.applications.filter((application) => application.isSelected).length === existingApplications.length &&
+      existingApplications.every((application) => form.applications.some((candidate) =>
+        candidate.isSelected && candidate.expenseAllocationId === application.expenseAllocationId &&
+        candidate.appliedAmount === application.appliedAmount
+      ))
+    );
+    // Date, reference, notes and receipt corrections must not redistribute recorded payments.
+    if (
+      updatedSettlement.fromMemberId === existing.fromMemberId &&
+      updatedSettlement.toMemberId === existing.toMemberId &&
+      updatedSettlement.amount === existing.amount &&
+      (updatedSettlement.sourceAccountId ?? "") === (existing.sourceAccountId ?? "") &&
+      (updatedSettlement.destinationAccountId ?? "") === (existing.destinationAccountId ?? "") &&
+      updatedSettlement.applicationMethod === existing.applicationMethod &&
+      updatedSettlement.isActive === existing.isActive && unchangedApplications
+    ) {
+      const saved = SettlementRepository.update(updatedSettlement);
+      return saved
+        ? OperationResults.success(saved, "Settlement details updated; applied payments were preserved.")
+        : OperationResults.failure({ general: "Settlement details could not be saved." });
+    }
+
     const applicationRemoval =
       this.removeApplications(
         existing.id,

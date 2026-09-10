@@ -266,6 +266,37 @@ function seedPartialSettlementFixture() {
   );
 }
 
+test("redating a synced settlement preserves its original member references and application IDs", () => {
+  seedPartialSettlementFixture();
+  const original = SettlementService.create({ householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
+    amount: 1299.32, settlementDate: "2026-09-10", sourceAccountId: "", destinationAccountId: "",
+    applicationMethod: "oldest-first", applications: [], referenceNumber: "SET-DATE-TEST", notes: "", attachments: [], isActive: true });
+  assert.ok(original.success && original.data);
+  // A synced record can retain a remote member reference even though the local picker uses local IDs.
+  const existing = { ...original.data, toMemberId: "remote-owner-reference" };
+  SettlementRepository.update(existing);
+  const applications = SettlementApplicationRepository.findBySettlementId(existing.id);
+  const allocations = ExpenseAllocationRepository.findAll();
+  const result = SettlementService.update(existing.id, { householdId, fromMemberId: existing.fromMemberId,
+    toMemberId: existing.toMemberId, amount: existing.amount, settlementDate: "2026-07-14",
+    sourceAccountId: "", destinationAccountId: "", applicationMethod: "oldest-first", applications: [],
+    referenceNumber: "SET-DATE-TEST", notes: "", attachments: [], isActive: true });
+  assert.equal(result.success, true, JSON.stringify(result.errors));
+  assert.equal(result.data?.settlementDate.getMonth(), 6);
+  assert.equal(result.data?.settlementDate.getDate(), 14);
+  assert.equal(result.data?.id, existing.id);
+  assert.equal(result.data?.toMemberId, existing.toMemberId);
+  assert.equal(result.data?.amount, 1299.32);
+  assert.deepEqual(SettlementApplicationRepository.findBySettlementId(existing.id), applications);
+  assert.deepEqual(ExpenseAllocationRepository.findAll(), allocations);
+  const invalidChange = SettlementService.update(existing.id, { householdId, fromMemberId: existing.fromMemberId,
+    toMemberId: "unrelated-member", amount: existing.amount, settlementDate: "2026-07-14",
+    sourceAccountId: "", destinationAccountId: "", applicationMethod: "oldest-first", applications: [],
+    referenceNumber: "SET-DATE-TEST", notes: "", attachments: [], isActive: true });
+  assert.equal(invalidChange.success, false);
+  assert.deepEqual(SettlementApplicationRepository.findBySettlementId(existing.id), applications);
+});
+
 test("manual settlement records full and partial applications for one payment", () => {
   seedPartialSettlementFixture();
 
