@@ -1061,7 +1061,7 @@ export default function UtilitiesPage() {
                 selectedMonth
               )
             }
-            submitLabel="Save Unpaid Bill"
+            submitLabel="SAVE"
             onSubmit={handleSave}
           />
         )}

@@ -5,6 +5,8 @@ import {
   type ClipboardEvent,
   type ReactNode,
 } from "react";
+import { Save } from "lucide-react";
+import Button from "../../../shared/ui/Button/Button";
 
 import type {
   StoredAttachment,
@@ -201,7 +203,7 @@ export default function UtilityBillForm({
   members,
   initialValue,
   defaultDate,
-  submitLabel = "Save Utility Bill",
+  submitLabel = "SAVE",
   onSubmit,
   onCancel,
 }: UtilityBillFormProps) {
@@ -814,7 +816,7 @@ export default function UtilityBillForm({
           <UtilityEntryTabButton
             label="Review"
             isActive={activeTab === "review"}
-            onClick={() => setActiveTab("review")}
+            onClick={() => calculatePreview()}
           />
         </div>
       </div>
@@ -1757,7 +1759,15 @@ export default function UtilityBillForm({
         </section>
       )}
 
-      <div className="sticky bottom-0 z-20 flex flex-wrap justify-end gap-3 rounded-xl border bg-card/95 p-3 shadow-lg backdrop-blur">
+      {activeTab === "review" &&
+        previewResult && (
+        <UtilityBillSharePreview
+          result={previewResult}
+          memberNames={memberNames}
+        />
+      )}
+
+      <div className="flex flex-wrap justify-end gap-3 border-t pt-4">
         {onCancel && (
           <button
             className={secondaryButtonClassName}
@@ -1768,34 +1778,19 @@ export default function UtilityBillForm({
           </button>
         )}
 
-        <button
-          className={secondaryButtonClassName}
-          type="button"
-          onClick={
-            calculatePreview
-          }
-        >
-          Calculate Bill Shares
-        </button>
-
-        {onSubmit && (
-          <button
-            className={primaryButtonClassName}
+        {onSubmit && activeTab === "review" && (
+          <Button
+            variant="primary"
+            className="min-h-11 min-w-48"
             type="button"
             onClick={handleSubmit}
           >
+            <Save size={16} aria-hidden="true" />
             {submitLabel}
-          </button>
+          </Button>
         )}
       </div>
 
-      {activeTab === "review" &&
-        previewResult && (
-        <UtilityBillSharePreview
-          result={previewResult}
-          memberNames={memberNames}
-        />
-      )}
     </div>
   );
 }
@@ -2080,9 +2075,6 @@ function formatDateInput(
 
 const inputClassName =
   "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
-
-const primaryButtonClassName =
-  "min-h-11 min-w-48 rounded-lg bg-[#dbeafe] px-6 py-2 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-[#9fbce2] focus:outline-none focus:ring-2 focus:ring-blue-500/30";
 
 const secondaryButtonClassName =
   "min-h-11 min-w-48 rounded-lg border bg-background px-6 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500/20";
