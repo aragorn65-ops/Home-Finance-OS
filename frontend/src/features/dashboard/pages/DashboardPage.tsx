@@ -902,7 +902,6 @@ export default function DashboardPage() {
 
           <div className="settlement-preview-list">
             {settlementPreviews
-              .slice(0, 3)
               .map((preview) => (
                 <div
                   key={`${preview.fromMemberId}-${preview.toMemberId}`}
@@ -938,7 +937,6 @@ export default function DashboardPage() {
 
                     <div className="settlement-preview__items">
                       {preview.items
-                        .slice(0, 3)
                         .map((item) => (
                           <span
                             key={
