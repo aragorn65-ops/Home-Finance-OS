@@ -1,4 +1,5 @@
 import type { Settlement } from "../models/Settlement";
+import { findHouseholdMemberByReference } from "../../household/services/householdMemberResolution";
 import type { SettlementForm } from "../models/SettlementForm";
 import type { SettlementApplication } from "../models/SettlementApplication";
 
@@ -499,17 +500,23 @@ export default class SettlementService {
         candidate.appliedAmount === application.appliedAmount
       ))
     );
+    const resolveMemberId = (memberId: string) =>
+      findHouseholdMemberByReference(memberId, existing.householdId)?.id ?? memberId;
     // Date, reference, notes and receipt corrections must not redistribute recorded payments.
     if (
-      updatedSettlement.fromMemberId === existing.fromMemberId &&
-      updatedSettlement.toMemberId === existing.toMemberId &&
+      resolveMemberId(updatedSettlement.fromMemberId) === resolveMemberId(existing.fromMemberId) &&
+      resolveMemberId(updatedSettlement.toMemberId) === resolveMemberId(existing.toMemberId) &&
       updatedSettlement.amount === existing.amount &&
       (updatedSettlement.sourceAccountId ?? "") === (existing.sourceAccountId ?? "") &&
       (updatedSettlement.destinationAccountId ?? "") === (existing.destinationAccountId ?? "") &&
       updatedSettlement.applicationMethod === existing.applicationMethod &&
       updatedSettlement.isActive === existing.isActive && unchangedApplications
     ) {
-      const saved = SettlementRepository.update(updatedSettlement);
+      const saved = SettlementRepository.update({
+        ...updatedSettlement,
+        fromMemberId: existing.fromMemberId,
+        toMemberId: existing.toMemberId,
+      });
       return saved
         ? OperationResults.success(saved, "Settlement details updated; applied payments were preserved.")
         : OperationResults.failure({ general: "Settlement details could not be saved." });

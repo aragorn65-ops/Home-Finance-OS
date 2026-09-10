@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import type { Account } from "../../accounts/models/Account";
+import { findHouseholdMemberByReference } from "../../household/services/householdMemberResolution";
 import {
   getAccountVisibilityLabel,
   isAccountVisibleForMember,
@@ -455,15 +456,26 @@ export default function SettlementForm({
   members,
   currency,
 
-  allocationOptions,
+  allocationOptions: storedAllocationOptions,
 
   preferredFromMemberId = "",
-  initialValues,
+  initialValues: storedInitialValues,
   submitLabel = "Save Settlement",
 
   onSubmit,
   onCancel,
 }: SettlementFormProps) {
+  const resolveMemberId = (id: string) => findHouseholdMemberByReference(id, householdId)?.id ?? id;
+  const initialValues = storedInitialValues ? {
+    ...storedInitialValues,
+    fromMemberId: resolveMemberId(storedInitialValues.fromMemberId),
+    toMemberId: resolveMemberId(storedInitialValues.toMemberId),
+  } : undefined;
+  const allocationOptions = storedAllocationOptions.map((option) => ({
+    ...option,
+    fromMemberId: resolveMemberId(option.fromMemberId),
+    toMemberId: resolveMemberId(option.toMemberId),
+  }));
   const activeMembers =
     useMemo(
       () =>
@@ -528,7 +540,7 @@ export default function SettlementForm({
   const [
     isAmountManuallyEdited,
     setIsAmountManuallyEdited,
-  ] = useState(false);
+  ] = useState(Boolean(initialValues));
 
   const showValidationAlert = (
     nextErrors:
@@ -636,7 +648,7 @@ export default function SettlementForm({
     setValidationAlertErrors({});
     setIsValidationAlertOpen(false);
     setMessage("");
-    setIsAmountManuallyEdited(false);
+    setIsAmountManuallyEdited(Boolean(initialValues));
   }, [
     initialValues,
     householdId,
@@ -880,6 +892,7 @@ export default function SettlementForm({
       event.target.value;
 
     setForm((current) => {
+      if (current.fromMemberId === fromMemberId) return current;
       const sourceAccount =
         accounts.find(
           (account) =>
@@ -950,6 +963,7 @@ export default function SettlementForm({
       event.target.value;
 
     setForm((current) => {
+      if (current.toMemberId === toMemberId) return current;
       const destinationAccount =
         accounts.find(
           (account) =>

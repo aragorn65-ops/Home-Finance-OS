@@ -297,6 +297,26 @@ test("redating a synced settlement preserves its original member references and 
   assert.deepEqual(SettlementApplicationRepository.findBySettlementId(existing.id), applications);
 });
 
+test("settlement date correction accepts a local picker ID for a stored member email", () => {
+  seedPartialSettlementFixture();
+  const household = JSON.parse(window.localStorage.getItem(HFOS_STORAGE_KEYS.household)!);
+  household.data.members.find((member: { id: string }) => member.id === receiverMemberId).email = "receiver@example.com";
+  window.localStorage.setItem(HFOS_STORAGE_KEYS.household, JSON.stringify(household));
+  const created = SettlementService.create({ householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
+    amount: 1299.32, settlementDate: "2026-09-10", sourceAccountId: "", destinationAccountId: "",
+    applicationMethod: "oldest-first", applications: [], referenceNumber: "ALIAS-EDIT", notes: "", attachments: [], isActive: true });
+  assert.ok(created.data);
+  SettlementRepository.update({ ...created.data, toMemberId: "receiver@example.com" });
+  const applications = SettlementApplicationRepository.findBySettlementId(created.data.id);
+  const updated = SettlementService.update(created.data.id, { householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
+    amount: 1299.32, settlementDate: "2026-07-14", sourceAccountId: "", destinationAccountId: "",
+    applicationMethod: "oldest-first", applications: [], referenceNumber: "ALIAS-EDIT", notes: "", attachments: [], isActive: true });
+  assert.equal(updated.success, true, JSON.stringify(updated.errors));
+  assert.equal(updated.data?.amount, 1299.32);
+  assert.equal(updated.data?.toMemberId, "receiver@example.com");
+  assert.deepEqual(SettlementApplicationRepository.findBySettlementId(created.data.id), applications);
+});
+
 test("manual settlement records full and partial applications for one payment", () => {
   seedPartialSettlementFixture();
 
