@@ -236,13 +236,21 @@ export function getLocalCoreSnapshotCounts(
   };
 }
 
+// Keep writes ordered and prevent an older in-flight read from replacing newer local data.
+const householdSnapshotWrites = new Map<string, Promise<RemoteHouseholdCoreSnapshot>>();
+
 export async function saveRemoteCoreSnapshotForHousehold(
   adapter: CoreSnapshotAdapter,
   source: LocalCoreSnapshotSource
 ): Promise<RemoteHouseholdCoreSnapshot> {
-  return adapter.saveRemoteCoreSnapshot(
-    createRemoteCoreSnapshotInput(source)
-  );
+  const input = createRemoteCoreSnapshotInput(source);
+  const previous = householdSnapshotWrites.get(source.householdId);
+  const write = (previous ? previous.catch(() => undefined) : Promise.resolve())
+    .then(() => adapter.saveRemoteCoreSnapshot(input));
+  householdSnapshotWrites.set(source.householdId, write);
+  // The caller receives failures; retain the rejected write to block destructive reloads.
+  void write.catch(() => undefined);
+  return write;
 }
 
 export async function saveCurrentBrowserCoreSnapshotForHousehold(
@@ -570,11 +578,13 @@ export async function restoreLinkedRemoteCoreSnapshot(
     };
   }
 
-  const snapshot =
-    await loadRemoteCoreSnapshotForHousehold(
-      options.adapter,
-      remoteHouseholdId
-    );
+  let snapshot: RemoteHouseholdCoreSnapshot;
+  for (;;) {
+    const pendingWrite = householdSnapshotWrites.get(remoteHouseholdId);
+    await pendingWrite;
+    snapshot = await loadRemoteCoreSnapshotForHousehold(options.adapter, remoteHouseholdId);
+    if (householdSnapshotWrites.get(remoteHouseholdId) === pendingWrite) break;
+  }
 
   const counts =
     applyRemoteCoreSnapshotToLocalHousehold({

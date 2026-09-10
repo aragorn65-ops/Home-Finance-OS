@@ -31,6 +31,94 @@ import type {
 const householdId =
   "household-core-sync-1";
 
+test("a reload started before Globe was saved cannot erase it when PLDT is paid", async () => {
+  const remoteId = "provider-payment-race";
+  const pldt = { ...providerBill, id: "pldt", providerName: "PLDT", status: "unpaid" as const, transactionId: "" };
+  const globe = { ...pldt, id: "globe", providerName: "Globe" };
+  let localBills = [pldt];
+  let cloud: RemoteHouseholdCoreSnapshot = { householdId: remoteId, accounts: [], transactions: [], expenseAllocations: [], providerBills: [pldt] };
+  let finishOldRead!: (value: RemoteHouseholdCoreSnapshot) => void;
+  let signalRead!: () => void;
+  const readStarted = new Promise<void>((resolve) => { signalRead = resolve; });
+  const oldRead = new Promise<RemoteHouseholdCoreSnapshot>((resolve) => { finishOldRead = resolve; });
+  let reads = 0;
+  const adapter = {
+    async loadRemoteCoreSnapshot() {
+      reads += 1;
+      if (reads === 1) { signalRead(); return oldRead; }
+      return cloud;
+    },
+    async saveRemoteCoreSnapshot(input: RemoteHouseholdCoreSnapshotInput) {
+      cloud = { ...input };
+      return cloud;
+    },
+  };
+  const staleCloud = cloud;
+  const restore = restoreLinkedRemoteCoreSnapshot({
+    authEnabled: true,
+    household: { id: householdId, authenticatedLink: { remoteHouseholdId: remoteId, ownerMemberId: "owner" } },
+    adapter,
+    writer: {
+      replaceAccounts: () => true,
+      replaceTransactions: () => true,
+      replaceProviderBills: (_id, bills) => { localBills = bills; return true; },
+    },
+  });
+  await readStarted;
+  localBills.push(globe);
+  await saveRemoteCoreSnapshotForHousehold(adapter, { householdId: remoteId, localHouseholdId: householdId, accounts: [], transactions: [], providerBills: localBills });
+  finishOldRead(staleCloud);
+  await restore;
+  assert.deepEqual(localBills.map((bill) => bill.id), ["pldt", "globe"]);
+  localBills = localBills.map((bill) => bill.id === "pldt" ? { ...bill, status: "paid", transactionId: "pldt-payment" } : bill);
+  await saveRemoteCoreSnapshotForHousehold(adapter, { householdId: remoteId, localHouseholdId: householdId, accounts: [], transactions: [], providerBills: localBills });
+  assert.deepEqual(cloud.providerBills?.map((bill) => [bill.id, bill.status]), [["pldt", "paid"], ["globe", "unpaid"]]);
+});
+
+test("snapshot writes stay ordered and a failed save blocks reload until a successful retry", async () => {
+  const id = "snapshot-write-order";
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let started!: () => void;
+  const firstStarted = new Promise<void>((resolve) => { started = resolve; });
+  const calls: number[] = [];
+  let fail = false;
+  let writes = 0;
+  const adapter = {
+    async saveRemoteCoreSnapshot(input: RemoteHouseholdCoreSnapshotInput) {
+      calls.push(input.providerBills?.length ?? 0);
+      if (calls.length === 1) { started(); await gate; }
+      if (fail) throw new Error("Cloud save failed");
+      return { ...input };
+    },
+    async loadRemoteCoreSnapshot() {
+      return { householdId: id, accounts: [], transactions: [], expenseAllocations: [], providerBills: [] };
+    },
+  };
+  const source = { householdId: id, localHouseholdId: householdId, accounts: [], transactions: [], providerBills: [providerBill] };
+  const first = saveRemoteCoreSnapshotForHousehold(adapter, source);
+  await firstStarted;
+  const second = saveRemoteCoreSnapshotForHousehold(adapter, { ...source, providerBills: [providerBill, { ...providerBill, id: "second" }] });
+  assert.deepEqual(calls, [1]);
+  release();
+  await Promise.all([first, second]);
+  assert.deepEqual(calls, [1, 2]);
+  fail = true;
+  await assert.rejects(saveRemoteCoreSnapshotForHousehold(adapter, source), /Cloud save failed/);
+  const restoreOptions = {
+    authEnabled: true,
+    household: { id: householdId, authenticatedLink: { remoteHouseholdId: id, ownerMemberId: "owner" } },
+    adapter,
+    writer: { replaceAccounts: () => { writes += 1; return true; }, replaceTransactions: () => true },
+  };
+  await assert.rejects(restoreLinkedRemoteCoreSnapshot(restoreOptions), /Cloud save failed/);
+  assert.equal(writes, 0);
+  fail = false;
+  await saveRemoteCoreSnapshotForHousehold(adapter, source);
+  await restoreLinkedRemoteCoreSnapshot(restoreOptions);
+  assert.equal(writes, 1);
+});
+
 const account: Account = {
   id:
     "account-1",
