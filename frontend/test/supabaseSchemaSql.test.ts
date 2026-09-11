@@ -639,8 +639,22 @@ test("Supabase settlement RPCs resolve local household member ids", () => {
   );
   assert.match(
     schemaSql,
-    /insert into public\.household_members \([\s\S]+local_record_id[\s\S]+returning id into resolved_to_member_id;/
+    /if resolved_to_member_id is null then\s+raise exception 'Settlement member could not be resolved/
   );
+});
+
+test("settlement identity guard matches schema functions and never creates members", () => {
+  const directory = join(process.cwd(), "..", "docs", "architecture");
+  const schema = readFileSync(join(directory, "supabase-spike-schema.sql"), "utf8").replace(/\r\n/g, "\n");
+  const guard = readFileSync(join(directory, "supabase-settlement-member-identity-guard.sql"), "utf8").replace(/\r\n/g, "\n");
+  for (const name of ["create_household_settlement", "update_household_settlement"]) {
+    const start = schema.indexOf(`create or replace function public.${name}(`);
+    const procedure = schema.slice(start, schema.indexOf("$$;", start) + 3);
+    assert.ok(guard.includes(procedure));
+    assert.doesNotMatch(procedure, /insert into public\.household_members/);
+    assert.match(procedure, /if resolved_from_member_id is null then\s+raise exception/);
+    assert.match(procedure, /if resolved_to_member_id is null then\s+raise exception/);
+  }
 });
 
 test("Supabase settlement update lets involved members revise records", () => {

@@ -21,6 +21,7 @@ export function resolveHouseholdMemberReference(
   return members.find(
     (member) =>
       member.id === value ||
+      member.referenceIds?.includes(value) ||
       member.remoteMemberId ===
         value ||
       member.email
@@ -40,6 +41,7 @@ export function createHouseholdMemberNameLookup(
   members.forEach((member) => {
     [
       member.id,
+      ...(member.referenceIds ?? []),
       member.remoteMemberId,
       member.email,
       member.email

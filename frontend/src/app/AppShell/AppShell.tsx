@@ -33,9 +33,7 @@ import {
   saveLinkedHouseholdShell,
   saveHouseholdMembers,
 } from "../../features/household/services/householdStorage";
-import type {
-  HouseholdMemberRole,
-} from "../../features/household/models/HouseholdMember";
+import { reconcileHouseholdMembers } from "../../features/household/services/reconcileHouseholdMembers";
 import AppUnlockScreen from "../../features/security/components/AppUnlockScreen";
 import {
   getAppLockIdleTimeoutMinutes,
@@ -133,6 +131,20 @@ export default function AppShell() {
       membership?.status === "active" &&
       household.members.length > 0
     );
+
+  const [memberRefreshVersion, setMemberRefreshVersion] = useState(0);
+  useEffect(() => {
+    if (!shouldHydrateRemoteMemberProfiles) return;
+    const refresh = () => {
+      if (document.visibilityState === "visible") setMemberRefreshVersion((value) => value + 1);
+    };
+    window.addEventListener("focus", refresh);
+    const timer = window.setInterval(refresh, 30000);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.clearInterval(timer);
+    };
+  }, [shouldHydrateRemoteMemberProfiles]);
 
   const [
     isLockEnabled,
@@ -486,89 +498,15 @@ export default function AppShell() {
           return;
         }
 
-        const remoteByLocalId =
-          new Map(
-            remoteMembers.map(
-              (member) => [
-                member.id,
-                member,
-              ]
-            )
-          );
-        const remoteByName =
-          new Map(
-            remoteMembers.map(
-              (member) => [
-                member.displayName
-                  .trim()
-                  .toLowerCase(),
-                member,
-              ]
-            )
-          );
-
-        let changed = false;
-        const mergedMembers =
-          household.members.map(
-            (member) => {
-              const remoteMember =
-                remoteByLocalId.get(
-                  member.id
-                ) ??
-                remoteByName.get(
-                  member.displayName
-                    .trim()
-                    .toLowerCase()
-                );
-
-              if (!remoteMember) {
-                return member;
-              }
-
-              const nextRole: HouseholdMemberRole =
-                remoteMember.role === "owner" ||
-                remoteMember.role === "admin"
-                  ? remoteMember.role
-                  : "member";
-              const nextColor =
-                remoteMember.color ??
-                member.color;
-
-              if (
-                member.remoteMemberId ===
-                  remoteMember.remoteMemberId &&
-                member.displayName ===
-                  remoteMember.displayName &&
-                member.role === nextRole &&
-                member.isActive ===
-                  remoteMember.isActive &&
-                member.color === nextColor
-              ) {
-                return member;
-              }
-
-              changed = true;
-
-              return {
-                ...member,
-                remoteMemberId:
-                  remoteMember.remoteMemberId,
-                displayName:
-                  remoteMember.displayName,
-                role:
-                  nextRole,
-                color:
-                  nextColor,
-                isActive:
-                  remoteMember.isActive,
-                updatedAt:
-                  remoteMember.updatedAt,
-              };
-            }
-          );
+        const currentHousehold = loadHousehold();
+        if (currentHousehold?.id !== household.id ||
+          currentHousehold.authenticatedLink?.remoteHouseholdId !== linkedRemoteHouseholdId) return;
+        const mergedMembers = reconcileHouseholdMembers(
+          currentHousehold.members, remoteMembers, currentHousehold.id
+        );
 
         if (
-          changed &&
+          JSON.stringify(mergedMembers) !== JSON.stringify(currentHousehold.members) &&
           saveHouseholdMembers(
             mergedMembers
           )
@@ -595,6 +533,7 @@ export default function AppShell() {
     membership,
     session.status,
     shouldHydrateRemoteMemberProfiles,
+    memberRefreshVersion,
   ]);
 
   if (

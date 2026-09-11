@@ -772,25 +772,7 @@ begin
   limit 1;
 
   if resolved_from_member_id is null then
-    insert into public.household_members (
-      household_id,
-      local_record_id,
-      display_name,
-      role,
-      status,
-      created_at,
-      updated_at
-    )
-    values (
-      target_household_id,
-      nullif(from_member_id, ''),
-      coalesce(nullif(from_member_id, ''), 'Settlement payer'),
-      'member',
-      'active',
-      now(),
-      now()
-    )
-    returning id into resolved_from_member_id;
+    raise exception 'Settlement member could not be resolved. Refresh household members before saving; no member was created.';
   end if;
 
   select member.id
@@ -804,25 +786,7 @@ begin
   limit 1;
 
   if resolved_to_member_id is null then
-    insert into public.household_members (
-      household_id,
-      local_record_id,
-      display_name,
-      role,
-      status,
-      created_at,
-      updated_at
-    )
-    values (
-      target_household_id,
-      nullif(to_member_id, ''),
-      coalesce(nullif(to_member_id, ''), 'Settlement receiver'),
-      'member',
-      'active',
-      now(),
-      now()
-    )
-    returning id into resolved_to_member_id;
+    raise exception 'Settlement member could not be resolved. Refresh household members before saving; no member was created.';
   end if;
 
   select account.id
@@ -1069,25 +1033,7 @@ begin
   limit 1;
 
   if resolved_from_member_id is null then
-    insert into public.household_members (
-      household_id,
-      local_record_id,
-      display_name,
-      role,
-      status,
-      created_at,
-      updated_at
-    )
-    values (
-      existing_settlement.household_id,
-      nullif(from_member_id, ''),
-      coalesce(nullif(from_member_id, ''), 'Settlement payer'),
-      'member',
-      'active',
-      now(),
-      now()
-    )
-    returning id into resolved_from_member_id;
+    raise exception 'Settlement member could not be resolved. Refresh household members before saving; no member was created.';
   end if;
 
   select member.id
@@ -1101,25 +1047,7 @@ begin
   limit 1;
 
   if resolved_to_member_id is null then
-    insert into public.household_members (
-      household_id,
-      local_record_id,
-      display_name,
-      role,
-      status,
-      created_at,
-      updated_at
-    )
-    values (
-      existing_settlement.household_id,
-      nullif(to_member_id, ''),
-      coalesce(nullif(to_member_id, ''), 'Settlement receiver'),
-      'member',
-      'active',
-      now(),
-      now()
-    )
-    returning id into resolved_to_member_id;
+    raise exception 'Settlement member could not be resolved. Refresh household members before saving; no member was created.';
   end if;
 
   if not public.is_household_admin(existing_settlement.household_id)

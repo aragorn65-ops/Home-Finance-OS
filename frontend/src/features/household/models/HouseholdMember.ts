@@ -16,6 +16,7 @@ export interface HouseholdMember {
   userId?: string;
   email?: string;
   remoteMemberId?: string;
+  referenceIds?: string[];
 
   displayName: string;
   role: HouseholdMemberRole;

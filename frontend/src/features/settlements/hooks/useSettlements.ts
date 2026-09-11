@@ -27,6 +27,7 @@ import type { MemberSettlementBalance } from "../models/MemberSettlementBalance"
 import type { MemberSettlementObligation } from "../models/MemberSettlementObligation";
 
 import SettlementService from "../services/SettlementService";
+import { findHouseholdMemberByReference } from "../../household/services/householdMemberResolution";
 
 import SettlementBalanceService from "../services/SettlementBalanceService";
 import {
@@ -115,9 +116,9 @@ function createRemoteSettlementDraft(
       localRecordId ??
       crypto.randomUUID(),
     fromMemberId:
-      form.fromMemberId.trim(),
+      findHouseholdMemberByReference(form.fromMemberId, form.householdId)?.remoteMemberId ?? form.fromMemberId.trim(),
     toMemberId:
-      form.toMemberId.trim(),
+      findHouseholdMemberByReference(form.toMemberId, form.householdId)?.remoteMemberId ?? form.toMemberId.trim(),
     amount:
       Math.round(
         form.amount * 100

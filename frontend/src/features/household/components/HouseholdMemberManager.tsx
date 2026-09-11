@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
 } from "react";
 import type {
@@ -90,6 +91,11 @@ export default function HouseholdMemberManager({
     () =>
       HouseholdMemberService.getMembers()
   );
+
+  const memberSnapshot = JSON.stringify(household?.members ?? []);
+  useEffect(() => {
+    setMembers(HouseholdMemberService.getMembers());
+  }, [memberSnapshot]);
 
   const [
     dialogMode,
