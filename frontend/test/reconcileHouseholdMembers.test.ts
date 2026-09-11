@@ -42,3 +42,19 @@ test("names cannot link two different identities and placeholders cannot demote 
   assert.equal(reconcileHouseholdMembers([owner], [member("new", { displayName: "Dadi Buboy" })], "local").length, 2);
   assert.deepEqual(reconcileHouseholdMembers([owner], [member("old")], "local"), [owner]);
 });
+
+test("repaired owner absorbs cached placeholder without losing settlement references", () => {
+  const owner = member("owner-uuid", { remoteMemberId: "owner-uuid", userId: "owner-user", displayName: "Dadi Buboy", role: "owner" });
+  const placeholder = member("member-001", { remoteMemberId: "placeholder-uuid" });
+  const repaired = { ...owner, id: "member-001" };
+  for (const local of [[owner, placeholder], [placeholder, owner], [placeholder], [owner]]) {
+    const result = reconcileHouseholdMembers(local, [repaired], "local");
+    assert.equal(result.length, 1);
+    assert.equal(result[0].role, "owner");
+    assert.equal(result[0].displayName, "Dadi Buboy");
+    for (const ref of ["member-001", "owner-uuid", ...(local.includes(placeholder) ? ["placeholder-uuid"] : [])]) {
+      assert.equal(resolveHouseholdMemberReference(result, ref), result[0]);
+    }
+    assert.deepEqual(reconcileHouseholdMembers(result, [repaired], "local"), result);
+  }
+});

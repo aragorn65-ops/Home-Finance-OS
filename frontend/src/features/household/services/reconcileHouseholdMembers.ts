@@ -6,18 +6,29 @@ export function reconcileHouseholdMembers(
   remote: HouseholdMember[],
   householdId: string
 ): HouseholdMember[] {
-  const used = new Set<HouseholdMember>();
-  const result = local.map((member) => {
+  const groups = new Map<HouseholdMember, HouseholdMember[]>();
+  const result: HouseholdMember[] = [];
+  for (const member of local) {
     const match =
       (member.userId ? remote.find((item) => item.userId === member.userId) : undefined) ??
       (member.remoteMemberId ? remote.find((item) => item.remoteMemberId === member.remoteMemberId) : undefined) ??
-      remote.find((item) => item.id === member.id);
-    if (!match) return member;
-    used.add(match);
-    if (!match.userId && match.displayName === match.id && member.displayName !== member.id) {
-      return member;
+      remote.find((item) => item.id === member.id || item.remoteMemberId === member.id);
+    if (!match) {
+      result.push(member);
+      continue;
     }
-    return {
+    groups.set(match, [...(groups.get(match) ?? []), member]);
+  }
+  for (const [match, candidates] of groups) {
+    // After a cloud repair, the UUID row and its old local alias may both be cached.
+    const member = candidates.find((item) => match.userId && item.userId === match.userId) ??
+      candidates.find((item) => match.remoteMemberId && item.remoteMemberId === match.remoteMemberId) ??
+      candidates[0];
+    if (!match.userId && match.displayName === match.id && member.displayName !== member.id) {
+      result.push(...candidates);
+      continue;
+    }
+    result.push({
       ...member,
       ...match,
       id: member.id,
@@ -25,15 +36,16 @@ export function reconcileHouseholdMembers(
       userId: match.userId ?? member.userId,
       email: match.email ?? member.email,
       referenceIds: [...new Set([
-        ...(member.referenceIds ?? []),
+        ...candidates.flatMap((item) => [item.id, ...(item.referenceIds ?? []), ...(item.remoteMemberId ? [item.remoteMemberId] : [])]),
         ...(match.referenceIds ?? []),
         match.id,
-      ])].filter((id) => id !== member.id),
+        ...(match.remoteMemberId ? [match.remoteMemberId] : []),
+      ])].filter((id) => id !== member.id).sort(),
       color: match.color ?? member.color,
-    };
-  });
+    });
+  }
   for (const member of remote) {
-    if (!used.has(member) && !result.some((item) => item.id === member.id)) {
+    if (!groups.has(member) && !result.some((item) => item.id === member.id || item.referenceIds?.includes(member.id))) {
       result.push({ ...member, householdId });
     }
   }
