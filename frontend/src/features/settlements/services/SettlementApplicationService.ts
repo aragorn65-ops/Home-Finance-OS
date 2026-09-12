@@ -5,6 +5,7 @@ import type { SettlementApplication } from "../models/SettlementApplication";
 import type { SettlementApplicationForm } from "../models/SettlementApplicationForm";
 
 import HouseholdMemberService from "../../household/services/HouseholdMemberService";
+import { findHouseholdMemberByReference } from "../../household/services/householdMemberResolution";
 
 import TransactionRepository from "../../transactions/repositories/TransactionRepository";
 
@@ -340,16 +341,16 @@ export default class SettlementApplicationService {
     fromMemberId: string,
     toMemberId: string
   ): EligibleOutstandingAllocation[] {
+    const resolve = (id: string) => findHouseholdMemberByReference(id, householdId)?.id ?? id;
     return ExpenseAllocationRepository
-      .findByMemberId(fromMemberId)
+      .findAll()
       .filter(
         (allocation) =>
-          allocation.paidByMemberId ===
-            toMemberId &&
+          resolve(allocation.memberId) === resolve(fromMemberId) &&
+          resolve(allocation.paidByMemberId) === resolve(toMemberId) &&
           allocation.isIncluded &&
           allocation.allocatedAmount > 0 &&
-          allocation.memberId !==
-            allocation.paidByMemberId
+          resolve(allocation.memberId) !== resolve(allocation.paidByMemberId)
       )
       .map((allocation) => {
         const transaction =
@@ -683,10 +684,8 @@ export default class SettlementApplicationService {
       );
     }
 
-    if (
-      allocation.memberId ===
-      allocation.paidByMemberId
-    ) {
+    const resolve = (id: string) => findHouseholdMemberByReference(id, householdId)?.id ?? id;
+    if (resolve(allocation.memberId) === resolve(allocation.paidByMemberId)) {
       return OperationResults.failure<boolean>(
         {
           applications:
@@ -697,8 +696,7 @@ export default class SettlementApplicationService {
     }
 
     if (
-      allocation.memberId !==
-      fromMemberId
+      resolve(allocation.memberId) !== resolve(fromMemberId)
     ) {
       return OperationResults.failure<boolean>(
         {
@@ -710,8 +708,7 @@ export default class SettlementApplicationService {
     }
 
     if (
-      allocation.paidByMemberId !==
-      toMemberId
+      resolve(allocation.paidByMemberId) !== resolve(toMemberId)
     ) {
       return OperationResults.failure<boolean>(
         {

@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import SettlementService from "../src/features/settlements/services/SettlementService.ts";
+import SettlementApplicationService from "../src/features/settlements/services/SettlementApplicationService.ts";
+import { loadHousehold, saveHouseholdMembers } from "../src/features/household/services/householdStorage.ts";
 import AllocationPaymentService from "../src/features/settlements/services/AllocationPaymentService.ts";
 import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository.ts";
 import SettlementApplicationRepository from "../src/features/settlements/repositories/SettlementApplicationRepository.ts";
@@ -128,6 +130,8 @@ test("manual application recalculation applies remainder to the next checked all
 
 function seedPartialSettlementFixture() {
   installBrowserStorage();
+  TransactionRepository.findAll();
+  ExpenseAllocationRepository.findAll();
 
   const now =
     "2026-08-06T00:00:00.000Z";
@@ -265,6 +269,46 @@ function seedPartialSettlementFixture() {
     []
   );
 }
+
+test("manual and oldest-first saves accept repaired member aliases without rewriting shares", () => {
+  for (const method of ["manual", "oldest-first"] as const) {
+    seedPartialSettlementFixture();
+    saveHouseholdMembers(loadHousehold()!.members.map((member) => ({ ...member,
+      remoteMemberId: `remote-${member.id}`, referenceIds: [`legacy-${member.id}`] })));
+    const allocations = ExpenseAllocationRepository.findAll().map((allocation) => ({ ...allocation,
+      memberId: `remote-${payerMemberId}`, paidByMemberId: `legacy-${receiverMemberId}` }));
+    assert.ok(ExpenseAllocationRepository.replaceForHousehold(householdId, allocations));
+    const before = ExpenseAllocationRepository.findAll();
+    const result = SettlementService.create({ householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
+      amount: 3000, settlementDate: "2026-08-03", sourceAccountId: "", destinationAccountId: "",
+      applicationMethod: method,
+      applications: method === "manual" ? [{ expenseAllocationId: "allocation-groceries", isSelected: true, appliedAmount: 3000 }] : [],
+      referenceNumber: "ALIAS-SETTLEMENT", notes: "", attachments: [], isActive: true });
+    assert.equal(result.success, true, JSON.stringify(result.errors));
+    assert.ok(result.data);
+    assert.equal(SettlementApplicationRepository.findBySettlementId(result.data.id)[0].expenseAllocationId, "allocation-groceries");
+    assert.deepEqual(ExpenseAllocationRepository.findAll(), before);
+  }
+});
+
+test("alias-aware applications still reject other members, self-shares and other households", () => {
+  for (const scenario of ["receiver", "payer", "self", "household"]) {
+    seedPartialSettlementFixture();
+    saveHouseholdMembers(loadHousehold()!.members.map((member) => ({ ...member, remoteMemberId: `remote-${member.id}` })));
+    const allocations = ExpenseAllocationRepository.findAll().map((allocation) => ({ ...allocation,
+      memberId: scenario === "payer" ? "unrelated-member" : `remote-${payerMemberId}`,
+      paidByMemberId: scenario === "receiver" ? "unrelated-member" : scenario === "self" ? payerMemberId : `remote-${receiverMemberId}` }));
+    assert.ok(ExpenseAllocationRepository.replaceForHousehold(householdId, allocations));
+    const requestHousehold = scenario === "household" ? "other-household" : householdId;
+    const result = SettlementApplicationService.buildManualApplications("new-id", requestHousehold,
+      payerMemberId, receiverMemberId, 100,
+      [{ expenseAllocationId: "allocation-groceries", isSelected: true, appliedAmount: 100 }]);
+    assert.equal(result.success, false, scenario);
+    assert.equal(SettlementApplicationRepository.findAll().length, 0);
+    const oldest = SettlementApplicationService.buildOldestFirstApplications("new-id", requestHousehold, payerMemberId, receiverMemberId, 100);
+    assert.equal(oldest.success, false, scenario);
+  }
+});
 
 test("redating a synced settlement preserves its original member references and application IDs", () => {
   seedPartialSettlementFixture();
