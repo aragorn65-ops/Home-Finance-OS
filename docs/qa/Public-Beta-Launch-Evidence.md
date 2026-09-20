@@ -217,6 +217,50 @@ docs/qa/Sprint-104-Attachment-Smoke.md
 
 ## Sprint 104 Production Evidence Log
 
+### Verification Update - 2026-09-21
+
+Recorded from the product owner's testing confirmations in this conversation.
+These are user-reported production results, not an independent authenticated
+browser audit. Latest code checkpoint: `86b372f`.
+
+* Passed: July/August entry and September transactions remain consistent across
+  participating member windows.
+* Passed: partial and final settlements, prior-month outstanding carryover,
+  and reduction of carried balances after payment.
+* Passed: Dadi Buboy / Owner identity and dashboard dues matching Settlement
+  balances after refresh in admin, Rasha, and Lyn sessions.
+* Passed: backup export and import in a different browser, with matching data.
+* The product owner reports settling the remaining PHP 0.02 deficit. The
+  historical cause of that discrepancy is not established by these results.
+
+Repo verification at `86b372f`: 265 tests passed and production build passed.
+Regression tests reproduce and prevent out-of-order or canceled cloud restores
+from replacing newer local balances. This is not proof that the same race
+caused the historical PHP 0.02 incident.
+
+Remaining release evidence: full direct-open/refresh route checks, role/privacy
+checks (including viewer if supported), attachment preview/refresh checks,
+active-session sync without manual refresh, and explicit Cloudflare environment
+verification. Earlier guides describe historical checkpoints; validate current
+permissions against the current implementation before using their expectations.
+
+Decision: retain the verified finance baseline and continue the remaining
+release checks. Do not reset test data or mark all launch gates complete.
+
+### Earlier Cutover Evidence
+
+Follow-up testing: attachment listings persist, but preview is unavailable in
+member browsers; cross-browser preview remains open. A notes-only transaction
+edit did not appear in the member window until browser refresh, so the
+active-session sync gate failed.
+
+Repo follow-up adds a visible-page 30-second core snapshot refresh fallback,
+focus/online recovery, non-blocking background refresh, and refreshed read-only
+transaction details without resetting edit forms. Verification: 268 tests and
+production build passed. Live no-refresh retest remains pending; the production
+realtime notification delivery failure itself has not been independently
+diagnosed. No finance formulas or database records were changed.
+
 Record the live smoke result here before checking launch gates:
 
 ```text

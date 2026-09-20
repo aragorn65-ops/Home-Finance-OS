@@ -22,6 +22,7 @@ import {
 import {
   browserCoreSnapshotLocalWriter,
 } from "../services/browserCoreSnapshotLocalWriter";
+import { subscribeToCoreSnapshotRefreshFallback } from "../services/coreSnapshotRefreshFallback";
 
 export const coreSnapshotRestoredEvent =
   "hfos-core-snapshot-restored";
@@ -52,6 +53,8 @@ export function useLinkedCoreSnapshotRestore({
     useState(false);
   const [error, setError] =
     useState("");
+  const [backgroundError, setBackgroundError] = useState("");
+  const isFetching = useRef(false);
   const [
     restoreTrigger,
     setRestoreTrigger,
@@ -86,6 +89,7 @@ export function useLinkedCoreSnapshotRestore({
     if (!shouldRestore) {
       setIsRestoring(false);
       setError("");
+      setBackgroundError("");
       return;
     }
 
@@ -113,9 +117,13 @@ export function useLinkedCoreSnapshotRestore({
     }
 
     let isActive = true;
+    const isInitialRestore = !restoredKeys.current.has(restoreKey);
+    const reportError = isInitialRestore ? setError : setBackgroundError;
 
     setError("");
-    setIsRestoring(true);
+    // Background refresh must not unmount the route or discard unsaved forms.
+    setIsRestoring(isInitialRestore);
+    isFetching.current = true;
 
     void restoreLinkedRemoteCoreSnapshot({
       authEnabled:
@@ -140,12 +148,14 @@ export function useLinkedCoreSnapshotRestore({
         }
 
         setIsRestoring(false);
+        isFetching.current = false;
 
         if (
           result.status ===
           "restored"
         ) {
           restoredKeys.current.add(restoreKey);
+          setBackgroundError("");
           window.dispatchEvent(
             new CustomEvent(
               coreSnapshotRestoredEvent,
@@ -160,7 +170,7 @@ export function useLinkedCoreSnapshotRestore({
 
         if (result.reason === "superseded-restore") return;
 
-        setError(
+        reportError(
           getSkippedRestoreMessage(
             result.reason
           )
@@ -172,7 +182,8 @@ export function useLinkedCoreSnapshotRestore({
         }
 
         setIsRestoring(false);
-        setError(
+        isFetching.current = false;
+        reportError(
           getErrorMessage(
             restoreError
           )
@@ -181,6 +192,7 @@ export function useLinkedCoreSnapshotRestore({
 
     return () => {
       isActive = false;
+      isFetching.current = false;
     };
   }, [
     isRouteAllowed,
@@ -216,8 +228,13 @@ export function useLinkedCoreSnapshotRestore({
             );
           }
         );
+    const stopFallback = subscribeToCoreSnapshotRefreshFallback(
+      () => setRestoreTrigger((current) => current + 1),
+      () => isFetching.current
+    );
 
     return () => {
+      stopFallback();
       subscription?.unsubscribe();
     };
   }, [
@@ -228,6 +245,7 @@ export function useLinkedCoreSnapshotRestore({
   return {
     isRestoring,
     error,
+    backgroundError,
     isRequired:
       shouldRestore,
   };

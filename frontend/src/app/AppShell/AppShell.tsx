@@ -612,6 +612,11 @@ export default function AppShell() {
 
         <main className="app-content">
           <div className="page-container">
+            {coreSnapshotRestore.backgroundError && (
+              <p role="status" className="mb-3 rounded-md border border-amber-400 p-3 text-sm">
+                Cloud refresh failed. Displayed records may be out of date. Retrying automatically.
+              </p>
+            )}
             {!household &&
             isCurrentSettingsPath ? (
               <Outlet />

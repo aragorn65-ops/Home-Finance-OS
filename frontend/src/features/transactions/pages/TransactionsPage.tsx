@@ -340,6 +340,13 @@ export default function TransactionsPage() {
     deleteError,
     setDeleteError,
   ] = useState("");
+
+  useEffect(() => {
+    if (dialogMode !== "view") return;
+    setSelectedTransaction((current) => current
+      ? transactions.find((record) => record.id === current.id && record.householdId === current.householdId) ?? null
+      : null);
+  }, [transactions, dialogMode]);
   const [
     isDeletingTransaction,
     setIsDeletingTransaction,

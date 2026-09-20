@@ -224,3 +224,15 @@ two-tab realtime smoke.
 **Closed:** Pending
 
 **Result:** Pending.
+
+### Verification Update - 2026-09-21
+
+The product owner has confirmed multi-month entry, settlement carryover,
+cross-member balance agreement after refresh, owner identity, and backup
+export/import with matching data. See the dated update in
+`docs/qa/Public-Beta-Launch-Evidence.md` for scope and limitations.
+
+Latest verified code checkpoint: `86b372f` (265 tests and production build
+passed). No finance formulas or saved records are changed by this documentation
+update. Full route/access, attachment, active-session realtime, and deployment
+configuration evidence remains to be completed before launch closeout.
