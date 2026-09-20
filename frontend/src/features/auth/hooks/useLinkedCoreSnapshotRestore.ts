@@ -112,15 +112,6 @@ export function useLinkedCoreSnapshotRestore({
       return;
     }
 
-    if (
-      restoreTrigger > 0 &&
-      !restoredKeys.current.has(
-        restoreKey
-      )
-    ) {
-      return;
-    }
-
     let isActive = true;
 
     setError("");
@@ -141,21 +132,20 @@ export function useLinkedCoreSnapshotRestore({
         getAuthBackendAdapter(),
       writer:
         browserCoreSnapshotLocalWriter,
+      isCurrent: () => isActive,
     })
       .then((result) => {
         if (!isActive) {
           return;
         }
 
-        restoredKeys.current.add(
-          restoreKey
-        );
         setIsRestoring(false);
 
         if (
           result.status ===
           "restored"
         ) {
+          restoredKeys.current.add(restoreKey);
           window.dispatchEvent(
             new CustomEvent(
               coreSnapshotRestoredEvent,
@@ -167,6 +157,8 @@ export function useLinkedCoreSnapshotRestore({
 
           return;
         }
+
+        if (result.reason === "superseded-restore") return;
 
         setError(
           getSkippedRestoreMessage(

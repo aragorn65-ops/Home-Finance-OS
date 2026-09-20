@@ -112,6 +112,8 @@ export interface LinkedCoreSnapshotRestoreOptions {
     | undefined;
   adapter: CoreSnapshotAdapter;
   writer: CoreSnapshotLocalWriter;
+  /** Whether the initiating route/session still accepts this response. */
+  isCurrent?: () => boolean;
 }
 
 export type LinkedCoreSnapshotRestoreResult =
@@ -121,7 +123,8 @@ export type LinkedCoreSnapshotRestoreResult =
         | "auth-disabled"
         | "missing-household"
         | "unlinked-household"
-        | "missing-owner-member";
+        | "missing-owner-member"
+        | "superseded-restore";
     }
   | {
       status: "restored";
@@ -238,6 +241,7 @@ export function getLocalCoreSnapshotCounts(
 
 // Keep writes ordered and prevent an older in-flight read from replacing newer local data.
 const householdSnapshotWrites = new Map<string, Promise<RemoteHouseholdCoreSnapshot>>();
+const householdSnapshotRestores = new Map<string, symbol>();
 
 export async function saveRemoteCoreSnapshotForHousehold(
   adapter: CoreSnapshotAdapter,
@@ -578,27 +582,38 @@ export async function restoreLinkedRemoteCoreSnapshot(
     };
   }
 
-  let snapshot: RemoteHouseholdCoreSnapshot;
-  for (;;) {
-    const pendingWrite = householdSnapshotWrites.get(remoteHouseholdId);
-    await pendingWrite;
-    snapshot = await loadRemoteCoreSnapshotForHousehold(options.adapter, remoteHouseholdId);
-    if (householdSnapshotWrites.get(remoteHouseholdId) === pendingWrite) break;
+  if (options.isCurrent?.() === false) {
+    return { status: "skipped", reason: "superseded-restore" };
   }
 
-  const counts =
-    applyRemoteCoreSnapshotToLocalHousehold({
-      snapshot,
-      localHouseholdId:
-        options.household.id,
-      ownerMemberId,
-      writer:
-        options.writer,
-    });
+  // Realtime refreshes can overlap. Only the latest request may replace local records.
+  const restoreKey = JSON.stringify([options.household.id, remoteHouseholdId]);
+  const token = Symbol();
+  householdSnapshotRestores.set(restoreKey, token);
+  const isCurrent = () => householdSnapshotRestores.get(restoreKey) === token &&
+    options.isCurrent?.() !== false;
 
-  return {
-    status: "restored",
-    snapshot,
-    ...counts,
-  };
+  try {
+    let snapshot: RemoteHouseholdCoreSnapshot;
+    for (;;) {
+      const pendingWrite = householdSnapshotWrites.get(remoteHouseholdId);
+      await pendingWrite;
+      if (!isCurrent()) return { status: "skipped", reason: "superseded-restore" };
+      snapshot = await loadRemoteCoreSnapshotForHousehold(options.adapter, remoteHouseholdId);
+      if (!isCurrent()) return { status: "skipped", reason: "superseded-restore" };
+      if (householdSnapshotWrites.get(remoteHouseholdId) === pendingWrite) break;
+    }
+
+    const counts = applyRemoteCoreSnapshotToLocalHousehold({
+      snapshot,
+      localHouseholdId: options.household.id,
+      ownerMemberId,
+      writer: options.writer,
+    });
+    return { status: "restored", snapshot, ...counts };
+  } finally {
+    if (householdSnapshotRestores.get(restoreKey) === token) {
+      householdSnapshotRestores.delete(restoreKey);
+    }
+  }
 }

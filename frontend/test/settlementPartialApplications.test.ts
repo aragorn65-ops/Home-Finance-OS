@@ -3,6 +3,7 @@ import test from "node:test";
 
 import SettlementService from "../src/features/settlements/services/SettlementService.ts";
 import SettlementApplicationService from "../src/features/settlements/services/SettlementApplicationService.ts";
+import { getSettlementPreviews } from "../src/features/dashboard/services/settlementPreviews.ts";
 import { loadHousehold, saveHouseholdMembers } from "../src/features/household/services/householdStorage.ts";
 import AllocationPaymentService from "../src/features/settlements/services/AllocationPaymentService.ts";
 import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository.ts";
@@ -308,6 +309,59 @@ test("alias-aware applications still reject other members, self-shares and other
     const oldest = SettlementApplicationService.buildOldestFirstApplications("new-id", requestHousehold, payerMemberId, receiverMemberId, 100);
     assert.equal(oldest.success, false, scenario);
   }
+});
+
+test("7092.07 manual settlement closes exact shares but preserves a genuine two-cent remainder", () => {
+  for (const remainder of [0, 0.02]) {
+    seedPartialSettlementFixture();
+    const allocations = ExpenseAllocationRepository.findAll().map((allocation) => ({ ...allocation,
+      allocatedAmount: allocation.id === "allocation-groceries" ? 3291.77 : 3800.30 }));
+    assert.ok(ExpenseAllocationRepository.replaceForHousehold(householdId, allocations));
+    const result = SettlementService.create({ householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
+      amount: 7092.07, settlementDate: "2026-08-03", sourceAccountId: "", destinationAccountId: "",
+      applicationMethod: "manual", applications: [
+        { expenseAllocationId: "allocation-groceries", isSelected: true, appliedAmount: 3291.77 - remainder },
+        { expenseAllocationId: "allocation-electricity", isSelected: true, appliedAmount: 3800.30 },
+      ], referenceNumber: "CENT-CHECK", notes: "", attachments: [], isActive: true });
+    assert.equal(result.success, true, JSON.stringify(result.errors));
+    assert.ok(result.data);
+    const applications = SettlementApplicationRepository.findBySettlementId(result.data.id);
+    assert.equal(Math.round(applications.reduce((sum, item) => sum + item.appliedAmount, 0) * 100), 709207 - Math.round(remainder * 100));
+    assert.equal(AllocationPaymentService.getOutstandingAmount(ExpenseAllocationRepository.findById("allocation-groceries")!), remainder);
+    assert.equal(AllocationPaymentService.getOutstandingAmount(ExpenseAllocationRepository.findById("allocation-electricity")!), 0);
+    assert.deepEqual(ExpenseAllocationRepository.findAll(), allocations);
+  }
+});
+
+test("August 15206.07 less 5170.49 and 2943.49 shows 7092.09 on the dashboard", () => {
+  seedPartialSettlementFixture();
+  const template = TransactionRepository.findAll()[0];
+  const amounts = [8041.04, 749.50, 899.50, 1686.68, 140, 3689.35];
+  const transactions = amounts.map((amount, index) => ({ ...template, id: `august-${index}`, amount,
+    transactionDate: new Date(`2026-08-${String(index + 1).padStart(2, "0")}T00:00:00Z`) }));
+  assert.ok(TransactionRepository.replaceForHousehold(householdId, transactions));
+  const allocations = transactions.map((transaction) => ({ id: `share-${transaction.id}`, transactionId: transaction.id,
+    memberId: payerMemberId, paidByMemberId: receiverMemberId, allocatedAmount: transaction.amount,
+    isIncluded: true, createdAt: transaction.createdAt, updatedAt: transaction.updatedAt }));
+  assert.ok(ExpenseAllocationRepository.replaceForHousehold(householdId, allocations));
+  const originalShares = ExpenseAllocationRepository.findAll();
+  const displayed = () => getSettlementPreviews(SettlementOverpaymentCreditService.applyCreditOffsetsToAllocations(
+    householdId, SettlementAllocationService.getOutstandingAllocations(householdId)), (id) => id)[0]?.amount ?? 0;
+  const pay = (amount: number, items: Array<[number, number]>) => {
+    const result = SettlementService.create({ householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
+      amount, settlementDate: "2026-08-30", sourceAccountId: "", destinationAccountId: "", applicationMethod: "manual",
+      applications: items.map(([index, appliedAmount]) => ({ expenseAllocationId: `share-august-${index}`, isSelected: true, appliedAmount })),
+      referenceNumber: "AUGUST-TRACE", notes: "", attachments: [], isActive: true });
+    assert.equal(result.success, true, JSON.stringify(result.errors));
+  };
+  assert.equal(displayed(), 15206.07);
+  pay(5170.49, [[0, 5170.49]]);
+  assert.equal(displayed(), 10035.58);
+  pay(2943.49, [[0, 2870.55], [4, 72.94]]);
+  assert.equal(displayed(), 7092.09);
+  pay(7092.07, [[1, 749.50], [2, 899.50], [3, 1686.68], [4, 67.06], [5, 3689.33]]);
+  assert.equal(displayed(), 0.02);
+  assert.deepEqual(ExpenseAllocationRepository.findAll(), originalShares);
 });
 
 test("redating a synced settlement preserves its original member references and application IDs", () => {

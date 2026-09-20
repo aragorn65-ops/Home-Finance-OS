@@ -38,3 +38,17 @@ test("dashboard keeps unrelated identities separate and retains every category",
   assert.equal(result[0].amount, 40);
   assert.equal(result[1].amount, 5);
 });
+
+test("audited August shares total 7092.09 before credit offsets, without losing two cents", () => {
+  const rows = [
+    allocation("rasha", "dadi", "Internet", 749.50),
+    allocation("rasha", "dadi", "Internet", 899.50),
+    allocation("rasha", "dadi", "Groceries", 1686.68),
+    allocation("rasha", "dadi", "Groceries", 67.06),
+    allocation("rasha", "dadi", "Electricity", 3689.35),
+  ];
+  const result = getSettlementPreviews(rows, (id) => id);
+  assert.equal(result[0].amount, 7092.09);
+  assert.equal(result[0].items.find((item) => item.category === "Electricity")?.amount, 3689.35);
+  assert.equal(getSettlementPreviews([...rows].reverse(), (id) => id)[0].amount, 7092.09);
+});
