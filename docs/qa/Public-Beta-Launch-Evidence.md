@@ -249,6 +249,25 @@ release checks. Do not reset test data or mark all launch gates complete.
 
 ### Earlier Cutover Evidence
 
+### Follow-up - 2026-09-23
+
+The product owner reports the no-refresh notes sync retest passed after
+`58d1b65`, unsaved form fields remained intact during background sync, and
+Rasha/Lyn passed the member UI access checks. These are UI checks, not an
+independent backend authorization audit.
+
+Attachment follow-up: retain file bodies for explicitly household-visible
+transactions in core snapshots and retain bill/payment files when saving
+utilities. Private, participant-only, and unspecified-visibility attachment
+bodies remain excluded from shared snapshots. Migration payloads remain
+metadata-only. No SQL change or financial recomputation is required.
+
+Legacy metadata-only attachments cannot regenerate missing file bytes: reattach
+the original to an existing record if needed. Do not recreate the transaction.
+This uses the existing inline attachment storage, not a new object-storage
+service; browser storage and snapshot payload capacity still limit file volume.
+Production image/PDF preview in admin and member browsers remains pending.
+
 Follow-up testing: attachment listings persist, but preview is unavailable in
 member browsers; cross-browser preview remains open. A notes-only transaction
 edit did not appear in the member window until browser refresh, so the

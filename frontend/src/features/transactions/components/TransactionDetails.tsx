@@ -495,7 +495,7 @@ export default function TransactionDetails({
                       </button>
                     ) : (
                       <p className="text-xs text-muted-foreground">
-                        Preview unavailable in cloud beta.
+                        File content unavailable for this record.
                       </p>
                     )}
                   </div>

@@ -10,7 +10,6 @@ import {
 import type {
   StoredAttachment,
 } from "../../../shared/models/StoredAttachment";
-import createAttachmentMetadataRecords from "../../../shared/utils/createAttachmentMetadataRecords";
 import {
   normalizeTransactionCategory,
 } from "../../transactions/models/TransactionCategory";
@@ -273,9 +272,7 @@ export default class UtilityProviderBillService {
         ),
 
       billAttachments:
-        createAttachmentMetadataRecords(
-          form.attachments
-        ),
+        form.attachments.map((attachment) => ({ ...attachment })),
       paymentAttachments: [],
 
       paidByMemberId: "",
@@ -435,9 +432,7 @@ export default class UtilityProviderBillService {
       paymentReferenceNumber:
         payment.referenceNumber.trim(),
       paymentAttachments:
-        createAttachmentMetadataRecords(
-          payment.paymentAttachments
-        ),
+        payment.paymentAttachments.map((attachment) => ({ ...attachment })),
       transactionId:
         saveResult.data?.id ?? "",
       updatedAt:
@@ -509,9 +504,7 @@ export default class UtilityProviderBillService {
       UtilityProviderBill = {
       ...providerBill,
       billAttachments:
-        createAttachmentMetadataRecords(
-          billAttachments
-        ),
+        billAttachments.map((attachment) => ({ ...attachment })),
       updatedAt:
         new Date(),
     };

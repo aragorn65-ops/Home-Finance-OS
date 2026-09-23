@@ -434,6 +434,8 @@ test("provider payment summary only includes payments from the selected month", 
 });
 
 test("saving an unpaid provider bill persists it for reload", async () => {
+  const attachment = { id: "water-bill", category: "bill" as const, fileName: "water.png",
+    mimeType: "image/png", sizeBytes: 3, dataUrl: "data:image/png;base64,YWJj", createdAt: new Date() };
   const { localStorage } =
     installBrowserStorage();
   const householdId =
@@ -467,6 +469,7 @@ test("saving an unpaid provider bill persists it for reload", async () => {
       .createUnpaid(
         {
           ...defaultUtilityBillForm,
+          attachments: [attachment],
           utilityType:
             "water",
           unit:
@@ -535,6 +538,11 @@ test("saving an unpaid provider bill persists it for reload", async () => {
     result.success,
     true
   );
+  const savedBill = UtilityProviderBillService.getActiveProviderBills()[0];
+  assert.equal(savedBill.billAttachments[0].dataUrl, attachment.dataUrl);
+  const replacement = { ...attachment, dataUrl: "data:image/png;base64,ZGVm" };
+  assert.equal(UtilityProviderBillService.replaceBillAttachments(savedBill.id, [replacement]).success, true);
+  assert.equal(UtilityProviderBillService.getActiveProviderBills()[0].billAttachments[0].dataUrl, replacement.dataUrl);
   assert.deepEqual(
     UtilityProviderBillService
       .getActiveProviderBills()
@@ -549,6 +557,8 @@ test("saving an unpaid provider bill persists it for reload", async () => {
 });
 
 test("marking a provider bill paid keeps it out of unpaid bills after reload", async () => {
+  const receipt = { id: "water-payment", category: "receipt" as const, fileName: "receipt.png",
+    mimeType: "image/png", sizeBytes: 3, dataUrl: "data:image/png;base64,YWJj", createdAt: new Date() };
   const { localStorage } =
     installBrowserStorage();
   const householdId =
@@ -639,7 +649,7 @@ test("marking a provider bill paid keeps it out of unpaid bills after reload", a
             "2026-07-13",
           referenceNumber:
             "",
-          paymentAttachments: [],
+          paymentAttachments: [receipt],
         }
       );
 
@@ -647,6 +657,7 @@ test("marking a provider bill paid keeps it out of unpaid bills after reload", a
     result.success,
     true
   );
+  assert.equal(UtilityProviderBillService.getPaidProviderBills()[0].paymentAttachments[0].dataUrl, receipt.dataUrl);
   assert.deepEqual(
     UtilityProviderBillService
       .getActiveProviderBills()

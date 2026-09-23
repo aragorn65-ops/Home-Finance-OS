@@ -161,6 +161,11 @@ export function createRemoteCoreSnapshotInput(
       source.transactions,
       localHouseholdId
     );
+  const sourceTransactions = new Map(
+    source.transactions
+      .filter((transaction) => transaction.householdId === localHouseholdId)
+      .map((transaction) => [transaction.id, transaction])
+  );
   const expenseAllocations =
     createMigrationExpenseAllocationUploadRecords(
       source.expenseAllocations ?? [],
@@ -176,7 +181,12 @@ export function createRemoteCoreSnapshotInput(
     accounts:
       accountPayload.accounts,
     transactions:
-      transactionPayload.transactions,
+      transactionPayload.transactions.map((transaction) => ({
+        ...transaction,
+        attachments: transaction.visibility === "household"
+          ? (sourceTransactions.get(transaction.id)?.attachments ?? []).map((attachment) => ({ ...attachment }))
+          : transaction.attachments,
+      })),
     expenseAllocations,
     providerBills:
       (source.providerBills ?? [])
@@ -187,6 +197,14 @@ export function createRemoteCoreSnapshotInput(
         )
         .map((providerBill) => ({
           ...providerBill,
+          billAttachments: providerBill.billAttachments.map((attachment) => ({
+            ...attachment,
+            dataUrl: providerBill.visibility === "household" ? attachment.dataUrl : "",
+          })),
+          paymentAttachments: providerBill.paymentAttachments.map((attachment) => ({
+            ...attachment,
+            dataUrl: providerBill.visibility === "household" ? attachment.dataUrl : "",
+          })),
           householdId:
             source.householdId,
           billingDate:

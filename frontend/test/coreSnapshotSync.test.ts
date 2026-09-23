@@ -343,6 +343,42 @@ const providerBill: UtilityProviderBill = {
     new Date("2026-07-30T14:10:00Z"),
 };
 
+test("household attachment bodies survive cloud serialization and a fresh member restore", () => {
+  const attachment = { id: "receipt", category: "bill" as const, fileName: "bill.png",
+    mimeType: "image/png", sizeBytes: 3, dataUrl: "data:image/png;base64,YWJj", createdAt: new Date() };
+  const input = createRemoteCoreSnapshotInput({ householdId: "remote", localHouseholdId: householdId,
+    accounts: [], transactions: [{ ...transaction, visibility: "household", attachments: [attachment] }],
+    providerBills: [{ ...providerBill, billAttachments: [attachment], paymentAttachments: [attachment] }] });
+  const wire = JSON.parse(JSON.stringify(input));
+  let restoredTransactions: Transaction[] = [];
+  let restoredBills: UtilityProviderBill[] = [];
+  applyRemoteCoreSnapshotToLocalHousehold({ snapshot: wire, localHouseholdId: "member-browser", ownerMemberId: "owner",
+    writer: { replaceAccounts: () => true,
+      replaceTransactions: (_id, records) => { restoredTransactions = records; return true; },
+      replaceProviderBills: (_id, records) => { restoredBills = records; return true; } } });
+  assert.equal(restoredTransactions[0].attachments?.[0].dataUrl, attachment.dataUrl);
+  assert.equal(restoredBills[0].billAttachments[0].dataUrl, attachment.dataUrl);
+  assert.equal(restoredBills[0].paymentAttachments[0].dataUrl, attachment.dataUrl);
+  assert.equal(restoredTransactions[0].amount, transaction.amount);
+  assert.equal(restoredBills[0].totalBillAmount, providerBill.totalBillAmount);
+});
+
+test("shared snapshots exclude non-household file bodies and other household records", () => {
+  const attachment = { id: "private", category: "receipt" as const, fileName: "private.pdf",
+    mimeType: "application/pdf", sizeBytes: 3, dataUrl: "data:application/pdf;base64,YWJj", createdAt: new Date() };
+  for (const visibility of ["private", "participants"] as const) {
+    const input = createRemoteCoreSnapshotInput({ householdId: "remote", localHouseholdId: householdId,
+      accounts: [], transactions: [{ ...transaction, visibility, attachments: [attachment] },
+        { ...transaction, id: "other", householdId: "other-household", visibility: "household", attachments: [attachment] }],
+      providerBills: [{ ...providerBill, visibility, billAttachments: [attachment], paymentAttachments: [attachment] }] });
+    assert.equal(input.transactions.length, 1);
+    assert.equal(input.transactions[0].attachments?.[0].dataUrl, "");
+    assert.equal(input.providerBills?.[0].billAttachments[0].dataUrl, "");
+    assert.equal(input.providerBills?.[0].paymentAttachments[0].dataUrl, "");
+    assert.notEqual(attachment.dataUrl, "");
+  }
+});
+
 test("creates a remote core snapshot input from local household records", () => {
   const remoteHouseholdId =
     "remote-household-core-sync-1";
