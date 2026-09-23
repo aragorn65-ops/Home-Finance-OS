@@ -268,6 +268,15 @@ This uses the existing inline attachment storage, not a new object-storage
 service; browser storage and snapshot payload capacity still limit file volume.
 Production image/PDF preview in admin and member browsers remains pending.
 
+Admin Transactions -> View follow-up: a metadata-only core restore could erase
+an existing local receipt body, including on focus return from the preview tab.
+The local writer now preserves bytes only for a matching attachment still
+listed on the same transaction in the same household (id, name, MIME type,
+size, creation time). Remote nonempty content and deletions stay authoritative.
+Verification: 274 tests and production build passed. The reported live
+open/close/reopen sequence remains pending; files already lost are not recovered
+by this guard. No amount, allocation, or settlement calculation changes.
+
 Follow-up testing: attachment listings persist, but preview is unavailable in
 member browsers; cross-browser preview remains open. A notes-only transaction
 edit did not appear in the member window until browser refresh, so the
