@@ -1,5 +1,10 @@
 # Sprint 104 Member Transparency Smoke
 
+Sprint 105 correction: see `Sprint-105-Access-Audit.md`. Members may manage
+their own private accounts and edit involved settlements, but not delete those
+settlements. Historical blanket read-only assertions below are superseded by
+these exceptions. UI checks do not establish server-side authorization.
+
 Use this guide on the deployed production URL after the latest `main`
 deployment is available.
 

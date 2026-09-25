@@ -1,5 +1,11 @@
 # Sprint 104 Route Smoke
 
+Sprint 105 correction: use `Sprint-105-Access-Audit.md` for current access
+expectations. Members may manage their own private accounts and edit involved
+settlements; historical read-only assertions below do not cover those exceptions.
+Use the intended current deployed commit, not the old minimum checkpoint, for
+release evidence. Backend privacy verification remains open.
+
 Use this guide after Cloudflare Pages deploys the latest `main` checkpoint.
 
 ```text

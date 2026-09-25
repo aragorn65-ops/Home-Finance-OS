@@ -17,8 +17,9 @@ acceptance does not by itself authorize public beta launch.
 
 * [x] Carry forward the accepted finance, sync, attachment, and backup baseline
   from Sprint 104 and record the remaining checks.
-* [ ] Audit current route and authorization behavior against the older QA
+* [x] Audit current route and authorization behavior against the older QA
   guides; correct stale expectations before asking for more manual testing.
+  Findings and corrected expectations: `docs/qa/Sprint-105-Access-Audit.md`.
 * [ ] Verify server-side access boundaries for signed-out, owner/admin, member,
   and viewer sessions where supported. Hidden buttons are not authorization
   evidence. Include cross-household and private-record access.
