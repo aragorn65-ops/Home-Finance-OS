@@ -1,5 +1,6 @@
 -- Prevent settlement saves from creating placeholder member identities.
--- Does not modify existing records, permissions, allocations, or amounts.
+-- Does not modify existing records, allocations, or amounts.
+-- Includes Sprint 105 active-role and original-participant write guards.
 -- Apply after reviewing the household-member audit; unresolved references now fail explicitly.
 begin;
 
@@ -43,6 +44,16 @@ begin
 
   if current_member_id is null then
     raise exception 'Active household membership is required to create a settlement.';
+  end if;
+
+  if not exists (
+    select 1 from public.household_memberships membership
+    where membership.household_id = target_household_id
+      and membership.user_id = auth.uid()
+      and membership.status = 'active'
+      and membership.role in ('owner', 'admin', 'member')
+  ) then
+    raise exception 'Active owner, admin, or member access is required to create a settlement.';
   end if;
 
   if application_method not in ('oldest-first', 'manual') then
@@ -220,6 +231,22 @@ begin
 
   if existing_settlement.id is null then
     raise exception 'Settlement was not found.';
+  end if;
+
+  if not exists (
+    select 1 from public.household_memberships membership
+    where membership.household_id = existing_settlement.household_id
+      and membership.user_id = auth.uid()
+      and membership.status = 'active'
+      and (
+        membership.role in ('owner', 'admin')
+        or (
+          membership.role = 'member'
+          and membership.member_id in (existing_settlement.from_member_id, existing_settlement.to_member_id)
+        )
+      )
+  ) then
+    raise exception 'Active admin or original settlement participant access is required to update a settlement.';
   end if;
 
   if application_method not in ('oldest-first', 'manual') then

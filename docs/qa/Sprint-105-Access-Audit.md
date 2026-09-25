@@ -3,6 +3,33 @@
 Date: 2026-09-25. Repository baseline: `3c69df3`.
 Static source inspection only; deployed database definitions have not been read.
 
+## Deployed Evidence And First Repair
+
+The product owner subsequently supplied the installed function definitions and
+table policies. Snapshot/create/update RPCs are owned by postgres and use
+SECURITY DEFINER; the visibility and viewer-role findings are present in those
+definitions. The update guard additionally uses NULL-sensitive NOT IN without
+requiring active membership, and checks proposed rather than original parties.
+An authenticated outsider can pass the NULL guard; an uninvolved member can
+attempt to adopt an existing settlement by naming themselves in the update.
+
+Prepared `docs/architecture/supabase-settlement-write-access-fix.sql` as the
+first, write-authorization-only repair. It patches only the two audited RPC
+definitions, aborts on unexpected signature counts/anchors, is transactional
+and idempotent, and reloads the API schema cache. It changes no financial rows.
+Run this targeted file, not the full spike schema or the older identity script.
+
+Verification: `scripts/test-settlement-write-access.mjs` passes on disposable
+PGlite PostgreSQL for signed-out, viewer, inactive, other-household, uninvolved,
+member, admin, and owner cases; it checks migration idempotency, unchanged
+settlement rows, and unexpected-schema refusal. Frontend: 277 tests and build
+passed. Production application and legitimate edit smoke test remain pending.
+
+Snapshot private-record filtering and participant-only read policies remain
+open, not fixed by this write patch. Filtering core snapshots requires checking
+subsequent full-snapshot saves to avoid deleting records hidden from the writer.
+Do not mark the entire backend authorization gate passed yet.
+
 ## Findings
 
 ### High: Snapshot RPC Does Not Enforce Record Visibility

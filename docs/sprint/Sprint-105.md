@@ -35,6 +35,11 @@ acceptance does not by itself authorize public beta launch.
 
 ## First Task
 
+Progress: deployed definitions received. Settlement write guard repair prepared
+and verified in disposable PostgreSQL; production application pending. Snapshot
+privacy and participant-only read-policy remediation remain open. Details:
+`docs/qa/Sprint-105-Access-Audit.md`.
+
 Compare the route/access QA guides with the current implementation and tests.
 Document discrepancies and prioritize access-control risks before UI polish.
 Use disposable fixtures for negative authorization and failure tests; retain the

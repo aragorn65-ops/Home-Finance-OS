@@ -757,6 +757,16 @@ begin
     raise exception 'Active household membership is required to create a settlement.';
   end if;
 
+  if not exists (
+    select 1 from public.household_memberships membership
+    where membership.household_id = target_household_id
+      and membership.user_id = auth.uid()
+      and membership.status = 'active'
+      and membership.role in ('owner', 'admin', 'member')
+  ) then
+    raise exception 'Active owner, admin, or member access is required to create a settlement.';
+  end if;
+
   if application_method not in ('oldest-first', 'manual') then
     raise exception 'Invalid settlement application method.';
   end if;
@@ -1016,6 +1026,22 @@ begin
 
   if existing_settlement.id is null then
     raise exception 'Settlement was not found.';
+  end if;
+
+  if not exists (
+    select 1 from public.household_memberships membership
+    where membership.household_id = existing_settlement.household_id
+      and membership.user_id = auth.uid()
+      and membership.status = 'active'
+      and (
+        membership.role in ('owner', 'admin')
+        or (
+          membership.role = 'member'
+          and membership.member_id in (existing_settlement.from_member_id, existing_settlement.to_member_id)
+        )
+      )
+  ) then
+    raise exception 'Active admin or original settlement participant access is required to update a settlement.';
   end if;
 
   if application_method not in ('oldest-first', 'manual') then
