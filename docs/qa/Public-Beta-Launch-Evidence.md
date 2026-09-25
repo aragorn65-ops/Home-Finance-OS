@@ -251,6 +251,21 @@ release checks. Do not reset test data or mark all launch gates complete.
 
 ### Follow-up - 2026-09-23
 
+### Utility Backup Follow-up - 2026-09-25
+
+The product owner confirmed previews in admin, Rasha, and Lyn for Transactions
+and Utilities, then reported unavailable paid/unpaid utility previews after a
+successful backup export and restore. Backup serialization retains file bodies;
+the utility cloud writer still lacked the transaction metadata-only protection.
+Extended matching-local-file preservation to provider bill and payment
+attachments, sharing the existing identity check. Cloud replacements and
+deletions remain authoritative. Added export/restore plus repeated metadata-only
+refresh coverage for both bill states and payment receipts. All 275 tests and
+production build passed. Live retest remains pending; the user's backup contents
+have not been inspected, so missing original bytes cannot be assumed recoverable.
+
+### Earlier September Verification
+
 The product owner reports the no-refresh notes sync retest passed after
 `58d1b65`, unsaved form fields remained intact during background sync, and
 Rasha/Lyn passed the member UI access checks. These are UI checks, not an

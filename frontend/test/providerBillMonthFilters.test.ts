@@ -33,9 +33,56 @@ import SettlementApplicationRepository from "../src/features/settlements/reposit
 import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository";
 import UtilityProviderBillRepository from "../src/features/utilities/repositories/UtilityProviderBillRepository";
 import UtilityProviderBillService from "../src/features/utilities/services/UtilityProviderBillService";
+import { createApplicationBackup, restoreApplicationBackup } from "../src/features/startup/services/applicationBackup.ts";
+import { browserCoreSnapshotLocalWriter } from "../src/features/auth/services/browserCoreSnapshotLocalWriter.ts";
 import {
   getProviderBillsPaidInMonth,
 } from "../src/features/utilities/services/providerBillMonthFilters";
+
+test("paid and unpaid utility previews survive backup restore followed by metadata-only cloud refresh", async () => {
+  const { localStorage } = installBrowserStorage();
+  const householdId = "utility-backup-preview";
+  localStorage.setItem(HFOS_STORAGE_KEYS.household, JSON.stringify(createStorageEnvelope({
+    id: householdId, householdName: "Backup Preview", country: "PH", currency: "PHP", timezone: "Asia/Manila",
+    members: [], createdAt: "2026-07-01T00:00:00.000Z", updatedAt: "2026-07-01T00:00:00.000Z",
+  })));
+  const file = { id: "bill-file", category: "bill" as const, fileName: "bill.png", mimeType: "image/png",
+    sizeBytes: 3, dataUrl: "data:image/png;base64,YWJj", createdAt: new Date("2026-07-01T00:00:00Z") };
+  const bills = ["paid", "unpaid"].map((status) => createProviderBill({
+    id: `backup-${status}`, householdId, status: status as "paid" | "unpaid",
+    billAttachments: [file], paymentAttachments: status === "paid" ? [{ ...file, id: "payment-file" }] : [],
+  }));
+  UtilityProviderBillRepository.replaceForHousehold(householdId, bills);
+  const backup = await createApplicationBackup();
+  assert.ok(backup.success && backup.json);
+  localStorage.clear();
+  assert.equal((await restoreApplicationBackup(backup.json)).success, true);
+  const restored = JSON.parse(localStorage.getItem(HFOS_STORAGE_KEYS.providerBills)!).data
+    .filter((bill: UtilityProviderBill) => bill.householdId === householdId);
+  assert.equal(restored.length, 2);
+  for (const bill of restored) assert.equal(bill.billAttachments[0].dataUrl, file.dataUrl);
+  // Hydrate the restored records before exercising the next cloud write.
+  UtilityProviderBillRepository.replaceForHousehold(householdId, restored);
+  const metadata = bills.map((bill) => ({ ...bill,
+    billAttachments: bill.billAttachments.map((attachment) => ({ ...attachment, dataUrl: "" })),
+    paymentAttachments: bill.paymentAttachments.map((attachment) => ({ ...attachment, dataUrl: "" })),
+  }));
+  for (let attempt = 0; attempt < 2; attempt++) {
+    browserCoreSnapshotLocalWriter.replaceProviderBills!(householdId, metadata);
+    for (const bill of bills) {
+      const saved = UtilityProviderBillRepository.findById(bill.id)!;
+      assert.equal(saved.billAttachments[0].dataUrl, file.dataUrl);
+      if (bill.status === "paid") assert.equal(saved.paymentAttachments[0].dataUrl, file.dataUrl);
+      assert.equal(saved.status, bill.status);
+      assert.equal(saved.totalBillAmount, bill.totalBillAmount);
+    }
+  }
+  browserCoreSnapshotLocalWriter.replaceProviderBills!(householdId, bills.map((bill) => ({
+    ...bill, billAttachments: [], paymentAttachments: [],
+  })));
+  assert.deepEqual(UtilityProviderBillRepository.findById(bills[0].id)!.billAttachments, []);
+  assert.deepEqual(UtilityProviderBillRepository.findById(bills[0].id)!.paymentAttachments, []);
+});
 
 test("duplicate deletion removes only September bill, reverses its balance and restores on cloud failure", async () => {
   const { localStorage } = installBrowserStorage();
