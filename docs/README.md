@@ -8,6 +8,7 @@
 * [Beta Hardening Plan](roadmap/Beta-Hardening-Plan.md)
 * [Release Notes](releases/)
 * [Sprint Notes](sprint/)
+* [Current Sprint: 105](sprint/Sprint-105.md)
 * [Future Auth Path](architecture/FUTURE_AUTH_PATH.md)
 * [Auth Migration Plan](architecture/AUTH_MIGRATION_PLAN.md)
 * [Household Roles And Permissions](architecture/HOUSEHOLD_ROLES_AND_PERMISSIONS.md)

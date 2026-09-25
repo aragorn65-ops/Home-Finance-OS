@@ -8,6 +8,28 @@ Supabase validation before inviting public beta testers.
 
 ---
 
+## Sprint 104 Acceptance - 2026-09-25
+
+The product owner explicitly requested sprint closure and progression to the
+next sprint after reporting these final passes on the `e88b523` baseline:
+
+* Utility attachment upload/save/refresh/view.
+* Viewing that attachment in Rasha and Lyn sessions.
+* Sign-in in an incognito browser, restore from Google Drive, and successful
+  Transaction and Utility attachment previews afterward.
+
+These confirmations supersede the corresponding pending live retests in the
+historical notes below. Earlier financial, member UI access, and automatic-sync
+passes remain recorded. Last code validation: 277 tests and production build
+passed; no new test run is claimed for this documentation-only closeout.
+
+Sprint 104 is closed as an accepted stabilization milestone. Remaining launch
+evidence is tracked in `docs/sprint/Sprint-105.md`; unchecked launch gates are
+not implicitly passed. No reset, data migration, or financial changes accompany
+this transition.
+
+---
+
 ## Repo-Verified Gates
 
 * Public beta safety banner:

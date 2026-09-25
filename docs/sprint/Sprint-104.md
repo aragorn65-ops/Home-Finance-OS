@@ -38,9 +38,10 @@ tester onboarding.
   the original July unsettled remainder remains visible until fully paid.
 * [x] Verify remote settlement history appears after refresh and does not leave
   the form stuck in a saving/reset state after failures.
-* [ ] Run limited member transparency and settlement-entry smoke checks.
+* [x] Run limited member transparency and settlement-entry smoke checks for
+  Rasha and Lyn. Remaining viewer/backend checks move to Sprint 105.
 * [ ] Run public beta route smoke checks on every first-class route.
-* [ ] Record the live evidence in
+* [x] Record the live evidence in
   `docs/qa/Public-Beta-Launch-Evidence.md`.
 
 ---
@@ -181,7 +182,8 @@ permissible-attachment review pass.
 * [x] Allowed involved-member settlement saves to continue when the pre-save
   core finance snapshot is rejected by Supabase admin-only permissions, while
   keeping the settlement RPC as the final authorization check.
-* [ ] Pending Sprint 104 live validation.
+* [x] Complete the user-accepted stabilization validation. Remaining release
+  validation moves to Sprint 105; see closeout below.
 
 ---
 
@@ -221,9 +223,30 @@ two-tab realtime smoke.
 
 ## Sprint Closeout
 
-**Closed:** Pending
+**Closed:** 2026-09-25
 
-**Result:** Pending.
+**Result:** Stabilization accepted by the product owner. This closes Sprint 104,
+not the public beta launch checklist.
+
+Code baseline: `e88b523`. Last code verification: 277 tests and production build
+passed. Closeout is documentation-only; those commands were not rerun for it.
+
+User-reported passes cover multi-month entries and settlement carryover,
+dashboard/settlement agreement, member identity and UI access for Rasha/Lyn,
+automatic notes sync, preservation of open form fields, attachment upload and
+refresh persistence, cross-member preview, and signed-in incognito Google Drive
+restore with Transaction and Utility attachment previews.
+
+Carryover to [Sprint 105](Sprint-105.md): full route/refresh smoke, backend
+authorization and viewer checks, deployment configuration evidence, failure and
+concurrent-edit checks, and reconciliation of historical QA guides with current
+behavior. Do not repeat completed data entry or clear the existing dataset.
+
+Limitations retained: metadata-only backups cannot recover missing file bytes;
+restricted attachments are not enabled for shared previews; inline file storage
+has capacity limits; automatic sync includes polling fallback, not proof of
+realtime notification delivery. The historical PHP 0.02 root cause remains
+unconfirmed, although the user settled the deficit and balance retests passed.
 
 ### Verification Update - 2026-09-21
 
