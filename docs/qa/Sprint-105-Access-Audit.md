@@ -75,6 +75,29 @@ participant and nonparticipant fixtures in server-side regression coverage.
 
 ## Next Gate
 
+### Member/Viewer Read Patch Prepared
+
+`supabase-member-read-privacy-fix.sql` filters member/viewer snapshot reads and
+direct transaction/allocation/provider-bill reads. Shared household records stay
+visible; private records require ownership/payer/creator access, and participant
+records require participation. Snapshot account reads exclude other members'
+private accounts for non-admin sessions. Membership checks remain household
+scoped. The migration does not update financial rows.
+
+Important scope: owner/admin snapshot access remains unchanged because the
+existing admin-only save RPC treats omitted rows as deletions. This patch does
+not promise owner-only privacy from household admins. Already downloaded browser
+data and backups cannot be revoked by database filters. Current local-only
+private-account preservation and full-snapshot replacement require a separate
+cache/write-path audit before claiming comprehensive private-data isolation.
+
+Verification: `scripts/test-member-read-privacy.mjs` exercises the real snapshot
+RPC and direct RLS queries under an authenticated role in disposable PostgreSQL.
+Owner/admin results match the old baseline; member/viewer filtering, inactive,
+other-household and signed-out rejection, idempotency and unchanged transaction
+rows pass. Production application and shared-balance smoke test remain pending.
+No live database was accessed by the test script.
+
 Run `docs/architecture/supabase-access-readonly-audit.sql` in Supabase SQL Editor.
 It reads installed function definitions and policy metadata only; it does not
 read financial rows or change data, roles, policies, or schema cache.

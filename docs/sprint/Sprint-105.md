@@ -35,6 +35,12 @@ acceptance does not by itself authorize public beta launch.
 
 ## First Task
 
+Member/viewer read filtering is now prepared and tested in disposable PostgreSQL
+for snapshots and direct RLS reads. Production application remains pending.
+Admin snapshot access is deliberately unchanged to avoid omitted-row deletion
+through existing saves. Private-cache retention/admin privacy remain explicit
+follow-up items, not completed gates.
+
 Progress: deployed definitions received. Settlement write guard repair prepared
 and verified in disposable PostgreSQL; production application pending. Snapshot
 privacy and participant-only read-policy remediation remain open. Details:
