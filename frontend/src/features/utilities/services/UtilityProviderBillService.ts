@@ -466,11 +466,11 @@ export default class UtilityProviderBillService {
     );
   }
 
-  static replaceBillAttachments(
+  static async replaceBillAttachments(
     providerBillId: string,
     billAttachments:
       StoredAttachment[]
-  ): OperationResult<UtilityProviderBill> {
+  ): Promise<OperationResult<UtilityProviderBill>> {
     const providerBill =
       UtilityProviderBillRepository.findById(
         providerBillId
@@ -514,10 +514,16 @@ export default class UtilityProviderBillService {
         updatedProviderBill
       );
 
-    return OperationResults.success(
-      savedProviderBill,
-      "Provider bill attachment updated."
+    const snapshotResult = await UtilityBillPersistenceService.saveCurrentSnapshot(
+      "Provider bill attachment saved to cloud."
     );
+    if (!snapshotResult.success) {
+      return OperationResults.failure<UtilityProviderBill>(
+        snapshotResult.errors,
+        "Attachment changed locally, but was not saved to cloud. Retry before refreshing."
+      );
+    }
+    return OperationResults.success(savedProviderBill, "Provider bill attachment saved.");
   }
 
   static async repairPaidByMember(

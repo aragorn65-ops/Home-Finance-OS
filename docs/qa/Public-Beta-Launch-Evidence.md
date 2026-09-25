@@ -253,6 +253,14 @@ release checks. Do not reset test data or mark all launch gates complete.
 
 ### Utility Backup Follow-up - 2026-09-25
 
+Further persistence finding: Add Bill File / Remove called a local-only
+replaceBillAttachments method. It now awaits the same cloud snapshot save used
+by other utility actions and surfaces failure instead of reporting success.
+Tests cover added content surviving cloud reload, removal persistence, pending
+save completion, and cloud failure. All 277 tests and production build pass;
+live upload/save/refresh retest is pending. Payment-form receipt selection is
+still a draft until Mark Bill Paid is saved. No financial calculations changed.
+
 The product owner confirmed previews in admin, Rasha, and Lyn for Transactions
 and Utilities, then reported unavailable paid/unpaid utility previews after a
 successful backup export and restore. Backup serialization retains file bodies;

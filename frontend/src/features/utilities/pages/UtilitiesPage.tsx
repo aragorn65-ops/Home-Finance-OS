@@ -600,7 +600,7 @@ export default function UtilitiesPage() {
           },
         ];
 
-        updateBillAttachments(
+        return updateBillAttachments(
           providerBill.id,
           nextAttachments
         );
@@ -621,7 +621,7 @@ export default function UtilitiesPage() {
       return;
     }
 
-    updateBillAttachments(
+    void updateBillAttachments(
       providerBill.id,
       providerBill.billAttachments.filter(
         (attachment) =>
@@ -631,13 +631,15 @@ export default function UtilitiesPage() {
     );
   };
 
-  const updateBillAttachments = (
+  const updateBillAttachments = async (
     providerBillId: string,
     billAttachments:
       StoredAttachment[]
-  ): void => {
+  ): Promise<void> => {
+    setSaveMessage("");
+    setSaveError("");
     const result =
-      UtilityProviderBillService.replaceBillAttachments(
+      await UtilityProviderBillService.replaceBillAttachments(
         providerBillId,
         billAttachments
       );
@@ -647,6 +649,7 @@ export default function UtilitiesPage() {
         result.message ??
           "Provider bill attachment was not updated."
       );
+      showNotification();
 
       return;
     }
@@ -662,6 +665,7 @@ export default function UtilitiesPage() {
       result.message ??
         "Provider bill attachment updated."
     );
+    showNotification();
   };
 
   const handleDeleteProviderBill = async (

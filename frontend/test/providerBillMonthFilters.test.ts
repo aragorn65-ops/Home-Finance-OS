@@ -33,11 +33,54 @@ import SettlementApplicationRepository from "../src/features/settlements/reposit
 import SettlementRepository from "../src/features/settlements/repositories/SettlementRepository";
 import UtilityProviderBillRepository from "../src/features/utilities/repositories/UtilityProviderBillRepository";
 import UtilityProviderBillService from "../src/features/utilities/services/UtilityProviderBillService";
+import UtilityBillPersistenceService from "../src/features/utilities/services/UtilityBillPersistenceService";
 import { createApplicationBackup, restoreApplicationBackup } from "../src/features/startup/services/applicationBackup.ts";
 import { browserCoreSnapshotLocalWriter } from "../src/features/auth/services/browserCoreSnapshotLocalWriter.ts";
 import {
   getProviderBillsPaidInMonth,
 } from "../src/features/utilities/services/providerBillMonthFilters";
+
+test("bill file updates wait for cloud save and persist additions and removals", async (t) => {
+  installBrowserStorage();
+  const bill = createProviderBill({ id: "attachment-cloud-save", householdId: "attachment-cloud", status: "unpaid" });
+  UtilityProviderBillRepository.replaceForHousehold(bill.householdId, [bill]);
+  const file = { id: "new-file", category: "bill" as const, fileName: "bill.png", mimeType: "image/png",
+    sizeBytes: 3, dataUrl: "data:image/png;base64,YWJj", createdAt: new Date() };
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let cloudBill = bill;
+  const save = t.mock.method(UtilityBillPersistenceService, "saveCurrentSnapshot", async () => {
+    cloudBill = UtilityProviderBillRepository.findById(bill.id)!;
+    await gate;
+    return OperationResults.success(true, "Saved");
+  });
+  let completed = false;
+  const pending = UtilityProviderBillService.replaceBillAttachments(bill.id, [file]).then((result) => {
+    completed = true; return result;
+  });
+  await Promise.resolve();
+  assert.equal(completed, false);
+  assert.equal(cloudBill.billAttachments[0].dataUrl, file.dataUrl);
+  release();
+  assert.equal((await pending).success, true);
+  browserCoreSnapshotLocalWriter.replaceProviderBills!(bill.householdId, [cloudBill]);
+  assert.equal(UtilityProviderBillRepository.findById(bill.id)!.billAttachments[0].dataUrl, file.dataUrl);
+  assert.equal((await UtilityProviderBillService.replaceBillAttachments(bill.id, [])).success, true);
+  assert.deepEqual(cloudBill.billAttachments, []);
+  assert.equal(save.mock.callCount(), 2);
+});
+
+test("bill file update reports cloud failure instead of success", async (t) => {
+  installBrowserStorage();
+  const bill = createProviderBill({ id: "attachment-cloud-failure", householdId: "attachment-failure", status: "unpaid" });
+  UtilityProviderBillRepository.replaceForHousehold(bill.householdId, [bill]);
+  t.mock.method(UtilityBillPersistenceService, "saveCurrentSnapshot", async () =>
+    OperationResults.failure({ cloud: "Cloud offline" }, "Not saved"));
+  const result = await UtilityProviderBillService.replaceBillAttachments(bill.id, []);
+  assert.equal(result.success, false);
+  assert.equal(result.errors?.cloud, "Cloud offline");
+  assert.match(result.message ?? "", /not saved to cloud/i);
+});
 
 test("paid and unpaid utility previews survive backup restore followed by metadata-only cloud refresh", async () => {
   const { localStorage } = installBrowserStorage();
@@ -588,7 +631,7 @@ test("saving an unpaid provider bill persists it for reload", async () => {
   const savedBill = UtilityProviderBillService.getActiveProviderBills()[0];
   assert.equal(savedBill.billAttachments[0].dataUrl, attachment.dataUrl);
   const replacement = { ...attachment, dataUrl: "data:image/png;base64,ZGVm" };
-  assert.equal(UtilityProviderBillService.replaceBillAttachments(savedBill.id, [replacement]).success, true);
+  assert.equal((await UtilityProviderBillService.replaceBillAttachments(savedBill.id, [replacement])).success, true);
   assert.equal(UtilityProviderBillService.getActiveProviderBills()[0].billAttachments[0].dataUrl, replacement.dataUrl);
   assert.deepEqual(
     UtilityProviderBillService
