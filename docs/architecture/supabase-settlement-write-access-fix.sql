@@ -18,7 +18,8 @@ begin
     if signature_count <> 1 then
       raise exception 'Expected one audited signature for %, found %; nothing applied.', function_name, signature_count;
     end if;
-    definition := pg_get_functiondef(function_oid);
+    -- SQL Editor uploads may preserve Windows CRLF line endings in prosrc.
+    definition := replace(pg_get_functiondef(function_oid), E'\r\n', E'\n');
     if function_name = 'create_household_settlement' then
       anchor := E'  if current_member_id is null then\n    raise exception ''Active household membership is required to create a settlement.'';\n  end if;\n\n';
       inserted_guard := $guard$  if not exists (
@@ -52,6 +53,7 @@ $guard$;
 
 $guard$;
     end if;
+    inserted_guard := replace(inserted_guard, E'\r\n', E'\n');
     if strpos(definition, inserted_guard) > 0 then
       continue;
     end if;

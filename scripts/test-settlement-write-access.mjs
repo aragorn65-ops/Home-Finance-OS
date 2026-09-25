@@ -5,12 +5,13 @@ import { pathToFileURL } from "node:url";
 const { PGlite } = await import(pathToFileURL(process.argv[2]).href);
 const dir = new URL("../docs/architecture/", import.meta.url);
 const schema = readFileSync(new URL("supabase-spike-schema.sql", dir), "utf8");
-const patch = readFileSync(new URL("supabase-settlement-write-access-fix.sql", dir), "utf8");
+const patch = readFileSync(new URL("supabase-settlement-write-access-fix.sql", dir), "utf8").replaceAll("\r\n", "\n");
 const guards = [...patch.matchAll(/\$guard\$([\s\S]*?)\$guard\$/g)].map((match) => match[1]);
-let rpc = readFileSync(new URL("supabase-settlement-member-identity-guard.sql", dir), "utf8");
+let rpc = readFileSync(new URL("supabase-settlement-member-identity-guard.sql", dir), "utf8").replaceAll("\r\n", "\n");
 for (const guard of guards) { assert.ok(rpc.includes(guard)); rpc = rpc.replace(guard, ""); }
-const db = new PGlite();
 const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+for (const lineEnding of ["\n", "\r\n"]) {
+const db = new PGlite();
 try {
   await db.exec(`create schema auth; create table auth.users (id uuid primary key);
     create role authenticated;
@@ -21,7 +22,7 @@ try {
   const helpers = schema.slice(schema.indexOf("create or replace function public.is_active_household_member"),
     schema.indexOf('drop policy if exists "active members can read households"'));
   await db.exec(helpers);
-  await db.exec(rpc);
+  await db.exec(rpc.replaceAll("\n", lineEnding));
   await db.exec(`insert into households (id,name,country,currency,timezone) values
     ('${id(1)}','Household','PH','PHP','Asia/Manila'), ('${id(2)}','Other','PH','PHP','Asia/Manila');`);
   for (const [n, role, status, house] of [[10,"owner","active",1], [11,"admin","active",1],
@@ -38,7 +39,15 @@ try {
     values ('${id(100)}','${id(1)}','original','${id(12)}','${id(10)}',50,'2026-07-01','manual');`);
   const records = async () => (await db.query("select to_jsonb(s) as row from settlements s order by id")).rows;
   const before = await records();
-  await db.exec(patch);
+  if (lineEnding === "\r\n") {
+    const previousPatch = patch
+      .replace("definition := replace(pg_get_functiondef(function_oid), E'\\r\\n', E'\\n');", "definition := pg_get_functiondef(function_oid);")
+      .replace("inserted_guard := replace(inserted_guard, E'\\r\\n', E'\\n');", "");
+    await assert.rejects(db.exec(previousPatch), /Unexpected definition for create_household_settlement/);
+    await db.exec("rollback");
+    assert.deepEqual(await records(), before);
+  }
+  await db.exec(patch.replaceAll("\n", lineEnding));
   assert.deepEqual(await records(), before);
   await db.exec(patch);
   assert.deepEqual(await records(), before);
@@ -66,5 +75,6 @@ try {
   await db.exec("alter function create_household_settlement(uuid,text,text,text,numeric,date,text,text,text,text,text,jsonb,boolean,jsonb) rename to unexpected_create");
   await assert.rejects(db.exec(patch), /Expected one audited signature/);
   await db.exec("rollback");
-  console.log("PASS: signed-out, viewer, inactive, other household, uninvolved, participant, admin, owner; idempotency and unchanged migration data");
+  console.log(`PASS (${lineEnding === "\n" ? "LF" : "CRLF"}): signed-out, viewer, inactive, other household, uninvolved, participant, admin, owner; idempotency and unchanged migration data`);
 } finally { await db.close(); }
+}
