@@ -31,6 +31,8 @@ import type {
 } from "../../../shared/models/StoredAttachment";
 
 import type { Settlement } from "../models/Settlement";
+import type { SettlementApplicationDetails } from "../models/SettlementApplicationDetails";
+import { Pencil } from "lucide-react";
 
 import type { SettlementAllocationOption } from "../models/SettlementAllocationOption";
 
@@ -57,6 +59,7 @@ type SettlementFormProps = {
 
   preferredFromMemberId?: string;
   initialValues?: SettlementFormData;
+  recordedApplications?: SettlementApplicationDetails[];
   submitLabel?: string;
 
   onSubmit: (
@@ -460,11 +463,13 @@ export default function SettlementForm({
 
   preferredFromMemberId = "",
   initialValues: storedInitialValues,
+  recordedApplications = [],
   submitLabel = "Save Settlement",
 
   onSubmit,
   onCancel,
 }: SettlementFormProps) {
+  const [showApplicationEditor, setShowApplicationEditor] = useState(false);
   const resolveMemberId = (id: string) => findHouseholdMemberByReference(id, householdId)?.id ?? id;
   const initialValues = storedInitialValues ? {
     ...storedInitialValues,
@@ -1553,7 +1558,7 @@ export default function SettlementForm({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-foreground">
-              Outstanding Between Members
+              {storedInitialValues ? "Available for Reallocation" : "Outstanding Between Members"}
             </p>
 
             <p className="mt-1 text-xs text-muted-foreground">
@@ -1737,10 +1742,43 @@ export default function SettlementForm({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-lg border p-4">
+      {storedInitialValues && (
+        <section className="space-y-3 border-t pt-4" aria-label="Recorded settlement items">
+          <h3 className="font-medium text-foreground">Recorded Payment Items</h3>
+          {recordedApplications.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No recorded expense applications.</p>
+          ) : (
+            <ul className="divide-y">
+              {recordedApplications.map((application) => (
+                <li key={application.settlementApplicationId} className="flex flex-wrap items-start justify-between gap-3 py-3">
+                  <div className="min-w-0 break-words">
+                    <p className="font-medium">{application.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {application.category} / {application.transactionDate.toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Applied by this payment</p>
+                    <p className="font-semibold">{formatAmount(application.appliedAmount, currency)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button type="button" className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+            aria-expanded={showApplicationEditor} aria-controls="settlement-application-editor"
+            onClick={() => setShowApplicationEditor((current) => !current)}>
+            <Pencil size={16} aria-hidden="true" />
+            {showApplicationEditor ? "Hide reallocation options" : "Change applied items"}
+          </button>
+        </section>
+      )}
+
+      {(!storedInitialValues || showApplicationEditor) && (
+      <div id="settlement-application-editor" className="space-y-4 rounded-lg border p-4">
         <div>
           <h3 className="font-medium text-foreground">
-            Settlement Applications
+            {storedInitialValues ? "Reallocation Options" : "Settlement Applications"}
           </h3>
 
           <p className="mt-1 text-sm text-muted-foreground">
@@ -2072,6 +2110,7 @@ export default function SettlementForm({
         )}
       </div>
 
+      )}
       <div className="grid gap-5 md:grid-cols-2">
         <div className="space-y-2">
           <label

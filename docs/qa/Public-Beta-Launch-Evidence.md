@@ -32,6 +32,13 @@ this transition.
 
 ## Repo-Verified Gates
 
+Sprint 105 settlement edit follow-up: Edit now shows recorded payment items
+from the same selectedApplicationDetails source as View. Reallocation options
+are separately disclosed by Change applied items; creation retains its existing
+application editor. No settlement computation or database definitions changed.
+280 tests and production build passed, including notes-only preservation of
+application IDs/amounts and allocations. Live View/Edit comparison pending.
+
 * Public beta safety banner:
   `frontend/src/app/AppShell/AppShell.tsx`
 * Settings Data & Backup safety note:

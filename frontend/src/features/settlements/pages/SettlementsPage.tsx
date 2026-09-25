@@ -1465,6 +1465,8 @@ export default function SettlementsPage() {
         <DialogBody>
           {household ? (
             <SettlementForm
+              key={dialogMode === "edit" ? selectedSettlement?.id : "new-settlement"}
+              recordedApplications={dialogMode === "edit" ? selectedApplicationDetails : []}
               householdId={
                 household.id
               }

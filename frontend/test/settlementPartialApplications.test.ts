@@ -364,6 +364,24 @@ test("August 15206.07 less 5170.49 and 2943.49 shows 7092.09 on the dashboard", 
   assert.deepEqual(ExpenseAllocationRepository.findAll(), originalShares);
 });
 
+test("notes-only edit keeps recorded applications instead of applying to today's unpaid dues", () => {
+  seedPartialSettlementFixture();
+  const form = { householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
+    amount: 100, settlementDate: "2026-07-14", sourceAccountId: "", destinationAccountId: "",
+    applicationMethod: "oldest-first" as const, applications: [], referenceNumber: "NOTES-EDIT",
+    notes: "", attachments: [], isActive: true };
+  const original = SettlementService.create(form);
+  assert.ok(original.success && original.data);
+  const applications = SettlementApplicationRepository.findBySettlementId(original.data.id);
+  const allocations = ExpenseAllocationRepository.findAll();
+  const updated = SettlementService.update(original.data.id, { ...form, notes: "Corrected notes" });
+  assert.ok(updated.success, JSON.stringify(updated.errors));
+  assert.equal(updated.data?.notes, "Corrected notes");
+  assert.equal(updated.data?.amount, 100);
+  assert.deepEqual(SettlementApplicationRepository.findBySettlementId(original.data.id), applications);
+  assert.deepEqual(ExpenseAllocationRepository.findAll(), allocations);
+});
+
 test("redating a synced settlement preserves its original member references and application IDs", () => {
   seedPartialSettlementFixture();
   const original = SettlementService.create({ householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
