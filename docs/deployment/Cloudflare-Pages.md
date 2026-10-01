@@ -81,14 +81,16 @@ the deployed smoke check.
 
 ## Routing
 
-HFOS uses client-side routing. The file below keeps direct route refreshes such
-as `/app/settlements` working on Cloudflare Pages:
+HFOS uses client-side routing and Cloudflare Pages' native SPA fallback. Keep
+`index.html` at the build output root and do not add a top-level `404.html`.
+Pages then serves the app shell for direct navigation and refreshes such as
+`/app/settlements`; the client router still enforces authentication.
 
-```text
-frontend/public/_redirects
-```
+No `_redirects` file is required. The former `/* /index.html 200` rule was
+ignored by Cloudflare as an infinite loop in the `c7b5c76` deployment. Removing
+it preserves the native fallback that was already serving production routes.
 
-The rule rewrites all paths to `index.html` with a `200` response.
+Reference: https://developers.cloudflare.com/pages/configuration/serving-pages/#single-page-application-spa-rendering
 
 ---
 
