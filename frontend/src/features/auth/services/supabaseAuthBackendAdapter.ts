@@ -2538,7 +2538,7 @@ export class SupabaseAuthBackendAdapter
   }
 
   subscribeToSessionChanges(
-    onChange: () => void
+    onChange: (session?: AuthSession) => void
   ): AuthSessionSubscription {
     if (!this.isConfigured()) {
       return {
@@ -2554,9 +2554,13 @@ export class SupabaseAuthBackendAdapter
         .then((client) =>
           client.auth
             .onAuthStateChange(
-              () => {
+              (_event, session) => {
                 if (!isDisposed) {
-                  onChange();
+                  onChange(session ? {
+                    status: "signed-in",
+                    user: mapSupabaseUser(session.user),
+                    expiresAt: mapSupabaseSessionExpiry(session),
+                  } : { status: "signed-out" });
                 }
               }
             )

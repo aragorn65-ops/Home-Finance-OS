@@ -33,21 +33,30 @@ acceptance does not by itself authorize public beta launch.
 * [ ] Reconcile the launch checklist and record remaining blockers or an
   evidence-backed launch recommendation.
 
-## First Task
+## Current Progress
 
-Member/viewer read filtering is now prepared and tested in disposable PostgreSQL
-for snapshots and direct RLS reads. Production application remains pending.
+2026-10-04: per-authenticated-user browser storage, user-bound backups, isolated
+reset operations, and session-switch reload guards are implemented locally.
+320 frontend tests and production build pass. Deployment and real-browser
+account-switch smoke remain pending. See
+`docs/architecture/Private-Storage-Isolation.md`; no production data was reset.
+
+Updated 2026-10-01 from user-reported production tests. The targeted settlement
+write guard and member read privacy migrations returned success. Legitimate
+settlement edits, private and participant-only visibility, signed-out route
+blocking, sign-in without record loss, and finance-page checks passed.
+Reconnect cleared the warning and delivered updated notes without refresh.
+Background updates preserved unsaved entries in an open edit form. A fresh
+backup export also passed. See `docs/qa/Public-Beta-Launch-Evidence.md`.
+
+These UI checks do not complete direct server authorization verification.
 Admin snapshot access is deliberately unchanged to avoid omitted-row deletion
 through existing saves. Private-cache retention/admin privacy remain explicit
-follow-up items, not completed gates.
+follow-up items. Same-record concurrent writes and failed-save behavior are not
+proven by the open-form test. Details: `docs/qa/Sprint-105-Access-Audit.md`.
 
-Progress: deployed definitions received. Settlement write guard repair prepared
-and verified in disposable PostgreSQL; production application pending. Snapshot
-privacy and participant-only read-policy remediation remain open. Details:
-`docs/qa/Sprint-105-Access-Audit.md`.
-
-Compare the route/access QA guides with the current implementation and tests.
-Document discrepancies and prioritize access-control risks before UI polish.
+Next: capture the production build/branch and Cloudflare deployment/settings
+evidence, then finish outstanding access, failure, and route checks.
 Use disposable fixtures for negative authorization and failure tests; retain the
 current July/August/September dataset and the latest backup.
 

@@ -3,6 +3,30 @@ import test from "node:test";
 import { restoreLinkedRemoteCoreSnapshot } from "../src/features/auth/services/coreSnapshotSync.ts";
 import type { RemoteHouseholdCoreSnapshot } from "../src/features/auth/models/RemoteCoreSnapshot.ts";
 import { getSettlementPreviews } from "../src/features/dashboard/services/settlementPreviews.ts";
+import { CoreSnapshotRestoreScope, getCoreSnapshotRestoreScopeKey } from "../src/features/auth/services/coreSnapshotRestoreScope.ts";
+
+test("member switch rejects a pending previous-user response before the next restore starts", async () => {
+  const id = "restore-switched-member";
+  const f = fixture(id);
+  const scope = new CoreSnapshotRestoreScope();
+  const key = (user: string) => getCoreSnapshotRestoreScopeKey(f.household.id, id, user, "signed-in", "member");
+  const oldGeneration = scope.select(key("rasha"));
+  const response = deferred<RemoteHouseholdCoreSnapshot>();
+  const started = deferred<void>();
+  const pending = restoreLinkedRemoteCoreSnapshot({ authEnabled: true, ...f,
+    isCurrent: () => scope.isCurrent(oldGeneration),
+    adapter: {
+      async loadRemoteCoreSnapshot() { started.resolve(); return response.promise; },
+      async saveRemoteCoreSnapshot() { throw new Error("unused"); },
+    },
+  });
+  await started.promise;
+  scope.select(key("lyn"));
+  response.resolve(snapshot(id, 3689.35));
+  assert.deepEqual(await pending, { status: "skipped", reason: "superseded-restore" });
+  assert.equal(f.writes(), 0);
+  assert.equal(scope.isRestored(), false);
+});
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

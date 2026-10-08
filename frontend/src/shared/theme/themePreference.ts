@@ -1,3 +1,5 @@
+import { getApplicationStorage } from "../storage/userScopedStorage";
+
 export type ThemePreference =
   | "system"
   | "light"
@@ -12,7 +14,7 @@ export function getStoredThemePreference(): ThemePreference {
   }
 
   const storedPreference =
-    window.localStorage.getItem(
+    getApplicationStorage()?.getItem(
       themePreferenceStorageKey
     );
 
@@ -42,7 +44,7 @@ export function storeThemePreference(
   preference: ThemePreference
 ): void {
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(
+    getApplicationStorage()?.setItem(
       themePreferenceStorageKey,
       preference
     );

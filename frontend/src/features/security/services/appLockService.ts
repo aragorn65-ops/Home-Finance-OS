@@ -1,3 +1,5 @@
+import { getApplicationStorage } from "../../../shared/storage/userScopedStorage";
+
 export const APP_LOCK_STORAGE_KEY =
   "hfos.v1.app-lock";
 
@@ -397,7 +399,7 @@ function getStorage():
   }
 
   try {
-    return window.localStorage;
+    return getApplicationStorage();
   } catch {
     return null;
   }

@@ -80,7 +80,7 @@ export interface AuthSessionSubscription {
 
 export interface AuthSessionObserver {
   subscribeToSessionChanges?(
-    onChange: () => void
+    onChange: (session?: AuthSession) => void
   ): AuthSessionSubscription;
 }
 

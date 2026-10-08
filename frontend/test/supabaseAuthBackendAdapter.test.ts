@@ -3742,10 +3742,11 @@ test(
       "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
     );
     let callback:
-      | (() => void)
+      | ((event: string, session: { user: { id: string; email: string; created_at: string; updated_at: string } } | null) => void)
       | undefined;
     let unsubscribeCount = 0;
     let changeCount = 0;
+    const received: unknown[] = [];
 
     const adapter =
       new SupabaseAuthBackendAdapter({
@@ -3756,7 +3757,7 @@ test(
         client:
           createSignedOutClient({
             onAuthStateChange(
-              onChange: () => void
+              onChange: NonNullable<typeof callback>
             ) {
               callback = onChange;
 
@@ -3775,21 +3776,26 @@ test(
 
     const subscription =
       adapter.subscribeToSessionChanges(
-        () => {
+        (session) => {
           changeCount += 1;
+          received.push(session);
         }
       );
 
     await Promise.resolve();
-    callback?.();
+    callback?.("SIGNED_IN", { user: { id: "rasha", email: "rasha@example.test",
+      created_at: "2026-10-04T00:00:00Z", updated_at: "2026-10-04T00:00:00Z" } });
     assert.equal(
       changeCount,
       1
     );
+    assert.equal((received[0] as { user: { id: string } }).user.id, "rasha");
+    callback?.("SIGNED_OUT", null);
+    assert.deepEqual(received[1], { status: "signed-out" });
 
     subscription.unsubscribe();
     await Promise.resolve();
-    callback?.();
+    callback?.("SIGNED_OUT", null);
 
     assert.equal(
       unsubscribeCount,
@@ -3797,7 +3803,7 @@ test(
     );
     assert.equal(
       changeCount,
-      1
+      2
     );
   }
 );

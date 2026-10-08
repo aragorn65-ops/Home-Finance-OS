@@ -1,3 +1,4 @@
+import { getApplicationStorage } from "../../../shared/storage/userScopedStorage";
 import {
   useCallback,
   useEffect,
@@ -124,7 +125,7 @@ function loadInviteDiagnostics(
 ): InviteDiagnosticRecord[] {
   try {
     const raw =
-      window.localStorage.getItem(
+      getApplicationStorage()?.getItem(
         getDiagnosticsStorageKey(
           householdId
         )
@@ -153,7 +154,7 @@ function saveInviteDiagnostics(
   householdId: string,
   diagnostics: InviteDiagnosticRecord[]
 ): void {
-  window.localStorage.setItem(
+  getApplicationStorage()?.setItem(
     getDiagnosticsStorageKey(
       householdId
     ),

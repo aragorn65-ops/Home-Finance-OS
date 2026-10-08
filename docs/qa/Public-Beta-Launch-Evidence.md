@@ -1,5 +1,56 @@
 # Public Beta Launch Evidence
 
+## Private Storage Local Verification - 2026-10-04
+
+Per-user browser cache isolation and backup ownership checks are implemented
+locally. 320 frontend tests and production build pass. No browser was available
+for interactive QA. Production remains at the last accepted deployment until
+these changes are explicitly deployed and smoke-tested. Scope and limitations:
+`docs/architecture/Private-Storage-Isolation.md`. No SQL, financial reset, or
+calculation change was performed.
+
+## Sprint 105 User Verification Update - 2026-10-01
+
+Evidence source: user reports from production testing, not independent browser
+or live database inspection. Repository checkpoint: `c7b5c76`; the deployed
+build was subsequently confirmed as `c7b5c76` on `main` in app diagnostics and
+Cloudflare's successful production deployment. After routing cleanup, app
+diagnostics confirmed `e71eb8e` on `main`.
+
+Production settings screenshot: auth enabled, Supabase provider and configuration
+present, `NODE_VERSION=22`. The supplied `c7b5c76` deployment log reports Node
+22.22.0 and npm 10.9.2, with successful build and publication. This meets the
+repository's Node >=22.13.0 requirement, though the checklist's exact pin is
+stale. No production environment changes were made.
+
+Post-cleanup route reports: Transactions and Settlements opened/refreshed;
+admin Household Members, Accounts, Savings, Help Center, and Settings all passed.
+The removal of the redirect warning has not been explicitly confirmed from the
+new deployment log. Full per-role/direct-route coverage remains distinct from
+these user-reported page checks.
+
+* Targeted settlement write and member read privacy SQL: user reported success.
+* Settlement notes save/refresh and View/Edit item consistency: passed.
+* Attachment viewing as admin and Rasha: passed.
+* Private-record visibility: user reported pass.
+* Participant-only visibility: admin and Rasha could see the record; Lyn could
+  not, and dashboards reflected the visibility difference.
+* Signed-out route blocking and sign-in without record loss: passed.
+* Transactions, Utilities, Settlements, and Analytics page checks: passed.
+* Offline/reconnect: existing records remained visible with a stale-data
+  warning. After reconnection, the warning cleared and notes updated without
+  manual refresh.
+* Background refresh with an edit form open: unsaved entries were retained
+  while a different transaction was updated in another browser; passed.
+* Fresh backup export after these checks: user reported pass.
+
+Still open: production build/settings evidence, complete route matrix, direct
+production authorization evidence, private-cache/admin privacy disposition,
+failed-write checks, and same-record concurrent-write boundaries. The edit-form
+test does not prove conflict resolution. Do not reset the accepted dataset or
+reapply migrations merely to collect evidence. Public beta launch is not yet
+approved.
+
 Use this ledger beside `docs/qa/Public-Beta-Launch-Checklist.md`.
 
 The checklist remains the launch decision source. This file records which gates
