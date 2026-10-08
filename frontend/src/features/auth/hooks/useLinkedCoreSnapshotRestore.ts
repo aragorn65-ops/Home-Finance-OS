@@ -23,7 +23,6 @@ import {
   browserCoreSnapshotLocalWriter,
 } from "../services/browserCoreSnapshotLocalWriter";
 import { subscribeToCoreSnapshotRefreshFallback } from "../services/coreSnapshotRefreshFallback";
-import { CoreSnapshotRestoreScope, getCoreSnapshotRestoreScopeKey } from "../services/coreSnapshotRestoreScope";
 
 export const coreSnapshotRestoredEvent =
   "hfos-core-snapshot-restored";
@@ -33,7 +32,6 @@ interface UseLinkedCoreSnapshotRestoreOptions {
     | LinkedCoreSnapshotHousehold
     | null;
   sessionStatus: AuthSessionStatus;
-  sessionUserId?: string;
   role?: AuthHouseholdRole;
   isRouteAllowed: boolean;
   isSettingsRoute: boolean;
@@ -42,12 +40,14 @@ interface UseLinkedCoreSnapshotRestoreOptions {
 export function useLinkedCoreSnapshotRestore({
   household,
   sessionStatus,
-  sessionUserId,
   role,
   isRouteAllowed,
   isSettingsRoute,
 }: UseLinkedCoreSnapshotRestoreOptions) {
-  const restoreScope = useRef(new CoreSnapshotRestoreScope());
+  const restoredKeys =
+    useRef<Set<string>>(
+      new Set()
+    );
 
   const [isRestoring, setIsRestoring] =
     useState(false);
@@ -65,7 +65,6 @@ export function useLinkedCoreSnapshotRestore({
     isRouteAllowed &&
     !isSettingsRoute &&
     sessionStatus === "signed-in" &&
-    Boolean(sessionUserId) &&
     (
       role === "owner" ||
       role === "admin" ||
@@ -86,12 +85,6 @@ export function useLinkedCoreSnapshotRestore({
     household?.authenticatedLink
       ?.ownerMemberId;
 
-  // Invalidate responses immediately on identity change, including before effect cleanup.
-  const scopeKey = getCoreSnapshotRestoreScopeKey(
-    localHouseholdId, remoteHouseholdId, sessionUserId, sessionStatus, role
-  );
-  const scopeGeneration = restoreScope.current.select(scopeKey);
-
   useEffect(() => {
     if (!shouldRestore) {
       setIsRestoring(false);
@@ -107,15 +100,24 @@ export function useLinkedCoreSnapshotRestore({
       return;
     }
 
+    const restoreKey = [
+      localHouseholdId,
+      remoteHouseholdId,
+      sessionStatus,
+      role,
+    ].join(":");
+
     if (
-      restoreScope.current.isRestored() &&
+      restoredKeys.current.has(
+        restoreKey
+      ) &&
       restoreTrigger === 0
     ) {
       return;
     }
 
     let isActive = true;
-    const isInitialRestore = !restoreScope.current.isRestored();
+    const isInitialRestore = !restoredKeys.current.has(restoreKey);
     const reportError = isInitialRestore ? setError : setBackgroundError;
 
     setError("");
@@ -138,10 +140,10 @@ export function useLinkedCoreSnapshotRestore({
         getAuthBackendAdapter(),
       writer:
         browserCoreSnapshotLocalWriter,
-      isCurrent: () => isActive && restoreScope.current.isCurrent(scopeGeneration),
+      isCurrent: () => isActive,
     })
       .then((result) => {
-        if (!isActive || !restoreScope.current.isCurrent(scopeGeneration)) {
+        if (!isActive) {
           return;
         }
 
@@ -152,7 +154,7 @@ export function useLinkedCoreSnapshotRestore({
           result.status ===
           "restored"
         ) {
-          restoreScope.current.markRestored(scopeGeneration);
+          restoredKeys.current.add(restoreKey);
           setBackgroundError("");
           window.dispatchEvent(
             new CustomEvent(
@@ -175,7 +177,7 @@ export function useLinkedCoreSnapshotRestore({
         );
       })
       .catch((restoreError: unknown) => {
-        if (!isActive || !restoreScope.current.isCurrent(scopeGeneration)) {
+        if (!isActive) {
           return;
         }
 
@@ -201,8 +203,6 @@ export function useLinkedCoreSnapshotRestore({
     restoreTrigger,
     role,
     sessionStatus,
-    sessionUserId,
-    scopeGeneration,
     shouldRestore,
   ]);
 
@@ -243,7 +243,7 @@ export function useLinkedCoreSnapshotRestore({
   ]);
 
   return {
-    isRestoring: isRestoring || (shouldRestore && !restoreScope.current.isRestored() && !error),
+    isRestoring,
     error,
     backgroundError,
     isRequired:

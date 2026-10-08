@@ -234,8 +234,8 @@ test("cloud restore keeps local accounts when remote account snapshot is empty",
   );
 });
 
-test("linked member shell does not adopt personal accounts from a previous household", () => {
-  const { localStorage } = installBrowserStorage();
+test("linked member shell salvages local personal accounts from previous household id", () => {
+  installBrowserStorage();
 
   const now =
     new Date("2026-08-06T00:00:00Z");
@@ -320,18 +320,25 @@ test("linked member shell does not adopt personal accounts from a previous house
     ]
   );
 
-  const originalStorage = localStorage.getItem(HFOS_STORAGE_KEYS.accounts);
   const accounts =
     AccountRepository.findAll();
 
-  assert.deepEqual(accounts, []);
-  assert.equal(localStorage.getItem(HFOS_STORAGE_KEYS.accounts), originalStorage);
-  assert.equal(AccountRepository.replaceForHousehold(linkedHouseholdId, []), true);
-  assert.deepEqual(AccountRepository.findAll(), []);
-  const archived = JSON.parse(localStorage.getItem(HFOS_STORAGE_KEYS.memberPersonalAccounts)!).data;
-  assert.equal(archived[0].householdId, previousHouseholdId);
-  assert.equal(archived[0].ownerMemberId, "previous-member-rasha");
-  assert.equal(archived[0].currentBalance, personalAccount.currentBalance);
+  assert.equal(
+    accounts.length,
+    1
+  );
+  assert.equal(
+    accounts[0]?.id,
+    "member-personal-account"
+  );
+  assert.equal(
+    accounts[0]?.householdId,
+    linkedHouseholdId
+  );
+  assert.equal(
+    accounts[0]?.ownerMemberId,
+    "member-rasha"
+  );
 });
 
 test("member personal account archive survives account collection replacement", () => {

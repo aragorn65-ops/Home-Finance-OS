@@ -1,4 +1,3 @@
-import { getApplicationStorage } from "../storage/userScopedStorage";
 import {
   useCallback,
   useState,
@@ -23,7 +22,7 @@ function readReportingMonth(): string {
   }
 
   return (
-    getApplicationStorage("sessionStorage")?.getItem(
+    window.sessionStorage.getItem(
       reportingMonthStorageKey
     ) ?? getDefaultReportingMonth()
   );
@@ -41,7 +40,7 @@ export default function useReportingMonth() {
         nextMonth
       );
 
-      getApplicationStorage("sessionStorage")?.setItem(
+      window.sessionStorage.setItem(
         reportingMonthStorageKey,
         nextMonth
       );

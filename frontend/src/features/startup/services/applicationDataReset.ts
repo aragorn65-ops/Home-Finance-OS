@@ -1,4 +1,3 @@
-import { getApplicationStorage } from "../../../shared/storage/userScopedStorage";
 import {
   APP_LOCK_STORAGE_KEY,
 } from "../../security/services/appLockService";
@@ -336,7 +335,7 @@ function getStorage(
   }
 
   try {
-    return getApplicationStorage(storageName);
+    return window[storageName];
   } catch {
     return null;
   }

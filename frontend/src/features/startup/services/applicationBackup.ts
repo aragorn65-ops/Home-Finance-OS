@@ -1,5 +1,3 @@
-import { applicationStorageScope, getApplicationStorage } from "../../../shared/storage/userScopedStorage";
-import { isAuthFeatureEnabled } from "../../../config/auth";
 import {
   HFOS_STORAGE_KEYS,
   HFOS_STORAGE_SCHEMA_VERSION,
@@ -182,7 +180,6 @@ interface StorageEnvelopeData {
 }
 
 interface ApplicationBackupFile {
-  storageOwnerUserId?: string;
   kind: typeof backupKind;
 
   backupVersion: number;
@@ -273,7 +270,6 @@ export async function createApplicationBackup(
     backupVersion,
     app:
       "Home Finance OS",
-    storageOwnerUserId: isAuthFeatureEnabled() ? applicationStorageScope.currentUserId() ?? undefined : undefined,
     exportedAt:
       exportedAt.toISOString(),
     storageSchemaVersion:
@@ -300,8 +296,6 @@ export async function createApplicationBackup(
       json
     );
 
-  if (!isCurrentStorage(storage)) return { success: false, message: "The signed-in user changed during export. Export again after reload." };
-
   if (!validation.success) {
     return {
       success: false,
@@ -320,8 +314,6 @@ export async function createApplicationBackup(
         password,
         exportedAt
       );
-
-    if (!isCurrentStorage(storage)) return { success: false, message: "The signed-in user changed during export. Export again after reload." };
 
     if (!protectedBackup.success) {
       return protectedBackup;
@@ -407,31 +399,12 @@ export async function restoreApplicationBackup(
       password
     );
 
-  if (!isCurrentStorage(storage)) return { success: false, message: "The signed-in user changed during restore. No backup data was imported." };
-
   if (!validation.success) {
     return validation;
   }
 
   const backup =
     validation.backup;
-
-  const backupHousehold = backup.records[HFOS_STORAGE_KEYS.household];
-  const backupLink = isRecord(backupHousehold) && isRecord(backupHousehold.authenticatedLink)
-    ? backupHousehold.authenticatedLink : undefined;
-  const currentUser = applicationStorageScope.currentUserId();
-  // Older backups already recorded the linking user. Never relabel an unbound
-  // backup as belonging to whoever happened to open the restore dialog.
-  const backupOwner = backup.storageOwnerUserId ?? backupLink?.linkedByUserId;
-  if (isAuthFeatureEnabled() && (!backupOwner || backupOwner !== currentUser ||
-      (backupLink && backupLink.linkedByUserId !== currentUser))) {
-    return {
-      success: false,
-      message: backupOwner
-        ? "This backup belongs to a different signed-in user. Sign in as its owner to restore it."
-        : "This older backup has no storage owner. It was not imported; retain it for ownership-checked recovery.",
-    };
-  }
 
   const recordsToRestore = {
     ...backup.records,
@@ -1014,10 +987,6 @@ async function decryptPasswordProtectedBackup(
 function validateBackupFile(
   backup: ApplicationBackupFile
 ): ApplicationRestoreResult {
-  if (backup.storageOwnerUserId !== undefined &&
-      (typeof backup.storageOwnerUserId !== "string" || !backup.storageOwnerUserId.trim())) {
-    return { success: false, message: "Backup storage owner metadata is invalid." };
-  }
   if (
     backup.kind !==
       backupKind ||
@@ -1736,19 +1705,9 @@ function getLocalStorage():
   }
 
   try {
-    return getApplicationStorage();
+    return window.localStorage;
   } catch {
     return null;
-  }
-}
-
-function isCurrentStorage(storage: Storage): boolean {
-  try {
-    // Scoped storage handles are invalidated even when a user signs out and back in.
-    void storage.length;
-    return true;
-  } catch {
-    return false;
   }
 }
 

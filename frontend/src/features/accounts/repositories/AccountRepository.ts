@@ -295,8 +295,7 @@ export default class AccountRepository {
 
     if (
       !this.persistAccounts(
-        nextAccounts,
-        householdId
+        nextAccounts
       )
     ) {
       return false;
@@ -388,11 +387,46 @@ export default class AccountRepository {
               account.householdId ===
               household.id
           );
+        const linkedShellMember =
+          household.authenticatedLink &&
+          household.members.length === 1
+            ? household.members[0]
+            : undefined;
+        const salvagedPersonalAccounts =
+          linkedShellMember
+            ? hydratedAccounts
+                .filter(
+                  (account) =>
+                    account.householdId !==
+                      household.id &&
+                    account.visibility ===
+                      "private"
+                )
+                .map((account) => ({
+                  ...account,
+                  householdId:
+                    household.id,
+                  ownerMemberId:
+                    linkedShellMember.id,
+                }))
+            : [];
+
         this.accounts =
           this.mergePersonalAccountArchive(
             household.id,
-            activeHouseholdAccounts
+            [
+              ...activeHouseholdAccounts,
+              ...salvagedPersonalAccounts,
+            ]
           );
+
+        if (
+          salvagedPersonalAccounts.length > 0
+        ) {
+          this.persistAccounts(
+            this.accounts
+          );
+        }
       }
 
       this.initializedHouseholdId =
@@ -442,12 +476,8 @@ export default class AccountRepository {
    * Persists the complete account collection.
    */
   private static persistAccounts(
-    accounts: Account[],
-    householdId = this.initializedHouseholdId
+    accounts: Account[]
   ): boolean {
-    if (!householdId || !this.preserveDisplacedPersonalAccounts(householdId)) {
-      return false;
-    }
     const serializedAccounts =
       accounts.map(
         (account) =>
@@ -465,44 +495,18 @@ export default class AccountRepository {
     return result.success;
   }
 
-  private static preserveDisplacedPersonalAccounts(householdId: string): boolean {
-    const stored = loadStoredData(
-      HFOS_STORAGE_KEYS.accounts,
-      (value): value is SerializedAccount[] => this.isSerializedAccountArray(value)
-    );
-    if (stored.status === "missing") return true;
-    if (stored.status !== "loaded") return false;
-
-    const displaced = (stored.data ?? []).filter((account) =>
-      account.visibility === "private" && account.householdId !== householdId
-    );
-    if (displaced.length === 0) return true;
-
-    const archive = loadStoredData(
-      HFOS_STORAGE_KEYS.memberPersonalAccounts,
-      (value): value is SerializedAccount[] => this.isSerializedAccountArray(value)
-    );
-    if (archive.status !== "loaded" && archive.status !== "missing") return false;
-
-    // Preserve original identities before replacing the active collection.
-    // A linked shell alone is not evidence that its user owns these records.
-    const key = (account: SerializedAccount) => JSON.stringify([
-      account.householdId, account.ownerMemberId, account.id,
-    ]);
-    const preserved = new Map((archive.data ?? []).map((account) => [key(account), account]));
-    for (const account of displaced) {
-      const existing = preserved.get(key(account));
-      if (!existing || new Date(account.updatedAt) >= new Date(existing.updatedAt)) {
-        preserved.set(key(account), account);
-      }
-    }
-    return saveStoredData(HFOS_STORAGE_KEYS.memberPersonalAccounts, [...preserved.values()]).success;
-  }
-
   private static mergePersonalAccountArchive(
     householdId: string,
     accounts: Account[]
   ): Account[] {
+    const household =
+      loadHousehold();
+    const linkedShellMember =
+      household?.id === householdId &&
+      household.authenticatedLink &&
+      household.members.length === 1
+        ? household.members[0]
+        : undefined;
     const accountById =
       new Map<string, Account>();
 
@@ -517,14 +521,16 @@ export default class AccountRepository {
       const archivedAccount =
         account.householdId === householdId
           ? account
-          : undefined;
+          : linkedShellMember
+            ? {
+                ...account,
+                householdId,
+                ownerMemberId:
+                  linkedShellMember.id,
+              }
+            : undefined;
 
       if (!archivedAccount) {
-        continue;
-      }
-
-      const incomingAccount = accountById.get(archivedAccount.id);
-      if (incomingAccount && incomingAccount.ownerMemberId !== archivedAccount.ownerMemberId) {
         continue;
       }
 
@@ -557,9 +563,7 @@ export default class AccountRepository {
         ...this.loadPersonalAccountArchive()
           .filter(
             (item) =>
-              item.id !== account.id ||
-              item.householdId !== account.householdId ||
-              item.ownerMemberId !== account.ownerMemberId
+              item.id !== account.id
           ),
         this.clone(account),
       ]
@@ -573,8 +577,7 @@ export default class AccountRepository {
       this.loadPersonalAccountArchive()
         .filter(
           (account) =>
-            account.id !== accountId ||
-            account.householdId !== this.initializedHouseholdId
+            account.id !== accountId
         )
     );
   }

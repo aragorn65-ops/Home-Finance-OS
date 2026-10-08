@@ -1,17 +1,7 @@
 # Sprint 105 Access Audit
 
 Date: 2026-09-25. Repository baseline: `3c69df3`.
-Initial audit used static source inspection; deployed definitions were later
-supplied by the product owner, as recorded below.
-
-## Verification Update - 2026-10-01
-
-The user reported successful application of both targeted repairs below and
-passing legitimate settlement edit, private-record, participant-only, and
-signed-out UI tests. Historical preparation/pending notes below describe the
-earlier audit stages, not a request to rerun the SQL. Direct production negative
-authorization checks and the documented cache/admin privacy limitations remain
-open. See `Public-Beta-Launch-Evidence.md` for subsequent sync and backup passes.
+Static source inspection only; deployed database definitions have not been read.
 
 ## Deployed Evidence And First Repair
 
@@ -41,87 +31,6 @@ subsequent full-snapshot saves to avoid deleting records hidden from the writer.
 Do not mark the entire backend authorization gate passed yet.
 
 ## Findings
-
-## Private Storage Follow-Up - 2026-10-04
-
-Application-level authenticated-user storage isolation is now implemented locally,
-including backup/reset isolation and fail-closed initialization. Earlier open
-private-cache notes below describe the investigation and intermediate fixes.
-See `docs/architecture/Private-Storage-Isolation.md` for behavior, legacy-data
-preservation, verification, and the remaining deployment smoke check. Server-side
-admin privacy and confidentiality against direct access to browser storage are
-separate boundaries; neither is claimed as resolved by client namespacing.
-
-### High: Browser Personal-Account Archive Is Not User-Isolated
-
-Follow-up inspection on 2026-10-01 at `e71eb8e` confirms:
-
-* `browserCoreSnapshotLocalWriter.replaceAccounts` keeps omitted local private
-  accounts and preserves all local accounts when the remote list is empty.
-* `AccountRepository` stores a shared `memberPersonalAccounts` archive rather
-  than an authenticated-user partition. `mergePersonalAccountArchive` can
-  reassign an archived account from another local household to the sole member
-  in a linked household shell, without verifying the original authenticated
-  owner. That can make an old private account appear owned by a different user.
-* `useAuthSession.signOut` and the Supabase adapter sign out of auth but do not
-  purge these application account stores.
-* Normal member account-list filtering checks member ownership, but cannot
-  provide storage isolation or protect an account whose owner was reassigned
-  by the recovery path. Server read filtering cannot revoke downloaded data.
-
-Evidence: eight existing account-visibility/local-writer tests pass, including
-archive survival and cross-local-household shell salvage. These characterize
-current behavior; they are not proof of safe account switching or a new
-production exploit test. No live records were inspected or modified.
-
-Disposition: shared-browser private-data isolation remains a release blocker.
-Do not clear the archive as a quick fix: personal accounts can be local-only.
-Remediation must establish authenticated ownership, partition local private
-records, and quarantine ambiguous legacy records without deleting or silently
-reassigning them. It must cover both active collections and archived accounts,
-in-memory caches, backup restore, and sign-in/household transitions. A partition
-alone is not confidentiality against someone with access to browser storage;
-that requires a separate encryption/shared-device threat-model decision.
-Until addressed, use separate browser profiles for different household users;
-do not claim signing out removes private data from a shared browser profile.
-
-#### Recovery Guard Implemented Locally
-
-Both cross-household automatic owner-reassignment paths were removed. Loading
-old records no longer rewrites their identities. Before replacing stored account
-collections, displaced private accounts are preserved in the existing backup-
-covered archive with their original household/owner IDs; malformed archives or
-failed preservation writes stop replacement. Matching account IDs in another
-household are retained when current accounts are created or deleted. Incoming
-records cannot have their owner overridden by a conflicting archived owner.
-
-Verification: 286 frontend tests and production build pass, including five new
-tests for archive recovery, reused member IDs, storage failure, malformed
-archives, and owner collisions. This is a bounded recovery fix, not complete
-authenticated-user storage partitioning. Shared-profile storage, same-household
-user transitions, backup identity validation, and encrypted isolation remain
-open. Previously misassigned records are not automatically rewritten because
-their original ownership needs evidence. No production data was modified.
-
-#### Session Boundary Guard Implemented Locally
-
-The core snapshot hook previously keyed restored state by household, session
-status, and role, but not user ID. It now requires a signed-in user ID and
-invalidates restored state and pending-response generations when identity,
-household, role, or session status changes. A return to a previously used user
-does not reuse the other user's restored collection. Initial route rendering
-waits for a successful restore; same-session background refresh remains
-non-disruptive. Membership selection now ignores cached memberships belonging
-to a previous signed-in user, including while the new membership request loads.
-
-Verification: 295 frontend tests, production build, and targeted ESLint checks
-pass. Added tests exercise same-role switching, sign-out, returning users,
-late responses before a new request starts, and stale admin membership rejection.
-These are local prerequisite fixes, not a completed private-storage migration.
-Cloud snapshot account replacement still needs to retain all records required
-by the admin full-snapshot save; filtering its input can otherwise delete omitted
-accounts. User-specific storage partitioning and backup identity binding remain
-open, and no production deployment was performed for these guards.
 
 ### High: Snapshot RPC Does Not Enforce Record Visibility
 

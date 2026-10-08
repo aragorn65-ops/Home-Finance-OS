@@ -314,7 +314,6 @@ export default function AppShell() {
       household,
       sessionStatus:
         session.status,
-      sessionUserId: session.user?.id,
       role:
         membership?.role,
       isRouteAllowed:

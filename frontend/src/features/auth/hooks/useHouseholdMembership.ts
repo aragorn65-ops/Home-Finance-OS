@@ -14,7 +14,6 @@ import {
 import {
   useAuthSession,
 } from "./useAuthSession";
-import { getSessionMemberships } from "../services/sessionMemberships";
 
 export function useHouseholdMembership(
   householdId: string
@@ -113,20 +112,11 @@ export function useHouseholdMembership(
     session.user?.id,
   ]);
 
-  const currentMemberships = useMemo(
-    () => getSessionMemberships(memberships, session, householdId),
-    [memberships, session, householdId]
-  );
-  const currentActiveMemberships = useMemo(
-    () => getSessionMemberships(allActiveMemberships, session),
-    [allActiveMemberships, session]
-  );
-
   const membership =
     useMemo(
       () => {
         const scopedMembership =
-          currentMemberships[0];
+          memberships[0];
 
         if (
           scopedMembership &&
@@ -141,7 +131,7 @@ export function useHouseholdMembership(
         }
 
         const newestMembership =
-          [...currentActiveMemberships].sort(
+          [...allActiveMemberships].sort(
             (
               left,
               right
@@ -156,16 +146,16 @@ export function useHouseholdMembership(
         );
       },
       [
-        currentActiveMemberships,
-        currentMemberships,
+        allActiveMemberships,
+        memberships,
       ]
     );
 
   return {
     session,
     membership,
-    memberships: currentMemberships,
-    allActiveMemberships: currentActiveMemberships,
+    memberships,
+    allActiveMemberships,
     error:
       sessionError || error,
     isLoading,

@@ -1,5 +1,3 @@
-import { getApplicationStorage } from "./userScopedStorage";
-
 export const HFOS_STORAGE_SCHEMA_VERSION = 1;
 
 export const HFOS_STORAGE_KEYS = {
@@ -399,7 +397,7 @@ function getBrowserStorage():
   }
 
   try {
-    return getApplicationStorage();
+    return window.localStorage;
   } catch {
     return null;
   }

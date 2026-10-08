@@ -24,7 +24,6 @@ import {
 } from "../../household/services/householdStorage";
 
 import AllocationPaymentService from "../../settlements/services/AllocationPaymentService";
-import { getApplicationStorage } from "../../../shared/storage/userScopedStorage";
 import type {
   UtilityProviderBill,
 } from "../../utilities/models/UtilityProviderBill";
@@ -156,7 +155,7 @@ export default class TransactionService {
 
     try {
       const rawValue =
-        getApplicationStorage()?.getItem(
+        window.localStorage.getItem(
           storageKey
         );
 
