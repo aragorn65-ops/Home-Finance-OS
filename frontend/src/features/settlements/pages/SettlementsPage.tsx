@@ -1452,6 +1452,8 @@ export default function SettlementsPage() {
       <Dialog
         open={isFormDialogOpen}
         onClose={closeDialog}
+        closeOnBackdrop={false}
+        closeOnEscape={false}
         className="hfos-dialog--large"
       >
         <DialogHeader
@@ -1465,7 +1467,7 @@ export default function SettlementsPage() {
         <DialogBody>
           {household ? (
             <SettlementForm
-              key={dialogMode === "edit" ? selectedSettlement?.id : "new-settlement"}
+              key={`${household.id}:${dialogMode === "edit" ? selectedSettlement?.id : "new-settlement"}`}
               recordedApplications={dialogMode === "edit" ? selectedApplicationDetails : []}
               householdId={
                 household.id

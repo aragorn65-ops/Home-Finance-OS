@@ -301,12 +301,12 @@ export default function useSettlements(
         );
 
         setError("");
-      } catch {
+      } catch (failure) {
         setSettlements(
           loadSettlements()
         );
         setError(
-          "Cloud settlements could not be loaded."
+          failure instanceof Error ? failure.message : "Cloud settlements could not be loaded."
         );
       }
     }, [

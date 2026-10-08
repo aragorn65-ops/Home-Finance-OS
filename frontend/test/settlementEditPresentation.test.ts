@@ -18,3 +18,15 @@ test("edit separates saved payment items from optional reallocation candidates",
   assert.match(form, /Change applied items/);
   assert.match(form, /aria-controls="settlement-application-editor"/);
 });
+
+test("receipt picker and background balance refresh cannot reset the mounted draft", () => {
+  assert.match(form, /const nextFormKey = householdId;/);
+  assert.match(form, /initializedFormKey\.current ===\s+nextFormKey/);
+  assert.doesNotMatch(form, /allocationOptions\s*\.map[\s\S]*?\.join\("::"\)/);
+  assert.ok(page.includes('key={`${household.id}:${dialogMode === "edit" ? selectedSettlement?.id : "new-settlement"}`}'));
+});
+
+test("settlement entry requires explicit cancel instead of backdrop or Escape dismissal", () => {
+  assert.match(page, /open=\{isFormDialogOpen\}\s+onClose=\{closeDialog\}\s+closeOnBackdrop=\{false\}\s+closeOnEscape=\{false\}/);
+  assert.match(page, /onCancel=\{\s*closeDialog\s*\}/);
+});

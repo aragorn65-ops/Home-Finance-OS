@@ -14,6 +14,46 @@ import {
   persistRemoteSettlementRecords,
 } from "../src/features/settlements/services/remoteSettlementSync.ts";
 
+for (const failedKey of [HFOS_STORAGE_KEYS.settlements, HFOS_STORAGE_KEYS.settlementApplications]) {
+  test(`remote refresh preserves both cached collections when ${failedKey} cannot be written`, () => {
+    const { localStorage } = installBrowserStorage();
+    const householdId = `quota-${failedKey}`;
+    const now = new Date("2026-10-05T00:00:00Z");
+    localStorage.setItem(HFOS_STORAGE_KEYS.household, JSON.stringify(createStorageEnvelope({
+      id: householdId, householdName: "Quota fixture", country: "PH", currency: "PHP",
+      timezone: "Asia/Manila", members: [], createdAt: now.toISOString(), updatedAt: now.toISOString(),
+    })));
+    const settlement = { id: "paid", householdId, fromMemberId: "rasha", toMemberId: "dadi",
+      amount: 100, settlementDate: now, applicationMethod: "manual" as const, attachments: [],
+      isActive: true, createdAt: now, updatedAt: now };
+    const application = { id: "link", settlementId: settlement.id, expenseAllocationId: "expense",
+      appliedAmount: 100, createdAt: now, updatedAt: now };
+    assert.ok(SettlementRepository.create(settlement));
+    assert.ok(SettlementApplicationRepository.create(application));
+    const beforePayments = localStorage.getItem(HFOS_STORAGE_KEYS.settlements);
+    const beforeLinks = localStorage.getItem(HFOS_STORAGE_KEYS.settlementApplications);
+    const write = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = (key, value) => {
+      if (key === failedKey) throw new DOMException("Quota exhausted", "QuotaExceededError");
+      write(key, value);
+    };
+    assert.throws(() => persistRemoteSettlementRecords(householdId,
+      [{ ...settlement, id: "remote", localRecordId: settlement.id }],
+      [{ ...settlement, notes: "remote update" }],
+      [{ ...application, householdId, settlementId: "remote" }]), /Browser storage is full/);
+    assert.equal(localStorage.getItem(HFOS_STORAGE_KEYS.settlements), beforePayments);
+    assert.equal(localStorage.getItem(HFOS_STORAGE_KEYS.settlementApplications), beforeLinks);
+    assert.deepEqual(SettlementRepository.findById(settlement.id), settlement);
+    assert.deepEqual(SettlementApplicationRepository.findBySettlementId(settlement.id), [application]);
+    // Reopening the repositories also sees the original complete payment state.
+    localStorage.setItem = write;
+    SettlementRepository.reloadFromStorage();
+    SettlementApplicationRepository.reloadFromStorage();
+    assert.deepEqual(SettlementRepository.findById(settlement.id), settlement);
+    assert.deepEqual(SettlementApplicationRepository.findBySettlementId(settlement.id), [application]);
+  });
+}
+
 test(
   "remote settlement sync clears local history when cloud has none",
   () => {

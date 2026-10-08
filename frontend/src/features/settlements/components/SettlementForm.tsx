@@ -1,3 +1,4 @@
+import { preserveRecordedApplications } from "../services/settlementEditSubmission";
 import {
   useEffect,
   useMemo,
@@ -573,31 +574,9 @@ export default function SettlementForm({
   };
 
   useEffect(() => {
-    const nextFormKey =
-      [
-        householdId,
-        initialValues?.householdId ?? "",
-        initialValues?.settlementDate ?? "",
-        initialValues?.fromMemberId ?? "",
-        initialValues?.toMemberId ?? "",
-        initialValues?.amount ?? "",
-        initialValues?.referenceNumber ?? "",
-        preferredFromMemberId,
-        activeMembers
-          .map((member) => member.id)
-          .join("|"),
-        allocationOptions
-          .map(
-            (option) =>
-              [
-                option.expenseAllocationId,
-                option.fromMemberId,
-                option.toMemberId,
-                option.outstandingAmount,
-              ].join(":")
-          )
-          .join("|"),
-      ].join("::");
+    // The page keys this component by record. Live balance/member refreshes
+    // must not replace the draft when focus returns from the receipt picker.
+    const nextFormKey = householdId;
 
     if (
       initializedFormKey.current ===
@@ -616,20 +595,7 @@ export default function SettlementForm({
 
             householdId,
 
-            applications:
-              initialValues.applicationMethod ===
-              "manual"
-                ? createApplicationForms(
-                    allocationOptions.filter(
-                      (option) =>
-                        option.fromMemberId ===
-                          initialValues.fromMemberId &&
-                        option.toMemberId ===
-                          initialValues.toMemberId
-                    ),
-                    initialValues.applications
-                  )
-                : [],
+            applications: initialValues.applications.map((item) => ({ ...item })),
           }
         : getDefaultFormValues(
             householdId,
@@ -1355,7 +1321,7 @@ export default function SettlementForm({
     setIsSubmitting(true);
 
     const submissionForm:
-      SettlementFormData = {
+      SettlementFormData = preserveRecordedApplications({
         ...form,
 
         householdId,
@@ -1368,7 +1334,7 @@ export default function SettlementForm({
                 form.applications
               )
             : [],
-      };
+      }, initialValues, showApplicationEditor);
 
     if (manualApplicationTotalExceedsSettlement) {
       const nextErrors = {

@@ -519,7 +519,7 @@ export default class SettlementService {
       });
       return saved
         ? OperationResults.success(saved, "Settlement details updated; applied payments were preserved.")
-        : OperationResults.failure({ general: "Settlement details could not be saved." });
+        : OperationResults.failure({ general: SettlementRepository.getLastWriteError() ?? "Settlement details could not be saved." });
     }
 
     const applicationRemoval =

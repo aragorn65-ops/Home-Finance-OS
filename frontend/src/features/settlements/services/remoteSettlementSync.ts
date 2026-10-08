@@ -10,6 +10,8 @@ import type {
 
 import SettlementRepository from "../repositories/SettlementRepository";
 import SettlementApplicationRepository from "../repositories/SettlementApplicationRepository";
+import { HFOS_STORAGE_KEYS, saveStoredDataBatch } from "../../../shared/storage/localStorageStore";
+import { loadHousehold } from "../../household/services/householdStorage";
 
 export function persistRemoteSettlementRecords(
   localHouseholdId: string,
@@ -17,6 +19,12 @@ export function persistRemoteSettlementRecords(
   mappedSettlements: Settlement[],
   remoteApplications: RemoteSettlementApplication[]
 ): void {
+  if (loadHousehold()?.id !== localHouseholdId ||
+      mappedSettlements.some((settlement) => settlement.householdId !== localHouseholdId) ||
+      mappedSettlements.length !== remoteSettlements.length ||
+      new Set(mappedSettlements.map((settlement) => settlement.id)).size !== mappedSettlements.length) {
+    throw new Error("Settlement refresh did not match the active household. Cached payments were preserved.");
+  }
   const existingApplicationsBySettlementId =
     new Map<string, SettlementApplication[]>();
 
@@ -32,13 +40,6 @@ export function persistRemoteSettlementRecords(
         )
       );
 
-      SettlementApplicationRepository
-        .deleteBySettlementId(
-          settlement.id
-        );
-      SettlementRepository.delete(
-        settlement.id
-      );
     });
 
   const localSettlementIdByRemoteId =
@@ -67,9 +68,6 @@ export function persistRemoteSettlementRecords(
         );
       }
 
-      SettlementRepository.create(
-        mappedSettlement
-      );
     }
   );
 
@@ -119,6 +117,7 @@ export function persistRemoteSettlementRecords(
     );
   }
 
+  const nextApplications: SettlementApplication[] = [];
   mappedSettlements.forEach(
     (settlement) => {
       const remoteSettlementApplications =
@@ -130,12 +129,20 @@ export function persistRemoteSettlementRecords(
           settlement.id
         ) ?? [];
 
-      SettlementApplicationRepository
-        .replaceBySettlementId(
-          settlement.id,
-          remoteSettlementApplications ??
-            preservedApplications
-        );
+      nextApplications.push(...(remoteSettlementApplications ?? preservedApplications));
     }
   );
+
+  if (new Set(nextApplications.map((application) => application.id)).size !== nextApplications.length) {
+    throw new Error("Settlement refresh contained duplicate payment links. Cached payments were preserved.");
+  }
+  // Persist both complete collections before changing either in-memory repository.
+  // A failed write restores the previous storage values instead of deleting payments.
+  const saved = saveStoredDataBatch([
+    { key: HFOS_STORAGE_KEYS.settlements, data: mappedSettlements },
+    { key: HFOS_STORAGE_KEYS.settlementApplications, data: nextApplications },
+  ]);
+  if (!saved.success) throw new Error(saved.message ?? "Settlement cache could not be saved.");
+  SettlementRepository.reloadFromStorage();
+  SettlementApplicationRepository.reloadFromStorage();
 }

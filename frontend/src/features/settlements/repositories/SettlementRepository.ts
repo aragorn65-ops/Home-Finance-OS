@@ -55,6 +55,17 @@ const applicationMethods:
   ];
 
 export default class SettlementRepository {
+  static reloadFromStorage(): void {
+    this.initializedHouseholdId = null;
+    this.ensureInitialized();
+  }
+
+  private static lastWriteError: string | undefined;
+
+  static getLastWriteError(): string | undefined {
+    return this.lastWriteError;
+  }
+
   /**
    * Hydrated settlement collection for the single
    * active household.
@@ -275,6 +286,7 @@ export default class SettlementRepository {
     settlement: Settlement
   ): Settlement | undefined {
     this.ensureInitialized();
+    this.lastWriteError = undefined;
 
     if (
       !this.initializedHouseholdId ||
@@ -489,6 +501,7 @@ export default class SettlementRepository {
         serializedSettlements
       );
 
+    this.lastWriteError = result.success ? undefined : result.message;
     return result.success;
   }
 

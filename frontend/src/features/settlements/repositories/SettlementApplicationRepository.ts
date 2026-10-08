@@ -23,6 +23,11 @@ interface SerializedSettlementApplication
 }
 
 export default class SettlementApplicationRepository {
+  static reloadFromStorage(): void {
+    this.initializedHouseholdId = null;
+    this.ensureInitialized();
+  }
+
   /**
    * Hydrated settlement-application collection for the
    * single active household.

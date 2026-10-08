@@ -304,12 +304,14 @@ export function saveStoredData<T>(
     return {
       success: true,
     };
-  } catch {
+  } catch (error) {
     return {
       success: false,
 
       message:
-        "HFOS data could not be written to browser local storage.",
+        error instanceof Error && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED")
+          ? "Browser storage is full. This change was not saved. Try a smaller receipt file and keep a backup; do not clear browser data."
+          : "HFOS data could not be written to browser local storage.",
     };
   }
 }
@@ -346,6 +348,38 @@ export function removeStoredData(
         "HFOS data could not be removed from browser local storage.",
     };
   }
+}
+
+/** Commit related collections without exposing partially written repository state. */
+export function saveStoredDataBatch(
+  records: Array<{ key: HfosStorageKey; data: unknown }>
+): StorageWriteResult {
+  const storage = getBrowserStorage();
+  if (!storage) return { success: false, message: "Browser local storage is unavailable." };
+  const before = new Map<HfosStorageKey, string | null>();
+  try {
+    for (const { key } of records) before.set(key, storage.getItem(key));
+  } catch {
+    return { success: false, message: "Browser local storage could not be read. No records were changed." };
+  }
+  const written: HfosStorageKey[] = [];
+  for (const { key, data } of records) {
+    const result = saveStoredData(key, data);
+    if (!result.success) {
+      try {
+        for (const changed of written.reverse()) {
+          const original = before.get(changed);
+          if (original == null) storage.removeItem(changed);
+          else storage.setItem(changed, original);
+        }
+      } catch {
+        return { success: false, message: "Browser storage failed during rollback. Stop editing and retain your backup; the cache needs recovery." };
+      }
+      return result;
+    }
+    written.push(key);
+  }
+  return { success: true };
 }
 
 /**

@@ -1,4 +1,5 @@
 import "./Dialog.css";
+import { createPortal } from "react-dom";
 
 import {
   useCallback,
@@ -90,12 +91,12 @@ function focusDialog(
     focusableElements[0];
 
   if (firstFocusableElement) {
-    firstFocusableElement.focus();
+    firstFocusableElement.focus({ preventScroll: true });
 
     return;
   }
 
-  dialog.focus();
+  dialog.focus({ preventScroll: true });
 }
 
 function trapFocus(
@@ -111,7 +112,7 @@ function trapFocus(
 
   if (focusableElements.length === 0) {
     event.preventDefault();
-    dialog.focus();
+    dialog.focus({ preventScroll: true });
 
     return;
   }
@@ -140,7 +141,7 @@ function trapFocus(
     )
   ) {
     event.preventDefault();
-    lastFocusableElement.focus();
+    lastFocusableElement.focus({ preventScroll: true });
 
     return;
   }
@@ -154,7 +155,7 @@ function trapFocus(
     )
   ) {
     event.preventDefault();
-    firstFocusableElement.focus();
+    firstFocusableElement.focus({ preventScroll: true });
   }
 }
 
@@ -344,7 +345,7 @@ export default function Dialog({
         previouslyFocusedElement &&
         previouslyFocusedElement.isConnected
       ) {
-        previouslyFocusedElement.focus();
+        previouslyFocusedElement.focus({ preventScroll: true });
 
         return;
       }
@@ -398,7 +399,7 @@ export default function Dialog({
     props.onKeyDown?.(event);
   };
 
-  return (
+  return createPortal(
     <DialogContext.Provider
       value={contextValue}
     >
@@ -441,6 +442,7 @@ export default function Dialog({
           {children}
         </div>
       </div>
-    </DialogContext.Provider>
+    </DialogContext.Provider>,
+    document.body
   );
 }

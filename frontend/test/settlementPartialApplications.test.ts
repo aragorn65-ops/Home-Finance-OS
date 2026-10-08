@@ -382,6 +382,38 @@ test("notes-only edit keeps recorded applications instead of applying to today's
   assert.deepEqual(ExpenseAllocationRepository.findAll(), allocations);
 });
 
+test("receipt edit reports storage quota failure without changing the saved payment", () => {
+  seedPartialSettlementFixture();
+  const form = { householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,
+    amount: 100, settlementDate: "2026-09-10", sourceAccountId: "", destinationAccountId: "",
+    applicationMethod: "oldest-first" as const, applications: [], referenceNumber: "RECEIPT-QUOTA",
+    notes: "", attachments: [], isActive: true };
+  const original = SettlementService.create(form);
+  assert.ok(original.success && original.data);
+  const savedJson = window.localStorage.getItem(HFOS_STORAGE_KEYS.settlements);
+  const applications = SettlementApplicationRepository.findBySettlementId(original.data.id);
+  const setItem = window.localStorage.setItem;
+  window.localStorage.setItem = function (key, value) {
+    if (key === HFOS_STORAGE_KEYS.settlements) {
+      throw new DOMException("Quota exceeded", "QuotaExceededError");
+    }
+    return setItem.call(this, key, value);
+  };
+  try {
+    const result = SettlementService.update(original.data.id, { ...form, attachments: [{
+      id: "receipt", category: "receipt", fileName: "receipt.png", mimeType: "image/png",
+      sizeBytes: 3, dataUrl: "data:image/png;base64,YWJj", createdAt: new Date(),
+    }] });
+    assert.equal(result.success, false);
+    assert.match(result.errors?.general ?? "", /Browser storage is full/);
+    assert.equal(window.localStorage.getItem(HFOS_STORAGE_KEYS.settlements), savedJson);
+    assert.deepEqual(SettlementRepository.findById(original.data.id), original.data);
+    assert.deepEqual(SettlementApplicationRepository.findBySettlementId(original.data.id), applications);
+  } finally {
+    window.localStorage.setItem = setItem;
+  }
+});
+
 test("redating a synced settlement preserves its original member references and application IDs", () => {
   seedPartialSettlementFixture();
   const original = SettlementService.create({ householdId, fromMemberId: payerMemberId, toMemberId: receiverMemberId,

@@ -6,6 +6,7 @@
 }
 
 .hfos-dialog-viewport {
+  box-sizing: border-box;
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog);
@@ -18,10 +19,13 @@
 }
 
 .hfos-dialog {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   width: 100%;
   max-width: 32rem;
+  max-height: calc(100vh - var(--space-8));
   max-height: calc(100dvh - var(--space-8));
   overflow: hidden;
   background: var(--color-surface);
@@ -40,6 +44,7 @@
 }
 
 .hfos-dialog__header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -68,9 +73,11 @@
   min-height: 0;
   padding: var(--space-5) var(--space-6);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .hfos-dialog__footer {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
