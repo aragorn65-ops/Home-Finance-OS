@@ -34,19 +34,19 @@ export default function FormValidationAlert({
       aria-modal="true"
       aria-labelledby="form-validation-alert-title"
     >
-      <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-5 text-black shadow-xl">
+      <div className="w-full max-w-md rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-[var(--color-text)] shadow-xl">
         <h2
           id="form-validation-alert-title"
-          className="text-base font-semibold text-black"
+          className="text-base font-semibold text-[var(--color-text-strong)]"
         >
           {title}
         </h2>
 
-        <p className="mt-2 text-sm text-gray-700">
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Save was not completed because the form has invalid or missing entries.
         </p>
 
-        <ul className="mt-4 space-y-2 text-sm text-black">
+        <ul className="mt-4 space-y-2 text-sm">
           {errorEntries.map(
             ([field, message]) => (
               <li key={field}>

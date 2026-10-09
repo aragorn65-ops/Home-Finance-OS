@@ -317,19 +317,19 @@ select option:checked {
   color: var(--color-text-inverse);
 }
 
-:root[data-theme="dark"] .app-content :is(.bg-white),
-:root[data-theme="dark"] .app-content :is(.bg-slate-50, .bg-gray-50),
-:root[data-theme="dark"] .app-content :is(.hover\:bg-slate-50):hover {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.bg-white),
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.bg-slate-50, .bg-gray-50),
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.hover\:bg-slate-50):hover {
   background-color: var(--color-surface);
 }
 
-:root[data-theme="dark"] .app-content :is(.bg-slate-100, .bg-gray-100),
-:root[data-theme="dark"] .app-content :is(.hover\:bg-slate-100):hover,
-:root[data-theme="dark"] .app-content :is(.hover\:bg-gray-100):hover {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.bg-slate-100, .bg-gray-100),
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.hover\:bg-slate-100):hover,
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.hover\:bg-gray-100):hover {
   background-color: var(--color-surface-hover);
 }
 
-:root[data-theme="dark"] .app-content :is(
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(
   .border-slate-100,
   .border-slate-200,
   .border-slate-300,
@@ -339,7 +339,7 @@ select option:checked {
   border-color: var(--color-border);
 }
 
-:root[data-theme="dark"] .app-content :is(
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(
   .divide-slate-100,
   .divide-slate-200,
   .divide-gray-100,
@@ -348,11 +348,11 @@ select option:checked {
   border-color: var(--color-border-subtle);
 }
 
-:root[data-theme="dark"] .app-content :is(.text-slate-900, .text-gray-900) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.text-slate-900, .text-gray-900) {
   color: var(--color-text-strong);
 }
 
-:root[data-theme="dark"] .app-content :is(
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(
   .text-slate-700,
   .text-slate-600,
   .text-gray-700,
@@ -361,46 +361,46 @@ select option:checked {
   color: var(--color-text);
 }
 
-:root[data-theme="dark"] .app-content :is(
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(
   .text-slate-500,
   .text-gray-500
 ) {
   color: var(--color-text-muted);
 }
 
-:root[data-theme="dark"] .app-content :is(.bg-blue-50) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.bg-blue-50) {
   background-color: var(--color-info-background);
 }
 
-:root[data-theme="dark"] .app-content :is(.border-blue-200) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.border-blue-200) {
   border-color: var(--color-info-border);
 }
 
-:root[data-theme="dark"] .app-content :is(.text-blue-900, .text-blue-800) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.text-blue-900, .text-blue-800) {
   color: var(--color-info-text);
 }
 
-:root[data-theme="dark"] .app-content :is(.bg-red-50) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.bg-red-50) {
   background-color: var(--color-danger-background);
 }
 
-:root[data-theme="dark"] .app-content :is(.border-red-200) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.border-red-200) {
   border-color: var(--color-danger-border);
 }
 
-:root[data-theme="dark"] .app-content :is(.text-red-900, .text-red-800) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.text-red-900, .text-red-800) {
   color: var(--color-danger-text);
 }
 
-:root[data-theme="dark"] .app-content :is(.bg-emerald-50) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.bg-emerald-50) {
   background-color: var(--color-success-background);
 }
 
-:root[data-theme="dark"] .app-content :is(.border-emerald-200) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.border-emerald-200) {
   border-color: var(--color-success-border);
 }
 
-:root[data-theme="dark"] .app-content :is(
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(
   .text-emerald-900,
   .text-emerald-800,
   .text-emerald-700
@@ -408,32 +408,32 @@ select option:checked {
   color: var(--color-success-text);
 }
 
-:root[data-theme="dark"] .app-content :is(.bg-amber-50) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.bg-amber-50) {
   background-color: var(--color-warning-background);
 }
 
-:root[data-theme="dark"] .app-content :is(.border-amber-200) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.border-amber-200) {
   border-color: var(--color-warning-border);
 }
 
-:root[data-theme="dark"] .app-content :is(.text-amber-900, .text-amber-800) {
+:root[data-theme="dark"] :is(.app-content, .hfos-dialog) :is(.text-amber-900, .text-amber-800) {
   color: var(--color-warning-text);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root[data-theme="system"] .app-content :is(.bg-white),
-  :root[data-theme="system"] .app-content :is(.bg-slate-50, .bg-gray-50),
-  :root[data-theme="system"] .app-content :is(.hover\:bg-slate-50):hover {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.bg-white),
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.bg-slate-50, .bg-gray-50),
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.hover\:bg-slate-50):hover {
     background-color: var(--color-surface);
   }
 
-  :root[data-theme="system"] .app-content :is(.bg-slate-100, .bg-gray-100),
-  :root[data-theme="system"] .app-content :is(.hover\:bg-slate-100):hover,
-  :root[data-theme="system"] .app-content :is(.hover\:bg-gray-100):hover {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.bg-slate-100, .bg-gray-100),
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.hover\:bg-slate-100):hover,
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.hover\:bg-gray-100):hover {
     background-color: var(--color-surface-hover);
   }
 
-  :root[data-theme="system"] .app-content :is(
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(
     .border-slate-100,
     .border-slate-200,
     .border-slate-300,
@@ -443,7 +443,7 @@ select option:checked {
     border-color: var(--color-border);
   }
 
-  :root[data-theme="system"] .app-content :is(
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(
     .divide-slate-100,
     .divide-slate-200,
     .divide-gray-100,
@@ -452,11 +452,11 @@ select option:checked {
     border-color: var(--color-border-subtle);
   }
 
-  :root[data-theme="system"] .app-content :is(.text-slate-900, .text-gray-900) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.text-slate-900, .text-gray-900) {
     color: var(--color-text-strong);
   }
 
-  :root[data-theme="system"] .app-content :is(
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(
     .text-slate-700,
     .text-slate-600,
     .text-gray-700,
@@ -465,46 +465,46 @@ select option:checked {
     color: var(--color-text);
   }
 
-  :root[data-theme="system"] .app-content :is(
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(
     .text-slate-500,
     .text-gray-500
   ) {
     color: var(--color-text-muted);
   }
 
-  :root[data-theme="system"] .app-content :is(.bg-blue-50) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.bg-blue-50) {
     background-color: var(--color-info-background);
   }
 
-  :root[data-theme="system"] .app-content :is(.border-blue-200) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.border-blue-200) {
     border-color: var(--color-info-border);
   }
 
-  :root[data-theme="system"] .app-content :is(.text-blue-900, .text-blue-800) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.text-blue-900, .text-blue-800) {
     color: var(--color-info-text);
   }
 
-  :root[data-theme="system"] .app-content :is(.bg-red-50) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.bg-red-50) {
     background-color: var(--color-danger-background);
   }
 
-  :root[data-theme="system"] .app-content :is(.border-red-200) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.border-red-200) {
     border-color: var(--color-danger-border);
   }
 
-  :root[data-theme="system"] .app-content :is(.text-red-900, .text-red-800) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.text-red-900, .text-red-800) {
     color: var(--color-danger-text);
   }
 
-  :root[data-theme="system"] .app-content :is(.bg-emerald-50) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.bg-emerald-50) {
     background-color: var(--color-success-background);
   }
 
-  :root[data-theme="system"] .app-content :is(.border-emerald-200) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.border-emerald-200) {
     border-color: var(--color-success-border);
   }
 
-  :root[data-theme="system"] .app-content :is(
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(
     .text-emerald-900,
     .text-emerald-800,
     .text-emerald-700
@@ -512,15 +512,15 @@ select option:checked {
     color: var(--color-success-text);
   }
 
-  :root[data-theme="system"] .app-content :is(.bg-amber-50) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.bg-amber-50) {
     background-color: var(--color-warning-background);
   }
 
-  :root[data-theme="system"] .app-content :is(.border-amber-200) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.border-amber-200) {
     border-color: var(--color-warning-border);
   }
 
-  :root[data-theme="system"] .app-content :is(.text-amber-900, .text-amber-800) {
+  :root[data-theme="system"] :is(.app-content, .hfos-dialog) :is(.text-amber-900, .text-amber-800) {
     color: var(--color-warning-text);
   }
 }

@@ -22,6 +22,18 @@ export default function openAttachmentPreview(
   previewWindow.document.title =
     attachment.fileName;
 
+  const theme = window.getComputedStyle(document.documentElement);
+  const previewRoot = previewWindow.document.documentElement;
+  for (const [name, fallback] of Object.entries({
+    "--color-canvas": "#f8fafc",
+    "--color-surface": "#ffffff",
+    "--color-text": "#0f172a",
+    "--color-border": "#cbd5e1",
+  })) {
+    previewRoot.style.setProperty(name, theme.getPropertyValue(name).trim() || fallback);
+  }
+  previewRoot.style.colorScheme = theme.colorScheme || "light";
+
   const style =
     previewWindow.document.createElement(
       "style"
@@ -33,8 +45,8 @@ export default function openAttachmentPreview(
       width: 100%;
       min-height: 100%;
       margin: 0;
-      background: #f8fafc;
-      color: #0f172a;
+      background: var(--color-canvas);
+      color: var(--color-text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
@@ -45,8 +57,9 @@ export default function openAttachmentPreview(
 
     header {
       padding: 12px 16px;
-      background: #ffffff;
-      border-bottom: 1px solid #dbeafe;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      overflow-wrap: anywhere;
       font-size: 14px;
       font-weight: 600;
     }
