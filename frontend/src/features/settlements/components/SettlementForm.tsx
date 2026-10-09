@@ -1,3 +1,4 @@
+import { stageAttachmentDataUrl } from "../../../shared/storage/attachmentContentStore";
 import { preserveRecordedApplications } from "../services/settlementEditSubmission";
 import {
   useEffect,
@@ -222,7 +223,7 @@ function readFileAsDataUrl(
           typeof reader.result ===
           "string"
         ) {
-          resolve(reader.result);
+          void stageAttachmentDataUrl(reader.result).then(resolve, reject);
           return;
         }
 

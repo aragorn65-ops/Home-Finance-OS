@@ -18,6 +18,7 @@ import type {
 import type {
   AuthBackendAdapter,
 } from "./AuthBackendAdapter";
+import { stageAttachmentRecords } from "../../../shared/storage/attachmentContentStore";
 import {
   createMigrationAccountUploadPayload,
   createMigrationExpenseAllocationUploadRecords,
@@ -622,6 +623,8 @@ export async function restoreLinkedRemoteCoreSnapshot(
       if (householdSnapshotWrites.get(remoteHouseholdId) === pendingWrite) break;
     }
 
+    await stageAttachmentRecords(snapshot);
+    if (!isCurrent()) return { status: "skipped", reason: "superseded-restore" };
     const counts = applyRemoteCoreSnapshotToLocalHousehold({
       snapshot,
       localHouseholdId: options.household.id,

@@ -16,6 +16,7 @@ import openAttachmentPreview, {
   hasAttachmentPreviewData,
 } from "../../../shared/utils/openAttachmentPreview";
 import useReportingMonth from "../../../shared/hooks/useReportingMonth";
+import { stageAttachmentDataUrl } from "../../../shared/storage/attachmentContentStore";
 import {
   formatDateInput,
   isSameMonth,
@@ -1965,7 +1966,7 @@ function readFileAsDataUrl(
           typeof reader.result ===
           "string"
         ) {
-          resolve(reader.result);
+          void stageAttachmentDataUrl(reader.result).then(resolve, reject);
 
           return;
         }

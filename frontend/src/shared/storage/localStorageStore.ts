@@ -1,3 +1,5 @@
+import { attachmentContentStore } from "./attachmentContentStore";
+
 export const HFOS_STORAGE_SCHEMA_VERSION = 1;
 
 export const HFOS_STORAGE_KEYS = {
@@ -155,6 +157,9 @@ export function loadStoredData<T>(
     };
   }
 
+  // A missing receipt must not be mistaken for an empty collection by repositories.
+  parsed.data = attachmentContentStore.decode(parsed.data);
+
   if (!isValidData(parsed.data)) {
     return {
       status: "invalid",
@@ -285,7 +290,7 @@ export function saveStoredData<T>(
 
   try {
     json =
-      JSON.stringify(envelope);
+      JSON.stringify(attachmentContentStore.encode(envelope));
   } catch {
     return {
       success: false,
@@ -296,6 +301,11 @@ export function saveStoredData<T>(
   }
 
   try {
+    const previous = storage.getItem(key);
+    if (previous !== null) {
+      // Never overwrite references this tab cannot resolve (for example, a newer tab's receipt).
+      attachmentContentStore.decode(JSON.parse(previous));
+    }
     storage.setItem(
       key,
       json
@@ -311,7 +321,9 @@ export function saveStoredData<T>(
       message:
         error instanceof Error && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED")
           ? "Browser storage is full. This change was not saved. Try a smaller receipt file and keep a backup; do not clear browser data."
-          : "HFOS data could not be written to browser local storage.",
+          : error instanceof Error && error.message.startsWith("Receipt content")
+            ? error.message
+            : "HFOS data could not be written to browser local storage.",
     };
   }
 }

@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import type { Account } from "../../accounts/models/Account";
+import { stageAttachmentDataUrl } from "../../../shared/storage/attachmentContentStore";
 import {
   isAccountVisibleForMember,
 } from "../../accounts/services/accountVisibility";
@@ -292,9 +293,7 @@ function readFileAsDataUrl(
           typeof reader.result ===
           "string"
         ) {
-          resolve(
-            reader.result
-          );
+          void stageAttachmentDataUrl(reader.result).then(resolve, reject);
 
           return;
         }

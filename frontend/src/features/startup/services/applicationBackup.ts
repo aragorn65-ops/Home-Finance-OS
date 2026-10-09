@@ -1,3 +1,4 @@
+import { attachmentContentStore, stageAttachmentRecords } from "../../../shared/storage/attachmentContentStore";
 import {
   HFOS_STORAGE_KEYS,
   HFOS_STORAGE_SCHEMA_VERSION,
@@ -227,6 +228,11 @@ interface PasswordProtectedApplicationBackupFile {
 export async function createApplicationBackup(
   options: ApplicationBackupOptions = {}
 ): Promise<ApplicationBackupResult> {
+  try {
+    if (typeof indexedDB !== "undefined") await attachmentContentStore.refresh();
+  } catch {
+    return { success: false, message: "Receipt content could not be read. Backup was not created; do not clear browser data." };
+  }
   const storage =
     getLocalStorage();
 
@@ -421,6 +427,12 @@ export async function restoreApplicationBackup(
           .memberPersonalAccounts
       ] ?? [],
   };
+
+  try {
+    await stageAttachmentRecords(recordsToRestore);
+  } catch {
+    return { success: false, message: "Receipt content could not be stored. Backup restore was not applied." };
+  }
 
   const snapshot =
     createRestoreSnapshot(storage);
@@ -617,11 +629,11 @@ function readStoredEnvelopeData(
     };
   }
 
-  return {
-    success: true,
-    data:
-      parsed.data,
-  };
+  try {
+    return { success: true, data: attachmentContentStore.decode(parsed.data) };
+  } catch {
+    return { success: false, message: "Receipt content is missing or not loaded. Backup was not created; do not clear browser data." };
+  }
 }
 
 function parseBackupJson(

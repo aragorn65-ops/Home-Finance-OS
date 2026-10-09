@@ -33,6 +33,7 @@ import SettlementBalanceService from "../services/SettlementBalanceService";
 import {
   createRemoteSettlementApplicationDrafts,
 } from "../services/settlementRemoteDrafts";
+import { stageAttachmentRecords } from "../../../shared/storage/attachmentContentStore";
 import {
   saveSettlementCoreSnapshotIfAllowed,
 } from "../services/settlementCoreSnapshotSave";
@@ -281,6 +282,7 @@ export default function useSettlements(
               )
           );
 
+        await stageAttachmentRecords(mappedRemoteSettlements);
         persistRemoteSettlementRecords(
           localHouseholdId,
           remoteSettlements,

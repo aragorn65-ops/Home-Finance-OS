@@ -67,3 +67,42 @@ The backup file and real browser/cloud records were not modified by this test.
 Authenticated browser visual verification and the actual receipt save remain
 pending. These fixes do not increase browser storage capacity or complete the
 private-storage isolation release.
+
+## Attachment Capacity Candidate, 2026-10-09
+
+Capacity-only release prepared at the user's request after the production upload
+continued to fail. Private-storage isolation remains disabled.
+
+- Receipt content is committed to IndexedDB and read back before replacing
+  inline localStorage bytes with content references. Financial fields and
+  settlement applications are not recalculated or migrated.
+- Startup resolves stored references before importing the application. Migration
+  touches only known active record keys, preserves unrelated/legacy caches,
+  and skips a record changed by another tab while content was being written.
+- File pickers await durable content storage. Cloud refreshes stage received
+  file content before writing local records. Previews and cloud payloads retain
+  the existing inline data URL format in memory.
+- Export resolves content into a self-contained portable backup. Restore stages
+  its content before replacing local records. Missing content blocks export or
+  overwrite instead of silently dropping receipts.
+- The latest backup was tested read-only using in-memory localStorage and an
+  IndexedDB emulator. Stored record envelopes fell from 3,249,945 to 184,332
+  characters. Every record and receipt byte matched after export and restore;
+  the source backup file was unchanged.
+- Verification: 307 frontend tests passed with the read-only baseline test
+  enabled, production build passed, and targeted storage/startup lint passed.
+
+Additional release verification reproduces receipt-only edits on both reported
+payments (373.36 and 9,260.13) in isolated storage under a 500,000-character
+localStorage quota. A 900 KB synthetic attachment saves, survives repository
+reload, and is included in a portable backup. Payment amounts, dates, member
+identities, all application links, and non-settlement collections stay unchanged.
+
+Residual verification: real-browser file-picker interaction, preview, and
+cross-browser cloud visibility remain unverified because browser discovery
+returned no connected browser. This is not a claim that the private-storage
+release gate passed. Retain a portable backup and close old-build tabs before
+the capacity migration; old builds cannot resolve IndexedDB content references.
+Do not roll back to an old build against migrated local records.
+Content garbage collection and per-user storage isolation are not implemented
+by this capacity change; no old receipt content or unknown cache is deleted.
