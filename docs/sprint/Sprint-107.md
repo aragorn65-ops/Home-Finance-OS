@@ -2,7 +2,7 @@
 
 ## Login Loading Performance
 
-**Status:** Active - first optimization verified locally; preview validation pending.
+**Status:** Preview accepted; promoting the narrow loading optimization to production.
 **Started:** 2026-10-20 (Asia/Manila)
 **Production baseline:** `6d1a707`, accepted for Dadi Buboy, Rasha, and Lyn.
 
@@ -28,3 +28,14 @@ Live latency measurements and user acceptance remain open.
 - Identify repeated reads and network/server delays before further changes.
 - Recheck same-browser switching and correct balances after refresh.
 - Retain the accepted production build until the preview is validated.
+
+### Preview Acceptance
+
+User reported approximately three seconds for Rasha's login and confirmed correct
+records/balances without another member's data or false zero balances appearing.
+This is a user-reported observation, not a controlled before/after benchmark or a
+guarantee for every connection. Build, 320 backend tests (one optional backup test
+skipped), and 13 browser tests passed before preview deployment `f8f6fd2`.
+
+Promote this narrow concurrency change without database writes or calculation
+changes. Further performance investigation is deferred unless slow loading recurs.
