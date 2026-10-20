@@ -4,7 +4,7 @@
 
 **Branch:** main
 **Started:** 2026-10-20 (Asia/Manila)
-**Status:** Active - login and password screens implemented; live acceptance/deployment pending
+**Status:** Login release accepted by user; production promotion in progress. Invitation enhancements remain deferred.
 **Baseline:** `22fd49b`, with user-accepted receipt save/view and backup restore.
 
 ## Intent

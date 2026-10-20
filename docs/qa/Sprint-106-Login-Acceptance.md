@@ -154,3 +154,21 @@ profiles, saves the browser link without clearing financial collections, then
 reloads into gated cloud hydration. It does not write server finance records.
 21 component tests and 13 Chromium tests pass, including multiple-household
 selection, refresh, and mobile layout. Live data presence is not yet verified.
+
+## User Acceptance And Production Promotion (2026-10-20)
+
+User confirmed password login, recovery, correct household records/balances after
+refresh, and same-browser Rasha -> Lyn -> Dadi Buboy checks. Rasha's initial load
+was slow; no measured latency or performance fix is claimed. Monitor this after
+release. Acceptance is user-reported, not an agent inspection of live records.
+
+Production `/login` and `/reset-password` redirects were checked using deliberately
+invalid, non-user verification tokens. Both returned HTTP 303 to the requested
+production path (not a fallback origin). No email was sent or account changed.
+This routing check supplements, not replaces, the successful preview recovery test.
+
+Promote the accepted login/settings/household selection changes through the existing
+main-branch Pages build. Keep magic-link fallback. No database migration, backup
+restore, membership cleanup, private-storage re-enable, or finance rewrite.
+Invitation-code onboarding and broader security gates remain separate unfinished
+work; this release is not approval for an unrestricted public launch.
