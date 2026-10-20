@@ -234,8 +234,6 @@ export function saveLinkedHouseholdShell(
     return null;
   }
 
-  initializeEmptyFinancialCollections();
-
   return cloneHousehold(
     household
   );

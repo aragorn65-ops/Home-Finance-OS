@@ -121,3 +121,21 @@ on these results; synthetic identity tests do not replace financial acceptance.
   alias `/login` and `/reset-password` URLs without replacing existing entries.
   Verify production equivalents before production promotion.
 - No live account password was entered or changed by the agent.
+
+## Fresh Owner Preview Regression
+
+User acceptance found an empty household on the fresh preview origin after
+successful owner login. Bootstrap was restricted to member/viewer roles, while
+owner/admin routes could mount without a local household. Extended bootstrap to
+all active household roles, gated missing/sparse household pages until loading
+completes, and surfaced load failures. Added cancellation checking after member
+fetch. Removed financial collection clearing from linked-shell saves so repairs
+preserve cached records pending authoritative cloud hydration.
+
+Verification: 318 node tests passed (1 optional backup test skipped), 19 component
+tests passed, 12 Chromium tests passed, build passed, lint 0 errors/12 existing
+warnings. New Chromium cases cover fresh owner/admin login, existing member and
+transaction hydration, and refresh with no server mutation requests. A storage
+test verifies shell creation and replacement preserve financial collections.
+Live household counts, balances, applications, and receipts still require user
+acceptance. Production promotion remains on hold.

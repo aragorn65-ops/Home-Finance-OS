@@ -52,6 +52,54 @@ async function fakeAuth(page: Page) {
   return requests;
 }
 
+for (const role of ["owner", "admin"] as const) {
+  test(`fresh ${role} login restores existing household and finance records without backup`, async ({ page }) => {
+    await fakeAuth(page);
+    const householdId = "44444444-4444-4444-8444-444444444444";
+    const memberId = "55555555-5555-4555-8555-555555555555";
+    const date = "2026-10-01T00:00:00Z";
+    const writes: string[] = [];
+    await page.route("https://auth.hfos-test.invalid/rest/v1/**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      let data: unknown = [];
+      if (path.endsWith("/household_memberships")) data = [{
+        id: "membership-owner", household_id: householdId, user_id: users.admin.id,
+        member_id: memberId, member: { display_name: "Dadi Buboy", local_record_id: null },
+        role, status: "active", created_at: date, updated_at: date,
+      }];
+      else if (path.endsWith("/household_members")) data = [{
+        id: memberId, household_id: householdId, linked_user_id: users.admin.id,
+        display_name: "Dadi Buboy", role, status: "active", created_at: date, updated_at: date,
+      }];
+      else if (path.endsWith("/load_household_preferences")) data = {
+        household_id: householdId, household_name: "Existing Household", country: "PH",
+        currency: "PHP", timezone: "Asia/Manila", status: "active", owner_member_id: memberId,
+      };
+      else if (path.endsWith("/load_household_core_snapshot")) data = {
+        household_id: householdId, accounts: [], expense_allocations: [], provider_bills: [],
+        transactions: [{ id: "existing-transaction", householdId, visibility: "household",
+          type: "expense", amount: 75, category: "Groceries", description: "Existing market receipt",
+          notes: "", transactionDate: "2026-10-01", isActive: true, attachments: [],
+          createdAt: date, updatedAt: date }],
+      };
+      else if (["POST", "PATCH", "PUT", "DELETE"].includes(route.request().method())) writes.push(path);
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
+    });
+    await page.goto("/login");
+    await page.getByLabel("Email", { exact: true }).fill(users.admin.email);
+    await page.getByLabel("Password", { exact: true }).fill("test-password-only");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page).not.toHaveURL(/\/login$/);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("hfos.v1.transactions"))).toContain("existing-transaction");
+    await page.goto("/app/household-members");
+    await expect(page.getByText("No household members are available.")).not.toBeVisible();
+    await expect(page.getByText("Dadi Buboy", { exact: true }).first()).toBeVisible();
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("hfos.v1.transactions"))).toContain("existing-transaction");
+    expect(writes).toEqual([]);
+  });
+}
+
 for (const theme of ["light", "dark"] as const) {
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     test(`${theme} login is readable and fits ${viewport.width}px`, async ({ page }, testInfo) => {

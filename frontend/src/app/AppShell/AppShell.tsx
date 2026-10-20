@@ -46,6 +46,7 @@ export default function AppShell() {
     setHouseholdBootstrapVersion,
   ] = useState(0);
   const household = loadHousehold();
+  const [bootstrapError, setBootstrapError] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const householdId =
@@ -113,11 +114,7 @@ export default function AppShell() {
       household &&
       session.status === "signed-in" &&
       membership?.status === "active" &&
-      (
-        membership.role === "member" ||
-        membership.role === "viewer"
-      ) &&
-      household.members.length <= 1
+      household.members.length === 0
     );
   const shouldRepairMemberHouseholdShell =
     shouldRepairMemberHouseholdLink ||
@@ -318,7 +315,7 @@ export default function AppShell() {
       role:
         membership?.role,
       isRouteAllowed:
-        authRouteAccess.isAllowed,
+        authRouteAccess.isAllowed && !shouldRepairMemberHouseholdShell,
       isSettingsRoute:
         isCurrentSettingsPath,
     });
@@ -330,7 +327,7 @@ export default function AppShell() {
       role:
         membership?.role,
       isRouteAllowed:
-        authRouteAccess.isAllowed,
+        authRouteAccess.isAllowed && !shouldRepairMemberHouseholdShell,
       isSettingsRoute:
         isCurrentSettingsPath,
     });
@@ -351,15 +348,13 @@ export default function AppShell() {
       !session.user ||
       !membership ||
       membership.status !== "active" ||
-      (
-        membership.role !== "member" &&
-        membership.role !== "viewer"
-      )
+      !["owner", "admin", "member", "viewer"].includes(membership.role)
     ) {
       return;
     }
 
     let isActive = true;
+    setBootstrapError("");
     const signedInUser =
       session.user;
 
@@ -381,6 +376,10 @@ export default function AppShell() {
           await adapter.listRemoteHouseholdMembers(
             membership.householdId
           );
+        if (!isActive) return;
+        if (!remoteMembers.length) {
+          throw new Error("No household member profiles were returned. Existing browser records were preserved.");
+        }
         const currentMember =
           remoteMembers.find(
             (member) =>
@@ -402,7 +401,7 @@ export default function AppShell() {
             timezone:
               remoteHousehold.timezone ?? "",
             ownerMemberId:
-              membership.memberId,
+              remoteMembers.find((member) => member.role === "owner")?.id ?? membership.memberId,
             linkedByUserId:
               signedInUser.id,
             member: {
@@ -444,13 +443,13 @@ export default function AppShell() {
             (current) =>
               current + 1
           );
+        } else {
+          throw new Error("The linked household could not be saved in this browser.");
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (isActive) {
-          setHouseholdBootstrapVersion(
-            (current) => current
-          );
+          setBootstrapError(error instanceof Error ? error.message : "The household could not be loaded.");
         }
       });
 
@@ -622,6 +621,19 @@ export default function AppShell() {
             {!household &&
             isCurrentSettingsPath ? (
               <Outlet />
+            ) : isProductionAuthEnabled && session.status === "signed-in" &&
+              membership?.status === "active" && (!household || shouldRepairMemberHouseholdShell) ? (
+              <AuthRouteGatePanel
+                access={{
+                  status: "loading", isAllowed: false,
+                  title: bootstrapError ? "Household Load Failed" : "Loading Household",
+                  message: bootstrapError || "Loading your existing household and member profiles.",
+                }}
+                sessionLabel={session.status} roleLabel={membership.role}
+                error={bootstrapError} isSignInAvailable={false}
+                onSignIn={() => { void signIn(); }}
+                onRefresh={() => { setBootstrapError(""); setHouseholdBootstrapVersion((value) => value + 1); }}
+              />
             ) : householdPreferencesRestore
               .isRestoring ? (
               <AuthRouteGatePanel
