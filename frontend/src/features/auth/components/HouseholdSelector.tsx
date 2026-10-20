@@ -3,6 +3,7 @@ import type { HouseholdMembership } from "../models";
 import { getAuthBackendAdapter } from "../services/createAuthBackendAdapter";
 import { saveLinkedHouseholdShell } from "../../household/services/householdStorage";
 import Button from "../../../shared/ui/Button";
+import { loadHouseholdBootstrap } from "../services/loadHouseholdBootstrap";
 
 export default function HouseholdSelector({ memberships, currentHouseholdId, userId }: {
   memberships: HouseholdMembership[];
@@ -43,8 +44,7 @@ export default function HouseholdSelector({ memberships, currentHouseholdId, use
       const authorized = (await adapter.listMemberships()).some((item) =>
         item.householdId === selected && item.userId === userId && item.status === "active");
       if (!authorized) throw new Error("Active membership for this household could not be verified.");
-      const household = await adapter.loadRemoteHousehold(selected);
-      const members = await adapter.listRemoteHouseholdMembers(selected);
+      const { household, members } = await loadHouseholdBootstrap(adapter, selected);
       const member = members.find((item) => item.id === membership.memberId || item.remoteMemberId === membership.memberId);
       if (!member || !members.length) throw new Error("Your household member profile could not be loaded.");
       const verifiedUser = await adapter.getCurrentUser();

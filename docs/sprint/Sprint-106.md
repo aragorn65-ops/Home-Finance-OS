@@ -4,8 +4,22 @@
 
 **Branch:** main
 **Started:** 2026-10-20 (Asia/Manila)
-**Status:** Login release accepted by user; production promotion in progress. Invitation enhancements remain deferred.
+**Status:** Closed - password login release deployed and accepted in production. Invitation enhancements remain deferred.
 **Baseline:** `22fd49b`, with user-accepted receipt save/view and backup restore.
+
+## Closure (2026-10-20)
+
+Production build `6d1a707` deployed through main. Live route checks verified login,
+recovery, Settings tabs, and signed-out finance guards without browser errors.
+User confirmed production login for Lyn, Rasha, and Dadi Buboy. Preview acceptance
+also covered password recovery, correct household selection, records/balances
+after refresh, and same-browser switching. No backup restore or finance/database
+migration was performed for this release.
+
+Carry forward: investigate Rasha's slow initial load; invitation-code onboarding,
+broader security audit gates, and private-storage isolation are not closed by
+this release. The progress notes below are historical, not additional claims of
+completed scope.
 
 ## Intent
 

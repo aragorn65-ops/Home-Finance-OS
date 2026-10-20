@@ -172,3 +172,12 @@ main-branch Pages build. Keep magic-link fallback. No database migration, backup
 restore, membership cleanup, private-storage re-enable, or finance rewrite.
 Invitation-code onboarding and broader security gates remain separate unfinished
 work; this release is not approval for an unrestricted public launch.
+
+## Production Acceptance Complete
+
+Production build `6d1a707` was verified on the main origin: email/password inputs
+enabled, recovery and Settings rendered, protected finance routes required login,
+and no browser page errors were observed. User subsequently confirmed production
+logins passed for Lyn, Rasha, and Dadi Buboy. Login release closed on 2026-10-20
+(Asia/Manila). Slow initial loading for Rasha remains a follow-up, not a resolved
+performance issue. Earlier pending-gate notes are retained as historical evidence.

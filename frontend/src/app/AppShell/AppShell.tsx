@@ -36,6 +36,7 @@ import {
 import { reconcileHouseholdMembers } from "../../features/household/services/reconcileHouseholdMembers";
 import AppUnlockScreen from "../../features/security/components/AppUnlockScreen";
 import HouseholdSelector from "../../features/auth/components/HouseholdSelector";
+import { loadHouseholdBootstrap } from "../../features/auth/services/loadHouseholdBootstrap";
 import {
   getAppLockIdleTimeoutMinutes,
   isAppLockEnabled,
@@ -363,22 +364,14 @@ export default function AppShell() {
     const adapter =
       getAuthBackendAdapter();
 
-    void adapter
-      .loadRemoteHousehold(
-        membership.householdId
-      )
-      .then(async (remoteHousehold) => {
+    void loadHouseholdBootstrap(adapter, membership.householdId)
+      .then(({ household: remoteHousehold, members: remoteMembers }) => {
         if (!isActive) {
           return;
         }
 
         const now =
           new Date();
-        const remoteMembers =
-          await adapter.listRemoteHouseholdMembers(
-            membership.householdId
-          );
-        if (!isActive) return;
         if (!remoteMembers.length) {
           throw new Error("No household member profiles were returned. Existing browser records were preserved.");
         }
