@@ -509,3 +509,41 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.settings-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 24px;
+}
+
+.settings-tabs [role="tab"] {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text);
+  padding: 12px 16px;
+  font-weight: 600;
+}
+
+.settings-tabs [aria-selected="true"] {
+  border-bottom-color: var(--color-primary, #2563eb);
+}
+
+.settings-tabs [role="tab"]:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: -2px;
+}
+
+.settings-panels > [hidden] {
+  display: none;
+}
+
+.settings-account-security {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  margin-bottom: 24px;
+  overflow-wrap: anywhere;
+}

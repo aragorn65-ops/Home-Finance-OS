@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { KeyRound } from "lucide-react";
 
 import PageHeader from "../../../shared/ui/PageHeader";
 import Card from "../../../shared/ui/Card";
@@ -95,6 +96,7 @@ const appLockIdleTimeoutOptions = [
 ];
 
 export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState("account");
   const navigate =
     useNavigate();
 
@@ -1352,7 +1354,48 @@ export default function SettingsPage() {
         }
       />
 
-      <div className="space-y-6">
+      <div className="settings-tabs" role="tablist" aria-label="Settings">
+        {[
+          ["account", "Account"],
+          ["preferences", "Preferences"],
+          ...(canManageHouseholdSettings ? [["backups", "Backups"]] : []),
+          ...(canViewAuthDiagnostics ? [["diagnostics", "Status & Tests"]] : []),
+          ["advanced", "Advanced"],
+        ].map(([id, label]) => (
+          <button key={id} id={`settings-tab-${id}`} type="button" role="tab"
+            aria-selected={activeTab === id} aria-controls={`settings-panel-${id}`}
+            tabIndex={activeTab === id ? 0 : -1}
+            onClick={() => setActiveTab(id)}
+            onKeyDown={(event) => {
+              const tabs = Array.from(event.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+              const index = tabs.indexOf(event.currentTarget);
+              const next = event.key === "ArrowRight" ? (index + 1) % tabs.length
+                : event.key === "ArrowLeft" ? (index + tabs.length - 1) % tabs.length
+                : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : -1;
+              if (next < 0) return;
+              event.preventDefault();
+              tabs[next].focus();
+              tabs[next].click();
+            }}>{label}</button>
+        ))}
+      </div>
+
+      <div className="settings-panels">
+        <section hidden={activeTab !== "account"} id="settings-panel-account"
+          role="tabpanel" aria-labelledby="settings-tab-account" className="space-y-6">
+          <div className="settings-account-security">
+            <h2 className="text-lg font-semibold text-foreground">Account Security</h2>
+            {session.user?.email && <p className="text-muted-foreground">{session.user.email}</p>}
+            {isProductionAuthEnabled ? (
+              <Button onClick={() => navigate(session.status === "signed-in" ? "/account/password" : "/login")}>
+                <KeyRound size={18} aria-hidden="true" />
+                {session.status === "signed-in" ? "Set or Change Password" : "Sign In"}
+              </Button>
+            ) : <p>Cloud sign-in is not enabled in this preview.</p>}
+          </div>
+        </section>
+        <section hidden={activeTab !== "preferences"} id="settings-panel-preferences"
+          role="tabpanel" aria-labelledby="settings-tab-preferences" className="space-y-6">
         <Card>
           <div className="space-y-5">
             <div className="space-y-2">
@@ -1835,6 +1878,8 @@ export default function SettingsPage() {
         </Card>
         )}
 
+        </section>
+        <section hidden={activeTab !== "account"} aria-label="Device security" className="space-y-6">
         <Card>
           <div className="space-y-5">
             <div>
@@ -2068,20 +2113,17 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {isAuthFeatureEnabled() && (
-          <section aria-label="Account security">
-            <h2 className="text-lg font-semibold text-foreground">Account Security</h2>
-            <button type="button" className="settings-secondary-button"
-              onClick={() => navigate("/account/password")}>Set or change password</button>
-          </section>
-        )}
-
-        {canViewAuthDiagnostics && (
+        </section>
+        <section hidden={activeTab !== "diagnostics"} id="settings-panel-diagnostics"
+          role="tabpanel" aria-labelledby="settings-tab-diagnostics" className="space-y-6">
+        {canViewAuthDiagnostics && activeTab === "diagnostics" && (
         <Card>
           <AuthDiagnosticsPanel />
         </Card>
         )}
-
+        </section>
+        <section hidden={activeTab !== "backups"} id="settings-panel-backups"
+          role="tabpanel" aria-labelledby="settings-tab-backups" className="space-y-6">
         {canManageHouseholdSettings && (
         <Card>
           <div className="space-y-5">
@@ -2470,6 +2512,9 @@ export default function SettingsPage() {
         </Card>
         )}
 
+        </section>
+        <section hidden={activeTab !== "advanced"} id="settings-panel-advanced"
+          role="tabpanel" aria-labelledby="settings-tab-advanced" className="space-y-6">
         {canManageHouseholdSettings && (
         <Card>
           <div className="space-y-5">
@@ -2620,6 +2665,7 @@ export default function SettingsPage() {
             )}
           </div>
         </Card>
+        </section>
       </div>
     </>
   );

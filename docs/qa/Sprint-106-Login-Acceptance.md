@@ -103,3 +103,21 @@ then sign out and sign in with that password. Verify refresh and recovery.
 Compare financial records, payment applications and authorized receipts before
 and after same-browser account switching. Production promotion remains gated
 on these results; synthetic identity tests do not replace financial acceptance.
+
+## Preview Deployment (2026-10-20)
+
+- Commit: `805fd3a`.
+- Branch alias: `https://login-preview.home-finance-os.pages.dev`.
+- Immutable deployment: `https://b0265b87.home-finance-os.pages.dev`.
+- Built with the existing production public client configuration; no service-role
+  credentials or database migrations. Production deployment was not replaced.
+- Deployed Chromium checks: `/login`, `/reset-password`, `/app/transactions`,
+  `/app/settlements` returned HTTP 200 with no page errors. Signed-out finance
+  routes showed Sign In Required. Login screenshot inspected.
+- Public Auth settings report email enabled, confirmation required, anonymous
+  sign-in disabled. Signup is currently enabled; this existing setting was not
+  changed. Household membership must remain server-authorized.
+- Redirect allowlist requires user dashboard verification. Add exact preview
+  alias `/login` and `/reset-password` URLs without replacing existing entries.
+  Verify production equivalents before production promotion.
+- No live account password was entered or changed by the agent.

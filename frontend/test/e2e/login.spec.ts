@@ -93,6 +93,41 @@ test("wrong password remains on login without false success", async ({ page }) =
   await expect(page).toHaveURL(/\/login$/);
 });
 
+for (const theme of ["light", "dark"] as const) {
+  test(`${theme} settings separates account controls from diagnostics and destructive actions`, async ({ page }, testInfo) => {
+    const requests = await fakeAuth(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript((value) => localStorage.setItem("hfos.themePreference", value), theme);
+    await page.goto("/login");
+    await page.getByLabel("Email", { exact: true }).fill(users.rasha.email);
+    await page.getByLabel("Password", { exact: true }).fill("test-password-only");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page).not.toHaveURL(/\/login$/);
+    await page.goto("/app/settings");
+    await expect(page.getByRole("tab", { name: "Account", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("button", { name: "Set or Change Password" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Auth Diagnostics" })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Reset All Application Data" })).not.toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("settings-account.png"), fullPage: true });
+    await page.getByRole("tab", { name: "Account", exact: true }).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByRole("tab", { name: "Preferences", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByLabel("Theme", { exact: true })).toBeVisible();
+    expect(requests.filter((request) => request.path.startsWith("/rest/") && request.method !== "GET")).toHaveLength(0);
+    await page.getByRole("tab", { name: "Status & Tests" }).click();
+    await expect(page.getByRole("heading", { name: "Auth Diagnostics" })).toBeVisible();
+    await page.getByRole("tab", { name: "Account", exact: true }).click();
+    await page.getByRole("button", { name: "Set or Change Password" }).click();
+    await expect(page).toHaveURL(/\/account\/password$/);
+    const diagnosticCalls = requests.filter((request) => request.path.startsWith("/rest/") && request.method !== "GET");
+    expect(diagnosticCalls.length).toBeGreaterThan(0);
+    for (const request of diagnosticCalls) {
+      expect(request.body).toMatchObject({ target_household_id: "00000000-0000-0000-0000-000000000000" });
+    }
+  });
+}
+
 test("same-browser Admin Rasha Lyn Admin login preserves Auth identity on refresh", async ({ page }) => {
   const requests = await fakeAuth(page);
   for (const identity of ["admin", "rasha", "lyn", "admin"] as const) {
