@@ -139,3 +139,18 @@ transaction hydration, and refresh with no server mutation requests. A storage
 test verifies shell creation and replacement preserve financial collections.
 Live household counts, balances, applications, and receipts still require user
 acceptance. Production promotion remains on hold.
+
+## Multiple Membership Selection
+
+The user's current-build screenshot showed eight memberships and a local link to
+`2ec4413e-9ddb-46d3-996d-4a80d86cb33c`, differing from the earlier production
+household `bafb3901-1666-4d6f-9471-153efbcf7cff`. Removed arbitrary first/newest
+membership selection when multiple households exist. Preserve an explicitly linked
+authorized household; otherwise require selection. Settings > Account now permits
+selection from active memberships with names, roles, and full IDs.
+
+Selection rechecks the authenticated user and active server membership, loads
+profiles, saves the browser link without clearing financial collections, then
+reloads into gated cloud hydration. It does not write server finance records.
+21 component tests and 13 Chromium tests pass, including multiple-household
+selection, refresh, and mobile layout. Live data presence is not yet verified.

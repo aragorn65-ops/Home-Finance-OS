@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { KeyRound } from "lucide-react";
+import HouseholdSelector from "../../auth/components/HouseholdSelector";
 
 import PageHeader from "../../../shared/ui/PageHeader";
 import Card from "../../../shared/ui/Card";
@@ -110,6 +111,7 @@ export default function SettingsPage() {
   const {
     session,
     membership,
+    allActiveMemberships,
   } = useHouseholdMembership(
     authHouseholdId
   );
@@ -1393,6 +1395,11 @@ export default function SettingsPage() {
               </Button>
             ) : <p>Cloud sign-in is not enabled in this preview.</p>}
           </div>
+          {isProductionAuthEnabled && session.user && allActiveMemberships.length > 0 && (
+            <HouseholdSelector key={session.user.id} memberships={allActiveMemberships}
+              currentHouseholdId={household?.authenticatedLink?.remoteHouseholdId}
+              userId={session.user.id} />
+          )}
         </section>
         <section hidden={activeTab !== "preferences"} id="settings-panel-preferences"
           role="tabpanel" aria-labelledby="settings-tab-preferences" className="space-y-6">

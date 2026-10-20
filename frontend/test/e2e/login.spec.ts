@@ -52,8 +52,9 @@ async function fakeAuth(page: Page) {
   return requests;
 }
 
-for (const role of ["owner", "admin"] as const) {
-  test(`fresh ${role} login restores existing household and finance records without backup`, async ({ page }) => {
+for (const scenario of ["owner", "admin", "multiple"] as const) {
+  const role = scenario === "admin" ? "admin" : "owner";
+  test(`fresh ${scenario} login restores existing household and finance records without backup`, async ({ page }, testInfo) => {
     await fakeAuth(page);
     const householdId = "44444444-4444-4444-8444-444444444444";
     const memberId = "55555555-5555-4555-8555-555555555555";
@@ -83,6 +84,9 @@ for (const role of ["owner", "admin"] as const) {
           createdAt: date, updatedAt: date }],
       };
       else if (["POST", "PATCH", "PUT", "DELETE"].includes(route.request().method())) writes.push(path);
+      if (scenario === "multiple" && path.endsWith("/household_memberships")) {
+        data = [{ ...(data as object[])[0], id: "other-membership", household_id: "66666666-6666-4666-8666-666666666666" }, ...(data as object[])];
+      }
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
     });
     await page.goto("/login");
@@ -90,12 +94,25 @@ for (const role of ["owner", "admin"] as const) {
     await page.getByLabel("Password", { exact: true }).fill("test-password-only");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page).not.toHaveURL(/\/login$/);
+    if (scenario === "multiple") {
+      await expect(page.getByLabel("Selected household")).toBeVisible();
+      expect(await page.evaluate(() => localStorage.getItem("hfos.v1.transactions"))).toBeNull();
+      await page.getByLabel("Selected household").selectOption(householdId);
+      await page.getByRole("button", { name: "Open Household" }).click();
+    }
     await expect.poll(() => page.evaluate(() => localStorage.getItem("hfos.v1.transactions"))).toContain("existing-transaction");
     await page.goto("/app/household-members");
     await expect(page.getByText("No household members are available.")).not.toBeVisible();
     await expect(page.getByText("Dadi Buboy", { exact: true }).first()).toBeVisible();
     await page.reload();
     await expect.poll(() => page.evaluate(() => localStorage.getItem("hfos.v1.transactions"))).toContain("existing-transaction");
+    if (scenario === "multiple") {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/app/settings");
+      await expect(page.getByLabel("Selected household")).toHaveValue(householdId);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath("household-selector.png"), fullPage: true });
+    }
     expect(writes).toEqual([]);
   });
 }

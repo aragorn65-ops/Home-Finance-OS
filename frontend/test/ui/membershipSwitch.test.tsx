@@ -14,6 +14,27 @@ vi.mock("../../src/features/auth/services/createAuthBackendAdapter", () => ({
 }));
 afterEach(cleanup);
 
+it("requires household selection instead of choosing the first owner membership", async () => {
+  mocks.session = { status: "signed-in", user: { id: "owner" } };
+  mocks.listMemberships.mockResolvedValue(["empty-home", "real-home"].map((householdId) => ({
+    id: householdId, userId: "owner", householdId, role: "owner", status: "active",
+  })));
+  const { result } = renderHook(() => useHouseholdMembership(""));
+  await waitFor(() => expect(result.current.isLoading).toBe(false));
+  expect(result.current.membership).toBeUndefined();
+  expect(result.current.allActiveMemberships).toHaveLength(2);
+});
+
+it("keeps the explicitly linked member household instead of switching to the newest membership", async () => {
+  mocks.listMemberships.mockResolvedValue(["real-home", "new-home"].map((householdId) => ({
+    id: householdId, userId: "owner", householdId, role: "member", status: "active",
+    createdAt: new Date(householdId === "new-home" ? "2026-10-20" : "2026-01-01"),
+  })));
+  const { result } = renderHook(() => useHouseholdMembership("real-home"));
+  await waitFor(() => expect(result.current.isLoading).toBe(false));
+  expect(result.current.membership?.householdId).toBe("real-home");
+});
+
 it("never exposes the previous member while the next membership request is pending", async () => {
   const row = (id: string) => ({ id, userId: id, householdId: "home", role: "member", status: "active", createdAt: new Date() });
   mocks.session = { status: "signed-in", user: { id: "rasha" } };

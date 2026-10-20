@@ -125,36 +125,16 @@ export function useHouseholdMembership(
         const scopedMembership =
           memberships[0];
 
-        if (
-          scopedMembership &&
-          (
-            scopedMembership.role ===
-              "owner" ||
-            scopedMembership.role ===
-              "admin"
-          )
-        ) {
+        if (householdId && scopedMembership) {
           return scopedMembership;
         }
-
-        const newestMembership =
-          [...allActiveMemberships].sort(
-            (
-              left,
-              right
-            ) =>
-              getMembershipTime(right) -
-              getMembershipTime(left)
-          )[0];
-
-        return (
-          newestMembership ??
-          scopedMembership
-        );
+        const householdIds = new Set(allActiveMemberships.map((item) => item.householdId));
+        return householdIds.size === 1 ? allActiveMemberships[0] : undefined;
       },
       [
         allActiveMemberships,
         memberships,
+        householdId,
       ]
     );
 
@@ -170,15 +150,4 @@ export function useHouseholdMembership(
     signIn,
     signOut,
   };
-}
-
-function getMembershipTime(
-  membership: HouseholdMembership
-): number {
-  return (
-    membership.acceptedAt ??
-    membership.invitedAt ??
-    membership.updatedAt ??
-    membership.createdAt
-  ).getTime();
 }

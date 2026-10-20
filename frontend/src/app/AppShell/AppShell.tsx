@@ -35,6 +35,7 @@ import {
 } from "../../features/household/services/householdStorage";
 import { reconcileHouseholdMembers } from "../../features/household/services/reconcileHouseholdMembers";
 import AppUnlockScreen from "../../features/security/components/AppUnlockScreen";
+import HouseholdSelector from "../../features/auth/components/HouseholdSelector";
 import {
   getAppLockIdleTimeoutMinutes,
   isAppLockEnabled,
@@ -72,6 +73,7 @@ export default function AppShell() {
   const {
     session,
     membership,
+    allActiveMemberships,
     error:
       authError,
     isLoading:
@@ -621,6 +623,10 @@ export default function AppShell() {
             {!household &&
             isCurrentSettingsPath ? (
               <Outlet />
+            ) : isProductionAuthEnabled && session.user && !isMembershipLoading &&
+              !membership && allActiveMemberships.length > 0 ? (
+              <HouseholdSelector key={session.user.id} memberships={allActiveMemberships}
+                userId={session.user.id} />
             ) : isProductionAuthEnabled && session.status === "signed-in" &&
               membership?.status === "active" && (!household || shouldRepairMemberHouseholdShell) ? (
               <AuthRouteGatePanel
