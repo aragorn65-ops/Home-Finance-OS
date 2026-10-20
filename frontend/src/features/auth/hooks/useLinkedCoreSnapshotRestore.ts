@@ -23,6 +23,7 @@ import {
   browserCoreSnapshotLocalWriter,
 } from "../services/browserCoreSnapshotLocalWriter";
 import { subscribeToCoreSnapshotRefreshFallback } from "../services/coreSnapshotRefreshFallback";
+import { refreshRemoteSettlementCache } from "../../settlements/services/remoteSettlementSync";
 
 export const coreSnapshotRestoredEvent =
   "hfos-core-snapshot-restored";
@@ -32,6 +33,7 @@ interface UseLinkedCoreSnapshotRestoreOptions {
     | LinkedCoreSnapshotHousehold
     | null;
   sessionStatus: AuthSessionStatus;
+  userId?: string;
   role?: AuthHouseholdRole;
   isRouteAllowed: boolean;
   isSettingsRoute: boolean;
@@ -40,6 +42,7 @@ interface UseLinkedCoreSnapshotRestoreOptions {
 export function useLinkedCoreSnapshotRestore({
   household,
   sessionStatus,
+  userId,
   role,
   isRouteAllowed,
   isSettingsRoute,
@@ -84,6 +87,7 @@ export function useLinkedCoreSnapshotRestore({
   const ownerMemberId =
     household?.authenticatedLink
       ?.ownerMemberId;
+  const restoreKey = [localHouseholdId, remoteHouseholdId, userId, sessionStatus, role].join(":");
 
   useEffect(() => {
     if (!shouldRestore) {
@@ -99,13 +103,6 @@ export function useLinkedCoreSnapshotRestore({
     ) {
       return;
     }
-
-    const restoreKey = [
-      localHouseholdId,
-      remoteHouseholdId,
-      sessionStatus,
-      role,
-    ].join(":");
 
     if (
       restoredKeys.current.has(
@@ -142,19 +139,24 @@ export function useLinkedCoreSnapshotRestore({
         browserCoreSnapshotLocalWriter,
       isCurrent: () => isActive,
     })
-      .then((result) => {
+      .then(async (result) => {
         if (!isActive) {
           return;
         }
-
-        setIsRestoring(false);
-        isFetching.current = false;
 
         if (
           result.status ===
           "restored"
         ) {
+          if (isInitialRestore) {
+            await refreshRemoteSettlementCache(
+              getAuthBackendAdapter(), remoteHouseholdId, localHouseholdId, () => isActive
+            );
+            if (!isActive) return;
+          }
           restoredKeys.current.add(restoreKey);
+          setIsRestoring(false);
+          isFetching.current = false;
           setBackgroundError("");
           window.dispatchEvent(
             new CustomEvent(
@@ -168,6 +170,8 @@ export function useLinkedCoreSnapshotRestore({
           return;
         }
 
+        setIsRestoring(false);
+        isFetching.current = false;
         if (result.reason === "superseded-restore") return;
 
         reportError(
@@ -204,6 +208,7 @@ export function useLinkedCoreSnapshotRestore({
     role,
     sessionStatus,
     shouldRestore,
+    restoreKey,
   ]);
 
   useEffect(() => {
@@ -243,7 +248,7 @@ export function useLinkedCoreSnapshotRestore({
   ]);
 
   return {
-    isRestoring,
+    isRestoring: isRestoring || (shouldRestore && !error && !restoredKeys.current.has(restoreKey)),
     error,
     backgroundError,
     isRequired:

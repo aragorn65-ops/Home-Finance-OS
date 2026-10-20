@@ -43,6 +43,9 @@ export function useHouseholdMembership(
     useState("");
   const [isLoading, setIsLoading] =
     useState(false);
+  const [loadedKey, setLoadedKey] = useState("");
+  const sessionKey = `${session.user?.id ?? ""}:${householdId}`;
+  const isCurrent = session.status === "signed-in" && loadedKey === sessionKey;
 
   useEffect(() => {
     let isActive = true;
@@ -55,6 +58,7 @@ export function useHouseholdMembership(
       setAllActiveMemberships([]);
       setError("");
       setIsLoading(false);
+      setLoadedKey("");
       return () => {
         isActive = false;
       };
@@ -89,6 +93,7 @@ export function useHouseholdMembership(
           )
         );
         setIsLoading(false);
+        setLoadedKey(sessionKey);
       })
       .catch(() => {
         if (!isActive) {
@@ -98,6 +103,7 @@ export function useHouseholdMembership(
         setMemberships([]);
         setAllActiveMemberships([]);
         setIsLoading(false);
+        setLoadedKey(sessionKey);
         setError(
           "Household membership could not be loaded."
         );
@@ -110,6 +116,7 @@ export function useHouseholdMembership(
     householdId,
     session.status,
     session.user?.id,
+    sessionKey,
   ]);
 
   const membership =
@@ -153,12 +160,12 @@ export function useHouseholdMembership(
 
   return {
     session,
-    membership,
-    memberships,
-    allActiveMemberships,
+    membership: isCurrent ? membership : undefined,
+    memberships: isCurrent ? memberships : [],
+    allActiveMemberships: isCurrent ? allActiveMemberships : [],
     error:
       sessionError || error,
-    isLoading,
+    isLoading: isLoading || (session.status === "signed-in" && !isCurrent),
     refreshSession,
     signIn,
     signOut,

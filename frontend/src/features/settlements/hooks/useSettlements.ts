@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -15,7 +16,6 @@ import {
   browserCoreSnapshotRecordSource,
 } from "../../auth/services/browserCoreSnapshotRecordSource";
 import type {
-  RemoteSettlement,
   RemoteSettlementDraft,
 } from "../../auth/models";
 
@@ -33,12 +33,11 @@ import SettlementBalanceService from "../services/SettlementBalanceService";
 import {
   createRemoteSettlementApplicationDrafts,
 } from "../services/settlementRemoteDrafts";
-import { stageAttachmentRecords } from "../../../shared/storage/attachmentContentStore";
 import {
   saveSettlementCoreSnapshotIfAllowed,
 } from "../services/settlementCoreSnapshotSave";
 import {
-  persistRemoteSettlementRecords,
+  refreshRemoteSettlementCache,
 } from "../services/remoteSettlementSync";
 
 import {
@@ -49,59 +48,6 @@ import {
 interface UseSettlementsOptions {
   remoteEnabled?: boolean;
   localHouseholdId?: string;
-}
-
-function mapRemoteSettlement(
-  settlement: RemoteSettlement,
-  localHouseholdId?: string
-): Settlement {
-  return {
-    id:
-      settlement.localRecordId ??
-      settlement.id,
-    householdId:
-      localHouseholdId ??
-      settlement.householdId,
-    fromMemberId:
-      settlement.fromMemberId,
-    toMemberId:
-      settlement.toMemberId,
-    amount:
-      settlement.amount,
-    settlementDate:
-      new Date(
-        settlement.settlementDate
-      ),
-    sourceAccountId:
-      settlement.sourceAccountId,
-    destinationAccountId:
-      settlement.destinationAccountId,
-    applicationMethod:
-      settlement.applicationMethod,
-    referenceNumber:
-      settlement.referenceNumber,
-    notes:
-      settlement.notes,
-    attachments:
-      settlement.attachments.map(
-        (attachment) => ({
-          ...attachment,
-          createdAt: new Date(
-            attachment.createdAt
-          ),
-        })
-      ),
-    isActive:
-      settlement.isActive,
-    createdAt:
-      new Date(
-        settlement.createdAt
-      ),
-    updatedAt:
-      new Date(
-        settlement.updatedAt
-      ),
-  };
 }
 
 function createRemoteSettlementDraft(
@@ -225,6 +171,15 @@ export default function useSettlements(
 
   const [error, setError] =
     useState("");
+  const active = useRef(false);
+  const refreshGeneration = useRef(0);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+      refreshGeneration.current += 1;
+    };
+  }, []);
 
   /**
    * Reloads settlement records and all derived
@@ -252,43 +207,20 @@ export default function useSettlements(
   const loadRemoteSettlements =
     useCallback(async () => {
       if (
+        !active.current ||
         !remoteEnabled ||
         !householdId.trim()
       ) {
         return;
       }
 
+      const generation = ++refreshGeneration.current;
+      const isCurrent = () => active.current && generation === refreshGeneration.current;
       try {
         const adapter =
           getAuthBackendAdapter();
-        const [
-          remoteSettlements,
-          remoteApplications,
-        ] = await Promise.all([
-          adapter.listRemoteSettlements(
-            householdId
-          ),
-          adapter
-            .listRemoteSettlementApplications(
-              householdId
-            ),
-        ]);
-        const mappedRemoteSettlements =
-          remoteSettlements.map(
-            (settlement) =>
-              mapRemoteSettlement(
-                settlement,
-                localHouseholdId
-              )
-          );
-
-        await stageAttachmentRecords(mappedRemoteSettlements);
-        persistRemoteSettlementRecords(
-          localHouseholdId,
-          remoteSettlements,
-          mappedRemoteSettlements,
-          remoteApplications
-        );
+        const saved = await refreshRemoteSettlementCache(adapter, householdId, localHouseholdId, isCurrent);
+        if (!saved) return;
 
         setSettlements(
           loadSettlements()
@@ -304,6 +236,7 @@ export default function useSettlements(
 
         setError("");
       } catch (failure) {
+        if (!isCurrent()) return;
         setSettlements(
           loadSettlements()
         );

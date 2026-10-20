@@ -1,11 +1,8 @@
 import type {
-  RemoteMigrationAccountUploadPayload,
   RemoteMigrationAccountUploadStagingResult,
   RemoteMigrationCommitResult,
   RemoteMigrationDraft,
-  RemoteMigrationTransactionUploadPayload,
   RemoteMigrationTransactionUploadStagingResult,
-  RemoteMigrationUploadManifest,
   RemoteMigrationUploadStagingResult,
   RemoteMigrationValidation,
 } from "../models";
@@ -41,8 +38,7 @@ export class DisabledRemoteMigrationRepository
   }
 
   async stageUploadManifest(
-    draftId: string,
-    _manifest: RemoteMigrationUploadManifest
+    draftId: string
   ): Promise<RemoteMigrationUploadStagingResult> {
     throw new Error(
       `Remote migration upload staging is disabled for ${draftId}.`
@@ -50,8 +46,7 @@ export class DisabledRemoteMigrationRepository
   }
 
   async stageAccounts(
-    draftId: string,
-    _payload: RemoteMigrationAccountUploadPayload
+    draftId: string
   ): Promise<RemoteMigrationAccountUploadStagingResult> {
     throw new Error(
       `Remote migration account staging is disabled for ${draftId}.`
@@ -59,8 +54,7 @@ export class DisabledRemoteMigrationRepository
   }
 
   async stageTransactions(
-    draftId: string,
-    _payload: RemoteMigrationTransactionUploadPayload
+    draftId: string
   ): Promise<RemoteMigrationTransactionUploadStagingResult> {
     throw new Error(
       `Remote migration transaction staging is disabled for ${draftId}.`

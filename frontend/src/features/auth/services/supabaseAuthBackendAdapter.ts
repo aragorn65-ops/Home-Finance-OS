@@ -59,6 +59,14 @@ interface SupabaseAuthClient {
       credentials:
         SupabasePasswordlessCredentials
     ): Promise<SupabaseErrorResult>;
+    signInWithPassword(credentials: {
+      email: string;
+      password: string;
+    }): Promise<SupabaseSessionResult>;
+    resetPasswordForEmail(email: string, options: {
+      redirectTo: string;
+    }): Promise<SupabaseErrorResult>;
+    updateUser(attributes: { password: string }): Promise<SupabaseUserResult>;
     signOut():
       Promise<SupabaseErrorResult>;
     onAuthStateChange(
@@ -706,6 +714,8 @@ export class SupabaseAuthBackendAdapter
 {
   private readonly config:
     SupabaseAuthBackendAdapterConfig;
+  private clientPromise?: Promise<SupabaseAuthClient>;
+  private recoveryUserId = readPasswordRecoveryUserId();
 
   constructor(
     config:
@@ -744,6 +754,9 @@ export class SupabaseAuthBackendAdapter
 
     return {
       status: "signed-in",
+      ...(this.recoveryUserId === data.session.user.id
+        ? { requiresPasswordUpdate: true }
+        : {}),
       user:
         mapSupabaseUser(
           data.session.user
@@ -772,8 +785,30 @@ export class SupabaseAuthBackendAdapter
 
     if (!email) {
       throw new Error(
-        "Supabase magic-link sign-in requires an email address."
+        "Supabase sign-in requires an email address."
       );
+    }
+
+    if (request.method === "password") {
+      if (!request.password) {
+        throw new Error("Password sign-in requires a password.");
+      }
+
+      const client = await this.getClient();
+      const { data, error } = await client.auth.signInWithPassword({
+        email,
+        password: request.password,
+      });
+
+      if (error || !data.session) {
+        throw new Error("Unable to sign in. Check your email and password and try again.");
+      }
+
+      return {
+        status: "signed-in",
+        user: mapSupabaseUser(data.session.user),
+        expiresAt: mapSupabaseSessionExpiry(data.session),
+      };
     }
 
     const {
@@ -798,6 +833,81 @@ export class SupabaseAuthBackendAdapter
     }
 
     return this.getSession();
+  }
+
+  async requestPasswordReset(email: string, redirectTo: string): Promise<void> {
+    if (!this.isConfigured()) {
+      throw new Error(this.createUnavailableMessage("password recovery"));
+    }
+    if (!email.trim()) {
+      throw new Error("Password recovery requires an email address.");
+    }
+
+    const redirect = new URL(redirectTo);
+    const isLocalPreview = ["localhost", "127.0.0.1", "[::1]"].includes(redirect.hostname);
+    if (
+      (redirect.protocol !== "https:" && !(redirect.protocol === "http:" && isLocalPreview)) ||
+      redirect.username || redirect.password || redirect.hash
+    ) {
+      throw new Error("Password recovery requires a secure callback URL.");
+    }
+
+    try {
+      const client = await this.getClient();
+      const { error } = await client.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: redirect.href,
+      });
+      if (error) throw new Error("Recovery request rejected.");
+    } catch {
+      throw new Error("Unable to request password recovery. Please try again later.");
+    }
+  }
+
+  async updatePassword(password: string, expectedUserId: string): Promise<void> {
+    if (!this.isConfigured()) {
+      throw new Error(this.createUnavailableMessage("password update"));
+    }
+    if (password.length < 8) {
+      throw new Error("Use a password with at least 8 characters.");
+    }
+    if (!expectedUserId) {
+      throw new Error("Sign in again before changing your password.");
+    }
+
+    try {
+      const client = await this.getClient();
+      // Validate the user with Auth, not a cached household member or session.
+      const verified = await client.auth.getUser();
+      if (verified.error || verified.data.user?.id !== expectedUserId) {
+        throw new Error("The authenticated account changed.");
+      }
+      const result = await client.auth.updateUser({ password });
+      if (result.error || result.data.user?.id !== expectedUserId) {
+        throw new Error("Password update was not confirmed.");
+      }
+      this.setRecoveryUserId(undefined);
+    } catch {
+      throw new Error("Unable to update your password. Verify your session and password requirements, then try again.");
+    }
+  }
+
+  async getPasswordRecoveryUser(): Promise<AuthUser | undefined> {
+    if (!this.isConfigured()) return undefined;
+    await this.getSession();
+    if (!this.recoveryUserId) return undefined;
+    const user = await this.getCurrentUser();
+    return user?.id === this.recoveryUserId ? user : undefined;
+  }
+
+  private setRecoveryUserId(userId: string | undefined): void {
+    this.recoveryUserId = userId;
+    try {
+      if (typeof window === "undefined") return;
+      if (userId) window.sessionStorage.setItem("hfos-password-recovery-user", userId);
+      else window.sessionStorage.removeItem("hfos-password-recovery-user");
+    } catch {
+      // A blocked session store must not prevent verified password recovery.
+    }
   }
 
   async signOut():
@@ -2556,7 +2666,8 @@ export class SupabaseAuthBackendAdapter
             .onAuthStateChange(
               () => {
                 if (!isDisposed) {
-                  onChange();
+                  // Avoid making another Auth request inside the SDK lock.
+                  setTimeout(() => { if (!isDisposed) onChange(); }, 0);
                 }
               }
             )
@@ -2978,34 +3089,45 @@ export class SupabaseAuthBackendAdapter
 
   private async getClient():
     Promise<SupabaseAuthClient> {
-    if (this.config.client) {
-      return this.config.client;
-    }
+    if (this.clientPromise) return this.clientPromise;
+    this.clientPromise = this.initializeClient().catch((error: unknown) => {
+      this.clientPromise = undefined;
+      throw error;
+    });
+    return this.clientPromise;
+  }
 
-    if (
-      !this.config.projectUrl ||
-      !this.config.anonKey
-    ) {
-      throw new Error(
-        this.createUnavailableMessage(
-          "client creation"
-        )
-      );
-    }
-
-    const {
-      createClient,
-    } = await import(
-      "@supabase/supabase-js"
-    );
-
-    this.config.client =
-      createClient(
+  private async initializeClient(): Promise<SupabaseAuthClient> {
+    if (!this.config.client) {
+      if (!this.config.projectUrl || !this.config.anonKey) {
+        throw new Error(this.createUnavailableMessage("client creation"));
+      }
+      const { createClient } = await import("@supabase/supabase-js");
+      this.config.client = createClient(
         this.config.projectUrl,
         this.config.anonKey
       ) as unknown as SupabaseAuthClient;
+    }
+
+    // Capture recovery before a screen mounts; never call async Auth APIs here.
+    this.config.client.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        this.setRecoveryUserId(session?.user.id);
+      } else if (event === "SIGNED_OUT" || (session && session.user.id !== this.recoveryUserId)) {
+        this.setRecoveryUserId(undefined);
+      }
+    });
 
     return this.config.client;
+  }
+}
+
+function readPasswordRecoveryUserId(): string | undefined {
+  try {
+    return typeof window === "undefined" ? undefined :
+      window.sessionStorage.getItem("hfos-password-recovery-user") || undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -4292,11 +4414,8 @@ function createSupabaseSettlementMutationParameters(
 function createLegacySupabaseSettlementMutationParameters(
   parameters: Record<string, unknown>
 ): Record<string, unknown> {
-  const {
-    settlement_attachments:
-      _settlementAttachments,
-    ...legacyParameters
-  } = parameters;
+  const legacyParameters = { ...parameters };
+  delete legacyParameters.settlement_attachments;
 
   return legacyParameters;
 }

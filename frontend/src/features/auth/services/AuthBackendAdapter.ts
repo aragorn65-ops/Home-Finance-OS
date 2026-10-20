@@ -51,10 +51,15 @@ export interface RemoteHouseholdPreferencesInput {
   timezone: string;
 }
 
-export interface AuthSignInRequest {
+export type AuthSignInRequest = {
   email?: string;
   redirectTo?: string;
-}
+  method?: "magic-link";
+} | {
+  method: "password";
+  email: string;
+  password: string;
+};
 
 export interface InviteLinkedHouseholdMemberRequest {
   householdId: string;
@@ -113,6 +118,12 @@ export interface AuthBackendAdapter {
   ): Promise<AuthSession>;
 
   signOut(): Promise<void>;
+
+  requestPasswordReset(email: string, redirectTo: string): Promise<void>;
+
+  updatePassword(password: string, expectedUserId: string): Promise<void>;
+
+  getPasswordRecoveryUser(): Promise<AuthUser | undefined>;
 
   getCurrentUser():
     Promise<AuthUser | undefined>;

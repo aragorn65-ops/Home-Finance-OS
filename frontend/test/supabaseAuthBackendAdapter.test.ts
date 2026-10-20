@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { setTimeout as settleAsync } from "node:timers/promises";
 
 function createSignedOutClient(
   overrides: Record<string, unknown> = {}
@@ -26,6 +27,15 @@ function createSignedOutClient(
         return {
           error: null,
         };
+      },
+      async signInWithPassword() {
+        return { data: { session: null }, error: null };
+      },
+      async resetPasswordForEmail() {
+        return { error: null };
+      },
+      async updateUser() {
+        return { data: { user: null }, error: null };
       },
       async signOut() {
         return {
@@ -96,6 +106,219 @@ function createSignedInClient(
     ...overrides,
   });
 }
+
+test("password sign-in preserves the authenticated identity without OTP or household writes", async () => {
+  const { SupabaseAuthBackendAdapter } = await import(
+    "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+  );
+  const requests: unknown[] = [];
+  const client = createSignedOutClient({
+    async signInWithPassword(request: unknown) {
+      requests.push(request);
+      return {
+        data: { session: {
+          user: { id: "existing-rasha", email: "rasha@example.com", created_at: "2026-07-22T00:00:00Z" },
+          expires_at: 1800000000,
+        } },
+        error: null,
+      };
+    },
+    async signInWithOtp() { assert.fail("Must not send a magic link"); },
+    async getSession() { assert.fail("Must not reuse an older cached session"); },
+  });
+  client.rpc = async () => { assert.fail("Must not mutate household records"); };
+  client.from = () => { assert.fail("Must not query or mutate household records"); };
+  const adapter = new SupabaseAuthBackendAdapter({
+    projectUrl: "https://example.supabase.co", anonKey: "anon-key", client,
+  });
+  const session = await adapter.signIn({
+    method: "password", email: " rasha@example.com ", password: " unchanged password ",
+  });
+  assert.equal(session.status, "signed-in");
+  assert.equal(session.user?.id, "existing-rasha");
+  assert.deepEqual(requests, [{ email: "rasha@example.com", password: " unchanged password " }]);
+});
+
+test("password sign-in rejects missing credentials, rejected passwords and absent sessions", async () => {
+  const { SupabaseAuthBackendAdapter } = await import(
+    "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+  );
+  let calls = 0;
+  let rejected = true;
+  const adapter = new SupabaseAuthBackendAdapter({
+    projectUrl: "https://example.supabase.co", anonKey: "anon-key",
+    client: createSignedOutClient({
+      async signInWithPassword() {
+        calls += 1;
+        return { data: { session: null }, error: rejected ? { message: "sensitive provider detail" } : null };
+      },
+      async signInWithOtp() { assert.fail("Must not fall back to OTP"); },
+    }),
+  });
+  await assert.rejects(adapter.signIn({ method: "password", email: " ", password: "secret" }), /requires an email/);
+  await assert.rejects(adapter.signIn({ method: "password", email: "rasha@example.com", password: "" }), /requires a password/);
+  assert.equal(calls, 0);
+  const request = { method: "password" as const, email: "rasha@example.com", password: "secret" };
+  await assert.rejects(adapter.signIn(request), /^Error: Unable to sign in\. Check your email and password and try again\.$/);
+  rejected = false;
+  await assert.rejects(adapter.signIn(request), /Unable to sign in/);
+  assert.equal(calls, 2);
+});
+
+test("password recovery sends only the email and callback without changing records", async () => {
+  const { SupabaseAuthBackendAdapter } = await import(
+    "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+  );
+  const requests: unknown[] = [];
+  const client = createSignedOutClient({
+    async resetPasswordForEmail(email: string, options: unknown) {
+      requests.push({ email, options });
+      return { error: null };
+    },
+    async updateUser() { assert.fail("Recovery email is not a password change"); },
+  });
+  client.rpc = async () => { assert.fail("Must not mutate household records"); };
+  client.from = () => { assert.fail("Must not query household records"); };
+  const adapter = new SupabaseAuthBackendAdapter({
+    projectUrl: "https://example.supabase.co", anonKey: "anon-key", client,
+  });
+  await adapter.requestPasswordReset(" rasha@example.com ", "https://hfos.example/app/reset-password");
+  assert.deepEqual(requests, [{ email: "rasha@example.com", options: { redirectTo: "https://hfos.example/app/reset-password" } }]);
+  await assert.rejects(adapter.requestPasswordReset(" ", "https://hfos.example/app/reset-password"), /requires an email/);
+  for (const url of ["javascript:alert(1)", "http://hfos.example/app", "https://user:pass@hfos.example/app", "https://hfos.example/app#token"]) {
+    await assert.rejects(adapter.requestPasswordReset("rasha@example.com", url), /secure callback/);
+  }
+  assert.equal(requests.length, 1);
+  await adapter.requestPasswordReset("rasha@example.com", "http://127.0.0.1:5173/app/reset-password");
+  assert.equal(requests.length, 2);
+});
+
+test("password recovery does not expose provider errors or report failed requests as sent", async () => {
+  const { SupabaseAuthBackendAdapter } = await import(
+    "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+  );
+  for (const fail of [false, true]) {
+    const adapter = new SupabaseAuthBackendAdapter({
+      projectUrl: "https://example.supabase.co", anonKey: "anon-key",
+      client: createSignedOutClient({
+        async resetPasswordForEmail() {
+          if (fail) throw new Error("sensitive transport detail");
+          return { error: { message: "sensitive account detail" } };
+        },
+      }),
+    });
+    await assert.rejects(
+      adapter.requestPasswordReset("rasha@example.com", "https://hfos.example/app/reset-password"),
+      /^Error: Unable to request password recovery\. Please try again later\.$/
+    );
+  }
+});
+
+test("password setup updates only the verified existing Auth user", async () => {
+  const { SupabaseAuthBackendAdapter } = await import(
+    "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+  );
+  const updates: unknown[] = [];
+  const client = createSignedInClient({
+    async updateUser(attributes: unknown) {
+      updates.push(attributes);
+      return { data: { user: { id: "user-1" } }, error: null };
+    },
+  });
+  client.rpc = async () => { assert.fail("Must not mutate household records"); };
+  client.from = () => { assert.fail("Must not query household records"); };
+  const adapter = new SupabaseAuthBackendAdapter({
+    projectUrl: "https://example.supabase.co", anonKey: "anon-key", client,
+  });
+  await adapter.updatePassword(" unchanged secret ", "user-1");
+  assert.deepEqual(updates, [{ password: " unchanged secret " }]);
+  await assert.rejects(adapter.updatePassword("short", "user-1"), /at least 8/);
+  await assert.rejects(adapter.updatePassword("valid secret", ""), /Sign in again/);
+  await assert.rejects(adapter.updatePassword("valid secret", "another-user"), /Unable to update/);
+  assert.equal(updates.length, 1);
+});
+
+test("password setup fails closed for absent or invalid sessions and failed updates", async () => {
+  const { SupabaseAuthBackendAdapter } = await import(
+    "../src/features/auth/services/supabaseAuthBackendAdapter.ts"
+  );
+  for (const invalidSession of [true, false]) {
+    let writes = 0;
+    const adapter = new SupabaseAuthBackendAdapter({
+      projectUrl: "https://example.supabase.co", anonKey: "anon-key",
+      client: createSignedOutClient({
+        async getUser() {
+          return { data: { user: invalidSession ? null : { id: "user-1" } }, error: null };
+        },
+        async updateUser() {
+          writes += 1;
+          return { data: { user: null }, error: { message: "password rejected" } };
+        },
+      }),
+    });
+    await assert.rejects(adapter.updatePassword("valid secret", "user-1"), /Unable to update/);
+    assert.equal(writes, invalidSession ? 0 : 1);
+  }
+});
+
+test("disabled and prototype adapters reject password setup and recovery", async () => {
+  const { DisabledAuthBackendAdapter } = await import("../src/features/auth/services/disabledAuthBackendAdapter.ts");
+  const { InMemoryAuthBackendAdapter } = await import("../src/features/auth/services/inMemoryAuthBackendAdapter.ts");
+  for (const adapter of [new DisabledAuthBackendAdapter(), new InMemoryAuthBackendAdapter()]) {
+    await assert.rejects(adapter.requestPasswordReset(), /authentication/);
+    await assert.rejects(adapter.updatePassword(), /authentication/);
+  }
+});
+
+test("recovery sessions are guarded until a confirmed password update", async () => {
+  const { SupabaseAuthBackendAdapter } = await import("../src/features/auth/services/supabaseAuthBackendAdapter.ts");
+  type Session = { user: { id: string; email: string; created_at: string } };
+  let callback: ((event: string, session: Session | null) => void) | undefined;
+  const session: Session = { user: { id: "user-1", email: "rasha@example.com", created_at: "2026-07-22T00:00:00Z" } };
+  let failUpdate = true;
+  const adapter = new SupabaseAuthBackendAdapter({
+    projectUrl: "https://example.supabase.co", anonKey: "anon-key",
+    client: createSignedInClient({
+      async getSession() { return { data: { session }, error: null }; },
+      onAuthStateChange(onChange: typeof callback) {
+        callback = onChange;
+        return { data: { subscription: { unsubscribe() {} } } };
+      },
+      async updateUser() {
+        return { data: { user: session.user }, error: failUpdate ? { message: "rejected" } : null };
+      },
+    }),
+  });
+  assert.equal(await adapter.getPasswordRecoveryUser(), undefined);
+  callback?.("PASSWORD_RECOVERY", session);
+  assert.equal((await adapter.getSession()).requiresPasswordUpdate, true);
+  assert.equal((await adapter.getPasswordRecoveryUser())?.id, "user-1");
+  callback?.("TOKEN_REFRESHED", session);
+  assert.equal((await adapter.getSession()).requiresPasswordUpdate, true);
+  await assert.rejects(adapter.updatePassword("a valid password", "user-1"));
+  assert.equal((await adapter.getSession()).requiresPasswordUpdate, true);
+  failUpdate = false;
+  await adapter.updatePassword("a valid password", "user-1");
+  assert.equal((await adapter.getSession()).requiresPasswordUpdate, undefined);
+  assert.equal(await adapter.getPasswordRecoveryUser(), undefined);
+  callback?.("PASSWORD_RECOVERY", session);
+  callback?.("SIGNED_OUT", null);
+  assert.equal(await adapter.getPasswordRecoveryUser(), undefined);
+});
+
+test("recovery identity is not accepted from a different current account", async () => {
+  const { SupabaseAuthBackendAdapter } = await import("../src/features/auth/services/supabaseAuthBackendAdapter.ts");
+  const adapter = new SupabaseAuthBackendAdapter({
+    projectUrl: "https://example.supabase.co", anonKey: "anon-key",
+    client: createSignedInClient({
+      onAuthStateChange(callback: (event: string, session: unknown) => void) {
+        callback("PASSWORD_RECOVERY", { user: { id: "another-user" } });
+        return { data: { subscription: { unsubscribe() {} } } };
+      },
+    }),
+  });
+  assert.equal(await adapter.getPasswordRecoveryUser(), undefined);
+});
 
 function createBackupSummary() {
   return {
@@ -3780,15 +4003,16 @@ test(
         }
       );
 
-    await Promise.resolve();
+    await settleAsync(0);
     callback?.();
+    await settleAsync(0);
     assert.equal(
       changeCount,
       1
     );
 
     subscription.unsubscribe();
-    await Promise.resolve();
+    await settleAsync(0);
     callback?.();
 
     assert.equal(
@@ -3877,7 +4101,7 @@ test(
         }
       );
 
-    await Promise.resolve();
+    await settleAsync(0);
     callback?.();
     assert.equal(
       changeCount,
@@ -3900,8 +4124,7 @@ test(
     );
 
     subscription.unsubscribe();
-    await Promise.resolve();
-    await Promise.resolve();
+    await settleAsync(0);
     callback?.();
 
     assert.equal(
@@ -3990,7 +4213,7 @@ test(
         }
       );
 
-    await Promise.resolve();
+    await settleAsync(0);
     callback?.();
     assert.equal(
       changeCount,
@@ -4023,8 +4246,7 @@ test(
     );
 
     subscription.unsubscribe();
-    await Promise.resolve();
-    await Promise.resolve();
+    await settleAsync(0);
     callback?.();
 
     assert.equal(
@@ -4114,7 +4336,7 @@ test(
           }
         );
 
-    await Promise.resolve();
+    await settleAsync(0);
     callback?.();
     assert.equal(
       changeCount,
@@ -4137,8 +4359,7 @@ test(
     );
 
     subscription.unsubscribe();
-    await Promise.resolve();
-    await Promise.resolve();
+    await settleAsync(0);
     callback?.();
 
     assert.equal(

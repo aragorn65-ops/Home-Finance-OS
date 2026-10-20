@@ -4,6 +4,30 @@ Date: 2026-10-09 (Asia/Manila)
 
 Status: NOT READY FOR PRODUCTION. The isolation release remains reverted.
 
+## Receipt-Storage Fix Closed, 2026-10-17
+
+Status: CLOSED following user acceptance. This closes the receipt-capacity fix,
+not the private-storage isolation release.
+
+Production receipt-storage release: `22fd49b`. The user confirmed receipt
+upload/save and viewing in both Admin and Rasha accounts. On October 17, the
+user reported ALL PASS for the following backup-portability checks:
+
+- Exported a fresh backup containing the newly saved receipts.
+- Restored that backup in the local test preview, not production.
+- Opened receipts under Settlements, Transactions, and Utilities.
+- Confirmed balances and payment links matched after restore.
+
+Evidence: user-reported manual acceptance, in addition to the release's 307
+passing automated tests, production build, and targeted lint. These acceptance
+results supersede the pending receipt checks in the historical entries below;
+they are not a claim of assistant-operated browser verification.
+
+The fresh, successfully restored backup is the baseline for subsequent work.
+Its file path was not supplied in the acceptance report. No financial records,
+application code, or production settings were changed for this closure.
+Private-storage isolation remains disabled and open for separate verification.
+
 ## Baseline
 
 The user's latest local backup was inspected read-only. It contains 49

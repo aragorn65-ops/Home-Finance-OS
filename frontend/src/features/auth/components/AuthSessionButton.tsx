@@ -70,7 +70,7 @@ export default function AuthSessionButton({
       className="app-header__auth-button"
       title={
         error ||
-        "Open Settings sign in"
+        "Sign in to Home Finance OS"
       }
       aria-label="Sign in"
       onClick={onSignIn}

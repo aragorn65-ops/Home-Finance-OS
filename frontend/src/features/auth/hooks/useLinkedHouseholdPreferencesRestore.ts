@@ -134,6 +134,7 @@ export function useLinkedHouseholdPreferencesRestore({
         getAuthBackendAdapter(),
       writer:
         browserHouseholdPreferencesLocalWriter,
+      isCurrent: () => isActive,
     })
       .then((result) => {
         if (!isActive) {

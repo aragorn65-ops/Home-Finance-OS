@@ -38,6 +38,7 @@ export interface LinkedHouseholdPreferencesRestoreOptions {
     | undefined;
   adapter: HouseholdPreferencesAdapter;
   writer: HouseholdPreferencesLocalWriter;
+  isCurrent?: () => boolean;
 }
 
 export type LinkedHouseholdPreferencesRestoreResult =
@@ -46,7 +47,8 @@ export type LinkedHouseholdPreferencesRestoreResult =
       reason:
         | "auth-disabled"
         | "missing-household"
-        | "unlinked-household";
+        | "unlinked-household"
+        | "superseded-restore";
     }
   | {
       status: "restored";
@@ -91,6 +93,9 @@ export async function restoreLinkedRemoteHouseholdPreferences(
     createLocalPreferences(
       remoteHousehold
     );
+  if (options.isCurrent && !options.isCurrent()) {
+    return { status: "skipped", reason: "superseded-restore" };
+  }
 
   if (
     !options.writer.replacePreferences(

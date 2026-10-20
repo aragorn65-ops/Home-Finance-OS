@@ -8,6 +8,9 @@ import {
   Route,
   Routes,
 } from "react-router-dom";
+import PasswordRecoveryGate from "../../features/auth/components/PasswordRecoveryGate";
+import SignInPage from "../../features/auth/pages/SignInPage";
+import PasswordPage from "../../features/auth/pages/PasswordPage";
 
 import AppShell from "../AppShell";
 
@@ -117,7 +120,11 @@ function RouteFallback() {
 export default function AppRouter() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <PasswordRecoveryGate>
       <Routes>
+        <Route path="/login" element={<SignInPage />} />
+        <Route path="/reset-password" element={<PasswordPage recovery />} />
+        <Route path="/account/password" element={<PasswordPage />} />
         {/* Startup */}
         <Route
           path="/"
@@ -244,6 +251,7 @@ export default function AppRouter() {
           />
         </Route>
       </Routes>
+      </PasswordRecoveryGate>
     </BrowserRouter>
   );
 }

@@ -134,13 +134,14 @@ export default function AuthDiagnosticsPanel() {
       setSupabaseSignInMessage("");
 
       try {
-        await signIn({
+        const requested = await signIn({
           email:
             supabaseEmail,
           redirectTo:
             window.location.origin +
             window.location.pathname,
         });
+        if (!requested) return;
         setSupabaseSignInMessage(
           "Magic link requested. Check your email inbox."
         );

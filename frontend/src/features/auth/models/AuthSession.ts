@@ -12,4 +12,5 @@ export interface AuthSession {
   status: AuthSessionStatus;
   user?: AuthUser;
   expiresAt?: Date;
+  requiresPasswordUpdate?: boolean;
 }

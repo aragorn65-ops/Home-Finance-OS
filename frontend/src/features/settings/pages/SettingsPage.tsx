@@ -2068,6 +2068,14 @@ export default function SettingsPage() {
           </div>
         </Card>
 
+        {isAuthFeatureEnabled() && (
+          <section aria-label="Account security">
+            <h2 className="text-lg font-semibold text-foreground">Account Security</h2>
+            <button type="button" className="settings-secondary-button"
+              onClick={() => navigate("/account/password")}>Set or change password</button>
+          </section>
+        )}
+
         {canViewAuthDiagnostics && (
         <Card>
           <AuthDiagnosticsPanel />

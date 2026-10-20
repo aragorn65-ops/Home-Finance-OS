@@ -4,7 +4,8 @@
 
 **Branch:** main
 **Started:** 2026-09-25
-**Status:** Active
+**Status:** Closed with explicit carry-forward
+**Closed:** 2026-10-20 (Asia/Manila)
 **Baseline:** `e88b523`, accepted at Sprint 104 closeout.
 
 ## Intent
@@ -71,5 +72,27 @@ and `git diff --check`. Record production evidence separately in
 
 ## Closeout
 
-Pending completion or explicit disposition of every scoped gate. No public
-beta launch decision has been made.
+Closed at the user's request on 2026-10-20. The receipt-storage fix was accepted
+on 2026-10-17: Admin and Rasha could view saved receipts; a fresh backup restored
+in the local test preview with receipts viewable in Settlements, Transactions,
+and Utilities, and balances and payment links matching. Closure evidence is in
+`docs/qa/Private-Storage-Redeploy-Gate.md`.
+
+Accepted releases: `231b642` (dark-theme popup fixes) and `22fd49b`
+(receipt-capacity fix). The latter passed 307 automated tests, build, targeted
+lint, and the subsequently reported manual acceptance checks. No financial data
+was changed for sprint closeout.
+
+Unchecked scope items above are NOT recorded as passed. Their disposition:
+
+- Server-side access boundaries and session-switch data checks carry into the
+  Sprint 106 login release gate; previous evidence must be reconciled, not
+  assumed complete or discarded.
+- Remaining route, reconnect, concurrent-edit, deployed-configuration, and
+  launch-evidence checks remain open release-readiness work.
+- Private-storage isolation remains disabled and separately tracked in
+  `docs/qa/Private-Storage-Redeploy-Gate.md`. Generalized conflict resolution and
+  full savings cloud persistence remain out of scope.
+
+No public beta launch approval is implied by this administrative closeout.
+Next active sprint: `docs/sprint/Sprint-106.md`.

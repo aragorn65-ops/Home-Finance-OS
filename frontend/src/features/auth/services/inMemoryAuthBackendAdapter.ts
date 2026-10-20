@@ -111,6 +111,18 @@ export class InMemoryAuthBackendAdapter
     this.store.signOut();
   }
 
+  async requestPasswordReset(): Promise<void> {
+    throw new Error("Password recovery requires Supabase authentication.");
+  }
+
+  async updatePassword(): Promise<void> {
+    throw new Error("Password updates require Supabase authentication.");
+  }
+
+  async getPasswordRecoveryUser(): Promise<AuthUser | undefined> {
+    return undefined;
+  }
+
   async getCurrentUser():
     Promise<AuthUser | undefined> {
     return this.store.getCurrentUser();

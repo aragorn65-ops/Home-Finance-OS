@@ -148,7 +148,7 @@ export default function Header({
             error={authSession.error}
             onSignIn={
               () => {
-                navigate("/app/settings");
+                navigate("/login");
               }
             }
             onSignOut={

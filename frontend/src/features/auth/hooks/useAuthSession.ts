@@ -79,13 +79,17 @@ export function useAuthSession() {
             authSessionChangedEvent
           )
         );
+        return true;
       } catch {
         setSession({
           status: "signed-out",
         });
         setError(
-          "Sign in is not available yet."
+          request?.method === "password"
+            ? "Unable to sign in. Check your email and password and try again."
+            : "Unable to request sign-in. Please try again later."
         );
+        return false;
       }
     }, []);
 

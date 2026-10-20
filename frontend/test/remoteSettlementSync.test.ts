@@ -12,7 +12,39 @@ import SettlementRepository from "../src/features/settlements/repositories/Settl
 import SettlementApplicationRepository from "../src/features/settlements/repositories/SettlementApplicationRepository.ts";
 import {
   persistRemoteSettlementRecords,
+  refreshRemoteSettlementCache,
 } from "../src/features/settlements/services/remoteSettlementSync.ts";
+
+test("an obsolete settlement response cannot overwrite the next account's cache", async () => {
+  const { localStorage } = installBrowserStorage();
+  localStorage.setItem(HFOS_STORAGE_KEYS.settlements, "next-account-payments");
+  localStorage.setItem(HFOS_STORAGE_KEYS.settlementApplications, "next-account-links");
+  let active = true;
+  let resolve!: (value: []) => void;
+  const pending = new Promise<[]>((done) => { resolve = done; });
+  const result = refreshRemoteSettlementCache({
+    listRemoteSettlements: () => pending,
+    listRemoteSettlementApplications: async () => [],
+  }, "remote-home", "local-home", () => active);
+  active = false;
+  resolve([]);
+  assert.equal(await result, false);
+  assert.equal(localStorage.getItem(HFOS_STORAGE_KEYS.settlements), "next-account-payments");
+  assert.equal(localStorage.getItem(HFOS_STORAGE_KEYS.settlementApplications), "next-account-links");
+});
+
+test("settlement refresh rechecks the session after staging attachment bytes", async () => {
+  const { localStorage } = installBrowserStorage();
+  localStorage.setItem(HFOS_STORAGE_KEYS.settlements, "preserved-payments");
+  let checks = 0;
+  const saved = await refreshRemoteSettlementCache({
+    listRemoteSettlements: async () => [],
+    listRemoteSettlementApplications: async () => [],
+  }, "remote-home", "local-home", () => ++checks < 3);
+  assert.equal(saved, false);
+  assert.equal(checks, 3);
+  assert.equal(localStorage.getItem(HFOS_STORAGE_KEYS.settlements), "preserved-payments");
+});
 
 for (const failedKey of [HFOS_STORAGE_KEYS.settlements, HFOS_STORAGE_KEYS.settlementApplications]) {
   test(`remote refresh preserves both cached collections when ${failedKey} cannot be written`, () => {

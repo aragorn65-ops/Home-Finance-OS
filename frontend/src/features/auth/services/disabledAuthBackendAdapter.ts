@@ -52,6 +52,18 @@ export class DisabledAuthBackendAdapter
     return Promise.resolve();
   }
 
+  async requestPasswordReset(): Promise<void> {
+    throw new Error("Password recovery is unavailable while authentication is disabled.");
+  }
+
+  async updatePassword(): Promise<void> {
+    throw new Error("Password updates are unavailable while authentication is disabled.");
+  }
+
+  async getPasswordRecoveryUser(): Promise<AuthUser | undefined> {
+    return undefined;
+  }
+
   async getCurrentUser():
     Promise<AuthUser | undefined> {
     return undefined;

@@ -312,6 +312,7 @@ export default function AppShell() {
   const coreSnapshotRestore =
     useLinkedCoreSnapshotRestore({
       household,
+      userId: session.user?.id,
       sessionStatus:
         session.status,
       role:
@@ -538,6 +539,7 @@ export default function AppShell() {
 
   if (
     !household &&
+    !isProductionAuthEnabled &&
     !isCurrentSettingsPath &&
     !isCurrentSettlementPath &&
     !isCurrentMemberTransparencyPath
@@ -747,9 +749,9 @@ export default function AppShell() {
                   authRouteAccess.status ===
                     "membership-required"
                 }
-                signInLabel="Go to Settings"
+                signInLabel="Sign in"
                 onSignIn={() => {
-                  navigate("/app/settings");
+                  navigate("/login");
                 }}
                 onRefresh={() => {
                   void refreshSession();

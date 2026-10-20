@@ -145,3 +145,5 @@ vite.config.ts.timestamp-*
 
 # Cloudflare Wrangler local cache
 .wrangler/
+frontend/test-results/
+frontend/playwright-report/
