@@ -299,6 +299,12 @@ function generateSettlementReference(
   return `SET-${timestamp}`;
 }
 
+function selectedApplicationAmount(applications: SettlementApplicationForm[]): number {
+  return applications.reduce((cents, application) => cents + (
+    application.isSelected ? Math.round(application.appliedAmount * 100) : 0
+  ), 0) / 100;
+}
+
 function getDefaultFormValues(
   householdId: string,
   members: HouseholdMember[],
@@ -918,7 +924,7 @@ export default function SettlementForm({
         amount:
           isAmountManuallyEdited
             ? current.amount
-            : getOldestOutstandingAmount(
+            : current.applicationMethod === "manual" ? 0 : getOldestOutstandingAmount(
                 allocationOptions,
                 fromMemberId,
                 nextToMemberId
@@ -990,7 +996,7 @@ export default function SettlementForm({
         amount:
           isAmountManuallyEdited
             ? current.amount
-            : getOldestOutstandingAmount(
+            : current.applicationMethod === "manual" ? 0 : getOldestOutstandingAmount(
                 allocationOptions,
                 nextFromMemberId,
                 toMemberId
@@ -1024,6 +1030,10 @@ export default function SettlementForm({
 
       applicationMethod,
 
+      amount: isAmountManuallyEdited ? current.amount
+        : applicationMethod === "manual" ? selectedApplicationAmount(current.applications)
+        : getOldestOutstandingAmount(eligibleAllocationOptions, current.fromMemberId, current.toMemberId),
+
       applications:
         applicationMethod ===
         "manual"
@@ -1047,10 +1057,8 @@ export default function SettlementForm({
         SettlementApplicationForm
       >
   ) => {
-    setForm((current) => ({
-      ...current,
-
-      applications:
+    setForm((current) => {
+      const applications =
         createApplicationForms(
           eligibleAllocationOptions,
           current.applications
@@ -1062,8 +1070,13 @@ export default function SettlementForm({
                 ...changes,
               }
             : application
-        ),
-    }));
+        );
+      return {
+        ...current,
+        applications,
+        amount: isAmountManuallyEdited ? current.amount : selectedApplicationAmount(applications),
+      };
+    });
 
     clearErrors([
       "applications",
@@ -1085,19 +1098,22 @@ export default function SettlementForm({
             ? {
                 ...application,
                 isSelected,
+                appliedAmount: isAmountManuallyEdited ? application.appliedAmount
+                  : isSelected ? option.outstandingAmount : 0,
               }
             : application
         );
 
       return {
         ...current,
+        amount: isAmountManuallyEdited ? current.amount : selectedApplicationAmount(applications),
 
         applications:
-          recalculateManualSettlementApplications(
+          isAmountManuallyEdited ? recalculateManualSettlementApplications(
             eligibleAllocationOptions,
             applications,
             current.amount
-          ),
+          ) : applications,
       };
     });
 
@@ -1129,32 +1145,10 @@ export default function SettlementForm({
     option:
       SettlementAllocationOption
   ) => {
-    setForm((current) => ({
-      ...current,
-
-      amount:
-        current.amount === 0
-          ? option.outstandingAmount
-          : current.amount,
-
-      applications:
-        createApplicationForms(
-          eligibleAllocationOptions,
-          current.applications
-        ).map((application) =>
-          application.expenseAllocationId ===
-          option.expenseAllocationId
-            ? {
-                ...application,
-
-                isSelected: true,
-
-                appliedAmount:
-                  option.outstandingAmount,
-              }
-            : application
-        ),
-    }));
+    updateApplication(option.expenseAllocationId, {
+      isSelected: true,
+      appliedAmount: option.outstandingAmount,
+    });
 
     clearErrors([
       "applications",
