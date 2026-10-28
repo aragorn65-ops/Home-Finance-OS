@@ -6,15 +6,15 @@ import type {
   UtilityProviderBill,
 } from "../models/UtilityProviderBill";
 
-export function getProviderBillsPaidInMonth(
+export function getPaidProviderBillsForBillingMonth(
   providerBills: UtilityProviderBill[],
   selectedMonth: Date
 ): UtilityProviderBill[] {
   return providerBills.filter(
     (providerBill) =>
-      providerBill.paidAt !== null &&
+      providerBill.status === "paid" &&
       isSameMonth(
-        providerBill.paidAt,
+        providerBill.billingDate,
         selectedMonth
       )
   );

@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -29,6 +30,7 @@ import {
   isAccountVisibleForMember,
 } from "../../accounts/services/accountVisibility";
 import {
+  coreSnapshotRestoredEvent,
   useHouseholdMembership,
 } from "../../auth";
 
@@ -52,7 +54,7 @@ import type {
 
 import UtilityProviderBillService from "../services/UtilityProviderBillService";
 import {
-  getProviderBillsPaidInMonth,
+  getPaidProviderBillsForBillingMonth,
 } from "../services/providerBillMonthFilters";
 import TransactionService from "../../transactions/services/TransactionService";
 
@@ -151,6 +153,22 @@ export default function UtilitiesPage() {
     Record<string, ProviderPaymentForm>
   >({});
 
+  useEffect(() => {
+    const refreshProviderBills = () => {
+      setProviderBills(
+        UtilityProviderBillService.getActiveProviderBills()
+      );
+      setPaidProviderBills(
+        UtilityProviderBillService.getPaidProviderBills()
+      );
+    };
+
+    window.addEventListener(coreSnapshotRestoredEvent, refreshProviderBills);
+    return () => {
+      window.removeEventListener(coreSnapshotRestoredEvent, refreshProviderBills);
+    };
+  }, []);
+
   const [
     markingPaidProviderBillId,
     setMarkingPaidProviderBillId,
@@ -222,7 +240,7 @@ export default function UtilitiesPage() {
       selectedMonthValue
     );
   const paidProviderBillsForSelectedMonth =
-    getProviderBillsPaidInMonth(
+    getPaidProviderBillsForBillingMonth(
       paidProviderBills,
       selectedMonth
     );
@@ -735,9 +753,16 @@ export default function UtilitiesPage() {
         duplicateMatches
       )
     ) {
-      setSaveMessage(
+      setProviderBills(
+        UtilityProviderBillService.getActiveProviderBills()
+      );
+      setPaidProviderBills(
+        UtilityProviderBillService.getPaidProviderBills()
+      );
+      setSaveError(
         "Provider bill was not saved because a possible duplicate was found."
       );
+      showNotification();
       return;
     }
 
@@ -747,6 +772,11 @@ export default function UtilitiesPage() {
         calculation
       );
 
+    // A failed cloud save can still leave a valid local unpaid bill.
+    setProviderBills(
+      UtilityProviderBillService.getActiveProviderBills()
+    );
+
     if (!result.success) {
       const errors =
         result.errors ?? {};
@@ -755,8 +785,8 @@ export default function UtilitiesPage() {
         Object.values(errors)[0];
 
       setSaveError(
-        firstError ??
-          result.message ??
+        result.message ??
+          firstError ??
           "Unable to save the utility bill."
       );
 
@@ -783,10 +813,6 @@ export default function UtilitiesPage() {
     );
     setValidationAlertErrors({});
     setIsValidationAlertOpen(false);
-    setProviderBills(
-      UtilityProviderBillService.getActiveProviderBills()
-    );
-
     /**
      * Clear the completed form only after persistence
      * succeeds.
@@ -807,7 +833,7 @@ export default function UtilitiesPage() {
         actions={
           <Input
             type="month"
-            aria-label="Reporting month"
+            aria-label="Billing month"
             value={selectedMonthValue}
             onChange={(event) =>
               setSelectedMonthValue(
@@ -1096,7 +1122,7 @@ function ProviderPaymentsSummary({
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div>
         <h2 className="font-semibold text-slate-900">
-          Provider Payments
+          Provider Payments by Billing Month
         </h2>
 
         <p className="mt-1 text-sm text-slate-500">
@@ -1109,6 +1135,9 @@ function ProviderPaymentsSummary({
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead className="text-xs uppercase text-slate-500">
             <tr>
+              <th className="py-2 pr-3">
+                Bill Date
+              </th>
               <th className="py-2 pr-3">
                 Paid Date
               </th>
@@ -1146,6 +1175,9 @@ function ProviderPaymentsSummary({
 
                 return (
                   <tr key={providerBill.id}>
+                    <td className="py-3 pr-3">
+                      {providerBill.billingDate.toLocaleDateString()}
+                    </td>
                     <td className="py-3 pr-3">
                       {providerBill.paidAt
                         ? providerBill.paidAt.toLocaleDateString()

@@ -37,7 +37,7 @@ import UtilityBillPersistenceService from "../src/features/utilities/services/Ut
 import { createApplicationBackup, restoreApplicationBackup } from "../src/features/startup/services/applicationBackup.ts";
 import { browserCoreSnapshotLocalWriter } from "../src/features/auth/services/browserCoreSnapshotLocalWriter.ts";
 import {
-  getProviderBillsPaidInMonth,
+  getPaidProviderBillsForBillingMonth,
 } from "../src/features/utilities/services/providerBillMonthFilters";
 
 test("bill file updates wait for cloud save and persist additions and removals", async (t) => {
@@ -489,7 +489,27 @@ function formatLocalDateKey(
   return `${year}-${month}-${day}`;
 }
 
-test("provider payment summary only includes payments from the selected month", () => {
+test("delayed Meralco payments stay with their original bill without duplicating November", () => {
+  const october = createProviderBill({ id: "october-meralco", providerName: "Meralco",
+    billingDate: new Date(2026, 9, 19), dueDate: new Date(2026, 9, 30),
+    paidAt: new Date(2026, 10, 2), totalBillAmount: 6321.88 });
+  const november = createProviderBill({ id: "november-meralco", providerName: "Meralco",
+    billingDate: new Date(2026, 10, 19), paidAt: new Date(2026, 10, 30) });
+  const unpaid = createProviderBill({ id: "unpaid", billingDate: new Date(2026, 9, 19) });
+  const bills = [october, november, unpaid];
+  const before = JSON.stringify(bills);
+  assert.deepEqual(getPaidProviderBillsForBillingMonth(bills, new Date(2026, 9, 1)).map(b => b.id), [october.id]);
+  assert.deepEqual(getPaidProviderBillsForBillingMonth(bills, new Date(2026, 10, 1)).map(b => b.id), [november.id]);
+  assert.equal(JSON.stringify(bills), before);
+});
+
+test("late year-end payments remain in December even when paid in February", () => {
+  const bill = createProviderBill({ billingDate: new Date(2026, 11, 19), paidAt: new Date(2027, 1, 2) });
+  assert.equal(getPaidProviderBillsForBillingMonth([bill], new Date(2026, 11, 1)).length, 1);
+  assert.equal(getPaidProviderBillsForBillingMonth([bill], new Date(2027, 1, 1)).length, 0);
+});
+
+test("provider payment summary groups by billing month rather than payment month", () => {
   const julyPayment =
     createProviderBill({
       id: "july-payment",
@@ -499,12 +519,13 @@ test("provider payment summary only includes payments from the selected month", 
   const augustPayment =
     createProviderBill({
       id: "august-payment",
+      billingDate: new Date("2026-08-01T00:00:00"),
       paidAt:
         new Date("2026-08-05T00:00:00"),
     });
 
   const augustPayments =
-    getProviderBillsPaidInMonth(
+    getPaidProviderBillsForBillingMonth(
       [
         julyPayment,
         augustPayment,
@@ -1258,7 +1279,7 @@ test("transaction delete preparation relinks provider bill to paid duplicate", (
   );
 });
 
-test("transaction date edits move linked paid provider bills to the corrected payment month", () => {
+test("transaction date edits preserve the provider bill's billing month", () => {
   const { localStorage } =
     installBrowserStorage();
   const householdId =
@@ -1420,7 +1441,7 @@ test("transaction date edits move linked paid provider bills to the corrected pa
   );
 
   assert.equal(
-    getProviderBillsPaidInMonth(
+    getPaidProviderBillsForBillingMonth(
       updatedProviderBill
         ? [updatedProviderBill]
         : [],
@@ -1431,12 +1452,12 @@ test("transaction date edits move linked paid provider bills to the corrected pa
     0
   );
   assert.deepEqual(
-    getProviderBillsPaidInMonth(
+    getPaidProviderBillsForBillingMonth(
       updatedProviderBill
         ? [updatedProviderBill]
         : [],
       new Date(
-        "2026-09-01T00:00:00"
+        "2026-07-01T00:00:00"
       )
     ).map(
       (providerBill) =>
