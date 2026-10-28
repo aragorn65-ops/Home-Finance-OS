@@ -757,6 +757,16 @@ export default function SettlementForm({
         )
       : 0;
 
+  const selectedAllocationIds = new Set(
+    form.applications.filter(application => application.isSelected)
+      .map(application => application.expenseAllocationId)
+  );
+  const selectedDuesTotal = eligibleAllocationOptions.reduce(
+    (cents, option) => cents + (selectedAllocationIds.has(option.expenseAllocationId)
+      ? Math.round(option.outstandingAmount * 100) : 0),
+    0
+  ) / 100;
+
   const manualApplicationTotalExceedsSettlement =
     form.applicationMethod ===
       "manual" &&
@@ -1787,26 +1797,6 @@ export default function SettlementForm({
             </p>
           )}
 
-          {form.applicationMethod ===
-            "manual" && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2 text-sm">
-              <span className="text-muted-foreground">
-                Selected application subtotal
-              </span>
-
-              <span className="font-semibold text-foreground">
-                {formatAmount(
-                  manualApplicationTotal,
-                  currency
-                )}
-                {" / "}
-                {formatAmount(
-                  form.amount,
-                  currency
-                )}
-              </span>
-            </div>
-          )}
         </div>
 
         {eligibleAllocationOptions.length ===
@@ -1879,6 +1869,21 @@ export default function SettlementForm({
           </div>
         ) : (
           <div className="space-y-3">
+            <div role="status" aria-label="Manual settlement running total" aria-live="polite" aria-atomic="true"
+              className="sticky top-0 z-10 grid grid-cols-1 gap-2 rounded-md border bg-background px-3 py-3 text-sm text-foreground shadow-sm sm:grid-cols-3">
+              <div>
+                <p className="text-muted-foreground">Selected dues ({selectedAllocationIds.size})</p>
+                <p className="font-semibold tabular-nums">{formatAmount(selectedDuesTotal, currency)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Applied amount</p>
+                <p className="font-semibold tabular-nums">{formatAmount(manualApplicationTotal, currency)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Payment amount</p>
+                <p className="font-semibold tabular-nums">{formatAmount(form.amount, currency)}</p>
+              </div>
+            </div>
             {eligibleAllocationOptions.map(
               (option) => {
                 const application =
