@@ -54,7 +54,7 @@ import type {
 
 import UtilityProviderBillService from "../services/UtilityProviderBillService";
 import {
-  getPaidProviderBillsForBillingMonth,
+  getPaidProviderBillsForDueMonth,
 } from "../services/providerBillMonthFilters";
 import TransactionService from "../../transactions/services/TransactionService";
 
@@ -240,7 +240,7 @@ export default function UtilitiesPage() {
       selectedMonthValue
     );
   const paidProviderBillsForSelectedMonth =
-    getPaidProviderBillsForBillingMonth(
+    getPaidProviderBillsForDueMonth(
       paidProviderBills,
       selectedMonth
     );
@@ -833,7 +833,7 @@ export default function UtilitiesPage() {
         actions={
           <Input
             type="month"
-            aria-label="Billing month"
+            aria-label="Due month"
             value={selectedMonthValue}
             onChange={(event) =>
               setSelectedMonthValue(
@@ -1122,7 +1122,7 @@ function ProviderPaymentsSummary({
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div>
         <h2 className="font-semibold text-slate-900">
-          Provider Payments by Billing Month
+          Provider Payments by Due Month
         </h2>
 
         <p className="mt-1 text-sm text-slate-500">
@@ -1137,6 +1137,9 @@ function ProviderPaymentsSummary({
             <tr>
               <th className="py-2 pr-3">
                 Bill Date
+              </th>
+              <th className="py-2 pr-3">
+                Due Date
               </th>
               <th className="py-2 pr-3">
                 Paid Date
@@ -1177,6 +1180,9 @@ function ProviderPaymentsSummary({
                   <tr key={providerBill.id}>
                     <td className="py-3 pr-3">
                       {providerBill.billingDate.toLocaleDateString()}
+                    </td>
+                    <td className="py-3 pr-3">
+                      {providerBill.dueDate.toLocaleDateString()}
                     </td>
                     <td className="py-3 pr-3">
                       {providerBill.paidAt

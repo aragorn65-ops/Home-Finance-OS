@@ -6,7 +6,7 @@ import type {
   UtilityProviderBill,
 } from "../models/UtilityProviderBill";
 
-export function getPaidProviderBillsForBillingMonth(
+export function getPaidProviderBillsForDueMonth(
   providerBills: UtilityProviderBill[],
   selectedMonth: Date
 ): UtilityProviderBill[] {
@@ -14,7 +14,7 @@ export function getPaidProviderBillsForBillingMonth(
     (providerBill) =>
       providerBill.status === "paid" &&
       isSameMonth(
-        providerBill.billingDate,
+        providerBill.dueDate,
         selectedMonth
       )
   );

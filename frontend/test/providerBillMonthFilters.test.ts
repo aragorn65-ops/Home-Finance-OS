@@ -37,7 +37,7 @@ import UtilityBillPersistenceService from "../src/features/utilities/services/Ut
 import { createApplicationBackup, restoreApplicationBackup } from "../src/features/startup/services/applicationBackup.ts";
 import { browserCoreSnapshotLocalWriter } from "../src/features/auth/services/browserCoreSnapshotLocalWriter.ts";
 import {
-  getPaidProviderBillsForBillingMonth,
+  getPaidProviderBillsForDueMonth,
 } from "../src/features/utilities/services/providerBillMonthFilters";
 
 test("bill file updates wait for cloud save and persist additions and removals", async (t) => {
@@ -494,22 +494,40 @@ test("delayed Meralco payments stay with their original bill without duplicating
     billingDate: new Date(2026, 9, 19), dueDate: new Date(2026, 9, 30),
     paidAt: new Date(2026, 10, 2), totalBillAmount: 6321.88 });
   const november = createProviderBill({ id: "november-meralco", providerName: "Meralco",
-    billingDate: new Date(2026, 10, 19), paidAt: new Date(2026, 10, 30) });
+    billingDate: new Date(2026, 10, 19), dueDate: new Date(2026, 10, 30), paidAt: new Date(2026, 10, 30) });
   const unpaid = createProviderBill({ id: "unpaid", billingDate: new Date(2026, 9, 19) });
   const bills = [october, november, unpaid];
   const before = JSON.stringify(bills);
-  assert.deepEqual(getPaidProviderBillsForBillingMonth(bills, new Date(2026, 9, 1)).map(b => b.id), [october.id]);
-  assert.deepEqual(getPaidProviderBillsForBillingMonth(bills, new Date(2026, 10, 1)).map(b => b.id), [november.id]);
+  assert.deepEqual(getPaidProviderBillsForDueMonth(bills, new Date(2026, 9, 1)).map(b => b.id), [october.id]);
+  assert.deepEqual(getPaidProviderBillsForDueMonth(bills, new Date(2026, 10, 1)).map(b => b.id), [november.id]);
   assert.equal(JSON.stringify(bills), before);
 });
 
-test("late year-end payments remain in December even when paid in February", () => {
-  const bill = createProviderBill({ billingDate: new Date(2026, 11, 19), paidAt: new Date(2027, 1, 2) });
-  assert.equal(getPaidProviderBillsForBillingMonth([bill], new Date(2026, 11, 1)).length, 1);
-  assert.equal(getPaidProviderBillsForBillingMonth([bill], new Date(2027, 1, 1)).length, 0);
+test("October keeps PLDT, Meralco, Globe and water together without including September or November bills", () => {
+  const fixtures = [
+    { id: "september-pldt", providerName: "PLDT", billingDate: new Date(2026, 8, 17), dueDate: new Date(2026, 8, 30), paidAt: new Date(2026, 8, 21), totalBillAmount: 1799 },
+    { id: "october-pldt", providerName: "PLDT", billingDate: new Date(2026, 8, 18), dueDate: new Date(2026, 9, 11), paidAt: new Date(2026, 9, 16), totalBillAmount: 1799 },
+    { id: "october-water", providerName: "Manila water", billingDate: new Date(2026, 9, 7), dueDate: new Date(2026, 9, 15), paidAt: new Date(2026, 9, 17), totalBillAmount: 1149.04 },
+    { id: "october-globe", providerName: "Globe Fiber", billingDate: new Date(2026, 9, 1), dueDate: new Date(2026, 9, 18), paidAt: new Date(2026, 9, 29), totalBillAmount: 1499 },
+    { id: "october-meralco", providerName: "Meralco", billingDate: new Date(2026, 9, 18), dueDate: new Date(2026, 9, 30), paidAt: new Date(2026, 10, 2), totalBillAmount: 6321.88 },
+    { id: "november-meralco", providerName: "Meralco", billingDate: new Date(2026, 10, 18), dueDate: new Date(2026, 10, 30), paidAt: new Date(2026, 11, 2), totalBillAmount: 6000 },
+  ].map(createProviderBill);
+  const before = JSON.stringify(fixtures);
+  const october = getPaidProviderBillsForDueMonth(fixtures, new Date(2026, 9, 1));
+  assert.deepEqual(october.map(b => b.id), ["october-pldt", "october-water", "october-globe", "october-meralco"]);
+  assert.equal(october.reduce((sum, b) => sum + Math.round(b.totalBillAmount * 100), 0), 1076892);
+  assert.deepEqual(getPaidProviderBillsForDueMonth(fixtures, new Date(2026, 8, 1)).map(b => b.id), ["september-pldt"]);
+  assert.deepEqual(getPaidProviderBillsForDueMonth(fixtures, new Date(2026, 10, 1)).map(b => b.id), ["november-meralco"]);
+  assert.equal(JSON.stringify(fixtures), before);
 });
 
-test("provider payment summary groups by billing month rather than payment month", () => {
+test("late year-end payments remain in December even when paid in February", () => {
+  const bill = createProviderBill({ billingDate: new Date(2026, 11, 19), dueDate: new Date(2026, 11, 30), paidAt: new Date(2027, 1, 2) });
+  assert.equal(getPaidProviderBillsForDueMonth([bill], new Date(2026, 11, 1)).length, 1);
+  assert.equal(getPaidProviderBillsForDueMonth([bill], new Date(2027, 1, 1)).length, 0);
+});
+
+test("provider payment summary groups by due month rather than payment month", () => {
   const julyPayment =
     createProviderBill({
       id: "july-payment",
@@ -520,12 +538,13 @@ test("provider payment summary groups by billing month rather than payment month
     createProviderBill({
       id: "august-payment",
       billingDate: new Date("2026-08-01T00:00:00"),
+      dueDate: new Date("2026-08-09T00:00:00"),
       paidAt:
         new Date("2026-08-05T00:00:00"),
     });
 
   const augustPayments =
-    getPaidProviderBillsForBillingMonth(
+    getPaidProviderBillsForDueMonth(
       [
         julyPayment,
         augustPayment,
@@ -1279,7 +1298,7 @@ test("transaction delete preparation relinks provider bill to paid duplicate", (
   );
 });
 
-test("transaction date edits preserve the provider bill's billing month", () => {
+test("transaction date edits preserve the provider bill's due month", () => {
   const { localStorage } =
     installBrowserStorage();
   const householdId =
@@ -1441,7 +1460,7 @@ test("transaction date edits preserve the provider bill's billing month", () => 
   );
 
   assert.equal(
-    getPaidProviderBillsForBillingMonth(
+    getPaidProviderBillsForDueMonth(
       updatedProviderBill
         ? [updatedProviderBill]
         : [],
@@ -1452,7 +1471,7 @@ test("transaction date edits preserve the provider bill's billing month", () => 
     0
   );
   assert.deepEqual(
-    getPaidProviderBillsForBillingMonth(
+    getPaidProviderBillsForDueMonth(
       updatedProviderBill
         ? [updatedProviderBill]
         : [],
