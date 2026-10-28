@@ -24,6 +24,8 @@ import deleteDuplicateTransaction from "../src/features/transactions/services/de
 import AccountRepository from "../src/features/accounts/repositories/AccountRepository";
 import { OperationResults } from "../src/shared/types/index";
 import MonthlyExpenseReportingService from "../src/features/transactions/services/MonthlyExpenseReportingService";
+import { getExpenseReportingDate } from "../src/features/transactions/services/expenseReportingDate";
+import { isSameMonth } from "../src/shared/utils/monthSelection";
 import HouseholdExpenseContributionService from "../src/features/transactions/services/HouseholdExpenseContributionService";
 import SettlementService from "../src/features/settlements/services/SettlementService";
 import SettlementAllocationService from "../src/features/settlements/services/SettlementAllocationService";
@@ -525,6 +527,55 @@ test("late year-end payments remain in December even when paid in February", () 
   const bill = createProviderBill({ billingDate: new Date(2026, 11, 19), dueDate: new Date(2026, 11, 30), paidAt: new Date(2027, 1, 2) });
   assert.equal(getPaidProviderBillsForDueMonth([bill], new Date(2026, 11, 1)).length, 1);
   assert.equal(getPaidProviderBillsForDueMonth([bill], new Date(2027, 1, 1)).length, 0);
+});
+
+test("October utility expenses and dues stay in October while November payment records remain unchanged", () => {
+  const { localStorage } = installBrowserStorage();
+  const householdId = "expense-period-regression";
+  const now = new Date(2026, 9, 1);
+  localStorage.setItem(HFOS_STORAGE_KEYS.household, JSON.stringify(createStorageEnvelope({
+    id: householdId, householdName: "Reporting test", country: "PH", currency: "PHP", timezone: "Asia/Manila",
+    members: ["member-1", "rasha"].map(id => ({ id, householdId, displayName: id, role: id === "member-1" ? "owner" : "member", isActive: true, createdAt: now, updatedAt: now })),
+    createdAt: now, updatedAt: now,
+  })));
+  const specs = [
+    { id: "meralco-oct", amount: 6321.88, due: new Date(2026, 9, 30), paid: new Date(2026, 10, 2), bill: new Date(2026, 9, 18), share: 3224.86 },
+    { id: "pldt-oct", amount: 1799, due: new Date(2026, 9, 11), paid: new Date(2026, 9, 16), bill: new Date(2026, 8, 18), share: 899.50 },
+    { id: "globe-oct", amount: 1499, due: new Date(2026, 9, 18), paid: new Date(2026, 9, 29), bill: new Date(2026, 9, 1), share: 749.50 },
+    { id: "water-oct", amount: 1149.04, due: new Date(2026, 9, 15), paid: new Date(2026, 9, 17), bill: new Date(2026, 9, 7), share: 574.52 },
+    { id: "meralco-nov", amount: 6000, due: new Date(2026, 10, 30), paid: new Date(2026, 11, 2), bill: new Date(2026, 10, 18), share: 3000 },
+  ];
+  const transactions = specs.map(s => createTransaction({ id: s.id, householdId, amount: s.amount, transactionDate: s.paid }));
+  transactions.push(createTransaction({ id: "ordinary-nov", householdId, amount: 100, transactionDate: new Date(2026, 10, 3) }));
+  TransactionRepository.replaceForHousehold(householdId, transactions);
+  UtilityProviderBillRepository.replaceForHousehold(householdId, specs.map(s => createProviderBill({
+    id: `bill-${s.id}`, householdId, transactionId: s.id, totalBillAmount: s.amount, dueDate: s.due, billingDate: s.bill, paidAt: s.paid,
+  })));
+  ExpenseAllocationRepository.replaceForHousehold(householdId, specs.flatMap(s => [
+    { id: `${s.id}-rasha`, transactionId: s.id, memberId: "rasha", paidByMemberId: "member-1", allocatedAmount: s.share, isIncluded: true, createdAt: now, updatedAt: now },
+    { id: `${s.id}-owner`, transactionId: s.id, memberId: "member-1", paidByMemberId: "member-1", allocatedAmount: Math.round((s.amount - s.share) * 100) / 100, isIncluded: true, createdAt: now, updatedAt: now },
+  ]));
+  const snapshot = () => JSON.stringify({ transactions: TransactionRepository.findAll(), bills: UtilityProviderBillRepository.findAll(),
+    allocations: ExpenseAllocationRepository.findAll(), accounts: AccountRepository.findAll(), settlements: SettlementRepository.findAll(), applications: SettlementApplicationRepository.findAll() });
+  const before = snapshot();
+  const october = new Date(2026, 9, 1);
+  const november = new Date(2026, 10, 1);
+  const expenseRecords = MonthlyExpenseReportingService.getMonthlyExpenses(householdId, october);
+  assert.deepEqual(expenseRecords.map(t => t.id).sort(), specs.slice(0, 4).map(s => s.id).sort());
+  assert.equal(expenseRecords.reduce((cents, t) => cents + Math.round(t.amount * 100), 0), 1076892);
+  assert.deepEqual(MonthlyExpenseReportingService.getMonthlyExpenses(householdId, november).map(t => t.id).sort(), ["meralco-nov", "ordinary-nov"]);
+  const summary = HouseholdExpenseContributionService.getMonthlySummary(householdId, october);
+  assert.equal(summary.totalAmount, 10768.92);
+  assert.equal(summary.memberContributions.find(m => m.memberId === "rasha")?.amount, 5448.38);
+  const outstanding = SettlementOverpaymentCreditService.applyCreditOffsetsToAllocations(householdId, SettlementAllocationService.getOutstandingAllocations(householdId));
+  const octDues = outstanding.filter(a => isSameMonth(getExpenseReportingDate(householdId, a.transactionId, a.transactionDate), october));
+  assert.deepEqual(octDues.map(a => a.transactionId).sort(), specs.slice(0, 4).map(s => s.id).sort());
+  assert.equal(octDues.reduce((cents, a) => cents + Math.round(a.outstandingAmount * 100), 0), 544838);
+  const meralco = TransactionRepository.findById("meralco-oct")!;
+  assert.equal(formatLocalDateKey(meralco.transactionDate), "2026-11-02");
+  assert.equal(formatLocalDateKey(expenseRecords.find(t => t.id === meralco.id)!.reportingDate), "2026-10-30");
+  assert.equal(getExpenseReportingDate("another-household", meralco.id, meralco.transactionDate), meralco.transactionDate);
+  assert.equal(snapshot(), before);
 });
 
 test("provider payment summary groups by due month rather than payment month", () => {

@@ -1,5 +1,6 @@
 import "./DashboardPage.css";
 
+import { getExpenseReportingDate } from "../../transactions/services/expenseReportingDate";
 import {
   ArrowRight,
   ArrowRightLeft,
@@ -141,7 +142,7 @@ function getCategoryTotals(
         transaction.isActive &&
         transaction.type === "expense" &&
         isSameMonth(
-          transaction.transactionDate,
+          transaction.reportingDate,
           selectedMonth
         )
     );
@@ -279,7 +280,7 @@ function settlementBelongsToMonth(
   return applicationDetails.some(
     (details) =>
       isSameMonth(
-        details.transactionDate,
+        getExpenseReportingDate(settlement.householdId, details.transactionId, details.transactionDate),
         selectedMonth
       )
   );
@@ -401,7 +402,7 @@ export default function DashboardPage() {
             transaction.type ===
               "expense" &&
             isSameMonth(
-              transaction.transactionDate,
+              getExpenseReportingDate(transaction.householdId, transaction.id, transaction.transactionDate),
               referenceMonth
             )
         );
@@ -558,7 +559,7 @@ export default function DashboardPage() {
         creditAdjustedOutstandingAllocations.filter(
           (allocation) =>
             isSameMonth(
-              allocation.transactionDate,
+              getExpenseReportingDate(householdId, allocation.transactionId, allocation.transactionDate),
               selectedMonth
             )
         ),
@@ -646,7 +647,7 @@ export default function DashboardPage() {
         (transaction) =>
           transaction.isActive &&
           isSameMonth(
-            transaction.transactionDate,
+            getExpenseReportingDate(transaction.householdId, transaction.id, transaction.transactionDate),
             selectedMonth
           )
       )

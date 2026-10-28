@@ -1,3 +1,4 @@
+import { getExpenseReportingDate } from "../../transactions/services/expenseReportingDate";
 import {
   useMemo,
   useState,
@@ -546,7 +547,7 @@ function settlementBelongsToMonth(
   return applicationDetails.some(
     (details) =>
       isSameMonth(
-        details.transactionDate,
+        getExpenseReportingDate(settlement.householdId, details.transactionId, details.transactionDate),
         selectedMonth
       )
   );
@@ -1169,7 +1170,7 @@ export default function SettlementsPage() {
         creditAdjustedOutstandingAllocations.filter(
           (allocation) =>
             isSameMonth(
-              allocation.transactionDate,
+              getExpenseReportingDate(household?.id ?? "", allocation.transactionId, allocation.transactionDate),
               selectedMonth
             )
         ),
@@ -1184,7 +1185,7 @@ export default function SettlementsPage() {
       () =>
         creditAdjustedOutstandingAllocations.filter(
           (allocation) =>
-            allocation.transactionDate <
+            getExpenseReportingDate(household?.id ?? "", allocation.transactionId, allocation.transactionDate) <
             selectedMonth
         ),
       [
@@ -1339,8 +1340,8 @@ export default function SettlementsPage() {
           </p>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Unpaid reimbursements from transactions dated
-            in {selectedMonthLabel} only.
+            Unpaid reimbursements from expenses for{" "}
+            {selectedMonthLabel} only.
           </p>
         </section>
 
@@ -1359,7 +1360,7 @@ export default function SettlementsPage() {
             </p>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Carryover from older transaction months.
+              Carryover from older expense months.
               Kept separate so {selectedMonthLabel} totals
               stay month-specific.
             </p>
@@ -1394,7 +1395,7 @@ export default function SettlementsPage() {
           members={members}
           currency={currency}
           title={`Who Owes Whom - ${selectedMonthLabel}`}
-          description={`Outstanding reimbursements from ${selectedMonthLabel} transactions only.`}
+          description={`Outstanding reimbursements from ${selectedMonthLabel} expenses only.`}
         />
 
         {previousObligations.length > 0 && (
@@ -1405,7 +1406,7 @@ export default function SettlementsPage() {
             members={members}
             currency={currency}
             title={`Unsettled Amount From Previous Month (${previousMonthLabel})`}
-            description={`Carryover from transaction months before ${selectedMonthLabel}. These amounts are not mixed into the ${selectedMonthLabel} summary.`}
+            description={`Carryover from expense months before ${selectedMonthLabel}. These amounts are not mixed into the ${selectedMonthLabel} summary.`}
             amountLabel="Carryover"
           />
         )}

@@ -16,7 +16,7 @@ test("dashboard and itemized settlements retain the same credit-adjusted monthly
   for (const source of [dashboard, settlements]) {
     assert.match(source, /SettlementAllocationService\s*\.getOutstandingAllocations\(/);
     assert.match(source, /SettlementOverpaymentCreditService\s*\.applyCreditOffsetsToAllocations\(/);
-    assert.match(source, /creditAdjustedOutstandingAllocations.filter\(\s*\(allocation\) =>\s*isSameMonth\(\s*allocation.transactionDate,\s*selectedMonth/);
+    assert.match(source, /creditAdjustedOutstandingAllocations.filter\(\s*\(allocation\) =>\s*isSameMonth\(\s*getExpenseReportingDate\([^\n]+allocation.transactionDate\),\s*selectedMonth/);
   }
   assert.match(dashboard, /getSettlementPreviews\(\s*monthlyOutstandingAllocations/);
   assert.match(dashboard, /settlementPreviews.reduce\(\s*\(total, preview\) =>\s*total \+ preview.amount/);

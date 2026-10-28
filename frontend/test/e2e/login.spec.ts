@@ -52,6 +52,71 @@ async function fakeAuth(page: Page) {
   return requests;
 }
 
+test("late utility payments report in their due month across all three finance pages", async ({ page }, testInfo) => {
+  await fakeAuth(page);
+  const householdId = "44444444-4444-4444-8444-444444444444";
+  const ownerId = "55555555-5555-4555-8555-555555555555";
+  const rashaId = "77777777-7777-4777-8777-777777777777";
+  const date = "2026-10-01T00:00:00Z";
+  const specs = [
+    { id: "meralco", amount: 6321.88, bill: "2026-10-18", due: "2026-10-30", paid: "2026-11-02", share: 3224.86 },
+    { id: "pldt", amount: 1799, bill: "2026-09-18", due: "2026-10-11", paid: "2026-10-16", share: 899.50 },
+    { id: "globe", amount: 1499, bill: "2026-10-01", due: "2026-10-18", paid: "2026-10-29", share: 749.50 },
+    { id: "water", amount: 1149.04, bill: "2026-10-07", due: "2026-10-15", paid: "2026-10-17", share: 574.52 },
+  ];
+  const writes: string[] = [];
+  await page.route("https://auth.hfos-test.invalid/rest/v1/**", async route => {
+    const path = new URL(route.request().url()).pathname;
+    let data: unknown = [];
+    if (path.endsWith("/household_memberships")) data = [{ id: "owner-membership", household_id: householdId,
+      user_id: users.admin.id, member_id: ownerId, member: { display_name: "Dadi Buboy", local_record_id: null }, role: "owner", status: "active", created_at: date, updated_at: date }];
+    else if (path.endsWith("/household_members")) data = [
+      { id: ownerId, household_id: householdId, linked_user_id: users.admin.id, display_name: "Dadi Buboy", role: "owner", status: "active", created_at: date, updated_at: date },
+      { id: rashaId, household_id: householdId, linked_user_id: users.rasha.id, display_name: "Rasha", role: "member", status: "active", created_at: date, updated_at: date },
+    ];
+    else if (path.endsWith("/load_household_preferences")) data = { household_id: householdId,
+      household_name: "Expense month test", country: "PH", currency: "PHP", timezone: "Asia/Manila", status: "active", owner_member_id: ownerId };
+    else if (path.endsWith("/load_household_core_snapshot")) data = { household_id: householdId, accounts: [],
+      transactions: specs.map(s => ({ id: s.id, householdId, visibility: "household", type: "expense", amount: s.amount,
+        category: "Utilities", description: `${s.id} October expense`, notes: "", transactionDate: s.paid, paidByMemberId: ownerId,
+        createdByMemberId: ownerId, expenseSplitMethod: "exact", isActive: true, attachments: [], createdAt: date, updatedAt: date })),
+      expense_allocations: specs.map(s => ({ id: `allocation-${s.id}`, transactionId: s.id, memberId: rashaId,
+        paidByMemberId: ownerId, allocatedAmount: s.share, isIncluded: true, createdAt: date, updatedAt: date })),
+      provider_bills: specs.map(s => ({ id: `bill-${s.id}`, householdId, utilityType: "electricity", unit: "kWh",
+        providerName: s.id, billingDate: s.bill, dueDate: s.due, totalBillAmount: s.amount, ratePerUnit: 1, status: "paid",
+        formSnapshot: { memberShares: [], applianceUsages: [] }, calculationSnapshot: { memberShares: [] }, memberShareSnapshot: [], billAttachments: [], paymentAttachments: [],
+        paidByMemberId: ownerId, sourceAccountId: "", paidAt: s.paid, paymentReferenceNumber: "", transactionId: s.id,
+        visibility: "household", description: "", notes: "", isActive: true, createdAt: date, updatedAt: date })),
+    };
+    else if (["POST", "PATCH", "PUT", "DELETE"].includes(route.request().method())) writes.push(path);
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
+  });
+  await page.goto("/login");
+  await page.evaluate(() => sessionStorage.setItem("hfos.reportingMonth", "2026-10"));
+  await page.getByLabel("Email", { exact: true }).fill(users.admin.email);
+  await page.getByLabel("Password", { exact: true }).fill("test-password-only");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("hfos.v1.provider-bills"))).toContain("bill-meralco");
+  await page.goto("/app/transactions");
+  for (const s of specs) await expect(page.getByText(`${s.id} October expense`, { exact: true })).toBeVisible();
+  await expect(page.getByText("Expense month: October 2026", { exact: true })).toBeVisible();
+  await page.getByLabel("Reporting month").fill("2026-11");
+  await expect(page.getByText("meralco October expense", { exact: true })).not.toBeVisible();
+  await page.getByLabel("Reporting month").fill("2026-10");
+  await page.goto("/app");
+  await expect(page.locator(".dashboard-metric").filter({ hasText: "Total Expenses" })).toContainText("10,768.92");
+  await page.goto("/app/settlements");
+  await expect(page.getByText("Total Outstanding for October 2026").locator("..")).toContainText("5,448.38");
+  await page.screenshot({ path: testInfo.outputPath("october-settlements.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/app/settlements");
+  await expect(page.getByText("Total Outstanding for October 2026")).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("october-settlements-mobile.png"), fullPage: true, animations: "disabled" });
+  const paymentDate = await page.evaluate(() => JSON.parse(localStorage.getItem("hfos.v1.transactions")!).data.find((t: { id: string }) => t.id === "meralco").transactionDate);
+  expect(paymentDate).toContain("2026-11-02");
+  expect(writes).toEqual([]);
+});
+
 for (const scenario of ["owner", "admin", "multiple"] as const) {
   const role = scenario === "admin" ? "admin" : "owner";
   test(`fresh ${scenario} login restores existing household and finance records without backup`, async ({ page }, testInfo) => {

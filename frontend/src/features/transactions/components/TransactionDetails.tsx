@@ -1,4 +1,6 @@
 import type { Transaction } from "../models/Transaction";
+import { getExpenseReportingDate } from "../services/expenseReportingDate";
+import { isSameMonth, formatMonthLabel } from "../../../shared/utils/monthSelection";
 
 import {
   findHouseholdMemberByReference,
@@ -67,6 +69,7 @@ export default function TransactionDetails({
   const formattedTransactionDate =
     transaction.transactionDate
       .toLocaleDateString();
+  const reportingDate = getExpenseReportingDate(transaction.householdId, transaction.id, transaction.transactionDate);
 
   const transactionMemberId =
     resolveTransactionMemberId(
@@ -112,6 +115,12 @@ export default function TransactionDetails({
       </div>
 
       <dl className="grid gap-5 sm:grid-cols-2">
+        {!isSameMonth(reportingDate, transaction.transactionDate) && (
+          <div>
+            <dt className="text-sm font-medium text-muted-foreground">Expense Month</dt>
+            <dd className="mt-1 text-sm text-foreground">{formatMonthLabel(reportingDate)}</dd>
+          </div>
+        )}
         <div>
           <dt className="text-sm font-medium text-muted-foreground">
             Transaction Date

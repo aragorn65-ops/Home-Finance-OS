@@ -1,4 +1,6 @@
 import type { Transaction } from "../models/Transaction";
+import { getExpenseReportingDate } from "../services/expenseReportingDate";
+import { isSameMonth, formatMonthLabel } from "../../../shared/utils/monthSelection";
 import formatCurrency from "../../../shared/utils/formatCurrency";
 import {
   normalizeTransactionCategory,
@@ -113,6 +115,7 @@ export default function TransactionListItem({
 }: TransactionListItemProps) {
   const formattedDate =
     transaction.transactionDate.toLocaleDateString();
+  const reportingDate = getExpenseReportingDate(transaction.householdId, transaction.id, transaction.transactionDate);
 
   const formattedAmount = formatCurrency(
     transaction.amount,
@@ -160,6 +163,9 @@ export default function TransactionListItem({
           <span className="text-sm text-muted-foreground">
             {formattedDate}
           </span>
+          {!isSameMonth(reportingDate, transaction.transactionDate) && (
+            <span className="text-sm text-muted-foreground">Expense month: {formatMonthLabel(reportingDate)}</span>
+          )}
         </div>
 
         <h3 className="truncate font-semibold text-foreground">

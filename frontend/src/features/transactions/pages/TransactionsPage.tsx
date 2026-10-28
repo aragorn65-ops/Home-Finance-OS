@@ -1,3 +1,4 @@
+import { getExpenseReportingDate } from "../services/expenseReportingDate";
 import {
   useMemo,
   useEffect,
@@ -563,7 +564,7 @@ export default function TransactionsPage() {
           transaction.householdId !==
             household?.id ||
           !isSameMonth(
-            transaction.transactionDate,
+            getExpenseReportingDate(transaction.householdId, transaction.id, transaction.transactionDate),
             selectedMonth
           )
         ) {
